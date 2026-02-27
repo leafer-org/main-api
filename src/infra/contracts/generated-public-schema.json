@@ -1,0 +1,243 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Playerok OpenAPI Schema",
+    "description": "Playerok OpenAPI Schema"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/banners": {
+      "get": {
+        "operationId": "getBanners",
+        "tags": ["Banners"],
+        "description": "Get all banners",
+        "parameters": [
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "createdAt": {
+                  "$ref": "#/components/schemas/DateRange"
+                }
+              }
+            }
+          },
+          {
+            "name": "pagination",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Pagination"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of banners",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["edges", "pageInfo", "totalCount"],
+                  "properties": {
+                    "edges": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BannerEdge"
+                      }
+                    },
+                    "pageInfo": {
+                      "$ref": "#/components/schemas/PageInfo"
+                    },
+                    "totalCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DateRange": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "after": {
+            "type": "string"
+          },
+          "before": {
+            "type": "string"
+          },
+          "first": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "last": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "SortDirection": {
+        "type": "string",
+        "enum": ["ASC", "DESC"]
+      },
+      "Sort": {
+        "type": "object",
+        "properties": {
+          "direction": {
+            "$ref": "#/components/schemas/SortDirection"
+          },
+          "field": {
+            "type": "string"
+          }
+        }
+      },
+      "BannerFile": {
+        "type": "object",
+        "required": ["id", "url"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "Banner": {
+        "type": "object",
+        "required": ["createdAt", "id", "isNew", "logo", "opacity", "sequence"],
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "isNew": {
+            "type": "boolean"
+          },
+          "logo": {
+            "$ref": "#/components/schemas/BannerFile"
+          },
+          "opacity": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "subtitle": {
+            "type": ["string", "null"]
+          },
+          "title": {
+            "type": ["string", "null"]
+          },
+          "url": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "BannerEdge": {
+        "type": "object",
+        "required": ["node"],
+        "properties": {
+          "cursor": {
+            "type": ["string", "null"]
+          },
+          "node": {
+            "$ref": "#/components/schemas/Banner"
+          }
+        }
+      },
+      "PageInfo": {
+        "type": "object",
+        "required": ["hasNextPage", "hasPreviousPage"],
+        "properties": {
+          "endCursor": {
+            "type": ["string", "null"]
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "hasPreviousPage": {
+            "type": "boolean"
+          },
+          "startCursor": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["statusCode", "message"],
+        "properties": {
+          "statusCode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "NotFoundError": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+➤ YN0018: │ b4a@npm:1.7.3: The remote archive doesn't match the expected checksum
+➤ YN0018: │ babel-plugin-istanbul@npm:6.1.1: The remote archive doesn't match the expected checksum
+➤ YN0018: │ babel-preset-expo@npm:54.0.10: The remote archive doesn't match the expected checksum
+➤ YN0018: │ jackspeak@npm:3.4.3: The remote archive doesn't match the expected checksum
+

@@ -1,0 +1,2 @@
+export const CONSUMER_ID_TOKEN = Symbol('CONSUMER_ID_TOKEN');
+export const CONSUMER_MODE_TOKEN = Symbol('CONSUMER_MODE_TOKEN');
