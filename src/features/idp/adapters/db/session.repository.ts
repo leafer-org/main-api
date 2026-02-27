@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 
 import { SessionRepository } from '../../application/ports.js';
 import type { SessionState } from '../../domain/aggregates/session/state.js';
-import { sessions } from '@/infra/db/schema/idp.schema.js';
+import { sessions } from './schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type { SessionId, UserId } from '@/kernel/domain/ids.js';

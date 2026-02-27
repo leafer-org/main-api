@@ -4,14 +4,14 @@ import { and, eq } from 'drizzle-orm';
 import { MeQueryPort } from '../../application/ports.js';
 import type { MeReadModel } from '../../domain/read-models/me.read-model.js';
 import type { FullName } from '../../domain/vo/full-name.js';
-import { media, sessions, users } from '@/infra/db/schema/idp.schema.js';
-import { DatabaseClient } from '@/infra/db/service.js';
+import { IdpDatabaseClient } from './client.js';
+import { media, sessions, users } from './schema.js';
 import type { FileId, SessionId, UserId } from '@/kernel/domain/ids.js';
 import type { Role } from '@/kernel/domain/vo.js';
 
 @Injectable()
 export class DrizzleMeQuery extends MeQueryPort {
-  public constructor(private readonly dbClient: DatabaseClient) {
+  public constructor(private readonly dbClient: IdpDatabaseClient) {
     super();
   }
 

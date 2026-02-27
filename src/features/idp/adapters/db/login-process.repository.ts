@@ -10,7 +10,7 @@ import type {
 import { FingerPrint } from '../../domain/vo/finger-print.js';
 import { OtpCodeHash } from '../../domain/vo/otp.js';
 import { PhoneNumber } from '../../domain/vo/phone-number.js';
-import { loginProcesses } from '@/infra/db/schema/idp.schema.js';
+import { loginProcesses } from './schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import { assertNever } from '@/infra/ddd/utils.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';

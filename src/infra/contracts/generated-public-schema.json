@@ -14,7 +14,9 @@
     "/banners": {
       "get": {
         "operationId": "getBanners",
-        "tags": ["Banners"],
+        "tags": [
+          "Banners"
+        ],
         "description": "Get all banners",
         "parameters": [
           {
@@ -54,7 +56,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["edges", "pageInfo", "totalCount"],
+                  "required": [
+                    "edges",
+                    "pageInfo",
+                    "totalCount"
+                  ],
                   "properties": {
                     "edges": {
                       "type": "array",
@@ -79,9 +85,608 @@
           }
         }
       }
+    },
+    "/auth/request-otp": {
+      "post": {
+        "operationId": "requestOtp",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Запрос одноразового кода подтверждения",
+        "description": "Создаёт и отправляет OTP пользователю.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phoneNumber"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "phoneNumber": {
+                    "type": "string",
+                    "pattern": "^\\+?[1-9]\\d{9,14}$",
+                    "description": "Телефон в формате E.164"
+                  },
+                  "channel": {
+                    "type": "string",
+                    "enum": [
+                      "sms",
+                      "whatsapp"
+                    ],
+                    "description": "Канал доставки OTP"
+                  },
+                  "locale": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 5,
+                    "description": "Локаль для текстов уведомлений"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP отправлен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "nextRetrySec": {
+                      "type": "number",
+                      "minimum": 1,
+                      "description": "Рекомендованная задержка до следующего запроса OTP"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Слишком много запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThrottledErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify-otp": {
+      "post": {
+        "operationId": "verifyOtp",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Подтверждение одноразового кода",
+        "description": "Проверяет OTP и возвращает пару токенов.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phoneNumber",
+                  "code"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "phoneNumber": {
+                    "type": "string",
+                    "pattern": "^\\+?[1-9]\\d{9,14}$",
+                    "description": "Телефон в формате E.164"
+                  },
+                  "code": {
+                    "type": "string",
+                    "pattern": "^\\d{4,6}$",
+                    "description": "Код подтверждения из SMS"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Авторизация успешна",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "accessToken",
+                    "refreshToken",
+                    "needProfile"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "accessToken": {
+                      "type": "string",
+                      "minLength": 16,
+                      "description": "JWT access-токен"
+                    },
+                    "refreshToken": {
+                      "type": "string",
+                      "minLength": 16,
+                      "description": "JWT refresh-токен"
+                    },
+                    "needProfile": {
+                      "type": "boolean",
+                      "description": "Признак необходимости дозаполнить профиль"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Превышено количество попыток",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "otp_attempts_exceeded"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "retryAfterSec": {
+                      "type": "number",
+                      "minimum": 60
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Слишком много запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThrottledErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "get": {
+        "operationId": "refresh",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Обновление токенов авторизации",
+        "description": "Обновляет токены по refresh-cookie или заголовку.",
+        "parameters": [
+          {
+            "name": "x-refresh-token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Токены обновлены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenPair"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Невалидный refresh-токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "getMe",
+        "tags": [
+          "auth",
+          "profile"
+        ],
+        "summary": "Получение текущего пользователя",
+        "description": "Возвращает профиль текущего пользователя.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Профиль пользователя",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/complete-profile": {
+      "post": {
+        "operationId": "completeProfile",
+        "tags": [
+          "auth",
+          "profile"
+        ],
+        "summary": "Дополнение профиля пользователя",
+        "description": "Обновляет профиль после первичного входа.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "fullName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "avatarMedia": {
+                    "$ref": "#/components/schemas/LinkMediaData"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Обновлённый профиль",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/avatar/upload-request": {
+      "post": {
+        "operationId": "avatarUploadRequest",
+        "tags": [
+          "media",
+          "profile"
+        ],
+        "summary": "Получение presigned URL для загрузки аватара",
+        "description": "Возвращает presigned URL и идентификатор медиа-объекта для аватара пользователя.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetMediaUploadUrlInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Presigned URL для загрузки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMediaUploadUrlResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/avatar/preview-upload": {
+      "post": {
+        "operationId": "avatarPreviewUpload",
+        "tags": [
+          "media",
+          "profile"
+        ],
+        "summary": "Получение preview URL для загрузки аватара",
+        "description": "Возвращает preview URL для загрузки аватара.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkMediaData"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "URL превью аватара",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Avatar"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/upload-request": {
+      "post": {
+        "operationId": "mediaUploadRequest",
+        "tags": [
+          "media"
+        ],
+        "summary": "Получение presigned URL для загрузки файла",
+        "description": "Возвращает presigned URL и идентификатор файла для загрузки.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Presigned URL для загрузки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadRequestResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/confirm-upload": {
+      "post": {
+        "operationId": "mediaConfirmUpload",
+        "tags": [
+          "media"
+        ],
+        "summary": "Подтверждение загрузки файлов",
+        "description": "Переводит загруженные файлы из временного хранилища в постоянное.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmUploadInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Загрузка подтверждена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Файл не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/preview/{mediaId}": {
+      "get": {
+        "operationId": "mediaPreview",
+        "tags": [
+          "media"
+        ],
+        "summary": "Получение preview URL для временного файла",
+        "description": "Возвращает presigned URL для предпросмотра файла до подтверждения загрузки.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preview URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewDownloadUrlResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Файл не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "schemas": {
       "DateRange": {
         "type": "object",
@@ -117,7 +722,10 @@
       },
       "SortDirection": {
         "type": "string",
-        "enum": ["ASC", "DESC"]
+        "enum": [
+          "ASC",
+          "DESC"
+        ]
       },
       "Sort": {
         "type": "object",
@@ -132,7 +740,10 @@
       },
       "BannerFile": {
         "type": "object",
-        "required": ["id", "url"],
+        "required": [
+          "id",
+          "url"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -146,7 +757,14 @@
       },
       "Banner": {
         "type": "object",
-        "required": ["createdAt", "id", "isNew", "logo", "opacity", "sequence"],
+        "required": [
+          "createdAt",
+          "id",
+          "isNew",
+          "logo",
+          "opacity",
+          "sequence"
+        ],
         "properties": {
           "createdAt": {
             "type": "string",
@@ -171,22 +789,36 @@
             "minimum": 0
           },
           "subtitle": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "title": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "url": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
       "BannerEdge": {
         "type": "object",
-        "required": ["node"],
+        "required": [
+          "node"
+        ],
         "properties": {
           "cursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "node": {
             "$ref": "#/components/schemas/Banner"
@@ -195,10 +827,16 @@
       },
       "PageInfo": {
         "type": "object",
-        "required": ["hasNextPage", "hasPreviousPage"],
+        "required": [
+          "hasNextPage",
+          "hasPreviousPage"
+        ],
         "properties": {
           "endCursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "hasNextPage": {
             "type": "boolean"
@@ -207,13 +845,19 @@
             "type": "boolean"
           },
           "startCursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
       "Error": {
         "type": "object",
-        "required": ["statusCode", "message"],
+        "required": [
+          "statusCode",
+          "message"
+        ],
         "properties": {
           "statusCode": {
             "type": "integer"
@@ -223,6 +867,281 @@
           },
           "error": {
             "type": "string"
+          }
+        }
+      },
+      "ThrottledErrorResponse": {
+        "type": "object",
+        "required": [
+          "code",
+          "retryAfterSec"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "throttled"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryAfterSec": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Рекомендованная задержка перед повторной попыткой"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Код ошибки для обработки на клиенте"
+          },
+          "message": {
+            "type": "string",
+            "description": "Человекочитаемое описание ошибки"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Дополнительные детали ошибки"
+          }
+        }
+      },
+      "TokenPair": {
+        "type": "object",
+        "required": [
+          "accessToken",
+          "refreshToken"
+        ],
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "minLength": 16,
+            "description": "JWT access-токен"
+          },
+          "refreshToken": {
+            "type": "string",
+            "minLength": 16,
+            "description": "JWT refresh-токен"
+          }
+        }
+      },
+      "Avatar": {
+        "type": "object",
+        "required": [
+          "largeUrl",
+          "mediumUrl",
+          "smallUrl",
+          "thumbUrl"
+        ],
+        "properties": {
+          "largeUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "mediumUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "smallUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "thumbUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": [
+          "id",
+          "phoneNumber",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Уникальный идентификатор пользователя"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "pattern": "^\\+?[1-9]\\d{9,14}$",
+            "description": "Телефон в формате E.164"
+          },
+          "fullName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "avatar": {
+            "$ref": "#/components/schemas/Avatar"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MediaVisibility": {
+        "type": "string",
+        "enum": [
+          "PUBLIC",
+          "PRIVATE"
+        ]
+      },
+      "LinkMediaData": {
+        "type": "object",
+        "required": [
+          "bucket",
+          "objectKey",
+          "mediaId",
+          "visibility"
+        ],
+        "properties": {
+          "bucket": {
+            "type": "string"
+          },
+          "objectKey": {
+            "type": "string"
+          },
+          "mediaId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Идентификатор загруженного медиа-объекта"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/MediaVisibility"
+          },
+          "contentType": {
+            "type": "string",
+            "maxLength": 255
+          }
+        }
+      },
+      "GetMediaUploadUrlInput": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "maxLength": 255
+          }
+        }
+      },
+      "GetMediaUploadUrlResult": {
+        "type": "object",
+        "required": [
+          "bucket",
+          "objectKey",
+          "mediaId",
+          "visibility",
+          "url"
+        ],
+        "properties": {
+          "bucket": {
+            "type": "string"
+          },
+          "objectKey": {
+            "type": "string"
+          },
+          "mediaId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/MediaVisibility"
+          },
+          "contentType": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "UploadRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "mimeType",
+          "bucket"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "mimeType": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "bucket": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "UploadRequestResult": {
+        "type": "object",
+        "required": [
+          "fileId",
+          "uploadUrl"
+        ],
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uploadUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "ConfirmUploadInput": {
+        "type": "object",
+        "required": [
+          "fileIds"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "fileIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        }
+      },
+      "PreviewDownloadUrlResult": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
           }
         }
       }

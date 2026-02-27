@@ -1,5 +1,6 @@
 import { ConfigurableModuleBuilder, Module } from '@nestjs/common';
 
+import { ConnectionPool } from './connection-pool.js';
 import type { CreateDatabaseClient } from './create-database-client.js';
 
 export type DbCasing = 'snake_case' | 'camelCase';
@@ -23,15 +24,15 @@ const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
     .setExtras(
       {
         isGlobal: false,
-        DatabaseClient: null as ReturnType<typeof CreateDatabaseClient> | null,
+        clients: [] as ReturnType<typeof CreateDatabaseClient>[],
       },
       (definition, extras) => {
-        const providers = definition.providers ?? [];
-        const exports = definition.exports ?? [];
+        const providers = [...(definition.providers ?? []), ConnectionPool];
+        const exports = [...(definition.exports ?? []), ConnectionPool];
 
-        if (extras.DatabaseClient) {
-          providers.push(extras.DatabaseClient);
-          exports.push(extras.DatabaseClient);
+        for (const client of extras.clients) {
+          providers.push(client);
+          exports.push(client);
         }
 
         return { ...definition, providers, exports, global: extras.isGlobal };

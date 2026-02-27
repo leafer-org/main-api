@@ -1,3 +1,4 @@
+export { ConnectionPool } from './connection-pool.js';
 export { CreateDatabaseClient } from './create-database-client.js';
 export {
   DatabaseModule,
