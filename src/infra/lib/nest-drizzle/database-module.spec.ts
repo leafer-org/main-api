@@ -3,6 +3,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { integer, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { ConnectionPool } from './connection-pool.js';
 import { CreateDatabaseClient } from './create-database-client.js';
 import { DatabaseModule } from './database-module.js';
 
@@ -29,7 +30,7 @@ describe('DatabaseModule', () => {
       imports: [
         DatabaseModule.register({
           connection: TEST_CONNECTION,
-          DatabaseClient: MainDatabaseClient,
+          clients: [MainDatabaseClient],
         }),
       ],
     }).compile();
@@ -68,7 +69,7 @@ describe('DatabaseModule', () => {
           imports: [ConfigModule],
           inject: [ConfigService],
           useFactory: (config: ConfigService) => ({ connection: config.getConnectionUrl() }),
-          DatabaseClient: MainDatabaseClient,
+          clients: [MainDatabaseClient],
         }),
       ],
     }).compile();
@@ -76,5 +77,40 @@ describe('DatabaseModule', () => {
     const client = module.get(MainDatabaseClient);
 
     expect(client).toBeDefined();
+  });
+
+  it('should provide multiple clients sharing one pool', async () => {
+    const usersTable = pgTable('users', {
+      id: integer().primaryKey().generatedAlwaysAsIdentity(),
+      name: varchar().notNull(),
+    });
+
+    const postsTable = pgTable('posts', {
+      id: integer().primaryKey().generatedAlwaysAsIdentity(),
+      title: varchar().notNull(),
+    });
+
+    @Injectable()
+    class UsersDatabaseClient extends CreateDatabaseClient({ usersTable }) {}
+
+    @Injectable()
+    class PostsDatabaseClient extends CreateDatabaseClient({ postsTable }) {}
+
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        DatabaseModule.register({
+          connection: TEST_CONNECTION,
+          clients: [UsersDatabaseClient, PostsDatabaseClient],
+        }),
+      ],
+    }).compile();
+
+    const usersClient = module.get(UsersDatabaseClient);
+    const postsClient = module.get(PostsDatabaseClient);
+    const pool = module.get(ConnectionPool);
+
+    expect(usersClient).toBeDefined();
+    expect(postsClient).toBeDefined();
+    expect(pool).toBeDefined();
   });
 });

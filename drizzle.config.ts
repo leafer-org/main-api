@@ -5,7 +5,7 @@ config({ convention: 'nextjs' });
 
 export default defineConfig({
   out: './drizzle',
-  schema: './src/infra/db/schema/index.ts',
+  schema: './src/features/*/adapters/db/schema.ts',
   dialect: 'postgresql',
   dbCredentials: {
     url: process.env['DB_URL']!,

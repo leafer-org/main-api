@@ -33,11 +33,9 @@ import { DeleteSessionInteractor } from './application/use-cases/session/delete-
 import { RotateSessionInteractor } from './application/use-cases/session/rotate-session.interactor.js';
 import { MainConfigModule } from '@/infra/config/module.js';
 import { MainConfigService } from '@/infra/config/service.js';
-import { MainDbModule } from '@/infra/db/module.js';
 
 @Module({
   imports: [
-    MainDbModule,
     MainConfigModule,
     JwtModule.registerAsync({
       imports: [MainConfigModule],

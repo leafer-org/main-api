@@ -3,13 +3,13 @@ import { eq } from 'drizzle-orm';
 
 import { UserSessionsQueryPort } from '../../application/ports.js';
 import type { UserSessionsReadModel } from '../../domain/read-models/user-sessions.read-model.js';
-import { sessions } from '@/infra/db/schema/idp.schema.js';
-import { DatabaseClient } from '@/infra/db/service.js';
+import { IdpDatabaseClient } from './client.js';
+import { sessions } from './schema.js';
 import type { SessionId, UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleUserSessionsQuery extends UserSessionsQueryPort {
-  public constructor(private readonly dbClient: DatabaseClient) {
+  public constructor(private readonly dbClient: IdpDatabaseClient) {
     super();
   }
 

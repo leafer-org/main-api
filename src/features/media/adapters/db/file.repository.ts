@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import type { FileRepository } from '../../application/ports.js';
 import type { FileState } from '../../domain/aggregates/file/state.js';
-import { files } from '@/infra/db/schema/media.schema.js';
+import { files } from './schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type { FileId } from '@/kernel/domain/ids.js';
@@ -26,6 +26,27 @@ export class DrizzleFileRepository implements FileRepository {
       isTemporary: row.isTemporary,
       createdAt: row.createdAt,
     };
+  }
+
+  public async findByIds(tx: Transaction, ids: FileId[]): Promise<Map<FileId, FileState>> {
+    if (ids.length === 0) return new Map();
+
+    const db = this.txHost.get(tx);
+    const rows = await db.select().from(files).where(inArray(files.id, ids));
+    const map = new Map<FileId, FileState>();
+
+    for (const row of rows) {
+      map.set(row.id as FileId, {
+        id: row.id as FileId,
+        name: row.name,
+        bucket: row.bucket,
+        mimeType: row.mimeType,
+        isTemporary: row.isTemporary,
+        createdAt: row.createdAt,
+      });
+    }
+
+    return map;
   }
 
   public async save(tx: Transaction, state: FileState): Promise<void> {
@@ -54,5 +75,12 @@ export class DrizzleFileRepository implements FileRepository {
   public async deleteById(tx: Transaction, id: FileId): Promise<void> {
     const db = this.txHost.get(tx);
     await db.delete(files).where(eq(files.id, id));
+  }
+
+  public async deleteByIds(tx: Transaction, ids: FileId[]): Promise<void> {
+    if (ids.length === 0) return;
+
+    const db = this.txHost.get(tx);
+    await db.delete(files).where(inArray(files.id, ids));
   }
 }

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"/d/projects/leafer/mono/main-api/src\" -type f -name \"*.ts\" -exec grep -l \"DatabaseClient\\\\|dbClient\" {} ;)",
+      "Bash(xargs grep -l \"CreateOtpInteractor\\\\|VerifyOtpInteractor\\\\|RegisterInteractor\")",
+      "Bash(xargs grep -l \"@Controller\")",
+      "Bash(ls -d d:/projects/leafer/mono/main-api/src/features/*/)",
+      "Bash(yarn openapi)",
+      "Bash(npx biome check --write src/features/media/media.module.ts)",
+      "Bash(npx biome check --write src/features/media/adapters/media/media-url.service.ts src/features/media/adapters/http/media.controller.ts src/features/media/adapters/media/media.service.ts src/features/media/application/ports.ts)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx vitest run src/features/media)",
+      "Bash(npx vitest run)"
+    ]
+  }
+}

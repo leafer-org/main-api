@@ -57,7 +57,7 @@ describe('sessionDecide', () => {
 
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
-        expect(result.error.type).toBe('SessionAlreadyExists');
+        expect(result.error.type).toBe('session_already_exists');
       }
     });
   });
@@ -97,7 +97,7 @@ describe('sessionDecide', () => {
 
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
-        expect(result.error.type).toBe('SessionNotFound');
+        expect(result.error.type).toBe('session_not_found');
       }
     });
   });
@@ -114,7 +114,7 @@ describe('sessionDecide', () => {
 
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
-        expect(result.error.type).toBe('SessionNotFound');
+        expect(result.error.type).toBe('session_not_found');
       }
     });
   });

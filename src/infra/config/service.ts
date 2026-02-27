@@ -43,4 +43,5 @@ export class MainConfigService extends CreateConfigService({
   MEDIA_IMAGE_PROXY_URL: Type.Optional(Type.String()),
   MEDIA_BUCKET_PUBLIC: Type.Optional(Type.String()),
   MEDIA_BUCKET_PRIVATE: Type.Optional(Type.String()),
+  MEDIA_IMAGE_PROXY_SECRET: Type.Optional(Type.String()),
 }) {}

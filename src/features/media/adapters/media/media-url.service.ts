@@ -1,18 +1,28 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import type {
+  DownloadUrlOptions,
   FileRepository,
   FileStorageService,
+  ImageProxyUrlSigner,
   MediaUrlService,
 } from '../../application/ports.js';
 import { MimeType } from '../../domain/vo/mime-type.js';
 import { MainConfigService } from '@/infra/config/service.js';
+import type { ImageProxyOptions } from '@/kernel/application/ports/media.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
+import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
 import type { FileId } from '@/kernel/domain/ids.js';
 
-const DEFAULT_CACHE_TTL_MS = 50 * 60 * 1000; // 50 minutes (presigned URL valid for 60)
-const DEFAULT_CACHE_MAX_SIZE = 1000;
+const PUBLIC_CACHE_TTL_MS = 55 * 60 * 1000; // 55 minutes
+const PRIVATE_CACHE_TTL_MS = 50 * 60 * 1000; // 50 minutes (presigned URL valid for 60)
+const PUBLIC_PRESIGNED_TTL_SEC = 3600; // 1 hour
+const PRIVATE_PRESIGNED_TTL_SEC = 3600; // 1 hour
+const PREVIEW_PRESIGNED_TTL_SEC = 300; // 5 minutes
+const DEFAULT_CACHE_MAX_SIZE = 2000;
 const DEFAULT_TIMEOUT_MS = 5000;
+
+export const IMAGE_PROXY_URL_SIGNER = 'IMAGE_PROXY_URL_SIGNER';
 
 type CacheEntry = {
   url: string;
@@ -24,39 +34,46 @@ export class CachedMediaUrlService implements MediaUrlService {
   private readonly logger = new Logger(CachedMediaUrlService.name);
   private readonly cache = new Map<string, CacheEntry>();
   private readonly maxSize: number;
-  private readonly cacheTtlMs: number;
   private readonly timeoutMs: number;
   private readonly imageProxyUrl: string | undefined;
+  private readonly cdnUrl: string | undefined;
 
   public constructor(
     private readonly fileRepository: FileRepository,
     private readonly fileStorage: FileStorageService,
+    @Inject(IMAGE_PROXY_URL_SIGNER)
+    private readonly urlSigner: ImageProxyUrlSigner | null,
     config: MainConfigService,
   ) {
     this.maxSize = DEFAULT_CACHE_MAX_SIZE;
-    this.cacheTtlMs = DEFAULT_CACHE_TTL_MS;
     this.timeoutMs = DEFAULT_TIMEOUT_MS;
     this.imageProxyUrl = config.get('MEDIA_IMAGE_PROXY_URL');
+    this.cdnUrl = config.get('MEDIA_PUBLIC_CDN_URL');
   }
 
-  public async getDownloadUrl(fileId: FileId): Promise<string | null> {
-    const cached = this.getFromCache(fileId);
+  public async getDownloadUrl(fileId: FileId, options: DownloadUrlOptions): Promise<string | null> {
+    const cacheKey = this.buildCacheKey(fileId, options);
+    const cached = this.getFromCache(cacheKey);
     if (cached) return cached;
 
     try {
-      return await this.resolveWithTimeout(fileId);
+      return await this.resolveWithTimeout(fileId, options, cacheKey);
     } catch (error) {
       this.logger.warn(`Failed to resolve download URL for ${fileId}`, error);
       return null;
     }
   }
 
-  public async getDownloadUrls(fileIds: FileId[]): Promise<Map<FileId, string | null>> {
+  public async getDownloadUrls(
+    fileIds: FileId[],
+    options: DownloadUrlOptions,
+  ): Promise<Map<FileId, string | null>> {
     const result = new Map<FileId, string | null>();
     const uncached: FileId[] = [];
 
     for (const fileId of fileIds) {
-      const cached = this.getFromCache(fileId);
+      const cacheKey = this.buildCacheKey(fileId, options);
+      const cached = this.getFromCache(cacheKey);
       if (cached) {
         result.set(fileId, cached);
       } else {
@@ -67,7 +84,8 @@ export class CachedMediaUrlService implements MediaUrlService {
     if (uncached.length > 0) {
       const settled = await Promise.allSettled(
         uncached.map(async (fileId) => {
-          const url = await this.resolveWithTimeout(fileId);
+          const cacheKey = this.buildCacheKey(fileId, options);
+          const url = await this.resolveWithTimeout(fileId, options, cacheKey);
           return { fileId, url };
         }),
       );
@@ -86,38 +104,67 @@ export class CachedMediaUrlService implements MediaUrlService {
     return result;
   }
 
-  private getFromCache(fileId: FileId): string | null {
-    const entry = this.cache.get(fileId);
+  public async getPreviewDownloadUrl(fileId: FileId): Promise<string | null> {
+    const noTx = NO_TRANSACTION as Transaction;
+    const file = await this.fileRepository.findById(noTx, fileId);
+    if (!file) return null;
+    if (!file.isTemporary) return null;
+
+    const tempBucket = `${file.bucket}-temp`;
+    return this.fileStorage.generateDownloadUrl(tempBucket, file.id, PREVIEW_PRESIGNED_TTL_SEC);
+  }
+
+  private buildCacheKey(fileId: FileId, options: DownloadUrlOptions): string {
+    const parts: string[] = [options.visibility, fileId];
+
+    if (options.imageProxy) {
+      const p = options.imageProxy;
+      if (p.width) parts.push(`w${p.width}`);
+      if (p.height) parts.push(`h${p.height}`);
+      if (p.quality) parts.push(`q${p.quality}`);
+      if (p.format) parts.push(`f${p.format}`);
+    }
+
+    return parts.join(':');
+  }
+
+  private getFromCache(cacheKey: string): string | null {
+    const entry = this.cache.get(cacheKey);
     if (!entry) return null;
 
     if (Date.now() > entry.expiresAt) {
-      this.cache.delete(fileId);
+      this.cache.delete(cacheKey);
       return null;
     }
 
     return entry.url;
   }
 
-  private setInCache(fileId: FileId, url: string): void {
+  private setInCache(cacheKey: string, url: string, visibility: 'PUBLIC' | 'PRIVATE'): void {
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
       if (firstKey) this.cache.delete(firstKey);
     }
 
-    this.cache.set(fileId, {
+    const ttl = visibility === 'PUBLIC' ? PUBLIC_CACHE_TTL_MS : PRIVATE_CACHE_TTL_MS;
+    this.cache.set(cacheKey, {
       url,
-      expiresAt: Date.now() + this.cacheTtlMs,
+      expiresAt: Date.now() + ttl,
     });
   }
 
-  private async resolveWithTimeout(fileId: FileId): Promise<string | null> {
+  private async resolveWithTimeout(
+    fileId: FileId,
+    options: DownloadUrlOptions,
+    cacheKey: string,
+  ): Promise<string | null> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
-      const url = await this.resolveUrl(fileId);
+      const url = await this.resolveUrl(fileId, options);
       if (url) {
-        this.setInCache(fileId, url);
+        this.setInCache(cacheKey, url, options.visibility);
       }
       return url;
     } finally {
@@ -125,19 +172,47 @@ export class CachedMediaUrlService implements MediaUrlService {
     }
   }
 
-  private async resolveUrl(fileId: FileId): Promise<string | null> {
-    // Use a no-op transaction for read-only queries
-    const noTx = { type: 'no-transaction' } as Transaction;
+  private async resolveUrl(fileId: FileId, options: DownloadUrlOptions): Promise<string | null> {
+    const noTx = NO_TRANSACTION as Transaction;
     const file = await this.fileRepository.findById(noTx, fileId);
     if (!file) return null;
 
     const bucket = file.isTemporary ? `${file.bucket}-temp` : file.bucket;
-    const presignedUrl = await this.fileStorage.generateDownloadUrl(bucket, file.id);
 
-    if (this.imageProxyUrl && MimeType.isImage(file.mimeType as ReturnType<typeof MimeType.raw>)) {
-      return `${this.imageProxyUrl}/${encodeURIComponent(presignedUrl)}`;
+    // For public files with CDN configured, use direct CDN URL
+    if (options.visibility === 'PUBLIC' && this.cdnUrl && !file.isTemporary) {
+      const baseUrl = `${this.cdnUrl}/${file.id}`;
+      return this.wrapWithImageProxy(baseUrl, file.mimeType, options.imageProxy);
     }
 
-    return presignedUrl;
+    const ttlSec =
+      options.visibility === 'PUBLIC' ? PUBLIC_PRESIGNED_TTL_SEC : PRIVATE_PRESIGNED_TTL_SEC;
+    const presignedUrl = await this.fileStorage.generateDownloadUrl(bucket, file.id, ttlSec);
+
+    return this.wrapWithImageProxy(presignedUrl, file.mimeType, options.imageProxy);
+  }
+
+  private wrapWithImageProxy(
+    sourceUrl: string,
+    mimeType: string,
+    proxyOptions?: ImageProxyOptions,
+  ): string {
+    if (!this.imageProxyUrl) return sourceUrl;
+    if (!MimeType.isImage(MimeType.raw(mimeType))) return sourceUrl;
+
+    const params = new URLSearchParams();
+    params.set('url', sourceUrl);
+    if (proxyOptions?.width) params.set('w', String(proxyOptions.width));
+    if (proxyOptions?.height) params.set('h', String(proxyOptions.height));
+    if (proxyOptions?.quality) params.set('q', String(proxyOptions.quality));
+    if (proxyOptions?.format) params.set('f', proxyOptions.format);
+
+    const proxyUrl = `${this.imageProxyUrl}?${params.toString()}`;
+
+    if (this.urlSigner) {
+      return this.urlSigner.sign(proxyUrl);
+    }
+
+    return proxyUrl;
   }
 }

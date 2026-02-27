@@ -21,6 +21,206 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/auth/request-otp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Запрос одноразового кода подтверждения
+     * @description Создаёт и отправляет OTP пользователю.
+     */
+    post: operations['requestOtp'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/verify-otp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Подтверждение одноразового кода
+     * @description Проверяет OTP и возвращает пару токенов.
+     */
+    post: operations['verifyOtp'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/refresh': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Обновление токенов авторизации
+     * @description Обновляет токены по refresh-cookie или заголовку.
+     */
+    get: operations['refresh'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/me': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Получение текущего пользователя
+     * @description Возвращает профиль текущего пользователя.
+     */
+    get: operations['getMe'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/complete-profile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Дополнение профиля пользователя
+     * @description Обновляет профиль после первичного входа.
+     */
+    post: operations['completeProfile'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/media/avatar/upload-request': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Получение presigned URL для загрузки аватара
+     * @description Возвращает presigned URL и идентификатор медиа-объекта для аватара пользователя.
+     */
+    post: operations['avatarUploadRequest'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/media/avatar/preview-upload': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Получение preview URL для загрузки аватара
+     * @description Возвращает preview URL для загрузки аватара.
+     */
+    post: operations['avatarPreviewUpload'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/media/upload-request': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Получение presigned URL для загрузки файла
+     * @description Возвращает presigned URL и идентификатор файла для загрузки.
+     */
+    post: operations['mediaUploadRequest'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/media/confirm-upload': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Подтверждение загрузки файлов
+     * @description Переводит загруженные файлы из временного хранилища в постоянное.
+     */
+    post: operations['mediaConfirmUpload'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/media/preview/{mediaId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Получение preview URL для временного файла
+     * @description Возвращает presigned URL для предпросмотра файла до подтверждения загрузки.
+     */
+    get: operations['mediaPreview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -77,6 +277,93 @@ export interface components {
       message: string;
       error?: string;
     };
+    ThrottledErrorResponse: {
+      /** @enum {string} */
+      code: 'throttled';
+      message?: string;
+      /** @description Рекомендованная задержка перед повторной попыткой */
+      retryAfterSec: number;
+    };
+    ErrorResponse: {
+      /** @description Код ошибки для обработки на клиенте */
+      code: string;
+      /** @description Человекочитаемое описание ошибки */
+      message?: string;
+      /** @description Дополнительные детали ошибки */
+      details?: {
+        [key: string]: unknown;
+      };
+    };
+    TokenPair: {
+      /** @description JWT access-токен */
+      accessToken: string;
+      /** @description JWT refresh-токен */
+      refreshToken: string;
+    };
+    Avatar: {
+      /** Format: uri */
+      largeUrl: string;
+      /** Format: uri */
+      mediumUrl: string;
+      /** Format: uri */
+      smallUrl: string;
+      /** Format: uri */
+      thumbUrl: string;
+    };
+    User: {
+      /**
+       * Format: uuid
+       * @description Уникальный идентификатор пользователя
+       */
+      id: string;
+      /** @description Телефон в формате E.164 */
+      phoneNumber: string;
+      fullName?: string;
+      avatar?: components['schemas']['Avatar'];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    /** @enum {string} */
+    MediaVisibility: 'PUBLIC' | 'PRIVATE';
+    LinkMediaData: {
+      bucket: string;
+      objectKey: string;
+      /** @description Идентификатор загруженного медиа-объекта */
+      mediaId: string;
+      visibility: components['schemas']['MediaVisibility'];
+      contentType?: string;
+    };
+    GetMediaUploadUrlInput: {
+      contentType?: string;
+    };
+    GetMediaUploadUrlResult: {
+      bucket: string;
+      objectKey: string;
+      mediaId: string;
+      visibility: components['schemas']['MediaVisibility'];
+      contentType?: string;
+      /** Format: uri */
+      url: string;
+    };
+    UploadRequest: {
+      name: string;
+      mimeType: string;
+      bucket: string;
+    };
+    UploadRequestResult: {
+      fileId: string;
+      /** Format: uri */
+      uploadUrl: string;
+    };
+    ConfirmUploadInput: {
+      fileIds: string[];
+    };
+    PreviewDownloadUrlResult: {
+      /** Format: uri */
+      url: string;
+    };
   };
   responses: {
     /** @description Resource not found */
@@ -125,6 +412,397 @@ export interface operations {
         };
       };
       404: components['responses']['NotFoundError'];
+    };
+  };
+  requestOtp: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description Телефон в формате E.164 */
+          phoneNumber: string;
+          /**
+           * @description Канал доставки OTP
+           * @enum {string}
+           */
+          channel?: 'sms' | 'whatsapp';
+          /** @description Локаль для текстов уведомлений */
+          locale?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OTP отправлен */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @description Рекомендованная задержка до следующего запроса OTP */
+            nextRetrySec?: number;
+          };
+        };
+      };
+      /** @description Слишком много запросов */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ThrottledErrorResponse'];
+        };
+      };
+    };
+  };
+  verifyOtp: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description Телефон в формате E.164 */
+          phoneNumber: string;
+          /** @description Код подтверждения из SMS */
+          code: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Авторизация успешна */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @description JWT access-токен */
+            accessToken: string;
+            /** @description JWT refresh-токен */
+            refreshToken: string;
+            /** @description Признак необходимости дозаполнить профиль */
+            needProfile: boolean;
+          };
+        };
+      };
+      /** @description Некорректный запрос */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Превышено количество попыток */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {string} */
+            code: 'otp_attempts_exceeded';
+            message?: string;
+            retryAfterSec?: number;
+          };
+        };
+      };
+      /** @description Слишком много запросов */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ThrottledErrorResponse'];
+        };
+      };
+    };
+  };
+  refresh: {
+    parameters: {
+      query?: never;
+      header: {
+        'x-refresh-token': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Токены обновлены */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TokenPair'];
+        };
+      };
+      /** @description Невалидный refresh-токен */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  getMe: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Профиль пользователя */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['User'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  completeProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          fullName?: string;
+          avatarMedia?: components['schemas']['LinkMediaData'];
+        };
+      };
+    };
+    responses: {
+      /** @description Обновлённый профиль */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['User'];
+        };
+      };
+      /** @description Некорректный запрос */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  avatarUploadRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GetMediaUploadUrlInput'];
+      };
+    };
+    responses: {
+      /** @description Presigned URL для загрузки */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['GetMediaUploadUrlResult'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  avatarPreviewUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LinkMediaData'];
+      };
+    };
+    responses: {
+      /** @description URL превью аватара */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Avatar'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  mediaUploadRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UploadRequest'];
+      };
+    };
+    responses: {
+      /** @description Presigned URL для загрузки */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UploadRequestResult'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  mediaConfirmUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConfirmUploadInput'];
+      };
+    };
+    responses: {
+      /** @description Загрузка подтверждена */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': Record<string, never>;
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Файл не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  mediaPreview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        mediaId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Preview URL */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PreviewDownloadUrlResult'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Файл не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
     };
   };
 }

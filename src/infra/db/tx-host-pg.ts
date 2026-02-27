@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
-import { DatabaseClient } from './service.js';
+import { ConnectionPool } from '@/infra/lib/nest-drizzle/index.js';
 import {
   createTransaction,
   type IsolationLevel,
@@ -8,7 +9,7 @@ import {
   TransactionHost,
 } from '@/kernel/application/ports/tx-host.js';
 
-type DrizzleTx = DatabaseClient['db'];
+type DrizzleTx = NodePgDatabase<Record<string, never>>;
 
 const ISOLATION_LEVEL_MAP = {
   'read-uncommited': 'read uncommitted',
@@ -20,7 +21,7 @@ const ISOLATION_LEVEL_MAP = {
 @Injectable()
 export class TransactionHostPg extends TransactionHost {
   private readonly transactions = new WeakMap<Transaction, DrizzleTx>();
-  public constructor(private readonly dbClient: DatabaseClient) {
+  public constructor(private readonly connectionPool: ConnectionPool) {
     super();
   }
 
@@ -28,7 +29,7 @@ export class TransactionHostPg extends TransactionHost {
     cb: (transaction: Transaction) => Promise<T>,
     isolationLevel?: IsolationLevel,
   ): Promise<T> {
-    return this.dbClient.db.transaction(
+    return this.connectionPool.db.transaction(
       async (tx) => {
         const transaction = createTransaction();
         this.transactions.set(transaction, tx);
@@ -42,7 +43,7 @@ export class TransactionHostPg extends TransactionHost {
 
   public get(transaction: Transaction): DrizzleTx {
     if (transaction.type === 'no-transaction') {
-      return this.dbClient.db;
+      return this.connectionPool.db;
     }
     const tx = this.transactions.get(transaction);
     if (!tx) {
