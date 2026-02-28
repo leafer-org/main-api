@@ -7,6 +7,7 @@ import { type E2eApp } from './helpers/create-app.js';
 import { runMigrations, truncateAll } from './helpers/db.js';
 import { createBuckets } from './helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
+import { configureApp } from '@/apps/configure-app.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
@@ -15,12 +16,12 @@ const PHONE = '+79991234567';
 
 /** Helper: full registration flow, returns tokens */
 async function registerNewUser(agent: E2eApp['agent'], phone = PHONE, fullName = 'Test User') {
-  await agent.post('/auth/request-otp').send({ phoneNumber: phone }).expect(201);
+  await agent.post('/auth/request-otp').send({ phoneNumber: phone }).expect(200);
 
   const verifyRes = await agent
     .post('/auth/verify-otp')
     .send({ phoneNumber: phone, code: FIXED_OTP })
-    .expect(201);
+    .expect(200);
 
   expect(verifyRes.body.type).toBe('new_registration');
   const { registrationSessionId } = verifyRes.body;
@@ -28,7 +29,7 @@ async function registerNewUser(agent: E2eApp['agent'], phone = PHONE, fullName =
   const regRes = await agent
     .post('/auth/complete-profile')
     .send({ registrationSessionId, fullName })
-    .expect(201);
+    .expect(200);
 
   return {
     accessToken: regRes.body.accessToken as string,
@@ -54,6 +55,7 @@ describe('Auth Controller (e2e)', () => {
       .compile();
 
     const app = moduleRef.createNestApplication();
+    configureApp(app);
     await app.init();
 
     e2e = {
@@ -79,9 +81,7 @@ describe('Auth Controller (e2e)', () => {
       const res = await e2e.agent
         .post('/auth/request-otp')
         .send({ phoneNumber: PHONE })
-        .expect(201);
-
-      console.log(res.body);
+        .expect(200);
 
       expect(res.body).toEqual({});
     });
@@ -91,7 +91,7 @@ describe('Auth Controller (e2e)', () => {
     });
 
     it('should return 429 when requesting OTP twice within throttle window', async () => {
-      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(201);
+      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       const res = await e2e.agent
         .post('/auth/request-otp')
@@ -106,12 +106,12 @@ describe('Auth Controller (e2e)', () => {
 
   describe('POST /auth/verify-otp', () => {
     it('should return new_registration for a new phone number', async () => {
-      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(201);
+      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       const res = await e2e.agent
         .post('/auth/verify-otp')
         .send({ phoneNumber: PHONE, code: FIXED_OTP })
-        .expect(201);
+        .expect(200);
 
       expect(res.body.type).toBe('new_registration');
       expect(res.body).toHaveProperty('registrationSessionId');
@@ -122,12 +122,12 @@ describe('Auth Controller (e2e)', () => {
       await registerNewUser(e2e.agent);
 
       // Login again
-      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(201);
+      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       const res = await e2e.agent
         .post('/auth/verify-otp')
         .send({ phoneNumber: PHONE, code: FIXED_OTP })
-        .expect(201);
+        .expect(200);
 
       expect(res.body.type).toBe('authenticated');
       expect(res.body).toHaveProperty('accessToken');
@@ -135,7 +135,7 @@ describe('Auth Controller (e2e)', () => {
     });
 
     it('should return 400 for a wrong OTP code', async () => {
-      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(201);
+      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       const res = await e2e.agent
         .post('/auth/verify-otp')
@@ -157,12 +157,12 @@ describe('Auth Controller (e2e)', () => {
 
   describe('POST /auth/complete-profile', () => {
     it('should register a new user and return tokens + user', async () => {
-      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(201);
+      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       const verifyRes = await e2e.agent
         .post('/auth/verify-otp')
         .send({ phoneNumber: PHONE, code: FIXED_OTP })
-        .expect(201);
+        .expect(200);
 
       const res = await e2e.agent
         .post('/auth/complete-profile')
@@ -170,7 +170,7 @@ describe('Auth Controller (e2e)', () => {
           registrationSessionId: verifyRes.body.registrationSessionId,
           fullName: 'John Doe',
         })
-        .expect(201);
+        .expect(200);
 
       expect(res.body).toHaveProperty('accessToken');
       expect(res.body).toHaveProperty('refreshToken');
@@ -210,8 +210,8 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body.refreshToken).not.toBe(refreshToken);
     });
 
-    it('should return 401 without a refresh token', async () => {
-      await e2e.agent.get('/auth/refresh').expect(401);
+    it('should return 400 without a refresh token (missing required header)', async () => {
+      await e2e.agent.get('/auth/refresh').expect(400);
     });
 
     it('should return 401 with an invalid refresh token', async () => {
@@ -377,7 +377,7 @@ describe('Auth Controller (e2e)', () => {
           registrationSessionId: verifyRes.body.registrationSessionId,
           fullName: 'Flow Test User',
         })
-        .expect(201);
+        .expect(200);
 
       const { accessToken, refreshToken } = regRes.body;
 

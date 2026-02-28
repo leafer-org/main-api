@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Inject, NotFoundException, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  NotFoundException,
+  Param,
+  Post,
+} from '@nestjs/common';
 
 import { GetPreviewDownloadUrlInteractor } from '../../application/queries/get-preview-download-url.interactor.js';
 import { RequestUploadInteractor } from '../../application/use-cases/upload/request-upload.interactor.js';
@@ -28,6 +37,7 @@ export class MediaController {
   }
 
   @Post('upload-request')
+  @HttpCode(200)
   public async uploadRequest(
     @Body() body: PublicBody['mediaUploadRequest'],
   ): Promise<PublicResponse['mediaUploadRequest']> {
@@ -42,6 +52,7 @@ export class MediaController {
   }
 
   @Post('confirm-upload')
+  @HttpCode(200)
   public async confirmUpload(
     @Body() body: PublicBody['mediaConfirmUpload'],
   ): Promise<PublicResponse['mediaConfirmUpload']> {
@@ -68,6 +79,7 @@ export class MediaController {
   }
 
   @Post('avatar/upload-request')
+  @HttpCode(200)
   public async avatarUploadRequest(
     @Body() body: PublicBody['avatarUploadRequest'],
   ): Promise<PublicResponse['avatarUploadRequest']> {
@@ -91,6 +103,7 @@ export class MediaController {
   }
 
   @Post('avatar/preview-upload')
+  @HttpCode(200)
   public async avatarPreviewUpload(
     @Body() body: PublicBody['avatarPreviewUpload'],
   ): Promise<PublicResponse['avatarPreviewUpload']> {

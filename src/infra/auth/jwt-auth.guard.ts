@@ -27,7 +27,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = this.extractToken(request);
 
     if (!token) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException({ code: 'unauthorized' });
     }
 
     try {
@@ -37,7 +37,7 @@ export class JwtAuthGuard implements CanActivate {
       const sessionExists = await this.sessionValidation.exists(NO_TRANSACTION, sessionId);
 
       if (!sessionExists) {
-        throw new UnauthorizedException();
+        throw new UnauthorizedException({ code: 'session_not_found' });
       }
 
       const userPayload: JwtUserPayload = {
@@ -52,7 +52,7 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
-      throw new UnauthorizedException();
+      throw new UnauthorizedException({ code: 'unauthorized' });
     }
   }
 

@@ -1,8 +1,6 @@
 import {
-  BadRequestException,
   Body,
   Controller,
-  ForbiddenException,
   Get,
   Headers,
   HttpCode,
@@ -10,7 +8,6 @@ import {
   Inject,
   Post,
   Req,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
@@ -26,7 +23,6 @@ import {
   LoginBlockedError,
   OtpExpiredError,
   OtpThrottleError,
-  RegistractionError,
 } from '../../domain/aggregates/login-process/errors.js';
 import {
   SessionExpiredError,
@@ -36,6 +32,7 @@ import { resolveAvatarUrls } from './avatar-url.helper.js';
 import { CurrentUser } from '@/infra/auth/current-user.decorator.js';
 import { JwtAuthGuard } from '@/infra/auth/jwt-auth.guard.js';
 import type { JwtUserPayload } from '@/infra/auth/jwt-user-payload.js';
+import { apiError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
@@ -67,18 +64,20 @@ export class AuthController {
     if (isLeft(result)) {
       const error = result.error;
       if (error instanceof OtpThrottleError) {
-        throw new HttpException(
-          { code: 'throttled', retryAfterSec: error.data.retryAfterSec },
+        throw apiError(
+          'requestOtp',
+          { code: error.type, retryAfterSec: error.data.retryAfterSec },
           429,
         );
       }
-      throw new BadRequestException({ code: error.type });
+      throw new HttpException({ code: error.type }, 400);
     }
 
     return {};
   }
 
   @Post('verify-otp')
+  @HttpCode(200)
   public async verifyOtpEndpoint(
     @Body() body: PublicBody['verifyOtp'],
     @Req() req: Request,
@@ -94,15 +93,19 @@ export class AuthController {
       const error = result.error;
       if (error instanceof LoginBlockedError) {
         const retryAfterSec = Math.ceil((error.data.blockedUntil.getTime() - Date.now()) / 1000);
-        throw new ForbiddenException({
-          code: 'otp_attempts_exceeded',
-          retryAfterSec: Math.max(retryAfterSec, 60),
-        });
+        throw apiError(
+          'verifyOtp',
+          {
+            code: 'otp_attempts_exceeded',
+            retryAfterSec: Math.max(retryAfterSec, 60),
+          },
+          403,
+        );
       }
       if (error instanceof InvalidOtpError || error instanceof OtpExpiredError) {
-        throw new BadRequestException({ code: error.type });
+        throw apiError('verifyOtp', { code: error.type }, 400);
       }
-      throw new BadRequestException({ code: 'unknown_error' });
+      throw apiError('verifyOtp', { code: 'unknown_error' }, 400);
     }
 
     const value = result.value;
@@ -125,7 +128,7 @@ export class AuthController {
     @Headers('x-refresh-token') refreshToken: string,
   ): Promise<PublicResponse['refresh']> {
     if (!refreshToken) {
-      throw new UnauthorizedException({ code: 'missing_refresh_token' });
+      throw apiError('refresh', { code: 'missing_refresh_token' }, 401);
     }
 
     try {
@@ -134,9 +137,9 @@ export class AuthController {
       if (isLeft(result)) {
         const error = result.error;
         if (error instanceof SessionNotFoundError || error instanceof SessionExpiredError) {
-          throw new UnauthorizedException({ code: error.type });
+          throw apiError('refresh', { code: error.type }, 401);
         }
-        throw new UnauthorizedException({ code: 'invalid_token' });
+        throw apiError('refresh', { code: 'invalid_token' }, 401);
       }
 
       return {
@@ -145,7 +148,7 @@ export class AuthController {
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new UnauthorizedException({ code: 'invalid_token' });
+      throw apiError('refresh', { code: 'invalid_token' }, 401);
     }
   }
 
@@ -167,17 +170,14 @@ export class AuthController {
     });
 
     if (isLeft(result)) {
-      if (result.error instanceof RegistractionError) {
-        throw new BadRequestException({ code: 'registration_error' });
-      }
-      throw new BadRequestException({ code: result.error.type });
+      throw apiError('completeProfile', { code: result.error.type }, 400);
     }
 
     const { accessToken, refreshToken, userId, sessionId } = result.value;
 
     const meResult = await this.getMe.execute({ userId, sessionId });
     if (isLeft(meResult)) {
-      throw new BadRequestException({ code: 'user_fetch_failed' });
+      throw apiError('completeProfile', { code: 'user_fetch_failed' }, 400);
     }
 
     const me = meResult.value;

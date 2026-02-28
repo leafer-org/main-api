@@ -36,7 +36,9 @@
       "Bash(npx tsc --noEmit --pretty)",
       "Bash(npx vitest --config vitest.config.e2e.ts --run)",
       "Bash(npx vitest run --reporter=verbose)",
-      "Bash(npx vitest run --reporter=default)"
+      "Bash(npx vitest run --reporter=default)",
+      "Bash(npx vitest --config vitest.config.e2e.ts --run -t \"should accept a valid phone number\")",
+      "Bash(node -e \":*)"
     ]
   }
 }

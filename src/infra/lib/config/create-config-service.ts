@@ -17,9 +17,9 @@ export function CreateConfigService<T extends Type.TProperties>(schema: T) {
       config(options.dotenv ?? { convention: 'nextjs' });
 
       try {
-        this.env = Value.Decode(ConfigSchema, process.env);
+        this.env = Value.Decode(ConfigSchema, { ...process.env });
       } catch (e) {
-        throw new ConfigValidationError(ConfigSchema, process.env, { cause: e });
+        throw new ConfigValidationError(ConfigSchema, { ...process.env }, { cause: e });
       }
     }
 

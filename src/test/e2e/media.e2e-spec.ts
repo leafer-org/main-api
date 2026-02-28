@@ -1,9 +1,36 @@
+import { Test } from '@nestjs/testing';
+import request from 'supertest';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { startContainers, stopContainers } from './helpers/containers.js';
-import { createApp, type E2eApp } from './helpers/create-app.js';
+import { type E2eApp } from './helpers/create-app.js';
 import { runMigrations, truncateAll } from './helpers/db.js';
 import { createBuckets } from './helpers/s3.js';
+import { AppModule } from '@/apps/app.module.js';
+import { configureApp } from '@/apps/configure-app.js';
+import { OtpGeneratorService } from '@/features/idp/application/ports.js';
+import { OtpCode } from '@/features/idp/domain/vo/otp.js';
+
+const FIXED_OTP = '123456';
+const PHONE = '+79991234567';
+
+async function getAccessToken(agent: E2eApp['agent']): Promise<string> {
+  await agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
+
+  const verifyRes = await agent
+    .post('/auth/verify-otp')
+    .send({ phoneNumber: PHONE, code: FIXED_OTP })
+    .expect(200);
+
+  const { registrationSessionId } = verifyRes.body;
+
+  const regRes = await agent
+    .post('/auth/complete-profile')
+    .send({ registrationSessionId, fullName: 'Test User' })
+    .expect(200);
+
+  return regRes.body.accessToken as string;
+}
 
 describe('Media Controller (e2e)', () => {
   let e2e: E2eApp;
@@ -13,7 +40,22 @@ describe('Media Controller (e2e)', () => {
     if (!process.env.DB_URL) throw new Error('DB_URL not set');
     await runMigrations(process.env.DB_URL);
     await createBuckets();
-    e2e = await createApp();
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    })
+      .overrideProvider(OtpGeneratorService)
+      .useValue({ generate: () => OtpCode.raw(FIXED_OTP) })
+      .compile();
+
+    const app = moduleRef.createNestApplication();
+    configureApp(app);
+    await app.init();
+
+    e2e = {
+      app,
+      agent: request(app.getHttpServer()),
+    };
   });
 
   afterEach(async () => {
@@ -28,14 +70,17 @@ describe('Media Controller (e2e)', () => {
 
   describe('POST /media/upload-request', () => {
     it('should create a file record and return fileId + presigned uploadUrl', async () => {
+      const accessToken = await getAccessToken(e2e.agent);
+
       const response = await e2e.agent
         .post('/media/upload-request')
+        .set('Authorization', `Bearer ${accessToken}`)
         .send({
           name: 'test-image.png',
           mimeType: 'image/png',
           bucket: 'media-public',
         })
-        .expect(201);
+        .expect(200);
 
       expect(response.body).toHaveProperty('fileId');
       expect(response.body).toHaveProperty('uploadUrl');
