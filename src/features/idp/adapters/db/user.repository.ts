@@ -7,8 +7,8 @@ import { PhoneNumber } from '../../domain/vo/phone-number.js';
 import { users } from './schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import { UserId } from '@/kernel/domain/ids.js';
+import { Role } from '@/kernel/domain/vo.js';
 
 @Injectable()
 export class DrizzleUserRepository extends UserRepository {
@@ -39,7 +39,7 @@ export class DrizzleUserRepository extends UserRepository {
     const row = rows[0];
     if (!row) return null;
 
-    return { id: row.id as UserId, role: row.role as Role };
+    return { id: UserId.raw(row.id), role: Role.raw(row.role) };
   }
 
   public async save(tx: Transaction, state: UserState): Promise<void> {
@@ -67,10 +67,10 @@ export class DrizzleUserRepository extends UserRepository {
 
   private toDomain(row: typeof users.$inferSelect): UserState {
     return {
-      id: row.id as UserId,
+      id: UserId.raw(row.id),
       phoneNumber: PhoneNumber.raw(row.phoneNumber),
       fullName: row.fullName as UserState['fullName'],
-      role: row.role as Role,
+      role: Role.raw(row.role),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

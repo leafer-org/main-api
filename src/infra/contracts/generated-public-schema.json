@@ -11,87 +11,10 @@
     }
   ],
   "paths": {
-    "/banners": {
-      "get": {
-        "operationId": "getBanners",
-        "tags": [
-          "Banners"
-        ],
-        "description": "Get all banners",
-        "parameters": [
-          {
-            "name": "filter",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "createdAt": {
-                  "$ref": "#/components/schemas/DateRange"
-                }
-              }
-            }
-          },
-          {
-            "name": "pagination",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/Pagination"
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/Sort"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of banners",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "edges",
-                    "pageInfo",
-                    "totalCount"
-                  ],
-                  "properties": {
-                    "edges": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/BannerEdge"
-                      }
-                    },
-                    "pageInfo": {
-                      "$ref": "#/components/schemas/PageInfo"
-                    },
-                    "totalCount": {
-                      "type": "integer",
-                      "minimum": 0
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          }
-        }
-      }
-    },
     "/auth/request-otp": {
       "post": {
         "operationId": "requestOtp",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Запрос одноразового кода подтверждения",
         "description": "Создаёт и отправляет OTP пользователю.",
         "requestBody": {
@@ -100,9 +23,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phoneNumber"
-                ],
+                "required": ["phoneNumber"],
                 "additionalProperties": false,
                 "properties": {
                   "phoneNumber": {
@@ -112,10 +33,7 @@
                   },
                   "channel": {
                     "type": "string",
-                    "enum": [
-                      "sms",
-                      "whatsapp"
-                    ],
+                    "enum": ["sms", "whatsapp"],
                     "description": "Канал доставки OTP"
                   },
                   "locale": {
@@ -164,9 +82,7 @@
     "/auth/verify-otp": {
       "post": {
         "operationId": "verifyOtp",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Подтверждение одноразового кода",
         "description": "Проверяет OTP и возвращает пару токенов.",
         "requestBody": {
@@ -175,10 +91,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phoneNumber",
-                  "code"
-                ],
+                "required": ["phoneNumber", "code"],
                 "additionalProperties": false,
                 "properties": {
                   "phoneNumber": {
@@ -202,29 +115,47 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "accessToken",
-                    "refreshToken",
-                    "needProfile"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "accessToken": {
-                      "type": "string",
-                      "minLength": 16,
-                      "description": "JWT access-токен"
+                  "discriminator": {
+                    "propertyName": "type"
+                  },
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": ["type", "accessToken", "refreshToken"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": ["authenticated"]
+                        },
+                        "accessToken": {
+                          "type": "string",
+                          "minLength": 16,
+                          "description": "JWT access-токен"
+                        },
+                        "refreshToken": {
+                          "type": "string",
+                          "minLength": 16,
+                          "description": "JWT refresh-токен"
+                        }
+                      }
                     },
-                    "refreshToken": {
-                      "type": "string",
-                      "minLength": 16,
-                      "description": "JWT refresh-токен"
-                    },
-                    "needProfile": {
-                      "type": "boolean",
-                      "description": "Признак необходимости дозаполнить профиль"
+                    {
+                      "type": "object",
+                      "required": ["type", "registrationSessionId"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": ["new_registration"]
+                        },
+                        "registrationSessionId": {
+                          "type": "string",
+                          "description": "Идентификатор сессии регистрации"
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               }
             }
@@ -245,16 +176,12 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "code"
-                  ],
+                  "required": ["code"],
                   "additionalProperties": false,
                   "properties": {
                     "code": {
                       "type": "string",
-                      "enum": [
-                        "otp_attempts_exceeded"
-                      ]
+                      "enum": ["otp_attempts_exceeded"]
                     },
                     "message": {
                       "type": "string"
@@ -284,9 +211,7 @@
     "/auth/refresh": {
       "get": {
         "operationId": "refresh",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Обновление токенов авторизации",
         "description": "Обновляет токены по refresh-cookie или заголовку.",
         "parameters": [
@@ -323,13 +248,112 @@
         }
       }
     },
+    "/auth/complete-profile": {
+      "post": {
+        "operationId": "completeProfile",
+        "tags": ["auth", "profile"],
+        "summary": "Дополнение профиля пользователя",
+        "description": "Обновляет профиль после первичного входа.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["registrationSessionId"],
+                "additionalProperties": false,
+                "properties": {
+                  "registrationSessionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Идентификатор сессии регистрации из verifyOtp"
+                  },
+                  "fullName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "avatarMedia": {
+                    "$ref": "#/components/schemas/LinkMediaData"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Профиль создан, токены выданы",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["user", "accessToken", "refreshToken"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    },
+                    "accessToken": {
+                      "type": "string",
+                      "minLength": 16,
+                      "description": "JWT access-токен"
+                    },
+                    "refreshToken": {
+                      "type": "string",
+                      "minLength": 16,
+                      "description": "JWT refresh-токен"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректный запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "tags": ["auth"],
+        "summary": "Выход из аккаунта",
+        "description": "Удаляет текущую сессию пользователя.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Сессия удалена"
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me": {
       "get": {
         "operationId": "getMe",
-        "tags": [
-          "auth",
-          "profile"
-        ],
+        "tags": ["auth", "profile"],
         "summary": "Получение текущего пользователя",
         "description": "Возвращает профиль текущего пользователя.",
         "security": [
@@ -361,15 +385,12 @@
         }
       }
     },
-    "/auth/complete-profile": {
-      "post": {
-        "operationId": "completeProfile",
-        "tags": [
-          "auth",
-          "profile"
-        ],
-        "summary": "Дополнение профиля пользователя",
-        "description": "Обновляет профиль после первичного входа.",
+    "/me/profile": {
+      "patch": {
+        "operationId": "updateProfile",
+        "tags": ["auth", "profile"],
+        "summary": "Обновление профиля пользователя",
+        "description": "Обновляет профиль текущего пользователя.",
         "security": [
           {
             "bearerAuth": []
@@ -381,15 +402,14 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": ["fullName"],
                 "additionalProperties": false,
                 "properties": {
                   "fullName": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 80
-                  },
-                  "avatarMedia": {
-                    "$ref": "#/components/schemas/LinkMediaData"
+                    "minLength": 2,
+                    "maxLength": 100,
+                    "description": "Полное имя пользователя"
                   }
                 }
               }
@@ -408,7 +428,137 @@
             }
           },
           "400": {
-            "description": "Некорректный запрос",
+            "description": "Невалидное имя",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/sessions": {
+      "get": {
+        "operationId": "getMeSessions",
+        "tags": ["auth", "sessions"],
+        "summary": "Получение списка активных сессий",
+        "description": "Возвращает список активных сессий текущего пользователя.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список сессий",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["sessions"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "sessions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UserSession"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAllSessions",
+        "tags": ["auth", "sessions"],
+        "summary": "Выход со всех устройств",
+        "description": "Удаляет все сессии текущего пользователя, кроме текущей.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Все сессии удалены"
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/sessions/{sessionId}": {
+      "delete": {
+        "operationId": "deleteSession",
+        "tags": ["auth", "sessions"],
+        "summary": "Удаление сессии",
+        "description": "Удаляет указанную сессию текущего пользователя.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Сессия удалена"
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Сессия не найдена",
             "content": {
               "application/json": {
                 "schema": {
@@ -423,10 +573,7 @@
     "/media/avatar/upload-request": {
       "post": {
         "operationId": "avatarUploadRequest",
-        "tags": [
-          "media",
-          "profile"
-        ],
+        "tags": ["media", "profile"],
         "summary": "Получение presigned URL для загрузки аватара",
         "description": "Возвращает presigned URL и идентификатор медиа-объекта для аватара пользователя.",
         "security": [
@@ -471,10 +618,7 @@
     "/media/avatar/preview-upload": {
       "post": {
         "operationId": "avatarPreviewUpload",
-        "tags": [
-          "media",
-          "profile"
-        ],
+        "tags": ["media", "profile"],
         "summary": "Получение preview URL для загрузки аватара",
         "description": "Возвращает preview URL для загрузки аватара.",
         "security": [
@@ -519,9 +663,7 @@
     "/media/upload-request": {
       "post": {
         "operationId": "mediaUploadRequest",
-        "tags": [
-          "media"
-        ],
+        "tags": ["media"],
         "summary": "Получение presigned URL для загрузки файла",
         "description": "Возвращает presigned URL и идентификатор файла для загрузки.",
         "security": [
@@ -566,9 +708,7 @@
     "/media/confirm-upload": {
       "post": {
         "operationId": "mediaConfirmUpload",
-        "tags": [
-          "media"
-        ],
+        "tags": ["media"],
         "summary": "Подтверждение загрузки файлов",
         "description": "Переводит загруженные файлы из временного хранилища в постоянное.",
         "security": [
@@ -623,9 +763,7 @@
     "/media/preview/{mediaId}": {
       "get": {
         "operationId": "mediaPreview",
-        "tags": [
-          "media"
-        ],
+        "tags": ["media"],
         "summary": "Получение preview URL для временного файла",
         "description": "Возвращает presigned URL для предпросмотра файла до подтверждения загрузки.",
         "security": [
@@ -677,6 +815,75 @@
           }
         }
       }
+    },
+    "/banners": {
+      "get": {
+        "operationId": "getBanners",
+        "tags": ["Banners"],
+        "description": "Get all banners",
+        "parameters": [
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "createdAt": {
+                  "$ref": "#/components/schemas/DateRange"
+                }
+              }
+            }
+          },
+          {
+            "name": "pagination",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Pagination"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Sort"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of banners",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["edges", "pageInfo", "totalCount"],
+                  "properties": {
+                    "edges": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BannerEdge"
+                      }
+                    },
+                    "pageInfo": {
+                      "$ref": "#/components/schemas/PageInfo"
+                    },
+                    "totalCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -688,6 +895,258 @@
       }
     },
     "schemas": {
+      "ThrottledErrorResponse": {
+        "type": "object",
+        "required": ["code", "retryAfterSec"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["throttled"]
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryAfterSec": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Рекомендованная задержка перед повторной попыткой"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["code"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Код ошибки для обработки на клиенте"
+          },
+          "message": {
+            "type": "string",
+            "description": "Человекочитаемое описание ошибки"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Дополнительные детали ошибки"
+          }
+        }
+      },
+      "TokenPair": {
+        "type": "object",
+        "required": ["accessToken", "refreshToken"],
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "minLength": 16,
+            "description": "JWT access-токен"
+          },
+          "refreshToken": {
+            "type": "string",
+            "minLength": 16,
+            "description": "JWT refresh-токен"
+          }
+        }
+      },
+      "MediaVisibility": {
+        "type": "string",
+        "enum": ["PUBLIC", "PRIVATE"]
+      },
+      "LinkMediaData": {
+        "type": "object",
+        "required": ["bucket", "objectKey", "mediaId", "visibility"],
+        "properties": {
+          "bucket": {
+            "type": "string"
+          },
+          "objectKey": {
+            "type": "string"
+          },
+          "mediaId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Идентификатор загруженного медиа-объекта"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/MediaVisibility"
+          },
+          "contentType": {
+            "type": "string",
+            "maxLength": 255
+          }
+        }
+      },
+      "Avatar": {
+        "type": "object",
+        "required": ["largeUrl", "mediumUrl", "smallUrl", "thumbUrl"],
+        "properties": {
+          "largeUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "mediumUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "smallUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "thumbUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["id", "phoneNumber", "createdAt", "updatedAt"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Уникальный идентификатор пользователя"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "pattern": "^\\+?[1-9]\\d{9,14}$",
+            "description": "Телефон в формате E.164"
+          },
+          "fullName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "avatar": {
+            "$ref": "#/components/schemas/Avatar"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserSession": {
+        "type": "object",
+        "required": ["id", "createdAt", "expiresAt"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Идентификатор сессии"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Дата создания сессии"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Дата истечения сессии"
+          }
+        }
+      },
+      "GetMediaUploadUrlInput": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "maxLength": 255
+          }
+        }
+      },
+      "GetMediaUploadUrlResult": {
+        "type": "object",
+        "required": ["bucket", "objectKey", "mediaId", "visibility", "url"],
+        "properties": {
+          "bucket": {
+            "type": "string"
+          },
+          "objectKey": {
+            "type": "string"
+          },
+          "mediaId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/MediaVisibility"
+          },
+          "contentType": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "UploadRequest": {
+        "type": "object",
+        "required": ["name", "mimeType", "bucket"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "mimeType": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "bucket": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "UploadRequestResult": {
+        "type": "object",
+        "required": ["fileId", "uploadUrl"],
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uploadUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "ConfirmUploadInput": {
+        "type": "object",
+        "required": ["fileIds"],
+        "additionalProperties": false,
+        "properties": {
+          "fileIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        }
+      },
+      "PreviewDownloadUrlResult": {
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
       "DateRange": {
         "type": "object",
         "properties": {
@@ -722,10 +1181,7 @@
       },
       "SortDirection": {
         "type": "string",
-        "enum": [
-          "ASC",
-          "DESC"
-        ]
+        "enum": ["ASC", "DESC"]
       },
       "Sort": {
         "type": "object",
@@ -740,10 +1196,7 @@
       },
       "BannerFile": {
         "type": "object",
-        "required": [
-          "id",
-          "url"
-        ],
+        "required": ["id", "url"],
         "properties": {
           "id": {
             "type": "string",
@@ -757,14 +1210,7 @@
       },
       "Banner": {
         "type": "object",
-        "required": [
-          "createdAt",
-          "id",
-          "isNew",
-          "logo",
-          "opacity",
-          "sequence"
-        ],
+        "required": ["createdAt", "id", "isNew", "logo", "opacity", "sequence"],
         "properties": {
           "createdAt": {
             "type": "string",
@@ -789,36 +1235,22 @@
             "minimum": 0
           },
           "subtitle": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "title": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "url": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         }
       },
       "BannerEdge": {
         "type": "object",
-        "required": [
-          "node"
-        ],
+        "required": ["node"],
         "properties": {
           "cursor": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "node": {
             "$ref": "#/components/schemas/Banner"
@@ -827,16 +1259,10 @@
       },
       "PageInfo": {
         "type": "object",
-        "required": [
-          "hasNextPage",
-          "hasPreviousPage"
-        ],
+        "required": ["hasNextPage", "hasPreviousPage"],
         "properties": {
           "endCursor": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "hasNextPage": {
             "type": "boolean"
@@ -845,19 +1271,13 @@
             "type": "boolean"
           },
           "startCursor": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         }
       },
       "Error": {
         "type": "object",
-        "required": [
-          "statusCode",
-          "message"
-        ],
+        "required": ["statusCode", "message"],
         "properties": {
           "statusCode": {
             "type": "integer"
@@ -867,281 +1287,6 @@
           },
           "error": {
             "type": "string"
-          }
-        }
-      },
-      "ThrottledErrorResponse": {
-        "type": "object",
-        "required": [
-          "code",
-          "retryAfterSec"
-        ],
-        "properties": {
-          "code": {
-            "type": "string",
-            "enum": [
-              "throttled"
-            ]
-          },
-          "message": {
-            "type": "string"
-          },
-          "retryAfterSec": {
-            "type": "number",
-            "minimum": 1,
-            "description": "Рекомендованная задержка перед повторной попыткой"
-          }
-        }
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "required": [
-          "code"
-        ],
-        "properties": {
-          "code": {
-            "type": "string",
-            "description": "Код ошибки для обработки на клиенте"
-          },
-          "message": {
-            "type": "string",
-            "description": "Человекочитаемое описание ошибки"
-          },
-          "details": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Дополнительные детали ошибки"
-          }
-        }
-      },
-      "TokenPair": {
-        "type": "object",
-        "required": [
-          "accessToken",
-          "refreshToken"
-        ],
-        "properties": {
-          "accessToken": {
-            "type": "string",
-            "minLength": 16,
-            "description": "JWT access-токен"
-          },
-          "refreshToken": {
-            "type": "string",
-            "minLength": 16,
-            "description": "JWT refresh-токен"
-          }
-        }
-      },
-      "Avatar": {
-        "type": "object",
-        "required": [
-          "largeUrl",
-          "mediumUrl",
-          "smallUrl",
-          "thumbUrl"
-        ],
-        "properties": {
-          "largeUrl": {
-            "type": "string",
-            "format": "uri"
-          },
-          "mediumUrl": {
-            "type": "string",
-            "format": "uri"
-          },
-          "smallUrl": {
-            "type": "string",
-            "format": "uri"
-          },
-          "thumbUrl": {
-            "type": "string",
-            "format": "uri"
-          }
-        }
-      },
-      "User": {
-        "type": "object",
-        "required": [
-          "id",
-          "phoneNumber",
-          "createdAt",
-          "updatedAt"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Уникальный идентификатор пользователя"
-          },
-          "phoneNumber": {
-            "type": "string",
-            "pattern": "^\\+?[1-9]\\d{9,14}$",
-            "description": "Телефон в формате E.164"
-          },
-          "fullName": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 80
-          },
-          "avatar": {
-            "$ref": "#/components/schemas/Avatar"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "MediaVisibility": {
-        "type": "string",
-        "enum": [
-          "PUBLIC",
-          "PRIVATE"
-        ]
-      },
-      "LinkMediaData": {
-        "type": "object",
-        "required": [
-          "bucket",
-          "objectKey",
-          "mediaId",
-          "visibility"
-        ],
-        "properties": {
-          "bucket": {
-            "type": "string"
-          },
-          "objectKey": {
-            "type": "string"
-          },
-          "mediaId": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Идентификатор загруженного медиа-объекта"
-          },
-          "visibility": {
-            "$ref": "#/components/schemas/MediaVisibility"
-          },
-          "contentType": {
-            "type": "string",
-            "maxLength": 255
-          }
-        }
-      },
-      "GetMediaUploadUrlInput": {
-        "type": "object",
-        "properties": {
-          "contentType": {
-            "type": "string",
-            "maxLength": 255
-          }
-        }
-      },
-      "GetMediaUploadUrlResult": {
-        "type": "object",
-        "required": [
-          "bucket",
-          "objectKey",
-          "mediaId",
-          "visibility",
-          "url"
-        ],
-        "properties": {
-          "bucket": {
-            "type": "string"
-          },
-          "objectKey": {
-            "type": "string"
-          },
-          "mediaId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "visibility": {
-            "$ref": "#/components/schemas/MediaVisibility"
-          },
-          "contentType": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "url": {
-            "type": "string",
-            "format": "uri"
-          }
-        }
-      },
-      "UploadRequest": {
-        "type": "object",
-        "required": [
-          "name",
-          "mimeType",
-          "bucket"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255
-          },
-          "mimeType": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "bucket": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      },
-      "UploadRequestResult": {
-        "type": "object",
-        "required": [
-          "fileId",
-          "uploadUrl"
-        ],
-        "properties": {
-          "fileId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "uploadUrl": {
-            "type": "string",
-            "format": "uri"
-          }
-        }
-      },
-      "ConfirmUploadInput": {
-        "type": "object",
-        "required": [
-          "fileIds"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "fileIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1
-            },
-            "minItems": 1
-          }
-        }
-      },
-      "PreviewDownloadUrlResult": {
-        "type": "object",
-        "required": [
-          "url"
-        ],
-        "properties": {
-          "url": {
-            "type": "string",
-            "format": "uri"
           }
         }
       }

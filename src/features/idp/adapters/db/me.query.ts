@@ -4,10 +4,11 @@ import { and, eq } from 'drizzle-orm';
 import { MeQueryPort } from '../../application/ports.js';
 import type { MeReadModel } from '../../domain/read-models/me.read-model.js';
 import type { FullName } from '../../domain/vo/full-name.js';
+import type { PhoneNumber } from '../../domain/vo/phone-number.js';
 import { IdpDatabaseClient } from './client.js';
 import { media, sessions, users } from './schema.js';
-import type { FileId, SessionId, UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import { FileId, SessionId, UserId } from '@/kernel/domain/ids.js';
+import { Role } from '@/kernel/domain/vo.js';
 
 @Injectable()
 export class DrizzleMeQuery extends MeQueryPort {
@@ -22,6 +23,9 @@ export class DrizzleMeQuery extends MeQueryPort {
         role: users.role,
         sessionId: sessions.id,
         fullName: users.fullName,
+        phoneNumber: users.phoneNumber,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
         avatarId: media.userAvatarId,
       })
       .from(users)
@@ -34,11 +38,14 @@ export class DrizzleMeQuery extends MeQueryPort {
     if (!row) return null;
 
     return {
-      userId: row.userId as UserId,
-      role: row.role as Role,
-      sessionId: row.sessionId as SessionId,
+      userId: UserId.raw(row.userId),
+      role: Role.raw(row.role),
+      sessionId: SessionId.raw(row.sessionId),
       fullName: row.fullName as FullName,
-      avatarId: (row.avatarId as FileId) ?? undefined,
+      phoneNumber: row.phoneNumber as PhoneNumber,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      avatarId: row.avatarId ? FileId.raw(row.avatarId) : undefined,
     };
   }
 }

@@ -4,23 +4,6 @@
  */
 
 export interface paths {
-  '/banners': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** @description Get all banners */
-    get: operations['getBanners'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/auth/request-otp': {
     parameters: {
       query?: never;
@@ -81,6 +64,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/auth/complete-profile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Дополнение профиля пользователя
+     * @description Обновляет профиль после первичного входа.
+     */
+    post: operations['completeProfile'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/auth/logout': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Выход из аккаунта
+     * @description Удаляет текущую сессию пользователя.
+     */
+    post: operations['logout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/me': {
     parameters: {
       query?: never;
@@ -101,7 +124,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/auth/complete-profile': {
+  '/me/profile': {
     parameters: {
       query?: never;
       header?: never;
@@ -110,12 +133,56 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /**
-     * Дополнение профиля пользователя
-     * @description Обновляет профиль после первичного входа.
-     */
-    post: operations['completeProfile'];
+    post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Обновление профиля пользователя
+     * @description Обновляет профиль текущего пользователя.
+     */
+    patch: operations['updateProfile'];
+    trace?: never;
+  };
+  '/me/sessions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Получение списка активных сессий
+     * @description Возвращает список активных сессий текущего пользователя.
+     */
+    get: operations['getMeSessions'];
+    put?: never;
+    post?: never;
+    /**
+     * Выход со всех устройств
+     * @description Удаляет все сессии текущего пользователя, кроме текущей.
+     */
+    delete: operations['deleteAllSessions'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/me/sessions/{sessionId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Удаление сессии
+     * @description Удаляет указанную сессию текущего пользователя.
+     */
+    delete: operations['deleteSession'];
     options?: never;
     head?: never;
     patch?: never;
@@ -221,10 +288,131 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/banners': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Get all banners */
+    get: operations['getBanners'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    ThrottledErrorResponse: {
+      /** @enum {string} */
+      code: 'throttled';
+      message?: string;
+      /** @description Рекомендованная задержка перед повторной попыткой */
+      retryAfterSec: number;
+    };
+    ErrorResponse: {
+      /** @description Код ошибки для обработки на клиенте */
+      code: string;
+      /** @description Человекочитаемое описание ошибки */
+      message?: string;
+      /** @description Дополнительные детали ошибки */
+      details?: {
+        [key: string]: unknown;
+      };
+    };
+    TokenPair: {
+      /** @description JWT access-токен */
+      accessToken: string;
+      /** @description JWT refresh-токен */
+      refreshToken: string;
+    };
+    /** @enum {string} */
+    MediaVisibility: 'PUBLIC' | 'PRIVATE';
+    LinkMediaData: {
+      bucket: string;
+      objectKey: string;
+      /** @description Идентификатор загруженного медиа-объекта */
+      mediaId: string;
+      visibility: components['schemas']['MediaVisibility'];
+      contentType?: string;
+    };
+    Avatar: {
+      /** Format: uri */
+      largeUrl: string;
+      /** Format: uri */
+      mediumUrl: string;
+      /** Format: uri */
+      smallUrl: string;
+      /** Format: uri */
+      thumbUrl: string;
+    };
+    User: {
+      /**
+       * Format: uuid
+       * @description Уникальный идентификатор пользователя
+       */
+      id: string;
+      /** @description Телефон в формате E.164 */
+      phoneNumber: string;
+      fullName?: string;
+      avatar?: components['schemas']['Avatar'];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    UserSession: {
+      /**
+       * Format: uuid
+       * @description Идентификатор сессии
+       */
+      id: string;
+      /**
+       * Format: date-time
+       * @description Дата создания сессии
+       */
+      createdAt: string;
+      /**
+       * Format: date-time
+       * @description Дата истечения сессии
+       */
+      expiresAt: string;
+    };
+    GetMediaUploadUrlInput: {
+      contentType?: string;
+    };
+    GetMediaUploadUrlResult: {
+      bucket: string;
+      objectKey: string;
+      mediaId: string;
+      visibility: components['schemas']['MediaVisibility'];
+      contentType?: string;
+      /** Format: uri */
+      url: string;
+    };
+    UploadRequest: {
+      name: string;
+      mimeType: string;
+      bucket: string;
+    };
+    UploadRequestResult: {
+      fileId: string;
+      /** Format: uri */
+      uploadUrl: string;
+    };
+    ConfirmUploadInput: {
+      fileIds: string[];
+    };
+    PreviewDownloadUrlResult: {
+      /** Format: uri */
+      url: string;
+    };
     DateRange: {
       /** Format: date-time */
       from?: string;
@@ -277,93 +465,6 @@ export interface components {
       message: string;
       error?: string;
     };
-    ThrottledErrorResponse: {
-      /** @enum {string} */
-      code: 'throttled';
-      message?: string;
-      /** @description Рекомендованная задержка перед повторной попыткой */
-      retryAfterSec: number;
-    };
-    ErrorResponse: {
-      /** @description Код ошибки для обработки на клиенте */
-      code: string;
-      /** @description Человекочитаемое описание ошибки */
-      message?: string;
-      /** @description Дополнительные детали ошибки */
-      details?: {
-        [key: string]: unknown;
-      };
-    };
-    TokenPair: {
-      /** @description JWT access-токен */
-      accessToken: string;
-      /** @description JWT refresh-токен */
-      refreshToken: string;
-    };
-    Avatar: {
-      /** Format: uri */
-      largeUrl: string;
-      /** Format: uri */
-      mediumUrl: string;
-      /** Format: uri */
-      smallUrl: string;
-      /** Format: uri */
-      thumbUrl: string;
-    };
-    User: {
-      /**
-       * Format: uuid
-       * @description Уникальный идентификатор пользователя
-       */
-      id: string;
-      /** @description Телефон в формате E.164 */
-      phoneNumber: string;
-      fullName?: string;
-      avatar?: components['schemas']['Avatar'];
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-    };
-    /** @enum {string} */
-    MediaVisibility: 'PUBLIC' | 'PRIVATE';
-    LinkMediaData: {
-      bucket: string;
-      objectKey: string;
-      /** @description Идентификатор загруженного медиа-объекта */
-      mediaId: string;
-      visibility: components['schemas']['MediaVisibility'];
-      contentType?: string;
-    };
-    GetMediaUploadUrlInput: {
-      contentType?: string;
-    };
-    GetMediaUploadUrlResult: {
-      bucket: string;
-      objectKey: string;
-      mediaId: string;
-      visibility: components['schemas']['MediaVisibility'];
-      contentType?: string;
-      /** Format: uri */
-      url: string;
-    };
-    UploadRequest: {
-      name: string;
-      mimeType: string;
-      bucket: string;
-    };
-    UploadRequestResult: {
-      fileId: string;
-      /** Format: uri */
-      uploadUrl: string;
-    };
-    ConfirmUploadInput: {
-      fileIds: string[];
-    };
-    PreviewDownloadUrlResult: {
-      /** Format: uri */
-      url: string;
-    };
   };
   responses: {
     /** @description Resource not found */
@@ -383,37 +484,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  getBanners: {
-    parameters: {
-      query?: {
-        filter?: {
-          createdAt?: components['schemas']['DateRange'];
-        };
-        pagination?: components['schemas']['Pagination'];
-        sort?: components['schemas']['Sort'];
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description List of banners */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': {
-            edges: components['schemas']['BannerEdge'][];
-            pageInfo: components['schemas']['PageInfo'];
-            totalCount: number;
-          };
-        };
-      };
-      404: components['responses']['NotFoundError'];
-    };
-  };
   requestOtp: {
     parameters: {
       query?: never;
@@ -484,14 +554,21 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': {
-            /** @description JWT access-токен */
-            accessToken: string;
-            /** @description JWT refresh-токен */
-            refreshToken: string;
-            /** @description Признак необходимости дозаполнить профиль */
-            needProfile: boolean;
-          };
+          'application/json':
+            | {
+                /** @enum {string} */
+                type: 'authenticated';
+                /** @description JWT access-токен */
+                accessToken: string;
+                /** @description JWT refresh-токен */
+                refreshToken: string;
+              }
+            | {
+                /** @enum {string} */
+                type: 'new_registration';
+                /** @description Идентификатор сессии регистрации */
+                registrationSessionId: string;
+              };
         };
       };
       /** @description Некорректный запрос */
@@ -559,6 +636,77 @@ export interface operations {
       };
     };
   };
+  completeProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description Идентификатор сессии регистрации из verifyOtp */
+          registrationSessionId: string;
+          fullName?: string;
+          avatarMedia?: components['schemas']['LinkMediaData'];
+        };
+      };
+    };
+    responses: {
+      /** @description Профиль создан, токены выданы */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            user: components['schemas']['User'];
+            /** @description JWT access-токен */
+            accessToken: string;
+            /** @description JWT refresh-токен */
+            refreshToken: string;
+          };
+        };
+      };
+      /** @description Некорректный запрос */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  logout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Сессия удалена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   getMe: {
     parameters: {
       query?: never;
@@ -588,7 +736,7 @@ export interface operations {
       };
     };
   };
-  completeProfile: {
+  updateProfile: {
     parameters: {
       query?: never;
       header?: never;
@@ -598,8 +746,8 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': {
-          fullName?: string;
-          avatarMedia?: components['schemas']['LinkMediaData'];
+          /** @description Полное имя пользователя */
+          fullName: string;
         };
       };
     };
@@ -613,8 +761,113 @@ export interface operations {
           'application/json': components['schemas']['User'];
         };
       };
-      /** @description Некорректный запрос */
+      /** @description Невалидное имя */
       400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  getMeSessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список сессий */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            sessions: components['schemas']['UserSession'][];
+          };
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  deleteAllSessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Все сессии удалены */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  deleteSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        sessionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Сессия удалена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Сессия не найдена */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -803,6 +1056,37 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
+    };
+  };
+  getBanners: {
+    parameters: {
+      query?: {
+        filter?: {
+          createdAt?: components['schemas']['DateRange'];
+        };
+        pagination?: components['schemas']['Pagination'];
+        sort?: components['schemas']['Sort'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of banners */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            edges: components['schemas']['BannerEdge'][];
+            pageInfo: components['schemas']['PageInfo'];
+            totalCount: number;
+          };
+        };
+      };
+      404: components['responses']['NotFoundError'];
     };
   };
 }

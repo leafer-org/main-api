@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { sessionDecide } from './decide.js';
 import type { SessionState } from './state.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
-import type { SessionId, UserId } from '@/kernel/domain/ids.js';
+import { SessionId, UserId } from '@/kernel/domain/ids.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
-const SESSION_ID = 'session-1' as SessionId;
-const NEW_SESSION_ID = 'session-2' as SessionId;
-const USER_ID = 'user-1' as UserId;
+const SESSION_ID = SessionId.raw('session-1');
+const NEW_SESSION_ID = SessionId.raw('session-2');
+const USER_ID = UserId.raw('user-1');
 const NOW = new Date('2024-06-01T12:00:00.000Z');
 const TTL_MS = 24 * 60 * 60 * 1000; // 1 день
 const EXPIRES = new Date(NOW.getTime() + TTL_MS);
@@ -49,7 +49,7 @@ describe('sessionDecide', () => {
       const state = makeSession();
       const result = sessionDecide(state, {
         type: 'CreateSession',
-        id: 'session-new' as SessionId,
+        id: SessionId.raw('session-new'),
         userId: USER_ID,
         now: NOW,
         ttlMs: TTL_MS,

@@ -10,8 +10,8 @@ import type { LoginProcessId, LoginProcessState, RequestedLoginProcessState } fr
 import { verifyOtpDecide } from './verify-otp.js';
 import type { EventId } from '@/infra/ddd/event.js';
 import { Left, Right } from '@/infra/lib/box.js';
-import type { UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import { UserId } from '@/kernel/domain/ids.js';
+import { Role } from '@/kernel/domain/vo.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
@@ -19,7 +19,7 @@ const PHONE = PhoneNumber.raw('79991234567');
 const FP = FingerPrint.fromIp('127.0.0.1');
 const VALID_OTP = OtpCode.raw('123456');
 const WRONG_OTP = OtpCode.raw('000000');
-const USER_ID = 'user-1' as UserId;
+const USER_ID = UserId.raw('user-1');
 const PROCESS_ID = 'proc-1' as LoginProcessId;
 const REG_SESSION = 'reg-session-abc';
 const NOW = new Date('2024-06-01T12:00:00.000Z');
@@ -103,14 +103,14 @@ describe('verifyOtpDecide', () => {
       const state = makeOtpRequested();
       const result = verifyOtpDecide(
         state,
-        makeCommand({ user: { id: USER_ID, role: 'USER' as Role } }),
+        makeCommand({ user: { id: USER_ID, role: Role.raw('USER') } }),
       );
 
       expect(result).toEqual(
         Right({
           type: 'login_process.completed',
           userId: USER_ID,
-          role: 'USER' as Role,
+          role: Role.raw('USER'),
           fingerPrint: FP,
         }),
       );

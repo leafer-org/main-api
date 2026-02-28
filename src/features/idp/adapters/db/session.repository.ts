@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 
 import { SessionRepository } from '../../application/ports.js';
 import type { SessionState } from '../../domain/aggregates/session/state.js';
 import { sessions } from './schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { SessionId, UserId } from '@/kernel/domain/ids.js';
+import { SessionId, UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleSessionRepository extends SessionRepository {
@@ -21,8 +21,8 @@ export class DrizzleSessionRepository extends SessionRepository {
     if (!row) return null;
 
     return {
-      id: row.id as SessionId,
-      userId: row.userId as UserId,
+      id: SessionId.raw(row.id),
+      userId: UserId.raw(row.userId),
       createdAt: row.createdAt,
       expiresAt: row.expiresAt,
     };
@@ -50,5 +50,16 @@ export class DrizzleSessionRepository extends SessionRepository {
   public async deleteById(tx: Transaction, sessionId: SessionId): Promise<void> {
     const db = this.txHost.get(tx);
     await db.delete(sessions).where(eq(sessions.id, sessionId));
+  }
+
+  public async deleteAllByUserIdExcept(
+    tx: Transaction,
+    userId: UserId,
+    excludeSessionId: SessionId,
+  ): Promise<void> {
+    const db = this.txHost.get(tx);
+    await db
+      .delete(sessions)
+      .where(and(eq(sessions.userId, userId), ne(sessions.id, excludeSessionId)));
   }
 }

@@ -7,17 +7,17 @@ import type { MeQueryPort } from '../../ports.js';
 import { GetMeInteractor } from './get-me.interactor.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import { ServiceMock } from '@/infra/test/mock.js';
-import type { SessionId, UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import { SessionId, UserId } from '@/kernel/domain/ids.js';
+import { Role } from '@/kernel/domain/vo.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
-const USER_ID = 'user-1' as UserId;
-const SESSION_ID = 'session-1' as SessionId;
+const USER_ID = UserId.raw('user-1');
+const SESSION_ID = SessionId.raw('session-1');
 
 const ME_READ_MODEL: MeReadModel = {
   userId: USER_ID,
-  role: 'USER' as Role,
+  role: Role.raw('USER'),
   sessionId: SESSION_ID,
   fullName: 'Иван Иванов' as FullName,
   avatarId: undefined,

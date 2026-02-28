@@ -7,15 +7,15 @@ import { PhoneNumber } from '../../vo/phone-number.js';
 import { loginProcessApply } from './apply.js';
 import { LOGIN_PROCESS_CONFIG } from './config.js';
 import type { LoginProcessId, LoginProcessState } from './state.js';
-import type { UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import { UserId } from '@/kernel/domain/ids.js';
+import { Role } from '@/kernel/domain/vo.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
 const PHONE = PhoneNumber.raw('79991234567');
 const FP = FingerPrint.fromIp('127.0.0.1');
 const VALID_OTP = OtpCode.raw('123456');
-const USER_ID = 'user-1' as UserId;
+const USER_ID = UserId.raw('user-1');
 const PROCESS_ID = 'proc-1' as LoginProcessId;
 const NOW = new Date('2024-06-01T12:00:00.000Z');
 
@@ -151,7 +151,7 @@ describe('loginProcessApply', () => {
       const state = loginProcessApply(makeOtpRequested(), {
         type: 'login_process.completed',
         userId: USER_ID,
-        role: 'USER' as Role,
+        role: Role.raw('USER'),
         fingerPrint: FP,
       });
 
@@ -170,7 +170,7 @@ describe('loginProcessApply', () => {
       const state = loginProcessApply(makeNewRegistration(), {
         type: 'login_process.registration_completed',
         userId: USER_ID,
-        role: 'USER' as Role,
+        role: Role.raw('USER'),
         fingerPrint: FP,
         phoneNumber: PHONE,
         fullName: FullName.raw('Иван Иванов'),

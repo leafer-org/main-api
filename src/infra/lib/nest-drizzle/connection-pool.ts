@@ -6,8 +6,8 @@ import { type DbModuleOptions, MODULE_OPTIONS_TOKEN } from './database-module.js
 
 @Injectable()
 export class ConnectionPool implements OnModuleDestroy {
-  readonly pool: pg.Pool;
-  readonly db: NodePgDatabase<Record<string, never>>;
+  public readonly pool: pg.Pool;
+  public readonly db: NodePgDatabase<Record<string, never>>;
 
   public constructor(
     @Inject(MODULE_OPTIONS_TOKEN)

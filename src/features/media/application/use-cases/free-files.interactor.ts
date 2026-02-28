@@ -25,7 +25,8 @@ export class FreeFilesInteractor {
     }
 
     for (const fileId of fileIds) {
-      const state = states.get(fileId)!;
+      const state = states.get(fileId);
+      if (!state) return Left(new FileNotFoundError());
       const eventEither = fileDecide(state, { type: 'FreeFile' });
       if (isLeft(eventEither)) return eventEither;
 
@@ -35,8 +36,10 @@ export class FreeFilesInteractor {
     await this.fileRepository.deleteByIds(tx, fileIds);
 
     for (const fileId of fileIds) {
-      const state = states.get(fileId)!;
+      const state = states.get(fileId);
+      if (!state) continue;
       const bucket = state.isTemporary ? `${state.bucket}-temp` : state.bucket;
+      // biome-ignore lint/performance/noAwaitInLoops: sequential deletion is intentional
       await this.fileStorage.delete(bucket, state.id);
     }
 

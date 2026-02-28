@@ -28,13 +28,15 @@ export class UseFilesInteractor {
     }
 
     for (const fileId of fileIds) {
-      const state = states.get(fileId)!;
+      const state = states.get(fileId);
+      if (!state) return Left(new FileNotFoundError());
       const eventEither = fileDecide(state, { type: 'UseFile', now });
       if (isLeft(eventEither)) return eventEither;
 
       const newState = fileApply(state, eventEither.value);
       if (!newState) throw new Error('Unexpected null state after file.used');
 
+      // biome-ignore lint/performance/noAwaitInLoops: sequential execution is intentional for storage side effects
       await this.fileRepository.save(tx, newState);
 
       const tempBucket = `${state.bucket}-temp`;

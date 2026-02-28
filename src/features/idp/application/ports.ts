@@ -56,6 +56,11 @@ export abstract class SessionRepository {
   public abstract findById(tx: Transaction, sessionId: SessionId): Promise<SessionState | null>;
   public abstract save(tx: Transaction, state: SessionState): Promise<void>;
   public abstract deleteById(tx: Transaction, sessionId: SessionId): Promise<void>;
+  public abstract deleteAllByUserIdExcept(
+    tx: Transaction,
+    userId: UserId,
+    excludeSessionId: SessionId,
+  ): Promise<void>;
 }
 
 // --- Read-model ports (read-side, no transactions, return domain read models) ---

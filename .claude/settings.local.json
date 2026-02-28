@@ -10,7 +10,26 @@
       "Bash(npx biome check --write src/features/media/adapters/media/media-url.service.ts src/features/media/adapters/http/media.controller.ts src/features/media/adapters/media/media.service.ts src/features/media/application/ports.ts)",
       "Bash(npx tsc --noEmit)",
       "Bash(npx vitest run src/features/media)",
-      "Bash(npx vitest run)"
+      "Bash(npx vitest run)",
+      "Bash(npm run openapi-bundle)",
+      "Bash(npm run openapi-gen)",
+      "Bash(yarn add -D testcontainers @testcontainers/postgresql)",
+      "Bash(npx drizzle-kit generate)",
+      "Bash(yarn test:e2e)",
+      "Bash(npm run build)",
+      "Bash(npx tsc --noEmit -p tsconfig.build.json)",
+      "Bash(yarn openapi-bundle)",
+      "Bash(yarn openapi-gen)",
+      "Bash(node -e \"const T = require\\(''typebox''\\); console.log\\(typeof T.StaticDecode\\)\")",
+      "Bash(yarn lint)",
+      "Bash(yarn lint:check)",
+      "Bash(yarn lint:check --max-diagnostics=100)",
+      "Bash(npx tsc -p tsconfig.json --noEmit)",
+      "Bash(yarn lint:types)",
+      "Bash(npx biome rage)",
+      "Bash(npx biome explain noUnusedVariables)",
+      "Bash(yarn lint:fix)",
+      "Bash(npx biome check src --write --unsafe)"
     ]
   }
 }

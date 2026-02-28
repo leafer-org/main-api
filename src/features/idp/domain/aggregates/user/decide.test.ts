@@ -5,12 +5,12 @@ import { PhoneNumber } from '../../vo/phone-number.js';
 import { userDecide } from './decide.js';
 import type { UserState } from './state.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
-import type { UserId } from '@/kernel/domain/ids.js';
+import { UserId } from '@/kernel/domain/ids.js';
 import { Role } from '@/kernel/domain/vo.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
-const USER_ID = 'user-1' as UserId;
+const USER_ID = UserId.raw('user-1');
 const PHONE = PhoneNumber.raw('79991234567');
 const FULL_NAME = FullName.raw('Иван Петров');
 const ROLE = Role.default();

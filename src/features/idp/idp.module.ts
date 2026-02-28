@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
 import { DrizzleLoginProcessRepository } from './adapters/db/login-process.repository.js';
@@ -6,6 +6,9 @@ import { DrizzleMeQuery } from './adapters/db/me.query.js';
 import { DrizzleSessionRepository } from './adapters/db/session.repository.js';
 import { DrizzleUserRepository } from './adapters/db/user.repository.js';
 import { DrizzleUserSessionsQuery } from './adapters/db/user-sessions.query.js';
+import { AuthController } from './adapters/http/auth.controller.js';
+import { JwtAuthGuard } from './adapters/http/jwt-auth.guard.js';
+import { MeController } from './adapters/http/me.controller.js';
 import { UuidIdGenerator } from './adapters/id/id-generator.service.js';
 import { NestJwtAccessService } from './adapters/jwt/jwt-access.service.js';
 import { NestJwtRefreshTokenService } from './adapters/jwt/refresh-token.service.js';
@@ -29,11 +32,13 @@ import { UpdateProfileInteractor } from './application/use-cases/manage-profile/
 import { CreateOtpInteractor } from './application/use-cases/otp-flow/create-otp.interactor.js';
 import { RegisterInteractor } from './application/use-cases/otp-flow/register.interactor.js';
 import { VerifyOtpInteractor } from './application/use-cases/otp-flow/verify-otp.interactor.js';
+import { DeleteAllSessionsInteractor } from './application/use-cases/session/delete-all-sessions.interactor.js';
 import { DeleteSessionInteractor } from './application/use-cases/session/delete-session.interactor.js';
 import { RotateSessionInteractor } from './application/use-cases/session/rotate-session.interactor.js';
 import { MainConfigModule } from '@/infra/config/module.js';
 import { MainConfigService } from '@/infra/config/service.js';
 
+@Global()
 @Module({
   imports: [
     MainConfigModule,
@@ -46,6 +51,7 @@ import { MainConfigService } from '@/infra/config/service.js';
       inject: [MainConfigService],
     }),
   ],
+  controllers: [AuthController, MeController],
   providers: [
     // Adapters
     { provide: LoginProcessRepository, useClass: DrizzleLoginProcessRepository },
@@ -58,6 +64,8 @@ import { MainConfigService } from '@/infra/config/service.js';
     { provide: OtpGeneratorService, useClass: CryptoOtpGenerator },
     { provide: OtpSenderService, useClass: MockOtpSender },
     { provide: IdGenerator, useClass: UuidIdGenerator },
+    // Guards
+    JwtAuthGuard,
     // Use cases
     CreateOtpInteractor,
     VerifyOtpInteractor,
@@ -65,6 +73,7 @@ import { MainConfigService } from '@/infra/config/service.js';
     UpdateProfileInteractor,
     RotateSessionInteractor,
     DeleteSessionInteractor,
+    DeleteAllSessionsInteractor,
     // Queries
     GetMeInteractor,
     GetUserSessionsInteractor,

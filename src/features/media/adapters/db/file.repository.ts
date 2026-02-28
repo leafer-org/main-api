@@ -6,7 +6,7 @@ import type { FileState } from '../../domain/aggregates/file/state.js';
 import { files } from './schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { FileId } from '@/kernel/domain/ids.js';
+import { FileId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleFileRepository implements FileRepository {
@@ -19,7 +19,7 @@ export class DrizzleFileRepository implements FileRepository {
     if (!row) return null;
 
     return {
-      id: row.id as FileId,
+      id: FileId.raw(row.id),
       name: row.name,
       bucket: row.bucket,
       mimeType: row.mimeType,
@@ -36,8 +36,8 @@ export class DrizzleFileRepository implements FileRepository {
     const map = new Map<FileId, FileState>();
 
     for (const row of rows) {
-      map.set(row.id as FileId, {
-        id: row.id as FileId,
+      map.set(FileId.raw(row.id), {
+        id: FileId.raw(row.id),
         name: row.name,
         bucket: row.bucket,
         mimeType: row.mimeType,

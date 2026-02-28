@@ -11,7 +11,11 @@ export class S3FileStorageService implements FileStorageService {
     return this.s3.getPresignedUploadUrl(bucket, key, mimeType);
   }
 
-  public async generateDownloadUrl(bucket: string, key: string, expiresIn?: number): Promise<string> {
+  public async generateDownloadUrl(
+    bucket: string,
+    key: string,
+    expiresIn?: number,
+  ): Promise<string> {
     return this.s3.getPresignedDownloadUrl(bucket, key, expiresIn);
   }
 

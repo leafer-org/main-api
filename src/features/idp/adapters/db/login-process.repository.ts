@@ -14,7 +14,7 @@ import { loginProcesses } from './schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import { assertNever } from '@/infra/ddd/utils.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { UserId } from '@/kernel/domain/ids.js';
+import { UserId } from '@/kernel/domain/ids.js';
 
 type LoginProcessRow = typeof loginProcesses.$inferSelect;
 
@@ -113,7 +113,7 @@ export class DrizzleLoginProcessRepository extends LoginProcessRepository {
         return {
           ...base,
           type: 'Success',
-          userId: row.userId as UserId,
+          userId: UserId.raw(row.userId!),
         };
       case 'Blocked':
         return {

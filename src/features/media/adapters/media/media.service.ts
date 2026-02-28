@@ -30,10 +30,9 @@ export class MediaServiceAdapter extends MediaService {
   }
 
   public async getDownloadUrls(
-    fileIds: FileId[],
-    options: GetDownloadUrlOptions,
-  ): Promise<Map<FileId, string | null>> {
-    const result = await this.downloadUrlQuery.executeBatch({ fileIds, options });
+    requests: { fileId: FileId; options: GetDownloadUrlOptions }[],
+  ): Promise<(string | null)[]> {
+    const result = await this.downloadUrlQuery.executeBatch({ requests });
     return unwrap(result);
   }
 

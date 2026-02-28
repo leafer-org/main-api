@@ -5,7 +5,7 @@ import { UserSessionsQueryPort } from '../../application/ports.js';
 import type { UserSessionsReadModel } from '../../domain/read-models/user-sessions.read-model.js';
 import { IdpDatabaseClient } from './client.js';
 import { sessions } from './schema.js';
-import type { SessionId, UserId } from '@/kernel/domain/ids.js';
+import { SessionId, type UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleUserSessionsQuery extends UserSessionsQueryPort {
@@ -19,7 +19,7 @@ export class DrizzleUserSessionsQuery extends UserSessionsQueryPort {
     return {
       userId,
       sessions: rows.map((row) => ({
-        id: row.id as SessionId,
+        id: SessionId.raw(row.id),
         createdAt: row.createdAt,
         expiresAt: row.expiresAt,
       })),
