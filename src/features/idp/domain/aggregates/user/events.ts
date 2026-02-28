@@ -18,4 +18,11 @@ export type UserProfileUpdatedEvent = {
   updatedAt: Date;
 };
 
-export type UserEvent = UserCreatedEvent | UserProfileUpdatedEvent;
+export type UserRoleUpdatedEvent = {
+  type: 'user.role_updated';
+  userId: UserId;
+  role: Role;
+  updatedAt: Date;
+};
+
+export type UserEvent = UserCreatedEvent | UserProfileUpdatedEvent | UserRoleUpdatedEvent;

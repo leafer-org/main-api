@@ -42,6 +42,12 @@ export class DrizzleUserRepository extends UserRepository {
     return { id: UserId.raw(row.id), role: Role.raw(row.role) };
   }
 
+  public async findByRoleName(tx: Transaction, roleName: string): Promise<UserState[]> {
+    const db = this.txHost.get(tx);
+    const rows = await db.select().from(users).where(eq(users.role, roleName));
+    return rows.map((row) => this.toDomain(row));
+  }
+
   public async save(tx: Transaction, state: UserState): Promise<void> {
     const db = this.txHost.get(tx);
     await db
@@ -50,7 +56,7 @@ export class DrizzleUserRepository extends UserRepository {
         id: state.id,
         phoneNumber: state.phoneNumber as string,
         fullName: state.fullName as string,
-        role: state.role as 'ADMIN' | 'USER',
+        role: state.role as string,
         createdAt: state.createdAt,
         updatedAt: state.updatedAt,
       })
@@ -59,7 +65,7 @@ export class DrizzleUserRepository extends UserRepository {
         set: {
           phoneNumber: state.phoneNumber as string,
           fullName: state.fullName as string,
-          role: state.role as 'ADMIN' | 'USER',
+          role: state.role as string,
           updatedAt: state.updatedAt,
         },
       });

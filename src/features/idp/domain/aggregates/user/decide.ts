@@ -31,6 +31,16 @@ export function userDecide(
       });
     }
 
+    case 'UpdateUserRole': {
+      if (!state) return Left(new UserNotFoundError());
+      return Right({
+        type: 'user.role_updated',
+        userId: state.id,
+        role: command.role,
+        updatedAt: command.now,
+      });
+    }
+
     default:
       assertNever(command);
   }

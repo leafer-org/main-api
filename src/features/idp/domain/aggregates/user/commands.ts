@@ -18,4 +18,10 @@ export type UpdateProfileCommand = {
   now: Date;
 };
 
-export type UserCommand = CreateUserCommand | UpdateProfileCommand;
+export type UpdateUserRoleCommand = {
+  type: 'UpdateUserRole';
+  role: Role;
+  now: Date;
+};
+
+export type UserCommand = CreateUserCommand | UpdateProfileCommand | UpdateUserRoleCommand;

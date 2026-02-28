@@ -12,6 +12,7 @@ export type PermissionsMap = {
 
 export abstract class PermissionsStore {
   public abstract get(): PermissionsMap;
+  public abstract refresh(): Promise<void>;
 }
 
 type ManualPermissionsMap = Record<RoleKey, [PermissionAction, PermissionValue][]>;
@@ -39,5 +40,9 @@ export class ManualPermissionsStore implements PermissionsStore {
 
   public get() {
     return this.permissionMap;
+  }
+
+  public async refresh(): Promise<void> {
+    // Static store — nothing to refresh
   }
 }

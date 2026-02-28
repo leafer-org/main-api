@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 
 import { IdGenerator } from '../../application/ports.js';
 import type { LoginProcessId } from '../../domain/aggregates/login-process/state.js';
-import { SessionId, UserId } from '@/kernel/domain/ids.js';
+import { RoleId, SessionId, UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class UuidIdGenerator extends IdGenerator {
@@ -17,5 +17,9 @@ export class UuidIdGenerator extends IdGenerator {
 
   public generateSessionId(): SessionId {
     return SessionId.raw(randomUUID());
+  }
+
+  public generateRoleId(): RoleId {
+    return RoleId.raw(randomUUID());
   }
 }

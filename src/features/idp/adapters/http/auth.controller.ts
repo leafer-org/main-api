@@ -54,6 +54,7 @@ export class AuthController {
   ) {}
 
   @Post('request-otp')
+  @HttpCode(201)
   public async requestOtp(
     @Body() body: PublicBody['requestOtp'],
     @Req() req: Request,

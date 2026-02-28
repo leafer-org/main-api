@@ -1,14 +1,36 @@
 import { relations } from 'drizzle-orm';
-import { index, integer, json, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  index,
+  integer,
+  json,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
-export const roleEnum = pgEnum('role', ['ADMIN', 'USER']);
 export const mediaVisibilityEnum = pgEnum('media_visibility', ['PUBLIC', 'PRIVATE']);
+
+export const roles = pgTable('roles', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull().unique(),
+  permissions: jsonb('permissions').notNull().default({}),
+  isStatic: boolean('is_static').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   phoneNumber: text('phone_number').notNull().unique(),
   fullName: text('full_name'),
-  role: roleEnum('role').notNull().default('USER'),
+  role: text('role').notNull().default('USER'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
@@ -108,3 +130,6 @@ export type NewSession = typeof sessions.$inferInsert;
 
 export type Media = typeof media.$inferSelect;
 export type NewMedia = typeof media.$inferInsert;
+
+export type DbRole = typeof roles.$inferSelect;
+export type NewDbRole = typeof roles.$inferInsert;
