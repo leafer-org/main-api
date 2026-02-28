@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { fileApply } from './apply.js';
 import type { FileState } from './state.js';
-import type { FileId } from '@/kernel/domain/ids.js';
+import { FileId } from '@/kernel/domain/ids.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
-const FILE_ID = 'file-1' as FileId;
+const FILE_ID = FileId.raw('file-1');
 const NOW = new Date('2024-06-01T12:00:00.000Z');
 const LATER = new Date('2024-06-02T12:00:00.000Z');
 

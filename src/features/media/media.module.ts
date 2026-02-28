@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 
 import { DrizzleFileRepository } from './adapters/db/file.repository.js';
 import { MediaController } from './adapters/http/media.controller.js';
@@ -21,6 +21,7 @@ import { MainConfigModule } from '@/infra/config/module.js';
 import { MainConfigService } from '@/infra/config/service.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
 
+@Global()
 @Module({
   imports: [MainConfigModule],
   controllers: [MediaController],

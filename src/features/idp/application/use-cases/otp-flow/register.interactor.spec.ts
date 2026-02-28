@@ -20,14 +20,14 @@ import { RegisterInteractor } from './register.interactor.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
-import type { SessionId, UserId } from '@/kernel/domain/ids.js';
+import { SessionId, UserId } from '@/kernel/domain/ids.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
 const NOW = new Date('2024-06-01T12:00:00.000Z');
 const PROCESS_ID = 'proc-1' as LoginProcessId;
-const USER_ID = 'user-1' as UserId;
-const SESSION_ID = 'session-1' as SessionId;
+const USER_ID = UserId.raw('user-1');
+const SESSION_ID = SessionId.raw('session-1');
 const REGISTRATION_SESSION_ID = String(PROCESS_ID);
 const ACCESS_TOKEN = AccessToken.raw('access-token');
 const REFRESH_TOKEN = RefreshToken.raw('refresh-token');

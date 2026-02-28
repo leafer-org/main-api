@@ -22,9 +22,8 @@ export abstract class MediaService {
   ): Promise<string | null>;
 
   public abstract getDownloadUrls(
-    fileIds: FileId[],
-    options: GetDownloadUrlOptions,
-  ): Promise<Map<FileId, string | null>>;
+    requests: { fileId: FileId; options: GetDownloadUrlOptions }[],
+  ): Promise<(string | null)[]>;
 
   public abstract getPreviewDownloadUrl(fileId: FileId): Promise<string | null>;
 

@@ -25,7 +25,7 @@ export function CreateConfigService<T extends Type.TProperties>(schema: T) {
 
     public get<K extends keyof T>(key: K) {
       const anyEnv = this.env as Record<K, unknown>;
-      return anyEnv[key] as Type.Static<T[K]>;
+      return anyEnv[key] as Type.StaticDecode<T[K]>;
     }
   }
 

@@ -6,12 +6,12 @@ import type { SessionRepository } from '../../ports.js';
 import { DeleteSessionInteractor } from './delete-session.interactor.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import { MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
-import type { SessionId, UserId } from '@/kernel/domain/ids.js';
+import { SessionId, UserId } from '@/kernel/domain/ids.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
-const SESSION_ID = 'session-1' as SessionId;
-const USER_ID = 'user-1' as UserId;
+const SESSION_ID = SessionId.raw('session-1');
+const USER_ID = UserId.raw('user-1');
 const NOW = new Date('2024-06-01T12:00:00.000Z');
 
 const makeSession = (): SessionState => ({

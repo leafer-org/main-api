@@ -9,19 +9,19 @@ import { UpdateProfileInteractor } from './update-profile.interactor.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
-import type { UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import { UserId } from '@/kernel/domain/ids.js';
+import { Role } from '@/kernel/domain/vo.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
-const USER_ID = 'user-1' as UserId;
+const USER_ID = UserId.raw('user-1');
 const NOW = new Date('2024-06-01T12:00:00.000Z');
 
 const makeUser = (): UserState => ({
   id: USER_ID,
   phoneNumber: PhoneNumber.raw('79991234567'),
   fullName: FullName.raw('Иван Иванов'),
-  role: 'USER' as Role,
+  role: Role.raw('USER'),
   createdAt: NOW,
   updatedAt: NOW,
 });

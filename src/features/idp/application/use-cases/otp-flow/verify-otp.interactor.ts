@@ -31,7 +31,7 @@ import { assertNever } from '@/infra/ddd/utils.js';
 import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
 import type { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo.js';
 
 type VerifyOtpResult =
   | { type: 'new_registration'; registrationSessionId: string }
@@ -72,7 +72,7 @@ export class VerifyOtpInteractor {
         otpCode,
         now,
         registrationSessionId,
-        user: user ? { id: user.id, role: user.role as Role } : undefined,
+        user: user ? { id: user.id, role: Role.raw(user.role) } : undefined,
         generateEventId: createEventId,
       });
 

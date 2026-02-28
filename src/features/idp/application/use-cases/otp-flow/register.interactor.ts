@@ -23,7 +23,7 @@ import { createEventId } from '@/infra/ddd/event.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import type { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { FileId } from '@/kernel/domain/ids.js';
+import { FileId } from '@/kernel/domain/ids.js';
 import { Role } from '@/kernel/domain/vo.js';
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -68,7 +68,7 @@ export class RegisterInteractor {
         newUserId: this.idGenerator.generateUserId(),
         role: Role.default(),
         fullName,
-        avatarId: command.avatarMedia?.key as FileId | undefined,
+        avatarId: command.avatarMedia ? FileId.raw(command.avatarMedia.key) : undefined,
         registrationSessionId: command.registrationSessionId,
         fingerPrint: state.fingerPrint,
         now,
@@ -113,7 +113,12 @@ export class RegisterInteractor {
         type: 'refresh',
       });
 
-      return Right({ accessToken, refreshToken });
+      return Right({
+        accessToken,
+        refreshToken,
+        userId: event.userId,
+        sessionId: sessionState.id,
+      });
     });
   }
 }

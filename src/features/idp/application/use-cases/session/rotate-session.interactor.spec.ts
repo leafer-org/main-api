@@ -21,15 +21,15 @@ import { RotateSessionInteractor } from './rotate-session.interactor.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
-import type { SessionId, UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import { SessionId, UserId } from '@/kernel/domain/ids.js';
+import { Role } from '@/kernel/domain/vo.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
 const NOW = new Date('2024-06-01T12:00:00.000Z');
-const SESSION_ID = 'session-1' as SessionId;
-const NEW_SESSION_ID = 'session-2' as SessionId;
-const USER_ID = 'user-1' as UserId;
+const SESSION_ID = SessionId.raw('session-1');
+const NEW_SESSION_ID = SessionId.raw('session-2');
+const USER_ID = UserId.raw('user-1');
 const ACCESS_TOKEN = AccessToken.raw('access-token');
 const REFRESH_TOKEN = RefreshToken.raw('refresh-token');
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -45,7 +45,7 @@ const makeUser = (): UserState => ({
   id: USER_ID,
   phoneNumber: PhoneNumber.raw('79991234567'),
   fullName: FullName.raw('Иван Иванов'),
-  role: 'USER' as Role,
+  role: Role.raw('USER'),
   createdAt: NOW,
   updatedAt: NOW,
 });

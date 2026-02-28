@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { sessionApply } from './apply.js';
 import type { SessionState } from './state.js';
-import type { SessionId, UserId } from '@/kernel/domain/ids.js';
+import { SessionId, UserId } from '@/kernel/domain/ids.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
-const SESSION_ID = 'session-1' as SessionId;
-const NEW_SESSION_ID = 'session-2' as SessionId;
-const USER_ID = 'user-1' as UserId;
+const SESSION_ID = SessionId.raw('session-1');
+const NEW_SESSION_ID = SessionId.raw('session-2');
+const USER_ID = UserId.raw('user-1');
 const NOW = new Date('2024-06-01T12:00:00.000Z');
 const EXPIRES = new Date('2024-06-02T12:00:00.000Z');
 

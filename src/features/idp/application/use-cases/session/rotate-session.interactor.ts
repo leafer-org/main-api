@@ -17,7 +17,7 @@ import {
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import type { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { SessionId } from '@/kernel/domain/ids.js';
+import { SessionId } from '@/kernel/domain/ids.js';
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -39,7 +39,7 @@ export class RotateSessionInteractor {
     const now = this.clock.now();
 
     return this.txHost.startTransaction(async (tx) => {
-      const state = await this.sessionRepository.findById(tx, payload.sessionId as SessionId);
+      const state = await this.sessionRepository.findById(tx, SessionId.raw(payload.sessionId));
 
       if (!state) return Left(new SessionNotFoundError());
 

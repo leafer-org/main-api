@@ -11,14 +11,14 @@ import type { LoginProcessId, LoginProcessState } from '../state.js';
 import { registerDecide } from './register.js';
 import type { EventId } from '@/infra/ddd/event.js';
 import { Left, Right } from '@/infra/lib/box.js';
-import type { UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import { UserId } from '@/kernel/domain/ids.js';
+import { Role } from '@/kernel/domain/vo.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
 const PHONE = PhoneNumber.raw('79991234567');
 const FP = FingerPrint.fromIp('127.0.0.1');
-const USER_ID = 'user-1' as UserId;
+const USER_ID = UserId.raw('user-1');
 const PROCESS_ID = 'proc-1' as LoginProcessId;
 const REG_SESSION = 'reg-session-abc';
 const FULL_NAME = FullName.raw('Иван Иванов');
@@ -35,7 +35,7 @@ const makeNewRegistration = (): LoginProcessState => ({
 const makeCommand = (overrides?: Partial<RegisterCommand>): RegisterCommand => ({
   type: 'Register',
   newUserId: USER_ID,
-  role: 'USER' as Role,
+  role: Role.raw('USER'),
   fullName: FULL_NAME,
   avatarId: undefined,
   registrationSessionId: REG_SESSION,
@@ -55,7 +55,7 @@ describe('registerDecide', () => {
       Right({
         type: 'login_process.registration_completed',
         userId: USER_ID,
-        role: 'USER' as Role,
+        role: Role.raw('USER'),
         fingerPrint: FP,
         phoneNumber: PHONE,
         fullName: FULL_NAME,

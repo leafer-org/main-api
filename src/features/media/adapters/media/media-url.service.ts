@@ -1,15 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import type {
-  DownloadUrlOptions,
   FileRepository,
   FileStorageService,
   ImageProxyUrlSigner,
-  MediaUrlService,
 } from '../../application/ports.js';
 import { MimeType } from '../../domain/vo/mime-type.js';
 import { MainConfigService } from '@/infra/config/service.js';
-import type { ImageProxyOptions } from '@/kernel/application/ports/media.js';
+import type { GetDownloadUrlOptions, ImageProxyOptions } from '@/kernel/application/ports/media.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
 import type { FileId } from '@/kernel/domain/ids.js';
@@ -30,7 +28,7 @@ type CacheEntry = {
 };
 
 @Injectable()
-export class CachedMediaUrlService implements MediaUrlService {
+export class CachedMediaUrlService {
   private readonly logger = new Logger(CachedMediaUrlService.name);
   private readonly cache = new Map<string, CacheEntry>();
   private readonly maxSize: number;
@@ -51,7 +49,10 @@ export class CachedMediaUrlService implements MediaUrlService {
     this.cdnUrl = config.get('MEDIA_PUBLIC_CDN_URL');
   }
 
-  public async getDownloadUrl(fileId: FileId, options: DownloadUrlOptions): Promise<string | null> {
+  public async getDownloadUrl(
+    fileId: FileId,
+    options: GetDownloadUrlOptions,
+  ): Promise<string | null> {
     const cacheKey = this.buildCacheKey(fileId, options);
     const cached = this.getFromCache(cacheKey);
     if (cached) return cached;
@@ -65,43 +66,17 @@ export class CachedMediaUrlService implements MediaUrlService {
   }
 
   public async getDownloadUrls(
-    fileIds: FileId[],
-    options: DownloadUrlOptions,
-  ): Promise<Map<FileId, string | null>> {
-    const result = new Map<FileId, string | null>();
-    const uncached: FileId[] = [];
+    requests: { fileId: FileId; options: GetDownloadUrlOptions }[],
+  ): Promise<(string | null)[]> {
+    const settled = await Promise.allSettled(
+      requests.map(({ fileId, options }) => this.getDownloadUrl(fileId, options)),
+    );
 
-    for (const fileId of fileIds) {
-      const cacheKey = this.buildCacheKey(fileId, options);
-      const cached = this.getFromCache(cacheKey);
-      if (cached) {
-        result.set(fileId, cached);
-      } else {
-        uncached.push(fileId);
-      }
-    }
-
-    if (uncached.length > 0) {
-      const settled = await Promise.allSettled(
-        uncached.map(async (fileId) => {
-          const cacheKey = this.buildCacheKey(fileId, options);
-          const url = await this.resolveWithTimeout(fileId, options, cacheKey);
-          return { fileId, url };
-        }),
-      );
-
-      for (const [i, entry] of settled.entries()) {
-        if (entry.status === 'fulfilled') {
-          result.set(entry.value.fileId, entry.value.url);
-        } else {
-          const id = uncached[i] as FileId;
-          this.logger.warn(`Failed to resolve download URL for ${id}`, entry.reason);
-          result.set(id, null);
-        }
-      }
-    }
-
-    return result;
+    return settled.map((entry, i) => {
+      if (entry.status === 'fulfilled') return entry.value;
+      this.logger.warn(`Failed to resolve download URL for ${requests[i]?.fileId}`, entry.reason);
+      return null;
+    });
   }
 
   public async getPreviewDownloadUrl(fileId: FileId): Promise<string | null> {
@@ -114,7 +89,7 @@ export class CachedMediaUrlService implements MediaUrlService {
     return this.fileStorage.generateDownloadUrl(tempBucket, file.id, PREVIEW_PRESIGNED_TTL_SEC);
   }
 
-  private buildCacheKey(fileId: FileId, options: DownloadUrlOptions): string {
+  private buildCacheKey(fileId: FileId, options: GetDownloadUrlOptions): string {
     const parts: string[] = [options.visibility, fileId];
 
     if (options.imageProxy) {
@@ -155,7 +130,7 @@ export class CachedMediaUrlService implements MediaUrlService {
 
   private async resolveWithTimeout(
     fileId: FileId,
-    options: DownloadUrlOptions,
+    options: GetDownloadUrlOptions,
     cacheKey: string,
   ): Promise<string | null> {
     const controller = new AbortController();
@@ -172,7 +147,7 @@ export class CachedMediaUrlService implements MediaUrlService {
     }
   }
 
-  private async resolveUrl(fileId: FileId, options: DownloadUrlOptions): Promise<string | null> {
+  private async resolveUrl(fileId: FileId, options: GetDownloadUrlOptions): Promise<string | null> {
     const noTx = NO_TRANSACTION as Transaction;
     const file = await this.fileRepository.findById(noTx, fileId);
     if (!file) return null;
