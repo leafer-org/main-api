@@ -15,7 +15,7 @@ import {
   UserRepository,
 } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
-import type { Clock } from '@/infra/lib/clock.js';
+import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import { SessionId } from '@/kernel/domain/ids.js';
 
@@ -24,6 +24,7 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 @Injectable()
 export class RotateSessionInteractor {
   public constructor(
+    @Inject(Clock)
     private readonly clock: Clock,
     private readonly sessionRepository: SessionRepository,
     private readonly userRepository: UserRepository,

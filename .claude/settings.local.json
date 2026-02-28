@@ -29,7 +29,9 @@
       "Bash(npx biome rage)",
       "Bash(npx biome explain noUnusedVariables)",
       "Bash(yarn lint:fix)",
-      "Bash(npx biome check src --write --unsafe)"
+      "Bash(npx biome check src --write --unsafe)",
+      "Bash(git checkout -- src/apps/db.module.ts)",
+      "Bash(npm test)"
     ]
   }
 }

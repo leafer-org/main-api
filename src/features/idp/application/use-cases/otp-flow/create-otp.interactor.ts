@@ -13,13 +13,14 @@ import {
   OtpSenderService,
 } from '../../ports.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
-import type { Clock } from '@/infra/lib/clock.js';
+import { Clock } from '@/infra/lib/clock.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 
 @Injectable()
 export class CreateOtpInteractor {
   public constructor(
+    @Inject(Clock)
     private readonly clock: Clock,
     private readonly loginProcessRepository: LoginProcessRepository,
     private readonly otpGenerator: OtpGeneratorService,

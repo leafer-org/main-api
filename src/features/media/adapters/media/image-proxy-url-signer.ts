@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 
-import type { ImageProxyUrlSigner } from '../../application/ports.js';
+import { ImageProxyUrlSigner } from '../../application/ports.js';
 
 export class HmacImageProxyUrlSigner implements ImageProxyUrlSigner {
   public constructor(private readonly secret: string) {}

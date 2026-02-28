@@ -1,13 +1,12 @@
 import { Global, Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 
 import { DrizzleLoginProcessRepository } from './adapters/db/login-process.repository.js';
 import { DrizzleMeQuery } from './adapters/db/me.query.js';
 import { DrizzleSessionRepository } from './adapters/db/session.repository.js';
+import { DrizzleSessionValidation } from './adapters/db/session-validation.adapter.js';
 import { DrizzleUserRepository } from './adapters/db/user.repository.js';
 import { DrizzleUserSessionsQuery } from './adapters/db/user-sessions.query.js';
 import { AuthController } from './adapters/http/auth.controller.js';
-import { JwtAuthGuard } from './adapters/http/jwt-auth.guard.js';
 import { MeController } from './adapters/http/me.controller.js';
 import { UuidIdGenerator } from './adapters/id/id-generator.service.js';
 import { NestJwtAccessService } from './adapters/jwt/jwt-access.service.js';
@@ -36,27 +35,19 @@ import { DeleteAllSessionsInteractor } from './application/use-cases/session/del
 import { DeleteSessionInteractor } from './application/use-cases/session/delete-session.interactor.js';
 import { RotateSessionInteractor } from './application/use-cases/session/rotate-session.interactor.js';
 import { MainConfigModule } from '@/infra/config/module.js';
-import { MainConfigService } from '@/infra/config/service.js';
+import { Clock, SystemClock } from '@/infra/lib/clock.js';
+import { SessionValidationPort } from '@/kernel/application/ports/session-validation.js';
 
 @Global()
 @Module({
-  imports: [
-    MainConfigModule,
-    JwtModule.registerAsync({
-      imports: [MainConfigModule],
-      useFactory: (config: MainConfigService) => ({
-        secret: config.get('IDP_JWT_SECRET'),
-        signOptions: { expiresIn: config.get('IDP_ACCESS_TOKEN_TTL_SEC') as never },
-      }),
-      inject: [MainConfigService],
-    }),
-  ],
+  imports: [MainConfigModule],
   controllers: [AuthController, MeController],
   providers: [
     // Adapters
     { provide: LoginProcessRepository, useClass: DrizzleLoginProcessRepository },
     { provide: UserRepository, useClass: DrizzleUserRepository },
     { provide: SessionRepository, useClass: DrizzleSessionRepository },
+    { provide: SessionValidationPort, useClass: DrizzleSessionValidation },
     { provide: MeQueryPort, useClass: DrizzleMeQuery },
     { provide: UserSessionsQueryPort, useClass: DrizzleUserSessionsQuery },
     { provide: JwtAccessService, useClass: NestJwtAccessService },
@@ -64,8 +55,7 @@ import { MainConfigService } from '@/infra/config/service.js';
     { provide: OtpGeneratorService, useClass: CryptoOtpGenerator },
     { provide: OtpSenderService, useClass: MockOtpSender },
     { provide: IdGenerator, useClass: UuidIdGenerator },
-    // Guards
-    JwtAuthGuard,
+    { provide: Clock, useClass: SystemClock },
     // Use cases
     CreateOtpInteractor,
     VerifyOtpInteractor,
@@ -78,5 +68,6 @@ import { MainConfigService } from '@/infra/config/service.js';
     GetMeInteractor,
     GetUserSessionsInteractor,
   ],
+  exports: [SessionValidationPort],
 })
 export class IdpModule {}

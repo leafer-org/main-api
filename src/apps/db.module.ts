@@ -20,7 +20,10 @@ import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
       inject: [MainConfigService],
     }),
   ],
-  providers: [{ useClass: TransactionHostPg, provide: TransactionHost }],
-  exports: [DatabaseModule, TransactionHost],
+  providers: [
+    { provide: TransactionHost, useClass: TransactionHostPg },
+    { provide: TransactionHostPg, useExisting: TransactionHost },
+  ],
+  exports: [DatabaseModule, TransactionHost, TransactionHostPg],
 })
 export class MainDbModule {}

@@ -5,31 +5,39 @@ import type { FileId } from '@/kernel/domain/ids.js';
 
 // --- Repository ports ---
 
-export interface FileRepository {
-  findById(tx: Transaction, id: FileId): Promise<FileState | null>;
-  findByIds(tx: Transaction, ids: FileId[]): Promise<Map<FileId, FileState>>;
-  save(tx: Transaction, state: FileState): Promise<void>;
-  deleteById(tx: Transaction, id: FileId): Promise<void>;
-  deleteByIds(tx: Transaction, ids: FileId[]): Promise<void>;
+export abstract class FileRepository {
+  public abstract findById(tx: Transaction, id: FileId): Promise<FileState | null>;
+  public abstract findByIds(tx: Transaction, ids: FileId[]): Promise<Map<FileId, FileState>>;
+  public abstract save(tx: Transaction, state: FileState): Promise<void>;
+  public abstract deleteById(tx: Transaction, id: FileId): Promise<void>;
+  public abstract deleteByIds(tx: Transaction, ids: FileId[]): Promise<void>;
 }
 
 // --- Service ports ---
 
-export interface FileStorageService {
-  generateUploadUrl(bucket: string, key: string, mimeType: string): Promise<string>;
-  generateDownloadUrl(bucket: string, key: string, expiresIn?: number): Promise<string>;
-  moveToPermanent(tempBucket: string, permanentBucket: string, key: string): Promise<void>;
-  delete(bucket: string, key: string): Promise<void>;
+export abstract class FileStorageService {
+  public abstract generateUploadUrl(bucket: string, key: string, mimeType: string): Promise<string>;
+  public abstract generateDownloadUrl(
+    bucket: string,
+    key: string,
+    expiresIn?: number,
+  ): Promise<string>;
+  public abstract moveToPermanent(
+    tempBucket: string,
+    permanentBucket: string,
+    key: string,
+  ): Promise<void>;
+  public abstract delete(bucket: string, key: string): Promise<void>;
 }
 
-export interface ImageProxyUrlSigner {
-  sign(url: string): string;
+export abstract class ImageProxyUrlSigner {
+  public abstract sign(url: string): string;
 }
 
 // --- ID generation ---
 
-export interface FileIdGenerator {
-  generateFileId(): FileId;
+export abstract class FileIdGenerator {
+  public abstract generateFileId(): FileId;
 }
 
 // Re-export for convenience

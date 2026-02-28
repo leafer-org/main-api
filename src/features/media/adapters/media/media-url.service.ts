@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-import type {
+import {
   FileRepository,
   FileStorageService,
-  ImageProxyUrlSigner,
+  type ImageProxyUrlSigner,
 } from '../../application/ports.js';
 import { MimeType } from '../../domain/vo/mime-type.js';
 import { MainConfigService } from '@/infra/config/service.js';
@@ -37,7 +37,9 @@ export class CachedMediaUrlService {
   private readonly cdnUrl: string | undefined;
 
   public constructor(
+    @Inject(FileRepository)
     private readonly fileRepository: FileRepository,
+    @Inject(FileStorageService)
     private readonly fileStorage: FileStorageService,
     @Inject(IMAGE_PROXY_URL_SIGNER)
     private readonly urlSigner: ImageProxyUrlSigner | null,

@@ -7,20 +7,22 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 
+import { JwtSessionStorage } from './jwt-session.storage.js';
+import type { JwtUserPayload } from './jwt-user-payload.js';
+import { SessionValidationPort } from '@/kernel/application/ports/session-validation.js';
+import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
 import { SessionId, UserId } from '@/kernel/domain/ids.js';
 import { Role } from '@/kernel/domain/vo.js';
 
-export type JwtUserPayload = {
-  userId: UserId;
-  role: Role;
-  sessionId: SessionId;
-};
-
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  public constructor(private readonly jwtService: JwtService) {}
+  public constructor(
+    private readonly jwtService: JwtService,
+    private readonly sessionStorage: JwtSessionStorage,
+    private readonly sessionValidation: SessionValidationPort,
+  ) {}
 
-  public canActivate(context: ExecutionContext): boolean {
+  public async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const token = this.extractToken(request);
 
@@ -31,14 +33,25 @@ export class JwtAuthGuard implements CanActivate {
     try {
       const payload = this.jwtService.verify<{ sub: string; role: string; sid: string }>(token);
 
-      (request as Request & { user: JwtUserPayload }).user = {
+      const sessionId = SessionId.raw(payload.sid);
+      const sessionExists = await this.sessionValidation.exists(NO_TRANSACTION, sessionId);
+
+      if (!sessionExists) {
+        throw new UnauthorizedException();
+      }
+
+      const userPayload: JwtUserPayload = {
         userId: UserId.raw(payload.sub),
         role: Role.raw(payload.role),
-        sessionId: SessionId.raw(payload.sid),
+        sessionId,
       };
 
+      (request as Request & { user: JwtUserPayload }).user = userPayload;
+      this.sessionStorage.store.enterWith(userPayload);
+
       return true;
-    } catch {
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
       throw new UnauthorizedException();
     }
   }

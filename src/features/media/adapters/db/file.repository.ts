@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { eq, inArray } from 'drizzle-orm';
 
-import type { FileRepository } from '../../application/ports.js';
+import { FileRepository } from '../../application/ports.js';
 import type { FileState } from '../../domain/aggregates/file/state.js';
 import { files } from './schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';

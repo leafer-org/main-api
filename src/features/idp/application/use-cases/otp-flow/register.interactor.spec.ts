@@ -104,6 +104,8 @@ describe('RegisterInteractor', () => {
       expect(result.value).toEqual({
         accessToken: ACCESS_TOKEN,
         refreshToken: REFRESH_TOKEN,
+        userId: USER_ID,
+        sessionId: SESSION_ID,
       });
     }
 
