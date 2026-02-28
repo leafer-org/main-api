@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.js';
 import type { MeReadModel } from '../../../domain/read-models/me.read-model.js';
 import type { FullName } from '../../../domain/vo/full-name.js';
+import { PhoneNumber } from '../../../domain/vo/phone-number.js';
 import type { MeQueryPort } from '../../ports.js';
 import { GetMeInteractor } from './get-me.interactor.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
@@ -20,6 +21,9 @@ const ME_READ_MODEL: MeReadModel = {
   role: Role.raw('USER'),
   sessionId: SESSION_ID,
   fullName: 'Иван Иванов' as FullName,
+  phoneNumber: PhoneNumber.raw('79991234567'),
+  createdAt: new Date('2025-01-01'),
+  updatedAt: new Date('2025-01-01'),
   avatarId: undefined,
 };
 
