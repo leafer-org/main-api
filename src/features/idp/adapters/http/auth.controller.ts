@@ -54,7 +54,7 @@ export class AuthController {
   ) {}
 
   @Post('request-otp')
-  @HttpCode(201)
+  @HttpCode(200)
   public async requestOtp(
     @Body() body: PublicBody['requestOtp'],
     @Req() req: Request,
@@ -150,6 +150,7 @@ export class AuthController {
   }
 
   @Post('complete-profile')
+  @HttpCode(200)
   public async completeProfile(
     @Body() body: PublicBody['completeProfile'],
   ): Promise<PublicResponse['completeProfile']> {
