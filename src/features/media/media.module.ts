@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 
 import { DrizzleFileRepository } from './adapters/db/file.repository.js';
 import { MediaController } from './adapters/http/media.controller.js';
+import { UuidFileIdGenerator } from './adapters/id/file-id-generator.service.js';
 import { HmacImageProxyUrlSigner } from './adapters/media/image-proxy-url-signer.js';
 import { MediaServiceAdapter } from './adapters/media/media.service.js';
 import {
@@ -10,6 +11,7 @@ import {
 } from './adapters/media/media-url.service.js';
 import { S3FileStorageService } from './adapters/s3/file-storage.service.js';
 import { S3ClientService } from './adapters/s3/s3-client.service.js';
+import { FileIdGenerator, FileRepository, FileStorageService } from './application/ports.js';
 import { GetDownloadUrlInteractor } from './application/queries/get-download-url.interactor.js';
 import { GetPreviewDownloadUrlInteractor } from './application/queries/get-preview-download-url.interactor.js';
 import { FreeFileInteractor } from './application/use-cases/free-file.interactor.js';
@@ -19,6 +21,7 @@ import { UseFileInteractor } from './application/use-cases/use-file.interactor.j
 import { UseFilesInteractor } from './application/use-cases/use-files.interactor.js';
 import { MainConfigModule } from '@/infra/config/module.js';
 import { MainConfigService } from '@/infra/config/service.js';
+import { Clock, SystemClock } from '@/infra/lib/clock.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
 
 @Global()
@@ -28,9 +31,11 @@ import { MediaService } from '@/kernel/application/ports/media.js';
   providers: [
     // infrastructure
     S3ClientService,
-    DrizzleFileRepository,
-    S3FileStorageService,
     CachedMediaUrlService,
+    { provide: FileRepository, useClass: DrizzleFileRepository },
+    { provide: FileStorageService, useClass: S3FileStorageService },
+    { provide: FileIdGenerator, useClass: UuidFileIdGenerator },
+    { provide: Clock, useClass: SystemClock },
     {
       provide: IMAGE_PROXY_URL_SIGNER,
       useFactory: (config: MainConfigService) => {

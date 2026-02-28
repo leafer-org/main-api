@@ -21,7 +21,7 @@ import {
 } from '../../ports.js';
 import { createEventId } from '@/infra/ddd/event.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
-import type { Clock } from '@/infra/lib/clock.js';
+import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import { FileId } from '@/kernel/domain/ids.js';
 import { Role } from '@/kernel/domain/vo.js';
@@ -31,6 +31,7 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 @Injectable()
 export class RegisterInteractor {
   public constructor(
+    @Inject(Clock)
     private readonly clock: Clock,
     private readonly loginProcessRepository: LoginProcessRepository,
     private readonly userRepository: UserRepository,

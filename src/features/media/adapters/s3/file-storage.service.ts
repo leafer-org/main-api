@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import type { FileStorageService } from '../../application/ports.js';
+import { FileStorageService } from '../../application/ports.js';
 import { S3ClientService } from './s3-client.service.js';
 
 @Injectable()

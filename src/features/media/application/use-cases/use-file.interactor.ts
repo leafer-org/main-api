@@ -3,17 +3,20 @@ import { Inject, Injectable } from '@nestjs/common';
 import { fileApply } from '../../domain/aggregates/file/apply.js';
 import { fileDecide } from '../../domain/aggregates/file/decide.js';
 import { FileNotFoundError } from '../../domain/aggregates/file/errors.js';
-import type { FileRepository, FileStorageService } from '../ports.js';
+import { FileRepository, FileStorageService } from '../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
-import type { Clock } from '@/infra/lib/clock.js';
+import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { FileId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class UseFileInteractor {
   public constructor(
+    @Inject(Clock)
     private readonly clock: Clock,
+    @Inject(FileRepository)
     private readonly fileRepository: FileRepository,
+    @Inject(FileStorageService)
     private readonly fileStorage: FileStorageService,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,

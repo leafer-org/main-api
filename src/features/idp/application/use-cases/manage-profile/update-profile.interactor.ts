@@ -6,13 +6,14 @@ import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.j
 import { FullName } from '../../../domain/vo/full-name.js';
 import { UserRepository } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
-import type { Clock } from '@/infra/lib/clock.js';
+import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class UpdateProfileInteractor {
   public constructor(
+    @Inject(Clock)
     private readonly clock: Clock,
     private readonly userRepository: UserRepository,
     @Inject(TransactionHost)

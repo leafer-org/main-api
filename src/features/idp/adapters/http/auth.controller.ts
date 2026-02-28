@@ -33,8 +33,9 @@ import {
   SessionNotFoundError,
 } from '../../domain/aggregates/session/errors.js';
 import { resolveAvatarUrls } from './avatar-url.helper.js';
-import { CurrentUser } from './current-user.decorator.js';
-import { JwtAuthGuard, type JwtUserPayload } from './jwt-auth.guard.js';
+import { CurrentUser } from '@/infra/auth/current-user.decorator.js';
+import { JwtAuthGuard } from '@/infra/auth/jwt-auth.guard.js';
+import type { JwtUserPayload } from '@/infra/auth/jwt-user-payload.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { MediaService } from '@/kernel/application/ports/media.js';

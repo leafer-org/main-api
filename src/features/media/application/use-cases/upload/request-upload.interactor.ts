@@ -12,17 +12,21 @@ import {
   type MimeType,
   MimeType as MimeTypeVO,
 } from '../../../domain/vo/mime-type.js';
-import type { FileIdGenerator, FileRepository, FileStorageService } from '../../ports.js';
+import { FileIdGenerator, FileRepository, FileStorageService } from '../../ports.js';
 import { type Either, isLeft, Right } from '@/infra/lib/box.js';
-import type { Clock } from '@/infra/lib/clock.js';
+import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 
 @Injectable()
 export class RequestUploadInteractor {
   public constructor(
+    @Inject(Clock)
     private readonly clock: Clock,
+    @Inject(FileRepository)
     private readonly fileRepository: FileRepository,
+    @Inject(FileStorageService)
     private readonly fileStorage: FileStorageService,
+    @Inject(FileIdGenerator)
     private readonly idGenerator: FileIdGenerator,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
