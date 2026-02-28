@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
 import { AlsSessionContext } from './als-session-context.js';
-import { appPermissionsStore } from './app-permissions-store.js';
+import { DynamicPermissionsStore } from './dynamic-permissions-store.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { JwtSessionStorage } from './jwt-session.storage.js';
 import { PermissionCheckServiceImpl } from './permission-check.service.js';
@@ -31,7 +31,7 @@ import { PermissionCheckService } from '@/kernel/application/ports/permission.js
     JwtSessionStorage,
     JwtAuthGuard,
     { provide: SessionContext, useClass: AlsSessionContext },
-    { provide: PermissionsStore, useValue: appPermissionsStore },
+    { provide: PermissionsStore, useClass: DynamicPermissionsStore },
     PermissionService,
     PermissionGuard,
     { provide: PermissionCheckService, useClass: PermissionCheckServiceImpl },

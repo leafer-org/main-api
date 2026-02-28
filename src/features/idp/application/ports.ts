@@ -2,17 +2,20 @@ import type {
   LoginProcessId,
   LoginProcessState,
 } from '../domain/aggregates/login-process/state.js';
+import type { RoleState } from '../domain/aggregates/role/state.js';
 import type { SessionState } from '../domain/aggregates/session/state.js';
 import type { RefreshTokenPayload } from '../domain/aggregates/session/token.types.js';
 import type { UserState } from '../domain/aggregates/user/state.js';
 import type { MeReadModel } from '../domain/read-models/me.read-model.js';
+import type { RoleReadModel } from '../domain/read-models/role.read-model.js';
+import type { RolesListReadModel } from '../domain/read-models/roles-list.read-model.js';
 import type { UserSessionsReadModel } from '../domain/read-models/user-sessions.read-model.js';
 import type { FingerPrint } from '../domain/vo/finger-print.js';
 import type { OtpCode } from '../domain/vo/otp.js';
 import type { PhoneNumber } from '../domain/vo/phone-number.js';
 import type { AccessToken, RefreshToken } from '../domain/vo/tokens.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { SessionId, UserId } from '@/kernel/domain/ids.js';
+import type { RoleId, SessionId, UserId } from '@/kernel/domain/ids.js';
 import type { Role } from '@/kernel/domain/vo.js';
 
 // --- Shared types ---
@@ -49,11 +52,13 @@ export abstract class UserRepository {
     tx: Transaction,
     phoneNumber: PhoneNumber,
   ): Promise<{ id: UserId; role: Role } | null>;
+  public abstract findByRoleName(tx: Transaction, roleName: string): Promise<UserState[]>;
   public abstract save(tx: Transaction, state: UserState): Promise<void>;
 }
 
 export abstract class SessionRepository {
   public abstract findById(tx: Transaction, sessionId: SessionId): Promise<SessionState | null>;
+  public abstract findByUserId(tx: Transaction, userId: UserId): Promise<SessionState[]>;
   public abstract save(tx: Transaction, state: SessionState): Promise<void>;
   public abstract deleteById(tx: Transaction, sessionId: SessionId): Promise<void>;
   public abstract deleteAllByUserIdExcept(
@@ -61,6 +66,14 @@ export abstract class SessionRepository {
     userId: UserId,
     excludeSessionId: SessionId,
   ): Promise<void>;
+}
+
+export abstract class RoleRepository {
+  public abstract findById(tx: Transaction, id: RoleId): Promise<RoleState | null>;
+  public abstract findByName(tx: Transaction, name: string): Promise<RoleState | null>;
+  public abstract findAll(tx: Transaction): Promise<RoleState[]>;
+  public abstract save(tx: Transaction, state: RoleState): Promise<void>;
+  public abstract deleteById(tx: Transaction, id: RoleId): Promise<void>;
 }
 
 // --- Read-model ports (read-side, no transactions, return domain read models) ---
@@ -71,6 +84,14 @@ export abstract class MeQueryPort {
 
 export abstract class UserSessionsQueryPort {
   public abstract findUserSessions(userId: UserId): Promise<UserSessionsReadModel>;
+}
+
+export abstract class RoleQueryPort {
+  public abstract findRole(roleId: RoleId): Promise<RoleReadModel | null>;
+}
+
+export abstract class RolesListQueryPort {
+  public abstract findAll(): Promise<RolesListReadModel>;
 }
 
 // --- Service ports ---
@@ -101,4 +122,5 @@ export abstract class IdGenerator {
   public abstract generateLoginProcessId(): LoginProcessId;
   public abstract generateUserId(): UserId;
   public abstract generateSessionId(): SessionId;
+  public abstract generateRoleId(): RoleId;
 }

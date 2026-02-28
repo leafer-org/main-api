@@ -3,6 +3,7 @@ import type { EntityId } from '@/infra/ddd/entity.js';
 export type FileId = EntityId<'File'>;
 export type UserId = EntityId<'User'>;
 export type SessionId = EntityId<'Session'>;
+export type RoleId = EntityId<'Role'>;
 
 export const FileId = {
   raw(id: string): FileId {
@@ -19,5 +20,11 @@ export const UserId = {
 export const SessionId = {
   raw(id: string): SessionId {
     return id as SessionId;
+  },
+};
+
+export const RoleId = {
+  raw(id: string): RoleId {
+    return id as RoleId;
   },
 };

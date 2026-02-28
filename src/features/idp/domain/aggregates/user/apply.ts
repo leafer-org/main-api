@@ -23,6 +23,15 @@ export function userApply(state: UserState | null, event: UserEvent): UserState 
       };
     }
 
+    case 'user.role_updated': {
+      if (!state) throw new Error('State is required for user.role_updated');
+      return {
+        ...state,
+        role: event.role,
+        updatedAt: event.updatedAt,
+      };
+    }
+
     default:
       assertNever(event);
   }

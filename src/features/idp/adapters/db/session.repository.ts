@@ -28,6 +28,17 @@ export class DrizzleSessionRepository extends SessionRepository {
     };
   }
 
+  public async findByUserId(tx: Transaction, userId: UserId): Promise<SessionState[]> {
+    const db = this.txHost.get(tx);
+    const rows = await db.select().from(sessions).where(eq(sessions.userId, userId));
+    return rows.map((row) => ({
+      id: SessionId.raw(row.id),
+      userId: UserId.raw(row.userId),
+      createdAt: row.createdAt,
+      expiresAt: row.expiresAt,
+    }));
+  }
+
   public async save(tx: Transaction, state: SessionState): Promise<void> {
     const db = this.txHost.get(tx);
     await db
