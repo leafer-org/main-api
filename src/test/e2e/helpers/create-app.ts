@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
 import { AppModule } from '@/apps/app.module.js';
+import { configureApp } from '@/apps/configure-app.js';
 
 export type E2eApp = {
   app: INestApplication;
@@ -15,6 +16,7 @@ export async function createApp(): Promise<E2eApp> {
   }).compile();
 
   const app = moduleRef.createNestApplication();
+  configureApp(app);
   await app.init();
 
   return {
