@@ -22,7 +22,7 @@ import { PermissionCheckService } from '@/kernel/application/ports/permission.js
       imports: [MainConfigModule],
       useFactory: (config: MainConfigService) => ({
         secret: config.get('IDP_JWT_SECRET'),
-        signOptions: { expiresIn: config.get('IDP_ACCESS_TOKEN_TTL_SEC') as never },
+        signOptions: { expiresIn: config.get('IDP_ACCESS_TOKEN_TTL_SEC') },
       }),
       inject: [MainConfigService],
     }),
