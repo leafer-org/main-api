@@ -8,8 +8,8 @@ import { userDecide } from '../../../domain/aggregates/user/decide.js';
 import { whenRoleDeletedUpdateUserRoles } from '../../../domain/policies/when-role-deleted-update-user-roles.policy.js';
 import { whenUserRoleUpdatedDeleteSessions } from '../../../domain/policies/when-user-role-updated-delete-sessions.policy.js';
 import { RoleRepository, SessionRepository, UserRepository } from '../../ports.js';
-import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { PermissionsStore } from '@/infra/lib/authorization/permissions-store.js';
+import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { RoleId } from '@/kernel/domain/ids.js';
@@ -57,6 +57,7 @@ export class DeleteRoleInteractor {
 
         const userEvent = userEventEither.value;
         const newUserState = userApply(userState, userEvent);
+        // biome-ignore lint/performance/noAwaitInLoops: normal
         await this.userRepository.save(tx, newUserState);
 
         // Policy 2: UserRoleUpdated → DeleteSession (per session)
@@ -66,6 +67,7 @@ export class DeleteRoleInteractor {
             const delCmd = whenUserRoleUpdatedDeleteSessions(userEvent);
             const sessionEventEither = sessionDecide(session, delCmd);
             if (isLeft(sessionEventEither)) continue;
+            // biome-ignore lint/performance/noAwaitInLoops: normal
             await this.sessionRepository.deleteById(tx, session.id);
           }
         }

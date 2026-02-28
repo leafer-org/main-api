@@ -1,5 +1,9 @@
 import type { RoleCommand } from './commands.js';
-import { RoleAlreadyExistsError, RoleNotFoundError, StaticRoleModificationError } from './errors.js';
+import {
+  RoleAlreadyExistsError,
+  RoleNotFoundError,
+  StaticRoleModificationError,
+} from './errors.js';
 import type { RoleEvent } from './events.js';
 import type { RoleState } from './state.js';
 import { assertNever } from '@/infra/ddd/utils.js';

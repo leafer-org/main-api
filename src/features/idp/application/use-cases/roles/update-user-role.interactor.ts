@@ -54,6 +54,7 @@ export class UpdateUserRoleInteractor {
           const delCmd = whenUserRoleUpdatedDeleteSessions(userRoleUpdatedEvent);
           const sessionEventEither = sessionDecide(session, delCmd);
           if (isLeft(sessionEventEither)) continue;
+          // biome-ignore lint/performance/noAwaitInLoops: sequence handling update role
           await this.sessionRepository.deleteById(tx, session.id);
         }
       }
