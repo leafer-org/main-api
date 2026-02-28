@@ -16,7 +16,8 @@ export function buildPermissionsSchema(): PermissionSchemaItem[] {
     action: perm.action,
     key,
     type: perm.context.type as 'boolean' | 'enum',
-    values: perm.context.type === 'enum' ? (perm.context as { values: string[] }).values : undefined,
+    values:
+      perm.context.type === 'enum' ? (perm.context as { values: string[] }).values : undefined,
     default: perm.def,
   }));
 }
