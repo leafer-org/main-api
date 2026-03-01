@@ -20,6 +20,7 @@ const makeUser = (): UserState => ({
   id: USER_ID,
   phoneNumber: PHONE,
   fullName: FULL_NAME,
+  avatarId: undefined,
   role: ROLE,
   createdAt: NOW,
   updatedAt: NOW,
@@ -35,6 +36,7 @@ describe('userDecide', () => {
         id: USER_ID,
         phoneNumber: PHONE,
         fullName: FULL_NAME,
+        avatarId: undefined,
         role: ROLE,
         now: NOW,
       });
@@ -45,6 +47,7 @@ describe('userDecide', () => {
           id: USER_ID,
           phoneNumber: PHONE,
           fullName: FULL_NAME,
+          avatarId: undefined,
           role: ROLE,
           createdAt: NOW,
         }),
@@ -58,6 +61,7 @@ describe('userDecide', () => {
         id: USER_ID,
         phoneNumber: PHONE,
         fullName: FULL_NAME,
+        avatarId: undefined,
         role: ROLE,
         now: NOW,
       });
@@ -78,6 +82,7 @@ describe('userDecide', () => {
       const result = userDecide(state, {
         type: 'UpdateProfile',
         fullName: newName,
+        avatarId: undefined,
         now: later,
       });
 
@@ -85,6 +90,7 @@ describe('userDecide', () => {
         Right({
           type: 'user.profile_updated',
           fullName: newName,
+          avatarId: undefined,
           updatedAt: later,
         }),
       );
@@ -94,6 +100,7 @@ describe('userDecide', () => {
       const result = userDecide(null, {
         type: 'UpdateProfile',
         fullName: FULL_NAME,
+        avatarId: undefined,
         now: NOW,
       });
 

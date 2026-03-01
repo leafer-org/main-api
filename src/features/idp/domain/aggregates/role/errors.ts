@@ -1,7 +1,10 @@
 import { CreateDomainError } from '@/infra/ddd/error.js';
 
-export class RoleAlreadyExistsError extends CreateDomainError('role_already_exists') {}
+export class RoleAlreadyExistsError extends CreateDomainError('role_already_exists', 400) {}
 
-export class RoleNotFoundError extends CreateDomainError('role_not_found') {}
+export class RoleNotFoundError extends CreateDomainError('role_not_found', 404) {}
 
-export class StaticRoleModificationError extends CreateDomainError('static_role_modification') {}
+export class StaticRoleModificationError extends CreateDomainError(
+  'static_role_modification',
+  403,
+) {}

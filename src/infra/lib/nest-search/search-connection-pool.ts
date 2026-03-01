@@ -1,33 +1,30 @@
-import { Client } from '@elastic/elasticsearch';
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
+import { Meilisearch } from 'meilisearch';
 
 import { MODULE_OPTIONS_TOKEN, type SearchModuleOptions } from './search-module.js';
 
 @Injectable()
 export class SearchConnectionPool implements OnModuleDestroy {
-  public readonly client: Client;
+  public readonly client: Meilisearch;
 
   public constructor(
     @Inject(MODULE_OPTIONS_TOKEN)
     config: SearchModuleOptions,
   ) {
-    this.client = new Client({
-      node: config.node,
-      auth: {
-        username: config.username,
-        password: config.password,
-      },
+    this.client = new Meilisearch({
+      host: config.host,
+      apiKey: config.apiKey,
     });
   }
 
   public async onModuleDestroy() {
-    await this.client.close();
+    // Meilisearch JS client has no close method
   }
 
   public async healthCheck(): Promise<boolean> {
     try {
-      await this.client.ping();
-      return true;
+      const result = await this.client.health();
+      return result.status === 'available';
     } catch {
       return false;
     }

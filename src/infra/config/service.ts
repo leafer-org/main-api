@@ -12,8 +12,6 @@ export class MainConfigService extends CreateConfigService({
   DB_URL: Type.String({ format: 'uri' }),
   PORT: Type.Decode(Type.String({ default: '3000' }), toInt),
   KAFKA_BROKER: Type.String(),
-  KAFKA_SASL_USERNAME: Type.String(),
-  KAFKA_SASL_PASSWORD: Type.String(),
   // IDP — JWT
   IDP_JWT_SECRET: Type.String(),
   IDP_JWT_ISSUER: Type.Optional(Type.String()),
@@ -44,8 +42,7 @@ export class MainConfigService extends CreateConfigService({
   MEDIA_BUCKET_PUBLIC: Type.Optional(Type.String()),
   MEDIA_BUCKET_PRIVATE: Type.Optional(Type.String()),
   MEDIA_IMAGE_PROXY_SECRET: Type.Optional(Type.String()),
-  // Search / ZincSearch
-  ZINC_URL: Type.String({ default: 'http://localhost:4080' }),
-  ZINC_USER: Type.String({ default: 'admin' }),
-  ZINC_PASSWORD: Type.String({ default: 'Complexpass#123' }),
+  // Search / Meilisearch
+  MEILI_URL: Type.String({ default: 'http://localhost:7700' }),
+  MEILI_API_KEY: Type.String({ default: 'devMasterKey123456' }),
 }) {}

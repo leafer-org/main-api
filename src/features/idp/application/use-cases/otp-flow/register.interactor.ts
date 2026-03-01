@@ -14,10 +14,8 @@ import {
   IdGenerator,
   JwtAccessService,
   LoginProcessRepository,
-  type MediaRecord,
   RefreshTokenService,
   SessionRepository,
-  UserEventPublisher,
   UserRepository,
 } from '../../ports.js';
 import { createEventId } from '@/infra/ddd/event.js';
@@ -40,8 +38,6 @@ export class RegisterInteractor {
     private readonly jwtAccess: JwtAccessService,
     private readonly refreshTokens: RefreshTokenService,
     private readonly idGenerator: IdGenerator,
-    @Inject(UserEventPublisher)
-    private readonly userEventPublisher: UserEventPublisher,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
   ) {}
@@ -49,7 +45,7 @@ export class RegisterInteractor {
   public async execute(command: {
     registrationSessionId: string;
     fullName: string;
-    avatarMedia?: MediaRecord;
+    avatarId?: string;
   }) {
     const fullNameEither = FullName.create(command.fullName);
     if (isLeft(fullNameEither)) return fullNameEither;
@@ -72,7 +68,7 @@ export class RegisterInteractor {
         newUserId: this.idGenerator.generateUserId(),
         role: Role.default(),
         fullName,
-        avatarId: command.avatarMedia ? FileId.raw(command.avatarMedia.key) : undefined,
+        avatarId: command.avatarId ? FileId.raw(command.avatarId) : undefined,
         registrationSessionId: command.registrationSessionId,
         fingerPrint: state.fingerPrint,
         now,
@@ -91,7 +87,6 @@ export class RegisterInteractor {
       if (isLeft(userEventEither)) throw new Error('Unexpected user creation failure');
       const userState = userApply(null, userEventEither.value);
       await this.userRepository.save(tx, userState);
-      await this.userEventPublisher.publish(tx, event.userId, userEventEither.value);
 
       // Policy: create session
       const sessionId = this.idGenerator.generateSessionId();

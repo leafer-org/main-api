@@ -1,18 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
 import { UserRepository } from '../../../application/ports.js';
 import type { UserState } from '../../../domain/aggregates/user/state.js';
 import { PhoneNumber } from '../../../domain/vo/phone-number.js';
+import { userStreamingContract } from '../../kafka/topics.js';
 import { users } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
+import { OutboxService } from '@/infra/lib/nest-outbox/outbox.service.js';
+import { MediaService } from '@/kernel/application/ports/media.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import { UserId } from '@/kernel/domain/ids.js';
+import { FileId, UserId } from '@/kernel/domain/ids.js';
 import { Role } from '@/kernel/domain/vo/role.js';
 
 @Injectable()
 export class DrizzleUserRepository extends UserRepository {
-  public constructor(private readonly txHost: TransactionHostPg) {
+  public constructor(
+    private readonly txHost: TransactionHostPg,
+    @Inject(OutboxService) private readonly outbox: OutboxService,
+    @Inject(MediaService) private readonly mediaService: MediaService,
+  ) {
     super();
   }
 
@@ -50,12 +57,22 @@ export class DrizzleUserRepository extends UserRepository {
 
   public async save(tx: Transaction, state: UserState): Promise<void> {
     const db = this.txHost.get(tx);
+
+    // Read old avatar before upsert
+    const oldRows = await db
+      .select({ avatarFileId: users.avatarFileId })
+      .from(users)
+      .where(eq(users.id, state.id))
+      .limit(1);
+    const oldAvatarId = oldRows[0]?.avatarFileId ? FileId.raw(oldRows[0].avatarFileId) : undefined;
+
     await db
       .insert(users)
       .values({
         id: state.id,
         phoneNumber: state.phoneNumber as string,
         fullName: state.fullName as string,
+        avatarFileId: (state.avatarId as string) ?? null,
         role: state.role as string,
         createdAt: state.createdAt,
         updatedAt: state.updatedAt,
@@ -65,10 +82,33 @@ export class DrizzleUserRepository extends UserRepository {
         set: {
           phoneNumber: state.phoneNumber as string,
           fullName: state.fullName as string,
+          avatarFileId: (state.avatarId as string) ?? null,
           role: state.role as string,
           updatedAt: state.updatedAt,
         },
       });
+
+    // Media file lifecycle
+    if (state.avatarId && state.avatarId !== oldAvatarId) {
+      await this.mediaService.useFiles(tx, [state.avatarId]);
+    }
+    if (oldAvatarId && oldAvatarId !== state.avatarId) {
+      await this.mediaService.freeFiles(tx, [oldAvatarId]);
+    }
+
+    await this.outbox.enqueue(
+      db,
+      userStreamingContract,
+      {
+        userId: state.id as string,
+        phoneNumber: state.phoneNumber as string,
+        fullName: state.fullName as string,
+        role: state.role as string,
+        createdAt: state.createdAt.toISOString(),
+        updatedAt: state.updatedAt.toISOString(),
+      },
+      { key: state.id as string },
+    );
   }
 
   private toDomain(row: typeof users.$inferSelect): UserState {
@@ -76,6 +116,7 @@ export class DrizzleUserRepository extends UserRepository {
       id: UserId.raw(row.id),
       phoneNumber: PhoneNumber.raw(row.phoneNumber),
       fullName: row.fullName as UserState['fullName'],
+      avatarId: row.avatarFileId ? FileId.raw(row.avatarFileId) : undefined,
       role: Role.raw(row.role),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

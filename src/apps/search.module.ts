@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 
+import { AdminUsersSearchClient } from '../features/idp/adapters/search/admin-users.index.js';
 import { MainConfigModule } from '@/infra/config/module.js';
 import { MainConfigService } from '@/infra/config/service.js';
 import { SearchModule } from '@/infra/lib/nest-search/index.js';
@@ -8,12 +9,11 @@ import { SearchModule } from '@/infra/lib/nest-search/index.js';
 @Module({
   imports: [
     SearchModule.registerAsync({
-      clients: [],
+      clients: [AdminUsersSearchClient],
       imports: [MainConfigModule],
       useFactory: (config: MainConfigService) => ({
-        node: config.get('ZINC_URL'),
-        username: config.get('ZINC_USER'),
-        password: config.get('ZINC_PASSWORD'),
+        host: config.get('MEILI_URL'),
+        apiKey: config.get('MEILI_API_KEY'),
       }),
       inject: [MainConfigService],
     }),

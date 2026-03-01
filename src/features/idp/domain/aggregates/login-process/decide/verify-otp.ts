@@ -24,7 +24,7 @@ export function verifyOtpDecide(
   command: VerifyOtpCommand,
 ): Either<LoginBlockedError | InvalidOtpError, VerifyOtpEvent> {
   if (state?.type === 'Blocked' && isActivelyBlocked(state, command.now)) {
-    return Left(new LoginBlockedError({ blockedUntil: state.blockedUntil }));
+    return Left(new LoginBlockedError({ blockedUntil: state.blockedUntil.toISOString() }));
   }
 
   if (!state || state.type !== 'OtpRequested') {

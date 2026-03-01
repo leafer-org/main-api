@@ -6,7 +6,7 @@ import type { MeReadModel } from '../../../domain/read-models/me.read-model.js';
 import type { FullName } from '../../../domain/vo/full-name.js';
 import type { PhoneNumber } from '../../../domain/vo/phone-number.js';
 import { IdpDatabaseClient } from '../client.js';
-import { media, sessions, users } from '../schema.js';
+import { sessions, users } from '../schema.js';
 import { FileId, SessionId, UserId } from '@/kernel/domain/ids.js';
 import { Role } from '@/kernel/domain/vo/role.js';
 
@@ -24,13 +24,12 @@ export class DrizzleMeQuery extends MeQueryPort {
         sessionId: sessions.id,
         fullName: users.fullName,
         phoneNumber: users.phoneNumber,
+        avatarFileId: users.avatarFileId,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
-        avatarId: media.userAvatarId,
       })
       .from(users)
       .innerJoin(sessions, and(eq(sessions.userId, users.id), eq(sessions.id, sessionId)))
-      .leftJoin(media, eq(media.userAvatarId, users.id))
       .where(eq(users.id, userId))
       .limit(1);
 
@@ -45,7 +44,7 @@ export class DrizzleMeQuery extends MeQueryPort {
       phoneNumber: row.phoneNumber as PhoneNumber,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      avatarId: row.avatarId ? FileId.raw(row.avatarId) : undefined,
+      avatarId: row.avatarFileId ? FileId.raw(row.avatarFileId) : undefined,
     };
   }
 }

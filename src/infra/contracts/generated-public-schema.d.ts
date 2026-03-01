@@ -188,6 +188,118 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/roles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Получение списка всех ролей
+     * @description Возвращает список всех ролей в системе.
+     */
+    get: operations['getRoles'];
+    put?: never;
+    /**
+     * Создание роли
+     * @description Создаёт новую роль с указанными разрешениями.
+     */
+    post: operations['createRole'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/roles/permissions-schema': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Получение схемы разрешений
+     * @description Возвращает схему всех доступных разрешений для построения UI.
+     */
+    get: operations['getPermissionsSchema'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/roles/{roleId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Получение роли по ID
+     * @description Возвращает детальную информацию о роли.
+     */
+    get: operations['getRole'];
+    put?: never;
+    post?: never;
+    /**
+     * Удаление роли
+     * @description Удаляет роль и переназначает всех пользователей на замещающую роль. Статические роли не могут быть удалены.
+     */
+    delete: operations['deleteRole'];
+    options?: never;
+    head?: never;
+    /**
+     * Обновление разрешений роли
+     * @description Обновляет разрешения указанной роли. Статические роли не могут быть изменены.
+     */
+    patch: operations['updateRole'];
+    trace?: never;
+  };
+  '/users/{userId}/role': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Назначение роли пользователю
+     * @description Обновляет роль пользователя. Все сессии пользователя будут удалены.
+     */
+    patch: operations['updateUserRole'];
+    trace?: never;
+  };
+  '/admin/users': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Поиск пользователей (admin)
+     * @description Поиск пользователей с фильтрацией по роли и текстовому запросу.
+     */
+    get: operations['searchAdminUsers'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/media/avatar/upload-request': {
     parameters: {
       query?: never;
@@ -309,21 +421,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    ThrottledErrorResponse: {
-      /** @enum {string} */
-      code: 'throttled';
-      message?: string;
-      /** @description Рекомендованная задержка перед повторной попыткой */
-      retryAfterSec: number;
-    };
     ErrorResponse: {
       /** @description Код ошибки для обработки на клиенте */
-      code: string;
+      type: string;
       /** @description Человекочитаемое описание ошибки */
       message?: string;
       /** @description Дополнительные детали ошибки */
-      details?: {
+      data?: {
         [key: string]: unknown;
+      };
+    };
+    ThrottledErrorResponse: {
+      /** @enum {string} */
+      type: 'throttled';
+      message?: string;
+      data: {
+        /** @description Рекомендованная задержка перед повторной попыткой */
+        retryAfterSec: number;
       };
     };
     TokenPair: {
@@ -383,6 +497,19 @@ export interface components {
        * @description Дата истечения сессии
        */
       expiresAt: string;
+    };
+    Role: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      permissions: {
+        [key: string]: unknown;
+      };
+      isStatic: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
     };
     GetMediaUploadUrlInput: {
       contentType?: string;
@@ -519,6 +646,32 @@ export interface operations {
           };
         };
       };
+      /** @description Некорректный запрос */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Превышено количество попыток */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {string} */
+            type: 'login_blocked';
+            message?: string;
+            data: {
+              /** Format: date-time */
+              blockedUntil: string;
+            };
+          };
+        };
+      };
       /** @description Слишком много запросов */
       429: {
         headers: {
@@ -588,9 +741,12 @@ export interface operations {
         content: {
           'application/json': {
             /** @enum {string} */
-            code: 'otp_attempts_exceeded';
+            type: 'login_blocked';
             message?: string;
-            retryAfterSec?: number;
+            data: {
+              /** Format: date-time */
+              blockedUntil: string;
+            };
           };
         };
       };
@@ -623,6 +779,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['TokenPair'];
+        };
+      };
+      /** @description Некорректный запрос */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
       /** @description Невалидный refresh-токен */
@@ -671,6 +836,24 @@ export interface operations {
       };
       /** @description Некорректный запрос */
       400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
         headers: {
           [name: string]: unknown;
         };
@@ -877,6 +1060,353 @@ export interface operations {
       };
     };
   };
+  getRoles: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список ролей */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            roles: components['schemas']['Role'][];
+          };
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  createRole: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+          permissions?: {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Роль создана */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Role'];
+        };
+      };
+      /** @description Роль уже существует */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  getPermissionsSchema: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Схема разрешений */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            action: string;
+            key: string;
+            /** @enum {string} */
+            type: 'boolean' | 'enum';
+            values?: string[];
+            default: unknown;
+          }[];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  getRole: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        roleId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Роль */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Role'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Роль не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  deleteRole: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        roleId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** Format: uuid */
+          replacementRoleId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Роль удалена */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': Record<string, never>;
+        };
+      };
+      /** @description Нельзя удалить статическую роль */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Роль не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  updateRole: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        roleId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          permissions: {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Роль обновлена */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Role'];
+        };
+      };
+      /** @description Нельзя изменить статическую роль */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Роль не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  updateUserRole: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** Format: uuid */
+          roleId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Роль пользователя обновлена */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': Record<string, never>;
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Пользователь или роль не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  searchAdminUsers: {
+    parameters: {
+      query?: {
+        /** @description Текстовый поисковый запрос */
+        query?: string;
+        /** @description Фильтр по роли */
+        role?: string;
+        /** @description Смещение для пагинации */
+        from?: number;
+        /** @description Размер страницы */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Результаты поиска */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            users: {
+              /** Format: uuid */
+              userId: string;
+              phoneNumber: string;
+              fullName: string;
+              role: string;
+              /** Format: date-time */
+              createdAt: string;
+              /** Format: date-time */
+              updatedAt: string;
+            }[];
+            total: number;
+          };
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   avatarUploadRequest: {
     parameters: {
       query?: never;
@@ -897,6 +1427,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['GetMediaUploadUrlResult'];
+        };
+      };
+      /** @description Некорректный запрос */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
       /** @description Не авторизован */
@@ -941,6 +1480,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse'];
         };
       };
+      /** @description Файл не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
     };
   };
   mediaUploadRequest: {
@@ -963,6 +1511,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['UploadRequestResult'];
+        };
+      };
+      /** @description Некорректный запрос */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
       /** @description Не авторизован */
@@ -996,6 +1553,15 @@ export interface operations {
         };
         content: {
           'application/json': Record<string, never>;
+        };
+      };
+      /** @description Некорректный запрос */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
       /** @description Не авторизован */

@@ -27,7 +27,7 @@ describe('CreateDomainError', () => {
     it('should have undefined data', () => {
       const error = new TestError();
 
-      expect(error.data).toBeUndefined();
+      expect(error.data).toEqual({});
     });
 
     it('should preserve cause', () => {

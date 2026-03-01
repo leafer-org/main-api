@@ -1,6 +1,6 @@
 import type { FullName } from '../../vo/full-name.js';
 import type { PhoneNumber } from '../../vo/phone-number.js';
-import type { UserId } from '@/kernel/domain/ids.js';
+import type { FileId, UserId } from '@/kernel/domain/ids.js';
 import type { Role } from '@/kernel/domain/vo/role.js';
 
 export type CreateUserCommand = {
@@ -8,6 +8,7 @@ export type CreateUserCommand = {
   id: UserId;
   phoneNumber: PhoneNumber;
   fullName: FullName;
+  avatarId: FileId | undefined;
   role: Role;
   now: Date;
 };
@@ -15,6 +16,7 @@ export type CreateUserCommand = {
 export type UpdateProfileCommand = {
   type: 'UpdateProfile';
   fullName: FullName;
+  avatarId: FileId | undefined;
   now: Date;
 };
 

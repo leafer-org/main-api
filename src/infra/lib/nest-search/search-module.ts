@@ -4,9 +4,8 @@ import type { CreateSearchClient } from './create-search-client.js';
 import { SearchConnectionPool } from './search-connection-pool.js';
 
 export type SearchModuleOptions = {
-  node: string;
-  username: string;
-  password: string;
+  host: string;
+  apiKey: string;
 };
 
 const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =

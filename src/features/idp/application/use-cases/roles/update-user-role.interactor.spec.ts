@@ -7,12 +7,7 @@ import type { UserState } from '../../../domain/aggregates/user/state.js';
 import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.js';
 import { FullName } from '../../../domain/vo/full-name.js';
 import { PhoneNumber } from '../../../domain/vo/phone-number.js';
-import type {
-  RoleRepository,
-  SessionRepository,
-  UserEventPublisher,
-  UserRepository,
-} from '../../ports.js';
+import type { RoleRepository, SessionRepository, UserRepository } from '../../ports.js';
 import { UpdateUserRoleInteractor } from './update-user-role.interactor.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
@@ -47,6 +42,7 @@ const makeUser = (): UserState => ({
   id: USER_ID,
   phoneNumber: PhoneNumber.raw('79991234567'),
   fullName: FullName.raw('Иван Иванов'),
+  avatarId: undefined,
   role: Role.raw('USER'),
   createdAt: NOW,
   updatedAt: NOW,
@@ -71,19 +67,16 @@ const makeDeps = () => {
   sessionRepo.findByUserId.mockResolvedValue([]);
   sessionRepo.deleteById.mockResolvedValue(undefined);
 
-  const userEventPublisher = ServiceMock<UserEventPublisher>();
-  userEventPublisher.publish.mockResolvedValue(undefined);
-
   const permissionCheck = new MockPermissionCheckService();
 
-  return { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck };
+  return { userRepo, roleRepo, sessionRepo, permissionCheck };
 };
 
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
 describe('UpdateUserRoleInteractor', () => {
   it('обновляет роль пользователя', async () => {
-    const { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, permissionCheck } = makeDeps();
     const txHost = new MockTransactionHost();
 
     const interactor = new UpdateUserRoleInteractor(
@@ -92,7 +85,6 @@ describe('UpdateUserRoleInteractor', () => {
       sessionRepo,
       txHost,
       makeClock(),
-      userEventPublisher,
       permissionCheck,
     );
 
@@ -109,7 +101,7 @@ describe('UpdateUserRoleInteractor', () => {
   });
 
   it('возвращает RoleNotFoundError если роль не найдена', async () => {
-    const { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, permissionCheck } = makeDeps();
     roleRepo.findById.mockResolvedValue(null);
 
     const interactor = new UpdateUserRoleInteractor(
@@ -118,7 +110,6 @@ describe('UpdateUserRoleInteractor', () => {
       sessionRepo,
       new MockTransactionHost(),
       makeClock(),
-      userEventPublisher,
       permissionCheck,
     );
 
@@ -131,7 +122,7 @@ describe('UpdateUserRoleInteractor', () => {
   });
 
   it('возвращает UserNotFoundError если пользователь не найден', async () => {
-    const { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, permissionCheck } = makeDeps();
     userRepo.findById.mockResolvedValue(null);
 
     const interactor = new UpdateUserRoleInteractor(
@@ -140,7 +131,6 @@ describe('UpdateUserRoleInteractor', () => {
       sessionRepo,
       new MockTransactionHost(),
       makeClock(),
-      userEventPublisher,
       permissionCheck,
     );
 
@@ -153,7 +143,7 @@ describe('UpdateUserRoleInteractor', () => {
   });
 
   it('удаляет сессии пользователя после смены роли', async () => {
-    const { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, permissionCheck } = makeDeps();
     const txHost = new MockTransactionHost();
 
     sessionRepo.findByUserId.mockResolvedValue([makeSession()]);
@@ -164,7 +154,6 @@ describe('UpdateUserRoleInteractor', () => {
       sessionRepo,
       txHost,
       makeClock(),
-      userEventPublisher,
       permissionCheck,
     );
 
@@ -175,7 +164,7 @@ describe('UpdateUserRoleInteractor', () => {
   });
 
   it('возвращает PermissionDeniedError если нет прав', async () => {
-    const { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, permissionCheck } = makeDeps();
     permissionCheck.deny('ROLE.MANAGE', 'USER');
 
     const interactor = new UpdateUserRoleInteractor(
@@ -184,7 +173,6 @@ describe('UpdateUserRoleInteractor', () => {
       sessionRepo,
       new MockTransactionHost(),
       makeClock(),
-      userEventPublisher,
       permissionCheck,
     );
 

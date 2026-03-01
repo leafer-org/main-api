@@ -118,7 +118,7 @@ export class VerifyOtpInteractor {
       case 'login_process.otp_verify_failed':
         return Left(new InvalidOtpError());
       case 'login_process.blocked':
-        return Left(new LoginBlockedError({ blockedUntil: event.blockedUntil }));
+        return Left(new LoginBlockedError({ blockedUntil: event.blockedUntil.toISOString() }));
       case 'login_process.new_registration':
         return Right({ type: 'new_registration', registrationSessionId });
       case 'login_process.completed': {

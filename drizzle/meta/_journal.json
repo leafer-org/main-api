@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1772281874921,
-      "tag": "0000_panoramic_eternity",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1772292104736,
-      "tag": "0001_chemical_riptide",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1772292118658,
-      "tag": "0002_seed_static_roles",
+      "when": 1772377146724,
+      "tag": "0000_even_ego",
       "breakpoints": true
     }
   ]

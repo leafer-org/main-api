@@ -1,51 +1,52 @@
-import type { Client, estypes } from '@elastic/elasticsearch';
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import type { Meilisearch, SearchResponse } from 'meilisearch';
 
 import type { IndexDefinition } from './index-definition.js';
 import { SearchConnectionPool } from './search-connection-pool.js';
 
 const logger = new Logger('SearchClient');
 
-function isAlreadyExistsError(error: unknown): boolean {
-  if (!(error instanceof Error) || !('meta' in error)) return false;
-
-  const meta = (error as Record<string, unknown>).meta as Record<string, unknown> | undefined;
-  const body = meta?.body as Record<string, unknown> | undefined;
-  const errorDetail = body?.error as Record<string, unknown> | undefined;
-
-  return errorDetail?.type === 'resource_already_exists_exception';
-}
-
-async function ensureIndex(client: Client, def: IndexDefinition) {
+async function ensureIndex(meili: Meilisearch, def: IndexDefinition) {
   try {
-    const exists = await client.indices.exists({ index: def.name });
-
-    if (exists) {
-      logger.debug(`Search index "${def.name}" already exists`);
-      return;
-    }
-
-    await client.indices.create({
-      index: def.name,
-      settings: def.settings,
-      mappings: def.mappings,
-    });
+    await meili.getIndex(def.name);
+    logger.debug(`Search index "${def.name}" already exists`);
+  } catch {
+    const task = await meili.createIndex(def.name, { primaryKey: def.primaryKey });
+    await meili.tasks.waitForTask(task.taskUid);
     logger.log(`Created search index "${def.name}"`);
-  } catch (error: unknown) {
-    if (isAlreadyExistsError(error)) {
-      logger.debug(`Search index "${def.name}" already exists (concurrent creation)`);
-      return;
-    }
+  }
 
-    logger.error(`Failed to ensure search index "${def.name}"`, error);
-    throw error;
+  const idx = meili.index(def.name);
+
+  const settings: Record<string, unknown> = {};
+  if (def.searchableAttributes) settings.searchableAttributes = def.searchableAttributes;
+  if (def.filterableAttributes) settings.filterableAttributes = def.filterableAttributes;
+  if (def.sortableAttributes) settings.sortableAttributes = def.sortableAttributes;
+
+  if (Object.keys(settings).length > 0) {
+    const task = await idx.updateSettings(settings);
+    await meili.tasks.waitForTask(task.taskUid);
+    logger.debug(`Updated settings for index "${def.name}"`);
   }
 }
+
+export type SearchParams = {
+  q?: string;
+  filter?: string;
+  sort?: string[];
+  offset?: number;
+  limit?: number;
+};
+
+export type SearchResult<T> = {
+  hits: T[];
+  total: number;
+};
 
 export function CreateSearchClient(indices: IndexDefinition[]) {
   @Injectable()
   class SearchClient implements OnModuleInit {
-    public readonly client: Client;
+    public readonly client: Meilisearch;
     public readonly indices: IndexDefinition[];
 
     public constructor(connectionPool: SearchConnectionPool) {
@@ -57,35 +58,48 @@ export function CreateSearchClient(indices: IndexDefinition[]) {
       await Promise.all(this.indices.map((def) => ensureIndex(this.client, def)));
     }
 
-    public async index<T extends Record<string, unknown>>(
+    public async addDocument<T extends Record<string, unknown>>(
       indexName: string,
-      id: string,
+      _id: string,
       document: T,
     ) {
-      return this.client.index({ index: indexName, id, document, refresh: true });
+      const idx = this.client.index(indexName);
+      const task = await idx.addDocuments([document]);
+      await this.client.tasks.waitForTask(task.taskUid);
     }
 
     public async bulkIndex<T extends Record<string, unknown>>(
       indexName: string,
       docs: Array<{ id: string; document: T }>,
     ) {
-      const operations = docs.flatMap(({ id, document }) => [
-        { index: { _index: indexName, _id: id } },
-        document,
-      ]);
-
-      return this.client.bulk({ operations, refresh: true });
+      const idx = this.client.index(indexName);
+      const documents = docs.map(({ document }) => document);
+      const task = await idx.addDocuments(documents);
+      await this.client.tasks.waitForTask(task.taskUid);
     }
 
     public async deleteDoc(indexName: string, id: string) {
-      return this.client.delete({ index: indexName, id, refresh: true });
+      const idx = this.client.index(indexName);
+      const task = await idx.deleteDocument(id);
+      await this.client.tasks.waitForTask(task.taskUid);
     }
 
-    public async search<T>(
+    public async search<T extends Record<string, unknown>>(
       indexName: string,
-      query: Record<string, unknown>,
-    ): Promise<estypes.SearchResponse<T>> {
-      return this.client.search<T>({ index: indexName, ...query });
+      searchParams: SearchParams,
+    ): Promise<SearchResult<T>> {
+      const idx = this.client.index(indexName);
+      const response: SearchResponse<T> = await idx.search(searchParams.q ?? '', {
+        filter: searchParams.filter,
+        sort: searchParams.sort,
+        offset: searchParams.offset,
+        limit: searchParams.limit,
+      });
+
+      return {
+        hits: response.hits,
+        total: response.estimatedTotalHits ?? 0,
+      };
     }
   }
 

@@ -18,21 +18,11 @@ import { RegisterInteractor } from '../../application/use-cases/otp-flow/registe
 import { VerifyOtpInteractor } from '../../application/use-cases/otp-flow/verify-otp.interactor.js';
 import { DeleteSessionInteractor } from '../../application/use-cases/session/delete-session.interactor.js';
 import { RotateSessionInteractor } from '../../application/use-cases/session/rotate-session.interactor.js';
-import {
-  InvalidOtpError,
-  LoginBlockedError,
-  OtpExpiredError,
-  OtpThrottleError,
-} from '../../domain/aggregates/login-process/errors.js';
-import {
-  SessionExpiredError,
-  SessionNotFoundError,
-} from '../../domain/aggregates/session/errors.js';
 import { resolveAvatarUrls } from './avatar-url.helper.js';
 import { CurrentUser } from '@/infra/auth/current-user.decorator.js';
 import { JwtAuthGuard } from '@/infra/auth/jwt-auth.guard.js';
 import type { JwtUserPayload } from '@/infra/auth/jwt-user-payload.js';
-import { apiError } from '@/infra/contracts/api-error.js';
+import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
@@ -62,15 +52,7 @@ export class AuthController {
     });
 
     if (isLeft(result)) {
-      const error = result.error;
-      if (error instanceof OtpThrottleError) {
-        throw apiError(
-          'requestOtp',
-          { code: error.type, retryAfterSec: error.data.retryAfterSec },
-          429,
-        );
-      }
-      throw new HttpException({ code: error.type }, 400);
+      throw domainToHttpError<'requestOtp'>(result.error.toResponse());
     }
 
     return {};
@@ -90,22 +72,7 @@ export class AuthController {
     });
 
     if (isLeft(result)) {
-      const error = result.error;
-      if (error instanceof LoginBlockedError) {
-        const retryAfterSec = Math.ceil((error.data.blockedUntil.getTime() - Date.now()) / 1000);
-        throw apiError(
-          'verifyOtp',
-          {
-            code: 'otp_attempts_exceeded',
-            retryAfterSec: Math.max(retryAfterSec, 60),
-          },
-          403,
-        );
-      }
-      if (error instanceof InvalidOtpError || error instanceof OtpExpiredError) {
-        throw apiError('verifyOtp', { code: error.type }, 400);
-      }
-      throw apiError('verifyOtp', { code: 'unknown_error' }, 400);
+      throw domainToHttpError<'verifyOtp'>(result.error.toResponse());
     }
 
     const value = result.value;
@@ -128,18 +95,14 @@ export class AuthController {
     @Headers('x-refresh-token') refreshToken: string,
   ): Promise<PublicResponse['refresh']> {
     if (!refreshToken) {
-      throw apiError('refresh', { code: 'missing_refresh_token' }, 401);
+      throw domainToHttpError<'refresh'>({ 401: { type: 'missing_refresh_token' } });
     }
 
     try {
       const result = await this.rotateSession.execute({ refreshToken });
 
       if (isLeft(result)) {
-        const error = result.error;
-        if (error instanceof SessionNotFoundError || error instanceof SessionExpiredError) {
-          throw apiError('refresh', { code: error.type }, 401);
-        }
-        throw apiError('refresh', { code: 'invalid_token' }, 401);
+        throw domainToHttpError<'refresh'>(result.error.toResponse());
       }
 
       return {
@@ -148,7 +111,7 @@ export class AuthController {
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw apiError('refresh', { code: 'invalid_token' }, 401);
+      throw domainToHttpError<'refresh'>({ 401: { type: 'invalid_token' } });
     }
   }
 
@@ -160,24 +123,18 @@ export class AuthController {
     const result = await this.register.execute({
       registrationSessionId: body.registrationSessionId,
       fullName: body.fullName ?? '',
-      avatarMedia: body.avatarMedia
-        ? {
-            key: body.avatarMedia.mediaId,
-            url: body.avatarMedia.objectKey,
-            mimeType: body.avatarMedia.contentType ?? '',
-          }
-        : undefined,
+      avatarId: body.avatarMedia?.mediaId,
     });
 
     if (isLeft(result)) {
-      throw apiError('completeProfile', { code: result.error.type }, 400);
+      throw domainToHttpError<'completeProfile'>(result.error.toResponse());
     }
 
     const { accessToken, refreshToken, userId, sessionId } = result.value;
 
     const meResult = await this.getMe.execute({ userId, sessionId });
     if (isLeft(meResult)) {
-      throw apiError('completeProfile', { code: 'user_fetch_failed' }, 400);
+      throw domainToHttpError<'completeProfile'>(meResult.error.toResponse());
     }
 
     const me = meResult.value;

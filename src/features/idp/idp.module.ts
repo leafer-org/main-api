@@ -9,16 +9,22 @@ import { DrizzleRoleRepository } from './adapters/db/repositories/role.repositor
 import { DrizzleSessionRepository } from './adapters/db/repositories/session.repository.js';
 import { DrizzleSessionValidation } from './adapters/db/repositories/session-validation.adapter.js';
 import { DrizzleUserRepository } from './adapters/db/repositories/user.repository.js';
+import { AdminUsersController } from './adapters/http/admin-users.controller.js';
 import { AuthController } from './adapters/http/auth.controller.js';
 import { MeController } from './adapters/http/me.controller.js';
 import { RolesController, UsersRoleController } from './adapters/http/roles.controller.js';
 import { UuidIdGenerator } from './adapters/id/id-generator.service.js';
 import { NestJwtAccessService } from './adapters/jwt/jwt-access.service.js';
 import { NestJwtRefreshTokenService } from './adapters/jwt/refresh-token.service.js';
-import { OutboxUserEventPublisher } from './adapters/kafka/user-events.handler.js';
+import { UserEventsProjectionHandler } from './adapters/kafka/user-events-projection.handler.js';
 import { CryptoOtpGenerator } from './adapters/otp/otp-generator.service.js';
 import { MockOtpSender } from './adapters/otp/otp-sender.service.js';
+import { MeiliAdminUsersListQuery } from './adapters/search/admin-users-list.query.js';
+import { MeiliAdminUsersListRepository } from './adapters/search/admin-users-list.repository.js';
+import { OnUserEventHandler } from './application/handlers/on-user-event.handler.js';
 import {
+  AdminUsersListQueryPort,
+  AdminUsersListRepository,
   IdGenerator,
   JwtAccessService,
   LoginProcessRepository,
@@ -30,10 +36,10 @@ import {
   RoleRepository,
   RolesListQueryPort,
   SessionRepository,
-  UserEventPublisher,
   UserRepository,
   UserSessionsQueryPort,
 } from './application/ports.js';
+import { SearchAdminUsersInteractor } from './application/queries/admin-users-list/search-admin-users.interactor.js';
 import { GetMeInteractor } from './application/queries/me/get-me.interactor.js';
 import { GetPermissionsSchemaInteractor } from './application/queries/roles/get-permissions-schema.interactor.js';
 import { GetRoleInteractor } from './application/queries/roles/get-role.interactor.js';
@@ -57,7 +63,13 @@ import { SessionValidationPort } from '@/kernel/application/ports/session-valida
 @Global()
 @Module({
   imports: [MainConfigModule],
-  controllers: [AuthController, MeController, RolesController, UsersRoleController],
+  controllers: [
+    AuthController,
+    MeController,
+    RolesController,
+    UsersRoleController,
+    AdminUsersController,
+  ],
   providers: [
     // Adapters
     { provide: LoginProcessRepository, useClass: DrizzleLoginProcessRepository },
@@ -69,13 +81,17 @@ import { SessionValidationPort } from '@/kernel/application/ports/session-valida
     { provide: UserSessionsQueryPort, useClass: DrizzleUserSessionsQuery },
     { provide: RoleQueryPort, useClass: DrizzleRoleQuery },
     { provide: RolesListQueryPort, useClass: DrizzleRolesListQuery },
+    { provide: AdminUsersListRepository, useClass: MeiliAdminUsersListRepository },
+    { provide: AdminUsersListQueryPort, useClass: MeiliAdminUsersListQuery },
     { provide: JwtAccessService, useClass: NestJwtAccessService },
     { provide: RefreshTokenService, useClass: NestJwtRefreshTokenService },
     { provide: OtpGeneratorService, useClass: CryptoOtpGenerator },
     { provide: OtpSenderService, useClass: MockOtpSender },
     { provide: IdGenerator, useClass: UuidIdGenerator },
     { provide: Clock, useClass: SystemClock },
-    { provide: UserEventPublisher, useClass: OutboxUserEventPublisher },
+    // Event handlers
+    OnUserEventHandler,
+    UserEventsProjectionHandler,
     // Use cases
     CreateOtpInteractor,
     VerifyOtpInteractor,
@@ -94,6 +110,7 @@ import { SessionValidationPort } from '@/kernel/application/ports/session-valida
     GetRoleInteractor,
     GetRolesListInteractor,
     GetPermissionsSchemaInteractor,
+    SearchAdminUsersInteractor,
   ],
   exports: [SessionValidationPort],
 })

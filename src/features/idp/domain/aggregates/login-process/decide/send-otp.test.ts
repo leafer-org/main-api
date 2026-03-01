@@ -75,7 +75,9 @@ describe('sendOtpCommandDecide', () => {
       const blockedUntil = new Date(NOW.getTime() + 10_000);
       const result = sendOtpCommandDecide(makeBlocked(blockedUntil), makeCommand());
 
-      expect(result).toEqual(Left(new LoginBlockedError({ blockedUntil })));
+      expect(result).toEqual(
+        Left(new LoginBlockedError({ blockedUntil: blockedUntil.toISOString() })),
+      );
     });
 
     it('создаёт новый процесс если блокировка истекла', () => {

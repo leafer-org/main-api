@@ -56,6 +56,7 @@ const makeUser = (): UserState => ({
   id: USER_ID,
   phoneNumber: PhoneNumber.raw('79991234567'),
   fullName: FullName.raw('Иван Иванов'),
+  avatarId: undefined,
   role: Role.raw('OldRole'),
   createdAt: NOW,
   updatedAt: NOW,

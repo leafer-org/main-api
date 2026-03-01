@@ -2,7 +2,7 @@ import { CreateDomainError } from '@/infra/ddd/error.js';
 import type { ValueObject } from '@/infra/ddd/value-object.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 
-export class InvalidMimeTypeError extends CreateDomainError('invalid_mime_type') {}
+export class InvalidMimeTypeError extends CreateDomainError('invalid_mime_type', 400) {}
 
 export type MimeType = ValueObject<string, 'MimeType'>;
 

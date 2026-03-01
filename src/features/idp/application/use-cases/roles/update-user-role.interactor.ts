@@ -6,12 +6,7 @@ import { userApply } from '../../../domain/aggregates/user/apply.js';
 import { userDecide } from '../../../domain/aggregates/user/decide.js';
 import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.js';
 import { whenUserRoleUpdatedDeleteSessions } from '../../../domain/policies/when-user-role-updated-delete-sessions.policy.js';
-import {
-  RoleRepository,
-  SessionRepository,
-  UserEventPublisher,
-  UserRepository,
-} from '../../ports.js';
+import { RoleRepository, SessionRepository, UserRepository } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
@@ -28,7 +23,6 @@ export class UpdateUserRoleInteractor {
     @Inject(SessionRepository) private readonly sessionRepository: SessionRepository,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
-    @Inject(UserEventPublisher) private readonly userEventPublisher: UserEventPublisher,
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
@@ -57,7 +51,6 @@ export class UpdateUserRoleInteractor {
 
       const newUserState = userApply(userState, eventEither.value);
       await this.userRepository.save(tx, newUserState);
-      await this.userEventPublisher.publish(tx, command.userId, eventEither.value);
 
       // Policy: UserRoleUpdated → delete sessions
       const userRoleUpdatedEvent = eventEither.value;
