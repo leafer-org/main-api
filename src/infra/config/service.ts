@@ -44,4 +44,8 @@ export class MainConfigService extends CreateConfigService({
   MEDIA_BUCKET_PUBLIC: Type.Optional(Type.String()),
   MEDIA_BUCKET_PRIVATE: Type.Optional(Type.String()),
   MEDIA_IMAGE_PROXY_SECRET: Type.Optional(Type.String()),
+  // Search / ZincSearch
+  ZINC_URL: Type.String({ default: 'http://localhost:4080' }),
+  ZINC_USER: Type.String({ default: 'admin' }),
+  ZINC_PASSWORD: Type.String({ default: 'Complexpass#123' }),
 }) {}

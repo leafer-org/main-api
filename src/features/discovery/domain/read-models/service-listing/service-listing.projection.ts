@@ -1,6 +1,6 @@
-import type { ServiceIntegrationEvent } from '@/kernel/domain/events/service.events.js';
-import { assertNever } from '@/infra/ddd/utils.js';
 import type { ServiceListingReadModel } from './service-listing.read-model.js';
+import { assertNever } from '@/infra/ddd/utils.js';
+import type { ServiceIntegrationEvent } from '@/kernel/domain/events/service.events.js';
 
 export function serviceListingProject(
   state: ServiceListingReadModel | null,

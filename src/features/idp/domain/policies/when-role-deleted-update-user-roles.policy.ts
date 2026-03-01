@@ -1,6 +1,6 @@
 import type { RoleDeletedEvent } from '../aggregates/role/events.js';
 import type { UpdateUserRoleCommand } from '../aggregates/user/commands.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 type Deps = {
   now: Date;

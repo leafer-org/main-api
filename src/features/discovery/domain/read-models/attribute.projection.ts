@@ -1,6 +1,6 @@
-import type { AttributeIntegrationEvent } from '@/kernel/domain/events/attribute.events.js';
-import { assertNever } from '@/infra/ddd/utils.js';
 import type { AttributeReadModel } from './attribute.read-model.js';
+import { assertNever } from '@/infra/ddd/utils.js';
+import type { AttributeIntegrationEvent } from '@/kernel/domain/events/attribute.events.js';
 
 export function attributeProject(
   state: AttributeReadModel | null,

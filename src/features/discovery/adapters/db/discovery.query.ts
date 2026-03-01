@@ -1,19 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { desc, eq, ilike, and, gt } from 'drizzle-orm';
+import { and, desc, eq, gt, SQL } from 'drizzle-orm';
 
-import { ServiceId } from '@/kernel/domain/ids.js';
-import type { CategoryId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo.js';
-import type { ServiceComponent } from '@/kernel/domain/service-component.js';
 import {
+  type PaginatedResult,
+  ServiceDetailQueryPort,
   ServiceFeedQueryPort,
   ServiceSearchQueryPort,
-  ServiceDetailQueryPort,
-  type PaginatedResult,
 } from '../../application/ports.js';
 import type { ServiceListingReadModel } from '../../domain/read-models/service-listing/service-listing.read-model.js';
 import { DiscoveryDatabaseClient } from './client.js';
 import { serviceListings } from './schema.js';
+import type { CategoryId } from '@/kernel/domain/ids.js';
+import { ServiceId } from '@/kernel/domain/ids.js';
+import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { ServiceComponent } from '@/kernel/domain/vo/service-component.js';
 
 @Injectable()
 export class DrizzleDiscoveryQuery
@@ -59,7 +59,7 @@ export class DrizzleDiscoveryQuery
     cursor?: string;
     limit: number;
   }): Promise<PaginatedResult<ServiceListingReadModel>> {
-    const conditions = [];
+    const conditions: SQL[] = [];
 
     if (params.categoryId) {
       conditions.push(eq(serviceListings.categoryId, params.categoryId));
@@ -80,7 +80,7 @@ export class DrizzleDiscoveryQuery
 
     const hasMore = rows.length > params.limit;
     const items = (hasMore ? rows.slice(0, params.limit) : rows).map((row) => this.toDomain(row));
-    const nextCursor = hasMore ? items[items.length - 1]!.serviceId : null;
+    const nextCursor = hasMore ? (items.at(-1)?.serviceId ?? null) : null;
 
     return { items, nextCursor };
   }

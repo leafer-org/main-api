@@ -1,8 +1,8 @@
+import type { AttributeReadModel } from '../domain/read-models/attribute.read-model.js';
+import type { ServiceListingReadModel } from '../domain/read-models/service-listing/service-listing.read-model.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type { AttributeId, CategoryId, ServiceId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo.js';
-import type { ServiceListingReadModel } from '../domain/read-models/service-listing/service-listing.read-model.js';
-import type { AttributeReadModel } from '../domain/read-models/attribute.read-model.js';
+import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
 // ─── Write-side (projection handlers) ───────────────────────────────────────
 
@@ -55,7 +55,5 @@ export abstract class ServiceSearchQueryPort {
 }
 
 export abstract class ServiceDetailQueryPort {
-  public abstract findByServiceId(
-    serviceId: ServiceId,
-  ): Promise<ServiceListingReadModel | null>;
+  public abstract findByServiceId(serviceId: ServiceId): Promise<ServiceListingReadModel | null>;
 }

@@ -31,7 +31,7 @@ import { assertNever } from '@/infra/ddd/utils.js';
 import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 type VerifyOtpResult =
   | { type: 'new_registration'; registrationSessionId: string }

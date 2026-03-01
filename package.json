@@ -24,6 +24,7 @@
     "@aws-sdk/client-s3": "^3.775.0",
     "@aws-sdk/s3-request-presigner": "^3.775.0",
     "@dotenvx/dotenvx": "^1.52.0",
+    "@elastic/elasticsearch": "^9.3.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.0",

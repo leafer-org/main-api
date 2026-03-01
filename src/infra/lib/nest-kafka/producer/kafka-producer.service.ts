@@ -133,6 +133,28 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  public sendRaw(topic: string, payload: Buffer, options?: SendOptions): void {
+    if (!this.isConnected) {
+      throw new KafkaConnectionError('Producer is not connected');
+    }
+
+    const headers = options?.headers
+      ? Object.entries(options.headers).map(([key, value]) => ({
+          [key]: Buffer.from(value),
+        }))
+      : undefined;
+
+    this.producer.produce(
+      topic,
+      options?.partition ?? null,
+      payload,
+      options?.key ?? null,
+      Date.now(),
+      undefined,
+      headers,
+    );
+  }
+
   public async flush(timeout = DEFAULT_FLUSH_TIMEOUT_MS): Promise<void> {
     return new Promise((resolve, reject) => {
       this.producer.flush(timeout, (error: Kafka.LibrdKafkaError | undefined) => {

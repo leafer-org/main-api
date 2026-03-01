@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { AttributeId, CategoryId } from '@/kernel/domain/ids.js';
-import type { AttributeSchema } from '@/kernel/domain/attribute.js';
-import type { AttributeIntegrationEvent } from '@/kernel/domain/events/attribute.events.js';
 import { attributeProject } from './attribute.projection.js';
 import type { AttributeReadModel } from './attribute.read-model.js';
+import type { AttributeIntegrationEvent } from '@/kernel/domain/events/attribute.events.js';
+import { AttributeId, CategoryId } from '@/kernel/domain/ids.js';
+import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 

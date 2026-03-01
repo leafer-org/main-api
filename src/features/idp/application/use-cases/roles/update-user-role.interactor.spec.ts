@@ -7,13 +7,18 @@ import type { UserState } from '../../../domain/aggregates/user/state.js';
 import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.js';
 import { FullName } from '../../../domain/vo/full-name.js';
 import { PhoneNumber } from '../../../domain/vo/phone-number.js';
-import type { RoleRepository, SessionRepository, UserRepository } from '../../ports.js';
+import type {
+  RoleRepository,
+  SessionRepository,
+  UserEventPublisher,
+  UserRepository,
+} from '../../ports.js';
 import { UpdateUserRoleInteractor } from './update-user-role.interactor.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
 import { RoleId, SessionId, UserId } from '@/kernel/domain/ids.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
@@ -65,14 +70,17 @@ const makeDeps = () => {
   sessionRepo.findByUserId.mockResolvedValue([]);
   sessionRepo.deleteById.mockResolvedValue(undefined);
 
-  return { userRepo, roleRepo, sessionRepo };
+  const userEventPublisher = ServiceMock<UserEventPublisher>();
+  userEventPublisher.publish.mockResolvedValue(undefined);
+
+  return { userRepo, roleRepo, sessionRepo, userEventPublisher };
 };
 
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
 describe('UpdateUserRoleInteractor', () => {
   it('обновляет роль пользователя', async () => {
-    const { userRepo, roleRepo, sessionRepo } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, userEventPublisher } = makeDeps();
     const txHost = new MockTransactionHost();
 
     const interactor = new UpdateUserRoleInteractor(
@@ -81,6 +89,7 @@ describe('UpdateUserRoleInteractor', () => {
       sessionRepo,
       txHost,
       makeClock(),
+      userEventPublisher,
     );
 
     const result = await interactor.execute({ userId: USER_ID, roleId: ROLE_ID });
@@ -96,7 +105,7 @@ describe('UpdateUserRoleInteractor', () => {
   });
 
   it('возвращает RoleNotFoundError если роль не найдена', async () => {
-    const { userRepo, roleRepo, sessionRepo } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, userEventPublisher } = makeDeps();
     roleRepo.findById.mockResolvedValue(null);
 
     const interactor = new UpdateUserRoleInteractor(
@@ -105,6 +114,7 @@ describe('UpdateUserRoleInteractor', () => {
       sessionRepo,
       new MockTransactionHost(),
       makeClock(),
+      userEventPublisher,
     );
 
     const result = await interactor.execute({ userId: USER_ID, roleId: ROLE_ID });
@@ -116,7 +126,7 @@ describe('UpdateUserRoleInteractor', () => {
   });
 
   it('возвращает UserNotFoundError если пользователь не найден', async () => {
-    const { userRepo, roleRepo, sessionRepo } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, userEventPublisher } = makeDeps();
     userRepo.findById.mockResolvedValue(null);
 
     const interactor = new UpdateUserRoleInteractor(
@@ -125,6 +135,7 @@ describe('UpdateUserRoleInteractor', () => {
       sessionRepo,
       new MockTransactionHost(),
       makeClock(),
+      userEventPublisher,
     );
 
     const result = await interactor.execute({ userId: USER_ID, roleId: ROLE_ID });
@@ -136,7 +147,7 @@ describe('UpdateUserRoleInteractor', () => {
   });
 
   it('удаляет сессии пользователя после смены роли', async () => {
-    const { userRepo, roleRepo, sessionRepo } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, userEventPublisher } = makeDeps();
     const txHost = new MockTransactionHost();
 
     sessionRepo.findByUserId.mockResolvedValue([makeSession()]);
@@ -147,6 +158,7 @@ describe('UpdateUserRoleInteractor', () => {
       sessionRepo,
       txHost,
       makeClock(),
+      userEventPublisher,
     );
 
     const result = await interactor.execute({ userId: USER_ID, roleId: ROLE_ID });

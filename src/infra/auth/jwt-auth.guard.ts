@@ -12,7 +12,7 @@ import type { JwtUserPayload } from './jwt-user-payload.js';
 import { SessionValidationPort } from '@/kernel/application/ports/session-validation.js';
 import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
 import { SessionId, UserId } from '@/kernel/domain/ids.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {

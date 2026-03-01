@@ -15,6 +15,7 @@ import { RolesController, UsersRoleController } from './adapters/http/roles.cont
 import { UuidIdGenerator } from './adapters/id/id-generator.service.js';
 import { NestJwtAccessService } from './adapters/jwt/jwt-access.service.js';
 import { NestJwtRefreshTokenService } from './adapters/jwt/refresh-token.service.js';
+import { OutboxUserEventPublisher } from './adapters/kafka/user-events.handler.js';
 import { CryptoOtpGenerator } from './adapters/otp/otp-generator.service.js';
 import { MockOtpSender } from './adapters/otp/otp-sender.service.js';
 import {
@@ -29,6 +30,7 @@ import {
   RoleRepository,
   RolesListQueryPort,
   SessionRepository,
+  UserEventPublisher,
   UserRepository,
   UserSessionsQueryPort,
 } from './application/ports.js';
@@ -73,6 +75,7 @@ import { SessionValidationPort } from '@/kernel/application/ports/session-valida
     { provide: OtpSenderService, useClass: MockOtpSender },
     { provide: IdGenerator, useClass: UuidIdGenerator },
     { provide: Clock, useClass: SystemClock },
+    { provide: UserEventPublisher, useClass: OutboxUserEventPublisher },
     // Use cases
     CreateOtpInteractor,
     VerifyOtpInteractor,

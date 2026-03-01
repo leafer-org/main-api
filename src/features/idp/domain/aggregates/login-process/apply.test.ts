@@ -8,7 +8,7 @@ import { loginProcessApply } from './apply.js';
 import { LOGIN_PROCESS_CONFIG } from './config.js';
 import type { LoginProcessId, LoginProcessState } from './state.js';
 import { UserId } from '@/kernel/domain/ids.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 

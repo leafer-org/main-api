@@ -1,5 +1,5 @@
 import type { ServiceId } from '../ids.js';
-import type { ServiceComponent } from '../service-component.js';
+import type { ServiceComponent } from '../vo/service-component.js';
 
 export type ServicePublishedEvent = {
   type: 'service.published';

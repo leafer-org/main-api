@@ -8,7 +8,7 @@ import { users } from './schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { UserId } from '@/kernel/domain/ids.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 @Injectable()
 export class DrizzleUserRepository extends UserRepository {
