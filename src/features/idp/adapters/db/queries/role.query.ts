@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import { RoleQueryPort } from '../../application/ports.js';
-import type { RoleReadModel } from '../../domain/read-models/role.read-model.js';
-import { IdpDatabaseClient } from './client.js';
-import { roles } from './schema.js';
+import { RoleQueryPort } from '../../../application/ports.js';
+import type { RoleReadModel } from '../../../domain/read-models/role.read-model.js';
+import { IdpDatabaseClient } from '../client.js';
+import { roles } from '../schema.js';
 import { RoleId } from '@/kernel/domain/ids.js';
 
 @Injectable()

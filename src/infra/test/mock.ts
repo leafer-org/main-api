@@ -1,6 +1,13 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: generic types */
 import { type Mock, vitest } from 'vitest';
 
+import type { WhereArg } from '@/infra/lib/authorization/permission-service.js';
+import type { InferPermissionValue, PermissionVariant } from '@/infra/lib/authorization/schema.js';
+import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
+import {
+  PermissionCheckService,
+  PermissionDeniedError,
+} from '@/kernel/application/ports/permission.js';
 import {
   createTransaction,
   type Transaction,
@@ -29,5 +36,33 @@ export class MockTransactionHost extends TransactionHost {
 
   public async startTransaction<T>(cb: (transaction: Transaction) => Promise<T>): Promise<T> {
     return cb(this.transaction);
+  }
+}
+
+export class MockPermissionCheckService extends PermissionCheckService {
+  private result: Either<PermissionDeniedError, void> = Right(undefined);
+
+  public deny(action = 'TEST', role = 'USER'): this {
+    this.result = Left(new PermissionDeniedError({ action, role }));
+    return this;
+  }
+
+  public allow(): this {
+    this.result = Right(undefined);
+    return this;
+  }
+
+  public can<T extends PermissionVariant>(
+    _perm: T,
+    ..._args: WhereArg<InferPermissionValue<T>>
+  ): boolean {
+    return !isLeft(this.result);
+  }
+
+  public mustCan<T extends PermissionVariant>(
+    _perm: T,
+    ..._args: WhereArg<InferPermissionValue<T>>
+  ): Either<PermissionDeniedError, void> {
+    return this.result;
   }
 }

@@ -6,10 +6,10 @@ import {
   ServiceDetailQueryPort,
   ServiceFeedQueryPort,
   ServiceSearchQueryPort,
-} from '../../application/ports.js';
-import type { ServiceListingReadModel } from '../../domain/read-models/service-listing/service-listing.read-model.js';
-import { DiscoveryDatabaseClient } from './client.js';
-import { serviceListings } from './schema.js';
+} from '../../../application/ports.js';
+import type { ServiceListingReadModel } from '../../../domain/read-models/service-listing/service-listing.read-model.js';
+import { DiscoveryDatabaseClient } from '../client.js';
+import { serviceListings } from '../schema.js';
 import type { CategoryId } from '@/kernel/domain/ids.js';
 import { ServiceId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';

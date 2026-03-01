@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { Right } from '@/infra/lib/box.js';
+import { isLeft, Right } from '@/infra/lib/box.js';
+import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { Permissions } from '@/kernel/domain/permissions.js';
 
 export type PermissionSchemaItem = {
@@ -24,7 +25,14 @@ export function buildPermissionsSchema(): PermissionSchemaItem[] {
 
 @Injectable()
 export class GetPermissionsSchemaInteractor {
+  public constructor(
+    @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
+  ) {}
+
   public execute() {
+    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+    if (isLeft(auth)) return auth;
+
     return Right(buildPermissionsSchema());
   }
 }

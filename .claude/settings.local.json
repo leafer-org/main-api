@@ -55,7 +55,8 @@
       "WebFetch(domain:sequinstream.com)",
       "Bash(npx biome check src/infra/lib/nest-search/ src/apps/search.module.ts src/apps/app.module.ts src/infra/config/service.ts src/test/e2e/helpers/containers.ts)",
       "Bash(npx biome check --write src/infra/lib/nest-search/ src/apps/search.module.ts src/apps/app.module.ts src/infra/config/service.ts src/test/e2e/helpers/containers.ts)",
-      "Bash(xargs sed -i \"s|@/kernel/domain/vo\\\\.js|@/kernel/domain/vo/vo.js|g\")"
+      "Bash(xargs sed -i \"s|@/kernel/domain/vo\\\\.js|@/kernel/domain/vo/vo.js|g\")",
+      "Bash(ls -la \"d:\\\\projects\\\\leafer\\\\mono\\\\main-api\\\\src\\\\features\\\\discovery\\\\adapters\"\" && echo \"---DB DIR---\" && ls -la \"d:projectsleafermonomain-apisrcfeaturesdiscoveryadaptersdb\"\")"
     ]
   }
 }

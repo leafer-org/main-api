@@ -5,7 +5,8 @@ import type { RoleReadModel } from '../../../domain/read-models/role.read-model.
 import type { RoleQueryPort } from '../../ports.js';
 import { GetRoleInteractor } from './get-role.interactor.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
-import { ServiceMock } from '@/infra/test/mock.js';
+import { MockPermissionCheckService, ServiceMock } from '@/infra/test/mock.js';
+import { PermissionDeniedError } from '@/kernel/application/ports/permission.js';
 import { RoleId } from '@/kernel/domain/ids.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
@@ -28,8 +29,9 @@ describe('GetRoleInteractor', () => {
   it('возвращает роль по ID', async () => {
     const roleQuery = ServiceMock<RoleQueryPort>();
     roleQuery.findRole.mockResolvedValue(ROLE_READ_MODEL);
+    const permissionCheck = new MockPermissionCheckService();
 
-    const interactor = new GetRoleInteractor(roleQuery);
+    const interactor = new GetRoleInteractor(roleQuery, permissionCheck);
     const result = await interactor.execute({ roleId: ROLE_ID });
 
     expect(result).toEqual(Right(ROLE_READ_MODEL));
@@ -39,13 +41,28 @@ describe('GetRoleInteractor', () => {
   it('возвращает RoleNotFoundError если роль не найдена', async () => {
     const roleQuery = ServiceMock<RoleQueryPort>();
     roleQuery.findRole.mockResolvedValue(null);
+    const permissionCheck = new MockPermissionCheckService();
 
-    const interactor = new GetRoleInteractor(roleQuery);
+    const interactor = new GetRoleInteractor(roleQuery, permissionCheck);
     const result = await interactor.execute({ roleId: ROLE_ID });
 
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) {
       expect(result.error).toBeInstanceOf(RoleNotFoundError);
     }
+  });
+
+  it('возвращает PermissionDeniedError если нет прав', async () => {
+    const roleQuery = ServiceMock<RoleQueryPort>();
+    const permissionCheck = new MockPermissionCheckService().deny('ROLE.MANAGE', 'USER');
+
+    const interactor = new GetRoleInteractor(roleQuery, permissionCheck);
+    const result = await interactor.execute({ roleId: ROLE_ID });
+
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) {
+      expect(result.error).toBeInstanceOf(PermissionDeniedError);
+    }
+    expect(roleQuery.findRole).not.toHaveBeenCalled();
   });
 });

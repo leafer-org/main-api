@@ -16,7 +16,8 @@ import type {
 import { UpdateUserRoleInteractor } from './update-user-role.interactor.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
-import { MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
+import { MockPermissionCheckService, MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
+import { PermissionDeniedError } from '@/kernel/application/ports/permission.js';
 import { RoleId, SessionId, UserId } from '@/kernel/domain/ids.js';
 import { Role } from '@/kernel/domain/vo/role.js';
 
@@ -73,14 +74,16 @@ const makeDeps = () => {
   const userEventPublisher = ServiceMock<UserEventPublisher>();
   userEventPublisher.publish.mockResolvedValue(undefined);
 
-  return { userRepo, roleRepo, sessionRepo, userEventPublisher };
+  const permissionCheck = new MockPermissionCheckService();
+
+  return { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck };
 };
 
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
 describe('UpdateUserRoleInteractor', () => {
   it('обновляет роль пользователя', async () => {
-    const { userRepo, roleRepo, sessionRepo, userEventPublisher } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck } = makeDeps();
     const txHost = new MockTransactionHost();
 
     const interactor = new UpdateUserRoleInteractor(
@@ -90,6 +93,7 @@ describe('UpdateUserRoleInteractor', () => {
       txHost,
       makeClock(),
       userEventPublisher,
+      permissionCheck,
     );
 
     const result = await interactor.execute({ userId: USER_ID, roleId: ROLE_ID });
@@ -105,7 +109,7 @@ describe('UpdateUserRoleInteractor', () => {
   });
 
   it('возвращает RoleNotFoundError если роль не найдена', async () => {
-    const { userRepo, roleRepo, sessionRepo, userEventPublisher } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck } = makeDeps();
     roleRepo.findById.mockResolvedValue(null);
 
     const interactor = new UpdateUserRoleInteractor(
@@ -115,6 +119,7 @@ describe('UpdateUserRoleInteractor', () => {
       new MockTransactionHost(),
       makeClock(),
       userEventPublisher,
+      permissionCheck,
     );
 
     const result = await interactor.execute({ userId: USER_ID, roleId: ROLE_ID });
@@ -126,7 +131,7 @@ describe('UpdateUserRoleInteractor', () => {
   });
 
   it('возвращает UserNotFoundError если пользователь не найден', async () => {
-    const { userRepo, roleRepo, sessionRepo, userEventPublisher } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck } = makeDeps();
     userRepo.findById.mockResolvedValue(null);
 
     const interactor = new UpdateUserRoleInteractor(
@@ -136,6 +141,7 @@ describe('UpdateUserRoleInteractor', () => {
       new MockTransactionHost(),
       makeClock(),
       userEventPublisher,
+      permissionCheck,
     );
 
     const result = await interactor.execute({ userId: USER_ID, roleId: ROLE_ID });
@@ -147,7 +153,7 @@ describe('UpdateUserRoleInteractor', () => {
   });
 
   it('удаляет сессии пользователя после смены роли', async () => {
-    const { userRepo, roleRepo, sessionRepo, userEventPublisher } = makeDeps();
+    const { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck } = makeDeps();
     const txHost = new MockTransactionHost();
 
     sessionRepo.findByUserId.mockResolvedValue([makeSession()]);
@@ -159,11 +165,35 @@ describe('UpdateUserRoleInteractor', () => {
       txHost,
       makeClock(),
       userEventPublisher,
+      permissionCheck,
     );
 
     const result = await interactor.execute({ userId: USER_ID, roleId: ROLE_ID });
 
     expect(isRight(result)).toBe(true);
     expect(sessionRepo.deleteById).toHaveBeenCalledWith(txHost.transaction, SESSION_ID);
+  });
+
+  it('возвращает PermissionDeniedError если нет прав', async () => {
+    const { userRepo, roleRepo, sessionRepo, userEventPublisher, permissionCheck } = makeDeps();
+    permissionCheck.deny('ROLE.MANAGE', 'USER');
+
+    const interactor = new UpdateUserRoleInteractor(
+      userRepo,
+      roleRepo,
+      sessionRepo,
+      new MockTransactionHost(),
+      makeClock(),
+      userEventPublisher,
+      permissionCheck,
+    );
+
+    const result = await interactor.execute({ userId: USER_ID, roleId: ROLE_ID });
+
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) {
+      expect(result.error).toBeInstanceOf(PermissionDeniedError);
+    }
+    expect(userRepo.save).not.toHaveBeenCalled();
   });
 });

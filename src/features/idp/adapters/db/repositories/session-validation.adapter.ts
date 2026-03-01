@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq, gt } from 'drizzle-orm';
 
-import { sessions } from './schema.js';
+import { sessions } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import { SessionValidationPort } from '@/kernel/application/ports/session-validation.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';

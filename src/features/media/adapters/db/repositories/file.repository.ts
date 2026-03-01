@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { eq, inArray } from 'drizzle-orm';
 
-import { FileRepository } from '../../application/ports.js';
-import type { FileState } from '../../domain/aggregates/file/state.js';
-import { files } from './schema.js';
+import { FileRepository } from '../../../application/ports.js';
+import type { FileState } from '../../../domain/aggregates/file/state.js';
+import { files } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { FileId } from '@/kernel/domain/ids.js';

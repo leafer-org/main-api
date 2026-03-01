@@ -4,13 +4,16 @@ import {
   buildPermissionsSchema,
   GetPermissionsSchemaInteractor,
 } from './get-permissions-schema.interactor.js';
-import { isRight } from '@/infra/lib/box.js';
+import { isLeft, isRight } from '@/infra/lib/box.js';
+import { MockPermissionCheckService } from '@/infra/test/mock.js';
+import { PermissionDeniedError } from '@/kernel/application/ports/permission.js';
 
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
 describe('GetPermissionsSchemaInteractor', () => {
   it('возвращает схему разрешений', () => {
-    const interactor = new GetPermissionsSchemaInteractor();
+    const permissionCheck = new MockPermissionCheckService();
+    const interactor = new GetPermissionsSchemaInteractor(permissionCheck);
     const result = interactor.execute();
 
     expect(isRight(result)).toBe(true);
@@ -38,6 +41,17 @@ describe('GetPermissionsSchemaInteractor', () => {
     for (const item of enumItems) {
       expect(item.values).toBeDefined();
       expect(Array.isArray(item.values)).toBe(true);
+    }
+  });
+
+  it('возвращает PermissionDeniedError если нет прав', () => {
+    const permissionCheck = new MockPermissionCheckService().deny('ROLE.MANAGE', 'USER');
+    const interactor = new GetPermissionsSchemaInteractor(permissionCheck);
+    const result = interactor.execute();
+
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) {
+      expect(result.error).toBeInstanceOf(PermissionDeniedError);
     }
   });
 });

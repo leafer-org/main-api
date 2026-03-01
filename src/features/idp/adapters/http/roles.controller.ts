@@ -25,15 +25,12 @@ import {
   StaticRoleModificationError,
 } from '../../domain/aggregates/role/errors.js';
 import { JwtAuthGuard } from '@/infra/auth/jwt-auth.guard.js';
-import { PermissionGuard } from '@/infra/lib/authorization/permission.guard.js';
-import { RequirePermission } from '@/infra/lib/authorization/require-permission.decorator.js';
 import { isLeft } from '@/infra/lib/box.js';
+import { PermissionDeniedError } from '@/kernel/application/ports/permission.js';
 import { RoleId, UserId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
 
 @Controller('roles')
-@UseGuards(JwtAuthGuard, PermissionGuard)
-@RequirePermission((can) => can(Permissions.manageRole))
+@UseGuards(JwtAuthGuard)
 export class RolesController {
   public constructor(
     private readonly createRole: CreateRoleInteractor,
@@ -47,12 +44,22 @@ export class RolesController {
   @Get()
   public async list() {
     const result = await this.getRolesList.execute();
+
+    if (isLeft(result)) {
+      throw new ForbiddenException({ code: result.error.type });
+    }
+
     return result.value;
   }
 
   @Get('permissions-schema')
   public getSchema() {
     const result = this.getPermissionsSchema.execute();
+
+    if (isLeft(result)) {
+      throw new ForbiddenException({ code: result.error.type });
+    }
+
     return result.value;
   }
 
@@ -61,6 +68,9 @@ export class RolesController {
     const result = await this.getRole.execute({ roleId: RoleId.raw(roleId) });
 
     if (isLeft(result)) {
+      if (result.error instanceof PermissionDeniedError) {
+        throw new ForbiddenException({ code: result.error.type });
+      }
       throw new NotFoundException({ code: result.error.type });
     }
 
@@ -75,6 +85,9 @@ export class RolesController {
     });
 
     if (isLeft(result)) {
+      if (result.error instanceof PermissionDeniedError) {
+        throw new ForbiddenException({ code: result.error.type });
+      }
       if (result.error instanceof RoleAlreadyExistsError) {
         throw new BadRequestException({ code: result.error.type });
       }
@@ -95,6 +108,9 @@ export class RolesController {
     });
 
     if (isLeft(result)) {
+      if (result.error instanceof PermissionDeniedError) {
+        throw new ForbiddenException({ code: result.error.type });
+      }
       if (result.error instanceof StaticRoleModificationError) {
         throw new ForbiddenException({ code: result.error.type });
       }
@@ -116,6 +132,9 @@ export class RolesController {
     });
 
     if (isLeft(result)) {
+      if (result.error instanceof PermissionDeniedError) {
+        throw new ForbiddenException({ code: result.error.type });
+      }
       if (result.error instanceof StaticRoleModificationError) {
         throw new ForbiddenException({ code: result.error.type });
       }
@@ -127,8 +146,7 @@ export class RolesController {
 }
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, PermissionGuard)
-@RequirePermission((can) => can(Permissions.manageRole))
+@UseGuards(JwtAuthGuard)
 export class UsersRoleController {
   public constructor(private readonly updateUserRole: UpdateUserRoleInteractor) {}
 
@@ -140,6 +158,9 @@ export class UsersRoleController {
     });
 
     if (isLeft(result)) {
+      if (result.error instanceof PermissionDeniedError) {
+        throw new ForbiddenException({ code: result.error.type });
+      }
       throw new NotFoundException({ code: result.error.type });
     }
 

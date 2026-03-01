@@ -1,14 +1,14 @@
 import { Global, Module } from '@nestjs/common';
 
-import { DrizzleLoginProcessRepository } from './adapters/db/login-process.repository.js';
-import { DrizzleMeQuery } from './adapters/db/me.query.js';
-import { DrizzleRoleQuery } from './adapters/db/role.query.js';
-import { DrizzleRoleRepository } from './adapters/db/role.repository.js';
-import { DrizzleRolesListQuery } from './adapters/db/roles-list.query.js';
-import { DrizzleSessionRepository } from './adapters/db/session.repository.js';
-import { DrizzleSessionValidation } from './adapters/db/session-validation.adapter.js';
-import { DrizzleUserRepository } from './adapters/db/user.repository.js';
-import { DrizzleUserSessionsQuery } from './adapters/db/user-sessions.query.js';
+import { DrizzleMeQuery } from './adapters/db/queries/me.query.js';
+import { DrizzleRoleQuery } from './adapters/db/queries/role.query.js';
+import { DrizzleRolesListQuery } from './adapters/db/queries/roles-list.query.js';
+import { DrizzleUserSessionsQuery } from './adapters/db/queries/user-sessions.query.js';
+import { DrizzleLoginProcessRepository } from './adapters/db/repositories/login-process.repository.js';
+import { DrizzleRoleRepository } from './adapters/db/repositories/role.repository.js';
+import { DrizzleSessionRepository } from './adapters/db/repositories/session.repository.js';
+import { DrizzleSessionValidation } from './adapters/db/repositories/session-validation.adapter.js';
+import { DrizzleUserRepository } from './adapters/db/repositories/user.repository.js';
 import { AuthController } from './adapters/http/auth.controller.js';
 import { MeController } from './adapters/http/me.controller.js';
 import { RolesController, UsersRoleController } from './adapters/http/roles.controller.js';

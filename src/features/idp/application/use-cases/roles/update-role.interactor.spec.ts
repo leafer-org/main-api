@@ -10,7 +10,8 @@ import { UpdateRoleInteractor } from './update-role.interactor.js';
 import { PermissionsStore } from '@/infra/lib/authorization/permissions-store.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
-import { MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
+import { MockPermissionCheckService, MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
+import { PermissionDeniedError } from '@/kernel/application/ports/permission.js';
 import { RoleId } from '@/kernel/domain/ids.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
@@ -42,17 +43,25 @@ const makeDeps = () => {
   const permissionsStore = ServiceMock<PermissionsStore>();
   permissionsStore.refresh.mockResolvedValue(undefined);
 
-  return { roleRepo, permissionsStore };
+  const permissionCheck = new MockPermissionCheckService();
+
+  return { roleRepo, permissionsStore, permissionCheck };
 };
 
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
 describe('UpdateRoleInteractor', () => {
   it('обновляет разрешения роли', async () => {
-    const { roleRepo, permissionsStore } = makeDeps();
+    const { roleRepo, permissionsStore, permissionCheck } = makeDeps();
     const txHost = new MockTransactionHost();
 
-    const interactor = new UpdateRoleInteractor(roleRepo, txHost, makeClock(), permissionsStore);
+    const interactor = new UpdateRoleInteractor(
+      roleRepo,
+      txHost,
+      makeClock(),
+      permissionsStore,
+      permissionCheck,
+    );
 
     const result = await interactor.execute({
       roleId: ROLE_ID,
@@ -71,7 +80,7 @@ describe('UpdateRoleInteractor', () => {
   });
 
   it('возвращает RoleNotFoundError если роль не найдена', async () => {
-    const { roleRepo, permissionsStore } = makeDeps();
+    const { roleRepo, permissionsStore, permissionCheck } = makeDeps();
     roleRepo.findById.mockResolvedValue(null);
 
     const interactor = new UpdateRoleInteractor(
@@ -79,6 +88,7 @@ describe('UpdateRoleInteractor', () => {
       new MockTransactionHost(),
       makeClock(),
       permissionsStore,
+      permissionCheck,
     );
 
     const result = await interactor.execute({
@@ -94,7 +104,7 @@ describe('UpdateRoleInteractor', () => {
   });
 
   it('возвращает StaticRoleModificationError если роль статическая', async () => {
-    const { roleRepo, permissionsStore } = makeDeps();
+    const { roleRepo, permissionsStore, permissionCheck } = makeDeps();
     roleRepo.findById.mockResolvedValue(makeRole({ isStatic: true }));
 
     const interactor = new UpdateRoleInteractor(
@@ -102,6 +112,7 @@ describe('UpdateRoleInteractor', () => {
       new MockTransactionHost(),
       makeClock(),
       permissionsStore,
+      permissionCheck,
     );
 
     const result = await interactor.execute({
@@ -112,6 +123,30 @@ describe('UpdateRoleInteractor', () => {
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) {
       expect(result.error).toBeInstanceOf(StaticRoleModificationError);
+    }
+    expect(roleRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('возвращает PermissionDeniedError если нет прав', async () => {
+    const { roleRepo, permissionsStore, permissionCheck } = makeDeps();
+    permissionCheck.deny('ROLE.MANAGE', 'USER');
+
+    const interactor = new UpdateRoleInteractor(
+      roleRepo,
+      new MockTransactionHost(),
+      makeClock(),
+      permissionsStore,
+      permissionCheck,
+    );
+
+    const result = await interactor.execute({
+      roleId: ROLE_ID,
+      permissions: {},
+    });
+
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) {
+      expect(result.error).toBeInstanceOf(PermissionDeniedError);
     }
     expect(roleRepo.save).not.toHaveBeenCalled();
   });

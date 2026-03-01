@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
-import { MeQueryPort } from '../../application/ports.js';
-import type { MeReadModel } from '../../domain/read-models/me.read-model.js';
-import type { FullName } from '../../domain/vo/full-name.js';
-import type { PhoneNumber } from '../../domain/vo/phone-number.js';
-import { IdpDatabaseClient } from './client.js';
-import { media, sessions, users } from './schema.js';
+import { MeQueryPort } from '../../../application/ports.js';
+import type { MeReadModel } from '../../../domain/read-models/me.read-model.js';
+import type { FullName } from '../../../domain/vo/full-name.js';
+import type { PhoneNumber } from '../../../domain/vo/phone-number.js';
+import { IdpDatabaseClient } from '../client.js';
+import { media, sessions, users } from '../schema.js';
 import { FileId, SessionId, UserId } from '@/kernel/domain/ids.js';
 import { Role } from '@/kernel/domain/vo/role.js';
 

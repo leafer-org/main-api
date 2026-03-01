@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-import { RolesListQueryPort } from '../../application/ports.js';
-import type { RolesListReadModel } from '../../domain/read-models/roles-list.read-model.js';
-import { IdpDatabaseClient } from './client.js';
-import { roles } from './schema.js';
+import { RolesListQueryPort } from '../../../application/ports.js';
+import type { RolesListReadModel } from '../../../domain/read-models/roles-list.read-model.js';
+import { IdpDatabaseClient } from '../client.js';
+import { roles } from '../schema.js';
 import { RoleId } from '@/kernel/domain/ids.js';
 
 @Injectable()
