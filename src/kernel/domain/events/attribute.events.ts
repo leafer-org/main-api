@@ -1,5 +1,5 @@
 import type { AttributeId, CategoryId } from '../ids.js';
-import type { AttributeSchema } from '../attribute.js';
+import type { AttributeSchema } from '../vo/attribute.js';
 
 export type AttributeCreatedEvent = {
   type: 'attribute.created';

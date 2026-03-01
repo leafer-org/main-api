@@ -41,7 +41,21 @@
       "Bash(node -e \":*)",
       "Bash(yarn test)",
       "Bash(npx vitest run src/features/discovery/)",
-      "Bash(npx vitest run --exclude='**/*.e2e-spec.ts')"
+      "Bash(npx vitest run --exclude='**/*.e2e-spec.ts')",
+      "Bash(xargs grep -l \"admin\\\\|Admin\")",
+      "Bash(xargs grep -l \"topic:\")",
+      "Bash(xargs grep -l \"createTypeboxContract\\\\|createProtoContract\")",
+      "Bash(yarn add @elastic/elasticsearch)",
+      "Bash(node -e \"const pkg = require\\(''@elastic/elasticsearch/package.json''\\); console.log\\(pkg.exports ? JSON.stringify\\(pkg.exports, null, 2\\) : ''no exports''\\)\")",
+      "Bash(node -e \"const es = require\\(''@elastic/elasticsearch''\\); console.log\\(Object.keys\\(es\\).filter\\(k => k.includes\\(''Search''\\) || k === ''Client''\\).join\\('', ''\\)\\)\")",
+      "Bash(node -e \"const types = require\\(''@elastic/elasticsearch/lib/api/types''\\); console.log\\(typeof types.SearchResponse\\)\")",
+      "Bash(ls /d/projects/leafer/mono/main-api/.yarn/cache/@elastic-elasticsearch-npm-*)",
+      "Bash(node -e \"console.log\\(require.resolve\\(''@elastic/elasticsearch''\\)\\)\")",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:sequinstream.com)",
+      "Bash(npx biome check src/infra/lib/nest-search/ src/apps/search.module.ts src/apps/app.module.ts src/infra/config/service.ts src/test/e2e/helpers/containers.ts)",
+      "Bash(npx biome check --write src/infra/lib/nest-search/ src/apps/search.module.ts src/apps/app.module.ts src/infra/config/service.ts src/test/e2e/helpers/containers.ts)",
+      "Bash(xargs sed -i \"s|@/kernel/domain/vo\\\\.js|@/kernel/domain/vo/vo.js|g\")"
     ]
   }
 }

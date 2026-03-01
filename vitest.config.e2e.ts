@@ -17,7 +17,6 @@ export default defineConfig({
     hookTimeout: 120_000,
     pool: 'forks',
     maxWorkers: 1,
-    minWorkers: 1,
   },
   plugins: [
     swc.vite({

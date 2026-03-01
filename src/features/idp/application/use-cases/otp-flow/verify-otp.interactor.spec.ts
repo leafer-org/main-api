@@ -23,7 +23,7 @@ import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
 import { SessionId, UserId } from '@/kernel/domain/ids.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 

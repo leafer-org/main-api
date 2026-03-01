@@ -11,7 +11,7 @@ import { verifyOtpDecide } from './verify-otp.js';
 import type { EventId } from '@/infra/ddd/event.js';
 import { Left, Right } from '@/infra/lib/box.js';
 import { UserId } from '@/kernel/domain/ids.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 

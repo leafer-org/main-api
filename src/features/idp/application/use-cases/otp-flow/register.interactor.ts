@@ -17,6 +17,7 @@ import {
   type MediaRecord,
   RefreshTokenService,
   SessionRepository,
+  UserEventPublisher,
   UserRepository,
 } from '../../ports.js';
 import { createEventId } from '@/infra/ddd/event.js';
@@ -24,7 +25,7 @@ import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import { FileId } from '@/kernel/domain/ids.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -39,6 +40,8 @@ export class RegisterInteractor {
     private readonly jwtAccess: JwtAccessService,
     private readonly refreshTokens: RefreshTokenService,
     private readonly idGenerator: IdGenerator,
+    @Inject(UserEventPublisher)
+    private readonly userEventPublisher: UserEventPublisher,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
   ) {}
@@ -88,6 +91,7 @@ export class RegisterInteractor {
       if (isLeft(userEventEither)) throw new Error('Unexpected user creation failure');
       const userState = userApply(null, userEventEither.value);
       await this.userRepository.save(tx, userState);
+      await this.userEventPublisher.publish(tx, event.userId, userEventEither.value);
 
       // Policy: create session
       const sessionId = this.idGenerator.generateSessionId();

@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { AttributeIntegrationEvent } from '@/kernel/domain/events/attribute.events.js';
 import { attributeProject } from '../../domain/read-models/attribute.projection.js';
 import { AttributeRepository } from '../ports.js';
+import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
+import type { AttributeIntegrationEvent } from '@/kernel/domain/events/attribute.events.js';
 
 @Injectable()
 export class OnAttributeEventHandler {

@@ -49,6 +49,22 @@ services:
       - ./kafka_client.properties:/tmp/client.properties
       - pl-kafka-vol:/bitnamilegacy/kafka
 
+  zincsearch:
+    image: public.ecr.aws/zinclabs/zincsearch:latest
+    environment:
+      ZINC_FIRST_ADMIN_USER: admin
+      ZINC_FIRST_ADMIN_PASSWORD: Complexpass#123
+      ZINC_DATA_PATH: /data
+    ports:
+      - "4080:4080"
+    volumes:
+      - zinc_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     ports:
@@ -63,3 +79,4 @@ services:
 volumes:
   postgres_data:
   pl-kafka-vol:
+  zinc_data:

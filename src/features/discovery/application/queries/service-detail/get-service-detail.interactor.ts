@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { ServiceId } from '@/kernel/domain/ids.js';
-import { Left, Right } from '@/infra/lib/box.js';
 import { ServiceNotFoundError } from '../../../domain/errors.js';
 import { ServiceDetailQueryPort } from '../../ports.js';
+import { Left, Right } from '@/infra/lib/box.js';
+import type { ServiceId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class GetServiceDetailInteractor {

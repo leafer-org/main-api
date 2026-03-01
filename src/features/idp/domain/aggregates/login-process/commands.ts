@@ -5,7 +5,7 @@ import type { PhoneNumber } from '../../vo/phone-number.js';
 import type { EntityId } from '@/infra/ddd/entity.js';
 import type { EventId } from '@/infra/ddd/event.js';
 import type { FileId, UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import type { Role } from '@/kernel/domain/vo/role.js';
 
 export type LoginProcessId = EntityId<'LoginProcess'>;
 

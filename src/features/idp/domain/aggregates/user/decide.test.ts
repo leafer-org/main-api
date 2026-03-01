@@ -6,7 +6,7 @@ import { userDecide } from './decide.js';
 import type { UserState } from './state.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import { UserId } from '@/kernel/domain/ids.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 

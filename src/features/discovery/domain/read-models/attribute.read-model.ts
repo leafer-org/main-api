@@ -1,5 +1,5 @@
 import type { AttributeId, CategoryId } from '@/kernel/domain/ids.js';
-import type { AttributeSchema } from '@/kernel/domain/attribute.js';
+import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 
 export type AttributeReadModel = {
   attributeId: AttributeId;

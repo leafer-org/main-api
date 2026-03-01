@@ -8,7 +8,7 @@ import type { PhoneNumber } from '../../domain/vo/phone-number.js';
 import { IdpDatabaseClient } from './client.js';
 import { media, sessions, users } from './schema.js';
 import { FileId, SessionId, UserId } from '@/kernel/domain/ids.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 @Injectable()
 export class DrizzleMeQuery extends MeQueryPort {

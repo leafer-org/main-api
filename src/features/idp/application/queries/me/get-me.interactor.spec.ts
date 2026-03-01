@@ -9,7 +9,7 @@ import { GetMeInteractor } from './get-me.interactor.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import { ServiceMock } from '@/infra/test/mock.js';
 import { SessionId, UserId } from '@/kernel/domain/ids.js';
-import { Role } from '@/kernel/domain/vo.js';
+import { Role } from '@/kernel/domain/vo/role.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
-import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import { AttributeId, CategoryId } from '@/kernel/domain/ids.js';
-import type { AttributeSchema } from '@/kernel/domain/attribute.js';
 import { AttributeRepository } from '../../application/ports.js';
 import type { AttributeReadModel } from '../../domain/read-models/attribute.read-model.js';
 import { attributes } from './schema.js';
+import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
+import type { Transaction } from '@/kernel/application/ports/tx-host.js';
+import { AttributeId, CategoryId } from '@/kernel/domain/ids.js';
+import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 
 @Injectable()
 export class DrizzleAttributeRepository implements AttributeRepository {

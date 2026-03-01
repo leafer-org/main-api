@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { ServiceIntegrationEvent } from '@/kernel/domain/events/service.events.js';
 import { serviceListingProject } from '../../domain/read-models/service-listing/service-listing.projection.js';
 import { ServiceListingRepository } from '../ports.js';
+import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
+import type { ServiceIntegrationEvent } from '@/kernel/domain/events/service.events.js';
 
 @Injectable()
 export class OnServiceEventHandler {

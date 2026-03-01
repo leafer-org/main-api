@@ -5,6 +5,7 @@ import type {
 import type { RoleState } from '../domain/aggregates/role/state.js';
 import type { SessionState } from '../domain/aggregates/session/state.js';
 import type { RefreshTokenPayload } from '../domain/aggregates/session/token.types.js';
+import type { UserEvent } from '../domain/aggregates/user/events.js';
 import type { UserState } from '../domain/aggregates/user/state.js';
 import type { MeReadModel } from '../domain/read-models/me.read-model.js';
 import type { RoleReadModel } from '../domain/read-models/role.read-model.js';
@@ -16,7 +17,7 @@ import type { PhoneNumber } from '../domain/vo/phone-number.js';
 import type { AccessToken, RefreshToken } from '../domain/vo/tokens.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type { RoleId, SessionId, UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import type { Role } from '@/kernel/domain/vo/role.js';
 
 // --- Shared types ---
 
@@ -123,4 +124,10 @@ export abstract class IdGenerator {
   public abstract generateUserId(): UserId;
   public abstract generateSessionId(): SessionId;
   public abstract generateRoleId(): RoleId;
+}
+
+// --- Event publishing ports ---
+
+export abstract class UserEventPublisher {
+  public abstract publish(tx: Transaction, userId: UserId, event: UserEvent): Promise<void>;
 }

@@ -1,11 +1,11 @@
-import type { AgeGroup } from './vo.js';
 import type {
   AttributeId,
   CategoryId,
   FileId,
   OrganizationId,
   ServiceComponentId,
-} from './ids.js';
+} from '../ids.js';
+import type { AgeGroup } from './role.js';
 
 export type BaseInfoComponent = {
   type: 'base-info';

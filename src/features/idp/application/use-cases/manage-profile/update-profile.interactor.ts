@@ -4,7 +4,7 @@ import { userApply } from '../../../domain/aggregates/user/apply.js';
 import { userDecide } from '../../../domain/aggregates/user/decide.js';
 import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.js';
 import { FullName } from '../../../domain/vo/full-name.js';
-import { UserRepository } from '../../ports.js';
+import { UserEventPublisher, UserRepository } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
@@ -16,6 +16,8 @@ export class UpdateProfileInteractor {
     @Inject(Clock)
     private readonly clock: Clock,
     private readonly userRepository: UserRepository,
+    @Inject(UserEventPublisher)
+    private readonly userEventPublisher: UserEventPublisher,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
   ) {}
@@ -41,6 +43,7 @@ export class UpdateProfileInteractor {
 
       const newState = userApply(state, eventEither.value);
       await this.userRepository.save(tx, newState);
+      await this.userEventPublisher.publish(tx, command.userId, eventEither.value);
 
       return Right(undefined);
     });

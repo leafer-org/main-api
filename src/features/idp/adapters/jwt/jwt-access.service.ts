@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { JwtAccessService } from '../../application/ports.js';
 import { AccessToken } from '../../domain/vo/tokens.js';
 import type { UserId } from '@/kernel/domain/ids.js';
-import type { Role } from '@/kernel/domain/vo.js';
+import type { Role } from '@/kernel/domain/vo/role.js';
 
 @Injectable()
 export class NestJwtAccessService extends JwtAccessService {

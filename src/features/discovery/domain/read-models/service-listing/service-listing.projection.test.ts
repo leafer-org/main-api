@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { ServiceId, ServiceComponentId, CategoryId, FileId } from '@/kernel/domain/ids.js';
-import type { ServiceComponent } from '@/kernel/domain/service-component.js';
-import type { ServiceIntegrationEvent } from '@/kernel/domain/events/service.events.js';
 import { serviceListingProject } from './service-listing.projection.js';
 import type { ServiceListingReadModel } from './service-listing.read-model.js';
+import type { ServiceIntegrationEvent } from '@/kernel/domain/events/service.events.js';
+import { CategoryId, FileId, ServiceComponentId, ServiceId } from '@/kernel/domain/ids.js';
+import type { ServiceComponent } from '@/kernel/domain/vo/service-component.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
