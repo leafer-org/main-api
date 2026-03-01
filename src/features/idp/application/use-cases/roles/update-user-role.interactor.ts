@@ -14,8 +14,10 @@ import {
 } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
+import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { RoleId, UserId } from '@/kernel/domain/ids.js';
+import { Permissions } from '@/kernel/domain/permissions.js';
 import { Role } from '@/kernel/domain/vo/role.js';
 
 @Injectable()
@@ -27,9 +29,13 @@ export class UpdateUserRoleInteractor {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
     @Inject(UserEventPublisher) private readonly userEventPublisher: UserEventPublisher,
+    @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
   public async execute(command: { userId: UserId; roleId: RoleId }) {
+    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+    if (isLeft(auth)) return auth;
+
     return this.txHost.startTransaction(async (tx) => {
       // Validate role exists
       const role = await this.roleRepository.findById(tx, command.roleId);

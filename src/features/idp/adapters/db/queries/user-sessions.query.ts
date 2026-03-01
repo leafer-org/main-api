@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import { UserSessionsQueryPort } from '../../application/ports.js';
-import type { UserSessionsReadModel } from '../../domain/read-models/user-sessions.read-model.js';
-import { IdpDatabaseClient } from './client.js';
-import { sessions } from './schema.js';
+import { UserSessionsQueryPort } from '../../../application/ports.js';
+import type { UserSessionsReadModel } from '../../../domain/read-models/user-sessions.read-model.js';
+import { IdpDatabaseClient } from '../client.js';
+import { sessions } from '../schema.js';
 import { SessionId, type UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import { RoleRepository } from '../../application/ports.js';
-import type { RoleState } from '../../domain/aggregates/role/state.js';
-import { roles } from './schema.js';
+import { RoleRepository } from '../../../application/ports.js';
+import type { RoleState } from '../../../domain/aggregates/role/state.js';
+import { roles } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { RoleId } from '@/kernel/domain/ids.js';

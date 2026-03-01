@@ -7,7 +7,8 @@ import { CreateRoleInteractor } from './create-role.interactor.js';
 import { PermissionsStore } from '@/infra/lib/authorization/permissions-store.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
-import { MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
+import { MockPermissionCheckService, MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
+import { PermissionDeniedError } from '@/kernel/application/ports/permission.js';
 import { RoleId } from '@/kernel/domain/ids.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
@@ -41,14 +42,16 @@ const makeDeps = () => {
   const permissionsStore = ServiceMock<PermissionsStore>();
   permissionsStore.refresh.mockResolvedValue(undefined);
 
-  return { roleRepo, idGenerator, permissionsStore };
+  const permissionCheck = new MockPermissionCheckService();
+
+  return { roleRepo, idGenerator, permissionsStore, permissionCheck };
 };
 
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
 describe('CreateRoleInteractor', () => {
   it('создаёт роль и сохраняет состояние', async () => {
-    const { roleRepo, idGenerator, permissionsStore } = makeDeps();
+    const { roleRepo, idGenerator, permissionsStore, permissionCheck } = makeDeps();
     const txHost = new MockTransactionHost();
 
     const interactor = new CreateRoleInteractor(
@@ -57,6 +60,7 @@ describe('CreateRoleInteractor', () => {
       txHost,
       makeClock(),
       permissionsStore,
+      permissionCheck,
     );
 
     const result = await interactor.execute({
@@ -78,7 +82,7 @@ describe('CreateRoleInteractor', () => {
   });
 
   it('возвращает RoleAlreadyExistsError если роль с таким именем существует', async () => {
-    const { roleRepo, idGenerator, permissionsStore } = makeDeps();
+    const { roleRepo, idGenerator, permissionsStore, permissionCheck } = makeDeps();
     roleRepo.findByName.mockResolvedValue(makeExistingRole());
 
     const interactor = new CreateRoleInteractor(
@@ -87,6 +91,7 @@ describe('CreateRoleInteractor', () => {
       new MockTransactionHost(),
       makeClock(),
       permissionsStore,
+      permissionCheck,
     );
 
     const result = await interactor.execute({
@@ -97,6 +102,31 @@ describe('CreateRoleInteractor', () => {
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) {
       expect(result.error).toBeInstanceOf(RoleAlreadyExistsError);
+    }
+    expect(roleRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('возвращает PermissionDeniedError если нет прав', async () => {
+    const { roleRepo, idGenerator, permissionsStore, permissionCheck } = makeDeps();
+    permissionCheck.deny('ROLE.MANAGE', 'USER');
+
+    const interactor = new CreateRoleInteractor(
+      roleRepo,
+      idGenerator,
+      new MockTransactionHost(),
+      makeClock(),
+      permissionsStore,
+      permissionCheck,
+    );
+
+    const result = await interactor.execute({
+      name: 'Editor',
+      permissions: {},
+    });
+
+    expect(isLeft(result)).toBe(true);
+    if (isLeft(result)) {
+      expect(result.error).toBeInstanceOf(PermissionDeniedError);
     }
     expect(roleRepo.save).not.toHaveBeenCalled();
   });

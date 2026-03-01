@@ -6,7 +6,9 @@ import { IdGenerator, RoleRepository } from '../../ports.js';
 import { PermissionsStore } from '@/infra/lib/authorization/permissions-store.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
+import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
+import { Permissions } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class CreateRoleInteractor {
@@ -16,9 +18,13 @@ export class CreateRoleInteractor {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
     @Inject(PermissionsStore) private readonly permissionsStore: PermissionsStore,
+    @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
   public async execute(command: { name: string; permissions: Record<string, unknown> }) {
+    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+    if (isLeft(auth)) return auth;
+
     return this.txHost.startTransaction(async (tx) => {
       const existing = await this.roleRepository.findByName(tx, command.name);
       const id = this.idGenerator.generateRoleId();

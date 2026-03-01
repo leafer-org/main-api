@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 
-import { DrizzleAttributeRepository } from './adapters/db/attribute.repository.js';
-import { DrizzleDiscoveryQuery } from './adapters/db/discovery.query.js';
-import { DrizzleServiceListingRepository } from './adapters/db/service-listing.repository.js';
+import { DrizzleDiscoveryQuery } from './adapters/db/queries/discovery.query.js';
+import { DrizzleAttributeRepository } from './adapters/db/repositories/attribute.repository.js';
+import { DrizzleServiceListingRepository } from './adapters/db/repositories/service-listing.repository.js';
 import { OnAttributeEventHandler } from './application/handlers/on-attribute-event.handler.js';
 import { OnServiceEventHandler } from './application/handlers/on-service-event.handler.js';
 import {

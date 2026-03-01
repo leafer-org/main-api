@@ -11,8 +11,10 @@ import { RoleRepository, SessionRepository, UserRepository } from '../../ports.j
 import { PermissionsStore } from '@/infra/lib/authorization/permissions-store.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
+import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { RoleId } from '@/kernel/domain/ids.js';
+import { Permissions } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class DeleteRoleInteractor {
@@ -23,9 +25,13 @@ export class DeleteRoleInteractor {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
     @Inject(PermissionsStore) private readonly permissionsStore: PermissionsStore,
+    @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
   public async execute(command: { roleId: RoleId; replacementRoleId: RoleId }) {
+    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+    if (isLeft(auth)) return auth;
+
     return this.txHost.startTransaction(async (tx) => {
       const state = await this.roleRepository.findById(tx, command.roleId);
       if (!state) return Left(new RoleNotFoundError());

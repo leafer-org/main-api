@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 
-import { DrizzleFileRepository } from './adapters/db/file.repository.js';
+import { DrizzleFileRepository } from './adapters/db/repositories/file.repository.js';
 import { MediaController } from './adapters/http/media.controller.js';
 import { UuidFileIdGenerator } from './adapters/id/file-id-generator.service.js';
 import { HmacImageProxyUrlSigner } from './adapters/media/image-proxy-url-signer.js';

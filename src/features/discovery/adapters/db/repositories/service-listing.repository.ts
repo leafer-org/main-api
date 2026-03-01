@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import { ServiceListingRepository } from '../../application/ports.js';
-import type { ServiceListingReadModel } from '../../domain/read-models/service-listing/service-listing.read-model.js';
-import { serviceListings } from './schema.js';
+import { ServiceListingRepository } from '../../../application/ports.js';
+import type { ServiceListingReadModel } from '../../../domain/read-models/service-listing/service-listing.read-model.js';
+import { serviceListings } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { ServiceId } from '@/kernel/domain/ids.js';
