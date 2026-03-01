@@ -1,12 +1,9 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   HttpCode,
-  NotFoundException,
   Param,
   Patch,
   Post,
@@ -20,14 +17,23 @@ import { CreateRoleInteractor } from '../../application/use-cases/roles/create-r
 import { DeleteRoleInteractor } from '../../application/use-cases/roles/delete-role.interactor.js';
 import { UpdateRoleInteractor } from '../../application/use-cases/roles/update-role.interactor.js';
 import { UpdateUserRoleInteractor } from '../../application/use-cases/roles/update-user-role.interactor.js';
-import {
-  RoleAlreadyExistsError,
-  StaticRoleModificationError,
-} from '../../domain/aggregates/role/errors.js';
+import type { RoleReadModel } from '../../domain/read-models/role.read-model.js';
 import { JwtAuthGuard } from '@/infra/auth/jwt-auth.guard.js';
+import { domainToHttpError } from '@/infra/contracts/api-error.js';
+import type { PublicBody, PublicResponse, PublicSchemas } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
-import { PermissionDeniedError } from '@/kernel/application/ports/permission.js';
 import { RoleId, UserId } from '@/kernel/domain/ids.js';
+
+function serializeRole(role: RoleReadModel): PublicSchemas['Role'] {
+  return {
+    id: role.id as string,
+    name: role.name,
+    permissions: role.permissions,
+    isStatic: role.isStatic,
+    createdAt: role.createdAt.toISOString(),
+    updatedAt: role.updatedAt.toISOString(),
+  };
+}
 
 @Controller('roles')
 @UseGuards(JwtAuthGuard)
@@ -42,103 +48,84 @@ export class RolesController {
   ) {}
 
   @Get()
-  public async list() {
+  public async list(): Promise<PublicResponse['getRoles']> {
     const result = await this.getRolesList.execute();
 
     if (isLeft(result)) {
-      throw new ForbiddenException({ code: result.error.type });
+      throw domainToHttpError<'getRoles'>(result.error.toResponse());
     }
 
-    return result.value;
+    return { roles: result.value.roles.map(serializeRole) };
   }
 
   @Get('permissions-schema')
-  public getSchema() {
+  public getSchema(): PublicResponse['getPermissionsSchema'] {
     const result = this.getPermissionsSchema.execute();
 
     if (isLeft(result)) {
-      throw new ForbiddenException({ code: result.error.type });
+      throw domainToHttpError<'getPermissionsSchema'>(result.error.toResponse());
     }
 
     return result.value;
   }
 
   @Get(':roleId')
-  public async getById(@Param('roleId') roleId: string) {
+  public async getById(@Param('roleId') roleId: string): Promise<PublicResponse['getRole']> {
     const result = await this.getRole.execute({ roleId: RoleId.raw(roleId) });
 
     if (isLeft(result)) {
-      if (result.error instanceof PermissionDeniedError) {
-        throw new ForbiddenException({ code: result.error.type });
-      }
-      throw new NotFoundException({ code: result.error.type });
+      throw domainToHttpError<'getRole'>(result.error.toResponse());
     }
 
-    return result.value;
+    return serializeRole(result.value);
   }
 
   @Post()
-  public async create(@Body() body: { name: string; permissions: Record<string, unknown> }) {
+  public async create(
+    @Body() body: PublicBody['createRole'],
+  ): Promise<PublicResponse['createRole']> {
     const result = await this.createRole.execute({
       name: body.name,
       permissions: body.permissions ?? {},
     });
 
     if (isLeft(result)) {
-      if (result.error instanceof PermissionDeniedError) {
-        throw new ForbiddenException({ code: result.error.type });
-      }
-      if (result.error instanceof RoleAlreadyExistsError) {
-        throw new BadRequestException({ code: result.error.type });
-      }
-      throw new BadRequestException({ code: result.error.type });
+      throw domainToHttpError<'createRole'>(result.error.toResponse());
     }
 
-    return result.value;
+    return serializeRole(result.value);
   }
 
   @Patch(':roleId')
   public async update(
     @Param('roleId') roleId: string,
-    @Body() body: { permissions: Record<string, unknown> },
-  ) {
+    @Body() body: PublicBody['updateRole'],
+  ): Promise<PublicResponse['updateRole']> {
     const result = await this.updateRole.execute({
       roleId: RoleId.raw(roleId),
       permissions: body.permissions,
     });
 
     if (isLeft(result)) {
-      if (result.error instanceof PermissionDeniedError) {
-        throw new ForbiddenException({ code: result.error.type });
-      }
-      if (result.error instanceof StaticRoleModificationError) {
-        throw new ForbiddenException({ code: result.error.type });
-      }
-      throw new NotFoundException({ code: result.error.type });
+      throw domainToHttpError<'updateRole'>(result.error.toResponse());
     }
 
-    return result.value;
+    return serializeRole(result.value);
   }
 
   @Delete(':roleId')
   @HttpCode(200)
   public async remove(
     @Param('roleId') roleId: string,
-    @Body() body: { replacementRoleId: string },
-  ) {
+    @Body() body: PublicBody['deleteRole'],
+  ): Promise<PublicResponse['deleteRole']> {
     const result = await this.deleteRole.execute({
       roleId: RoleId.raw(roleId),
       replacementRoleId: RoleId.raw(body.replacementRoleId),
     });
 
     if (isLeft(result)) {
-      if (result.error instanceof PermissionDeniedError) {
-        throw new ForbiddenException({ code: result.error.type });
-      }
-      if (result.error instanceof StaticRoleModificationError) {
-        throw new ForbiddenException({ code: result.error.type });
-      }
-      throw new NotFoundException({ code: result.error.type });
+      throw domainToHttpError<'deleteRole'>(result.error.toResponse());
     }
 
     return {};
@@ -151,17 +138,17 @@ export class UsersRoleController {
   public constructor(private readonly updateUserRole: UpdateUserRoleInteractor) {}
 
   @Patch(':userId/role')
-  public async updateRole(@Param('userId') userId: string, @Body() body: { roleId: string }) {
+  public async updateRole(
+    @Param('userId') userId: string,
+    @Body() body: PublicBody['updateUserRole'],
+  ): Promise<PublicResponse['updateUserRole']> {
     const result = await this.updateUserRole.execute({
       userId: UserId.raw(userId),
       roleId: RoleId.raw(body.roleId),
     });
 
     if (isLeft(result)) {
-      if (result.error instanceof PermissionDeniedError) {
-        throw new ForbiddenException({ code: result.error.type });
-      }
-      throw new NotFoundException({ code: result.error.type });
+      throw domainToHttpError<'updateUserRole'>(result.error.toResponse());
     }
 
     return {};

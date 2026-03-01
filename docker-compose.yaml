@@ -49,18 +49,17 @@ services:
       - ./kafka_client.properties:/tmp/client.properties
       - pl-kafka-vol:/bitnamilegacy/kafka
 
-  zincsearch:
-    image: public.ecr.aws/zinclabs/zincsearch:latest
+  meilisearch:
+    image: getmeili/meilisearch:latest
     environment:
-      ZINC_FIRST_ADMIN_USER: admin
-      ZINC_FIRST_ADMIN_PASSWORD: Complexpass#123
-      ZINC_DATA_PATH: /data
+      MEILI_MASTER_KEY: devMasterKey123456
+      MEILI_ENV: development
     ports:
-      - "4080:4080"
+      - "7700:7700"
     volumes:
-      - zinc_data:/data
+      - meili_data:/meili_data
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4080/healthz"]
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -79,4 +78,4 @@ services:
 volumes:
   postgres_data:
   pl-kafka-vol:
-  zinc_data:
+  meili_data:

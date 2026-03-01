@@ -9,6 +9,7 @@ export function userApply(state: UserState | null, event: UserEvent): UserState 
         id: event.id,
         phoneNumber: event.phoneNumber,
         fullName: event.fullName,
+        avatarId: event.avatarId,
         role: event.role,
         createdAt: event.createdAt,
         updatedAt: event.createdAt,
@@ -19,6 +20,7 @@ export function userApply(state: UserState | null, event: UserEvent): UserState 
       return {
         ...state,
         fullName: event.fullName,
+        avatarId: event.avatarId,
         updatedAt: event.updatedAt,
       };
     }

@@ -4,7 +4,7 @@ import type { UserState } from '../../../domain/aggregates/user/state.js';
 import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.js';
 import { FullName } from '../../../domain/vo/full-name.js';
 import { PhoneNumber } from '../../../domain/vo/phone-number.js';
-import type { UserEventPublisher, UserRepository } from '../../ports.js';
+import type { UserRepository } from '../../ports.js';
 import { UpdateProfileInteractor } from './update-profile.interactor.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
@@ -21,6 +21,7 @@ const makeUser = (): UserState => ({
   id: USER_ID,
   phoneNumber: PhoneNumber.raw('79991234567'),
   fullName: FullName.raw('Иван Иванов'),
+  avatarId: undefined,
   role: Role.raw('USER'),
   createdAt: NOW,
   updatedAt: NOW,
@@ -32,12 +33,6 @@ const makeClock = () => {
   return clock;
 };
 
-const makeUserEventPublisher = () => {
-  const publisher = ServiceMock<UserEventPublisher>();
-  publisher.publish.mockResolvedValue(undefined);
-  return publisher;
-};
-
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
 describe('UpdateProfileInteractor', () => {
@@ -47,12 +42,7 @@ describe('UpdateProfileInteractor', () => {
     userRepo.save.mockResolvedValue(undefined);
     const txHost = new MockTransactionHost();
 
-    const interactor = new UpdateProfileInteractor(
-      makeClock(),
-      userRepo,
-      makeUserEventPublisher(),
-      txHost,
-    );
+    const interactor = new UpdateProfileInteractor(makeClock(), userRepo, txHost);
 
     const result = await interactor.execute({ userId: USER_ID, fullName: 'Пётр Петров' });
 
@@ -68,7 +58,6 @@ describe('UpdateProfileInteractor', () => {
     const interactor = new UpdateProfileInteractor(
       makeClock(),
       userRepo,
-      makeUserEventPublisher(),
       new MockTransactionHost(),
     );
 
@@ -85,7 +74,6 @@ describe('UpdateProfileInteractor', () => {
     const interactor = new UpdateProfileInteractor(
       makeClock(),
       userRepo,
-      makeUserEventPublisher(),
       new MockTransactionHost(),
     );
 

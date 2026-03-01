@@ -5,8 +5,8 @@ import type {
 import type { RoleState } from '../domain/aggregates/role/state.js';
 import type { SessionState } from '../domain/aggregates/session/state.js';
 import type { RefreshTokenPayload } from '../domain/aggregates/session/token.types.js';
-import type { UserEvent } from '../domain/aggregates/user/events.js';
 import type { UserState } from '../domain/aggregates/user/state.js';
+import type { AdminUsersListReadModel } from '../domain/read-models/admin-users-list/admin-users-list.read-model.js';
 import type { MeReadModel } from '../domain/read-models/me.read-model.js';
 import type { RoleReadModel } from '../domain/read-models/role.read-model.js';
 import type { RolesListReadModel } from '../domain/read-models/roles-list.read-model.js';
@@ -22,12 +22,6 @@ import type { Role } from '@/kernel/domain/vo/role.js';
 // --- Shared types ---
 
 export type SmsChannel = 'sms' | 'call';
-
-export interface MediaRecord {
-  key: string;
-  url: string;
-  mimeType: string;
-}
 
 // --- Aggregate repository ports (write-side, state-based, transactional) ---
 
@@ -126,8 +120,17 @@ export abstract class IdGenerator {
   public abstract generateRoleId(): RoleId;
 }
 
-// --- Event publishing ports ---
+// --- Search read-model ports (Meilisearch, no transactions) ---
 
-export abstract class UserEventPublisher {
-  public abstract publish(tx: Transaction, userId: UserId, event: UserEvent): Promise<void>;
+export abstract class AdminUsersListRepository {
+  public abstract saveBatch(models: AdminUsersListReadModel[]): Promise<void>;
+}
+
+export abstract class AdminUsersListQueryPort {
+  public abstract search(params: {
+    query?: string;
+    role?: string;
+    from?: number;
+    size?: number;
+  }): Promise<{ users: AdminUsersListReadModel[]; total: number }>;
 }

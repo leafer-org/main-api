@@ -14,6 +14,7 @@ export function whenRegistrationCompletedCreateUser(
     id: event.userId,
     phoneNumber: event.phoneNumber,
     fullName: event.fullName,
+    avatarId: event.avatarId,
     role: event.role,
     now: deps.now,
   };

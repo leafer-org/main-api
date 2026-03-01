@@ -2,7 +2,7 @@ import { CreateDomainError } from '@/infra/ddd/error.js';
 import type { ValueObject } from '@/infra/ddd/value-object.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 
-export class InvalidPhoneNumberError extends CreateDomainError('invalid_phone_number') {}
+export class InvalidPhoneNumberError extends CreateDomainError('invalid_phone_number', 400) {}
 
 export type PhoneNumber = ValueObject<string, 'PhoneNumber'>;
 

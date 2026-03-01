@@ -1,5 +1,22 @@
-CREATE TYPE "public"."media_visibility" AS ENUM('PUBLIC', 'PRIVATE');--> statement-breakpoint
-CREATE TYPE "public"."role" AS ENUM('ADMIN', 'USER');--> statement-breakpoint
+CREATE TABLE "attributes" (
+	"attribute_id" uuid PRIMARY KEY NOT NULL,
+	"category_id" uuid NOT NULL,
+	"name" text NOT NULL,
+	"schema" jsonb NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "service_listings" (
+	"service_id" uuid PRIMARY KEY NOT NULL,
+	"components" jsonb NOT NULL,
+	"category_id" uuid,
+	"organization_id" uuid,
+	"age_group" text,
+	"published_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "login_processes" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"type" text NOT NULL,
@@ -16,20 +33,14 @@ CREATE TABLE "login_processes" (
 	"error" text
 );
 --> statement-breakpoint
-CREATE TABLE "media" (
+CREATE TABLE "roles" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"media_id" text NOT NULL,
-	"bucket" text NOT NULL,
-	"object_key" text NOT NULL,
-	"content_type" text,
-	"visibility" "media_visibility" DEFAULT 'PUBLIC' NOT NULL,
-	"metadata" json,
-	"deleted_at" timestamp with time zone,
+	"name" text NOT NULL,
+	"permissions" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"is_static" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"user_avatar_id" uuid,
-	CONSTRAINT "media_media_id_unique" UNIQUE("media_id"),
-	CONSTRAINT "media_user_avatar_id_unique" UNIQUE("user_avatar_id")
+	CONSTRAINT "roles_name_unique" UNIQUE("name")
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
@@ -43,7 +54,8 @@ CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"phone_number" text NOT NULL,
 	"full_name" text,
-	"role" "role" DEFAULT 'USER' NOT NULL,
+	"role" text DEFAULT 'USER' NOT NULL,
+	"avatar_file_id" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "users_phone_number_unique" UNIQUE("phone_number")
@@ -58,7 +70,15 @@ CREATE TABLE "files" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "media" ADD CONSTRAINT "media_user_avatar_id_users_id_fk" FOREIGN KEY ("user_avatar_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+CREATE TABLE "outbox" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"topic" text NOT NULL,
+	"key" text,
+	"payload" "bytea",
+	"headers" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "login_processes_phone_ip_requested_idx" ON "login_processes" USING btree ("phone_number","ip","requested_at");--> statement-breakpoint
 CREATE INDEX "login_processes_reg_session_idx" ON "login_processes" USING btree ("registration_session_id");--> statement-breakpoint

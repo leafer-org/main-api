@@ -122,7 +122,9 @@ describe('verifyOtpDecide', () => {
       const blockedUntil = new Date(NOW.getTime() + 60_000);
       const result = verifyOtpDecide(makeBlocked(blockedUntil), makeCommand());
 
-      expect(result).toEqual(Left(new LoginBlockedError({ blockedUntil })));
+      expect(result).toEqual(
+        Left(new LoginBlockedError({ blockedUntil: blockedUntil.toISOString() })),
+      );
     });
 
     it('возвращает InvalidOtpError если блокировка истекла (невалидное состояние)', () => {

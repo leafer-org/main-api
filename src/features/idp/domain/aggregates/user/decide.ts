@@ -17,6 +17,7 @@ export function userDecide(
         id: command.id,
         phoneNumber: command.phoneNumber,
         fullName: command.fullName,
+        avatarId: command.avatarId,
         role: command.role,
         createdAt: command.now,
       });
@@ -27,6 +28,7 @@ export function userDecide(
       return Right({
         type: 'user.profile_updated',
         fullName: command.fullName,
+        avatarId: command.avatarId,
         updatedAt: command.now,
       });
     }

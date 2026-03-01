@@ -4,11 +4,11 @@ import { userApply } from '../../../domain/aggregates/user/apply.js';
 import { userDecide } from '../../../domain/aggregates/user/decide.js';
 import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.js';
 import { FullName } from '../../../domain/vo/full-name.js';
-import { UserEventPublisher, UserRepository } from '../../ports.js';
+import { UserRepository } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { UserId } from '@/kernel/domain/ids.js';
+import { FileId, type UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class UpdateProfileInteractor {
@@ -16,13 +16,11 @@ export class UpdateProfileInteractor {
     @Inject(Clock)
     private readonly clock: Clock,
     private readonly userRepository: UserRepository,
-    @Inject(UserEventPublisher)
-    private readonly userEventPublisher: UserEventPublisher,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
   ) {}
 
-  public async execute(command: { userId: UserId; fullName: string }) {
+  public async execute(command: { userId: UserId; fullName: string; avatarId?: string }) {
     const fullNameEither = FullName.create(command.fullName);
     if (isLeft(fullNameEither)) return fullNameEither;
 
@@ -36,6 +34,7 @@ export class UpdateProfileInteractor {
       const eventEither = userDecide(state, {
         type: 'UpdateProfile',
         fullName,
+        avatarId: command.avatarId ? FileId.raw(command.avatarId) : state.avatarId,
         now,
       });
 
@@ -43,7 +42,6 @@ export class UpdateProfileInteractor {
 
       const newState = userApply(state, eventEither.value);
       await this.userRepository.save(tx, newState);
-      await this.userEventPublisher.publish(tx, command.userId, eventEither.value);
 
       return Right(undefined);
     });

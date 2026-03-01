@@ -56,7 +56,25 @@
       "Bash(npx biome check src/infra/lib/nest-search/ src/apps/search.module.ts src/apps/app.module.ts src/infra/config/service.ts src/test/e2e/helpers/containers.ts)",
       "Bash(npx biome check --write src/infra/lib/nest-search/ src/apps/search.module.ts src/apps/app.module.ts src/infra/config/service.ts src/test/e2e/helpers/containers.ts)",
       "Bash(xargs sed -i \"s|@/kernel/domain/vo\\\\.js|@/kernel/domain/vo/vo.js|g\")",
-      "Bash(ls -la \"d:\\\\projects\\\\leafer\\\\mono\\\\main-api\\\\src\\\\features\\\\discovery\\\\adapters\"\" && echo \"---DB DIR---\" && ls -la \"d:projectsleafermonomain-apisrcfeaturesdiscoveryadaptersdb\"\")"
+      "Bash(ls -la \"d:\\\\projects\\\\leafer\\\\mono\\\\main-api\\\\src\\\\features\\\\discovery\\\\adapters\"\" && echo \"---DB DIR---\" && ls -la \"d:projectsleafermonomain-apisrcfeaturesdiscoveryadaptersdb\"\")",
+      "Bash(npx vitest run --config vitest.config.e2e.ts src/test/e2e/roles.e2e-spec.ts)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(list\\(d.get\\(''paths'',{}\\).keys\\(\\)\\), indent=2\\)\\)\")",
+      "Bash(node -e \"const d=require\\(''./src/infra/contracts/generated-public-schema.json''\\); console.log\\(JSON.stringify\\(Object.keys\\(d.paths || {}\\), null, 2\\)\\)\")",
+      "Bash(node -e \"const d=require\\(''../http-contracts/main.yaml''\\); console.log\\(d\\)\")",
+      "Bash(xargs grep -l \"ZincSearch\\\\|SearchClient\\\\|nest-search\")",
+      "Bash(xargs wc -l)",
+      "WebFetch(domain:www.meilisearch.com)",
+      "Bash(npm uninstall @elastic/elasticsearch)",
+      "Bash(npm install meilisearch)",
+      "Bash(node -e \"const m = require\\(''meilisearch''\\); const c = new m.Meilisearch\\({host:''http://localhost:7700''}\\); console.log\\(Object.getOwnPropertyNames\\(Object.getPrototypeOf\\(c\\)\\).filter\\(n => n.includes\\(''wait''\\) || n.includes\\(''task''\\) || n.includes\\(''Task''\\)\\)\\)\")",
+      "Bash(node -e \"const m = require\\(''meilisearch''\\); const c = new m.Meilisearch\\({host:''http://localhost:7700''}\\); console.log\\(Object.getOwnPropertyNames\\(Object.getPrototypeOf\\(c.tasks\\)\\)\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''src/infra/contracts/generated-public-schema.json'', ''utf8''\\)\\); console.log\\(''Valid JSON''\\)\")",
+      "Bash(ls d:projectsleafermonomain-apidrizzle/*.sql)",
+      "Bash(xargs grep -l \"extends CreateDomainError\\\\|class.*Error extends\")",
+      "Bash(xargs grep -l \"analytics\\\\|tracking\\\\|interaction\\\\|recommendation\")",
+      "Bash(xargs grep -l \"role_already_exists\\\\|role_not_found\\\\|static_role_modification\")",
+      "Bash(npx vitest run src/features/idp)",
+      "Bash(npx tsc --noEmit src/infra/lib/nest-outbox/outbox-relay.service.ts)"
     ]
   }
 }

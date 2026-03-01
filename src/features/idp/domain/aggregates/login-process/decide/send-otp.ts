@@ -12,7 +12,7 @@ export function sendOtpCommandDecide(
 ): Either<LoginBlockedError | OtpThrottleError, LoginProcessStartedEvent> {
   // Обрабатываем, всю блокировку, которая ещё активна
   if (state?.type === 'Blocked' && state.blockedUntil.getTime() > command.now.getTime()) {
-    return Left(new LoginBlockedError({ blockedUntil: state.blockedUntil }));
+    return Left(new LoginBlockedError({ blockedUntil: state.blockedUntil.toISOString() }));
   }
 
   // Если пользователь ещё не входил

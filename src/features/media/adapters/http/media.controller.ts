@@ -1,18 +1,10 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  NotFoundException,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Post } from '@nestjs/common';
 
 import { GetPreviewDownloadUrlInteractor } from '../../application/queries/get-preview-download-url.interactor.js';
 import { RequestUploadInteractor } from '../../application/use-cases/upload/request-upload.interactor.js';
 import { UseFilesInteractor } from '../../application/use-cases/use-files.interactor.js';
 import { MainConfigService } from '@/infra/config/service.js';
+import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
@@ -47,7 +39,10 @@ export class MediaController {
       mimeType: body.mimeType,
     });
 
-    if (isLeft(result)) throw result.error;
+    if (isLeft(result)) {
+      throw domainToHttpError<'mediaUploadRequest'>(result.error.toResponse());
+    }
+
     return result.value;
   }
 
@@ -62,7 +57,10 @@ export class MediaController {
         fileIds: body.fileIds.map(FileId.raw),
       });
 
-      if (isLeft(result)) throw result.error;
+      if (isLeft(result)) {
+        throw domainToHttpError<'mediaConfirmUpload'>(result.error.toResponse());
+      }
+
       return {} as Record<string, never>;
     });
   }
@@ -74,7 +72,10 @@ export class MediaController {
     });
 
     const url = result.value;
-    if (!url) throw new NotFoundException('File not found');
+    if (!url) {
+      throw domainToHttpError<'mediaPreview'>({ 404: { type: 'file_not_found' } });
+    }
+
     return { url };
   }
 
@@ -90,7 +91,9 @@ export class MediaController {
       mimeType,
     });
 
-    if (isLeft(result)) throw result.error;
+    if (isLeft(result)) {
+      throw domainToHttpError<'avatarUploadRequest'>(result.error.toResponse());
+    }
 
     return {
       bucket: this.avatarBucket,
@@ -117,7 +120,7 @@ export class MediaController {
     ]);
 
     if (!largeUrl || !mediumUrl || !smallUrl || !thumbUrl) {
-      throw new NotFoundException('File not found');
+      throw domainToHttpError<'avatarPreviewUpload'>({ 404: { type: 'file_not_found' } });
     }
 
     return { largeUrl, mediumUrl, smallUrl, thumbUrl };

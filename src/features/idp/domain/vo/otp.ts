@@ -4,7 +4,7 @@ import { CreateDomainError } from '@/infra/ddd/error.js';
 import type { ValueObject } from '@/infra/ddd/value-object.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 
-export class InvalidOtpCodeError extends CreateDomainError('invalid_otp_code') {}
+export class InvalidOtpCodeError extends CreateDomainError('invalid_otp_code', 400) {}
 
 export type OtpCode = ValueObject<string, 'OtpCode'>;
 

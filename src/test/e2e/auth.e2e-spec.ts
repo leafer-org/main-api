@@ -355,6 +355,53 @@ describe('Auth Controller (e2e)', () => {
     });
   });
 
+  // ─── Login blocking ──────────────────────────────────────────────
+
+  describe('Login blocking', () => {
+    it('should block login after exceeding max OTP attempts', async () => {
+      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
+
+      // Send wrong OTP 6 times (MAX_OTP_ATTEMPTS=5, blocked on attempt > 5)
+      for (let i = 0; i < 5; i++) {
+        // biome-ignore lint/performance/noAwaitInLoops: Test
+        const res = await e2e.agent
+          .post('/auth/verify-otp')
+          .send({ phoneNumber: PHONE, code: '000000' })
+          .expect(400);
+
+        expect(res.body.code).toBe('invalid_otp');
+      }
+
+      // 6th wrong attempt should trigger block
+      const blockedRes = await e2e.agent
+        .post('/auth/verify-otp')
+        .send({ phoneNumber: PHONE, code: '000000' })
+        .expect(403);
+
+      expect(blockedRes.body.code).toBe('login_blocked');
+      expect(blockedRes.body.data).toHaveProperty('blockedUntil');
+    });
+  });
+
+  // ─── Refresh token rotation ─────────────────────────────────────
+
+  describe('Refresh token rotation', () => {
+    it('should invalidate old refresh token after rotation', async () => {
+      const { refreshToken } = await registerNewUser(e2e.agent);
+
+      // Rotate: get new tokens using refresh
+      const refreshRes = await e2e.agent
+        .get('/auth/refresh')
+        .set('x-refresh-token', refreshToken)
+        .expect(200);
+
+      expect(refreshRes.body).toHaveProperty('refreshToken');
+
+      // Old refresh token should no longer work
+      await e2e.agent.get('/auth/refresh').set('x-refresh-token', refreshToken).expect(401);
+    });
+  });
+
   // ─── Full auth flow ───────────────────────────────────────────────
 
   describe('Full auth flow', () => {

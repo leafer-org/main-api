@@ -173,7 +173,58 @@ export abstract class MediaService {
 }
 ```
 
-Реализуется в media feature, используется в других feature.
+Реализуется в media feature, используется в других feature. `MediaModule` — `@Global()`, поэтому порт доступен без явного импорта модуля.
+
+#### Интеграция модулей с MediaService
+
+Когда feature хранит ссылку на файл (аватар, фото и т.д.), она должна управлять жизненным циклом файла через `MediaService`:
+
+- **`useFiles(tx, fileIds)`** — перемещает файл из temp-хранилища в постоянное. Вызывать при привязке файла к агрегату.
+- **`freeFiles(tx, fileIds)`** — удаляет файл из хранилища. Вызывать при отвязке/замене файла.
+- **`getDownloadUrl(fileId, options)`** / **`getDownloadUrls(...)`** — получение URL для клиента. Вызывать в контроллерах.
+
+**Рекомендация**: вызывать `useFiles`/`freeFiles` в **репозитории** (в методе `save()`), а не в interactor'е — так жизненный цикл файла гарантированно обрабатывается при любом сохранении агрегата.
+
+**Пример** (IDP — аватар пользователя):
+
+```ts
+// user.repository.ts
+@Injectable()
+export class DrizzleUserRepository implements UserRepository {
+  public constructor(
+    private readonly txHost: TransactionHostPg,
+    @Inject(MediaService) private readonly mediaService: MediaService,
+  ) { super(); }
+
+  public async save(tx: Transaction, state: UserState): Promise<void> {
+    // 1. Прочитать старый avatarId
+    const oldRows = await db.select({ avatarFileId: users.avatarFileId })
+      .from(users).where(eq(users.id, state.id)).limit(1);
+    const oldAvatarId = oldRows[0]?.avatarFileId
+      ? FileId.raw(oldRows[0].avatarFileId) : undefined;
+
+    // 2. Upsert с новым avatarFileId
+    await db.insert(users).values({ ..., avatarFileId: state.avatarId ?? null })
+      .onConflictDoUpdate({ ... });
+
+    // 3. Управление файлами
+    if (state.avatarId && state.avatarId !== oldAvatarId) {
+      await this.mediaService.useFiles(tx, [state.avatarId]);
+    }
+    if (oldAvatarId && oldAvatarId !== state.avatarId) {
+      await this.mediaService.freeFiles(tx, [oldAvatarId]);
+    }
+  }
+}
+```
+
+**DI**: `MediaService` — abstract class, поэтому нужен value import и `@Inject(MediaService)`:
+
+```ts
+import { MediaService } from '@/kernel/application/ports/media.js';  // value import!
+```
+
+**Домен** работает только с `FileId` — не знает про URL, хранилище или MediaService.
 
 ### PermissionCheckService
 

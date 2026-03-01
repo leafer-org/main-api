@@ -7,7 +7,6 @@ import {
   Inject,
   Param,
   Patch,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 
@@ -20,6 +19,7 @@ import { resolveAvatarUrls } from './avatar-url.helper.js';
 import { CurrentUser } from '@/infra/auth/current-user.decorator.js';
 import { JwtAuthGuard } from '@/infra/auth/jwt-auth.guard.js';
 import type { JwtUserPayload } from '@/infra/auth/jwt-user-payload.js';
+import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
@@ -46,7 +46,7 @@ export class MeController {
     });
 
     if (isLeft(result)) {
-      throw new UnauthorizedException({ code: 'user_not_found' });
+      throw domainToHttpError<'getMe'>(result.error.toResponse());
     }
 
     const me = result.value;
@@ -70,10 +70,11 @@ export class MeController {
     const result = await this.updateProfile.execute({
       userId: user.userId,
       fullName: body.fullName,
+      avatarId: (body as Record<string, unknown>).avatarId as string | undefined,
     });
 
     if (isLeft(result)) {
-      throw new UnauthorizedException({ code: result.error.type });
+      throw domainToHttpError<'updateProfile'>(result.error.toResponse());
     }
 
     // Re-fetch to return full User with avatar
@@ -83,7 +84,7 @@ export class MeController {
     });
 
     if (isLeft(meResult)) {
-      throw new UnauthorizedException({ code: 'user_not_found' });
+      throw domainToHttpError<'updateProfile'>(meResult.error.toResponse());
     }
 
     const me = meResult.value;
@@ -106,10 +107,6 @@ export class MeController {
     const result = await this.getUserSessions.execute({
       userId: user.userId,
     });
-
-    if (isLeft(result)) {
-      throw new UnauthorizedException({ code: 'unauthorized' });
-    }
 
     return {
       sessions: result.value.sessions.map((s) => ({

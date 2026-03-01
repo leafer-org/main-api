@@ -14,7 +14,6 @@ import type {
   LoginProcessRepository,
   RefreshTokenService,
   SessionRepository,
-  UserEventPublisher,
   UserRepository,
 } from '../../ports.js';
 import { RegisterInteractor } from './register.interactor.js';
@@ -68,9 +67,6 @@ const makeDeps = () => {
   idGenerator.generateUserId.mockReturnValue(USER_ID);
   idGenerator.generateSessionId.mockReturnValue(SESSION_ID);
 
-  const userEventPublisher = ServiceMock<UserEventPublisher>();
-  userEventPublisher.publish.mockResolvedValue(undefined);
-
   return {
     loginProcessRepo,
     userRepo,
@@ -78,7 +74,6 @@ const makeDeps = () => {
     jwtAccess,
     refreshTokens,
     idGenerator,
-    userEventPublisher,
   };
 };
 
@@ -93,7 +88,6 @@ const makeInteractor = (deps: ReturnType<typeof makeDeps>) => {
       deps.jwtAccess,
       deps.refreshTokens,
       deps.idGenerator,
-      deps.userEventPublisher,
       txHost,
     ),
     txHost,

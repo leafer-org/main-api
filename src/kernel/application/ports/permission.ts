@@ -3,7 +3,7 @@ import type { WhereArg } from '@/infra/lib/authorization/permission-service.js';
 import type { InferPermissionValue, PermissionVariant } from '@/infra/lib/authorization/schema.js';
 import type { Either } from '@/infra/lib/box.js';
 
-export class PermissionDeniedError extends CreateDomainError('permission_denied').withData<{
+export class PermissionDeniedError extends CreateDomainError('permission_denied', 403).withData<{
   action: string;
   role: string;
 }>() {}

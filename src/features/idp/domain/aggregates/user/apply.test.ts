@@ -19,6 +19,7 @@ const makeUser = (): UserState => ({
   id: USER_ID,
   phoneNumber: PHONE,
   fullName: FULL_NAME,
+  avatarId: undefined,
   role: ROLE,
   createdAt: NOW,
   updatedAt: NOW,
@@ -34,6 +35,7 @@ describe('userApply', () => {
         id: USER_ID,
         phoneNumber: PHONE,
         fullName: FULL_NAME,
+        avatarId: undefined,
         role: ROLE,
         createdAt: NOW,
       });
@@ -42,6 +44,7 @@ describe('userApply', () => {
         id: USER_ID,
         phoneNumber: PHONE,
         fullName: FULL_NAME,
+        avatarId: undefined,
         role: ROLE,
         createdAt: NOW,
         updatedAt: NOW,
@@ -58,6 +61,7 @@ describe('userApply', () => {
       const result = userApply(state, {
         type: 'user.profile_updated',
         fullName: newName,
+        avatarId: undefined,
         updatedAt: later,
       });
 
@@ -73,6 +77,7 @@ describe('userApply', () => {
         userApply(null, {
           type: 'user.profile_updated',
           fullName: FULL_NAME,
+          avatarId: undefined,
           updatedAt: NOW,
         }),
       ).toThrow('State is required');

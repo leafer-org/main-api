@@ -2,7 +2,7 @@ import { CreateDomainError } from '@/infra/ddd/error.js';
 import type { ValueObject } from '@/infra/ddd/value-object.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 
-export class InvalidFullNameError extends CreateDomainError('invalid_full_name') {}
+export class InvalidFullNameError extends CreateDomainError('invalid_full_name', 400) {}
 
 export type FullName = ValueObject<string, 'FullName'>;
 

@@ -2,7 +2,7 @@ import { CreateDomainError } from '@/infra/ddd/error.js';
 import type { ValueObject } from '@/infra/ddd/value-object.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 
-export class InvalidIpError extends CreateDomainError('invalid_ip') {}
+export class InvalidIpError extends CreateDomainError('invalid_ip', 400) {}
 
 export type IpAddress = ValueObject<string, 'IpAddress'>;
 
