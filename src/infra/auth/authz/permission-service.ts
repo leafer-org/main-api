@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
+import { SessionContext } from '../session/session-context.js';
 import { PermissionsStore } from './permissions-store.js';
 import type { InferPermissionValue, PermissionVariant } from './schema.js';
-import { SessionContext } from './session-context.js';
 
 export type WhereArg<T> = [T] extends [boolean] ? [] : [where: (value: T) => boolean];
 

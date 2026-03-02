@@ -89,7 +89,9 @@
       "Bash(node -e \"try { require\\(''js-yaml''\\); console.log\\(''js-yaml: available''\\); } catch\\(e\\) { console.log\\(''js-yaml: not found''\\); }\")",
       "Bash(npx vitest run src/test/e2e/auth.e2e-spec.ts)",
       "Bash(npx biome check --write src/test/e2e/helpers/kafka.ts)",
-      "Bash(yarn add nestjs-cls)"
+      "Bash(yarn add nestjs-cls)",
+      "Bash(npx biome check src/infra/auth/)",
+      "WebFetch(domain:vitest.dev)"
     ]
   }
 }

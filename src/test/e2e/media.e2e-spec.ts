@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
+import { registerUser } from './actors/auth.js';
 import { startContainers, stopContainers } from './helpers/containers.js';
 import { type E2eApp } from './helpers/create-app.js';
 import { runMigrations, truncateAll } from './helpers/db.js';
@@ -12,25 +13,6 @@ import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
-const PHONE = '+79991234567';
-
-async function getAccessToken(agent: E2eApp['agent']): Promise<string> {
-  await agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
-
-  const verifyRes = await agent
-    .post('/auth/verify-otp')
-    .send({ phoneNumber: PHONE, code: FIXED_OTP })
-    .expect(200);
-
-  const { registrationSessionId } = verifyRes.body;
-
-  const regRes = await agent
-    .post('/auth/complete-profile')
-    .send({ registrationSessionId, fullName: 'Test User' })
-    .expect(200);
-
-  return regRes.body.accessToken as string;
-}
 
 describe('Media Controller (e2e)', () => {
   let e2e: E2eApp;
@@ -72,7 +54,7 @@ describe('Media Controller (e2e)', () => {
 
   describe('POST /media/upload-request', () => {
     it('should create a file record and return fileId + presigned uploadUrl', async () => {
-      const accessToken = await getAccessToken(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       const response = await e2e.agent
         .post('/media/upload-request')

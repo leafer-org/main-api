@@ -18,7 +18,7 @@ import { DeleteRoleInteractor } from '../../application/use-cases/roles/delete-r
 import { UpdateRoleInteractor } from '../../application/use-cases/roles/update-role.interactor.js';
 import { UpdateUserRoleInteractor } from '../../application/use-cases/roles/update-user-role.interactor.js';
 import type { RoleReadModel } from '../../domain/read-models/role.read-model.js';
-import { JwtAuthGuard } from '@/infra/auth/jwt-auth.guard.js';
+import { JwtAuthGuard } from '@/infra/auth/authn/jwt-auth.guard.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse, PublicSchemas } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';

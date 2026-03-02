@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ClsService } from 'nestjs-cls';
 
-import type { JwtUserPayload } from './jwt-user-payload.js';
+import type { JwtUserPayload } from '../authn/jwt-user-payload.js';
 import { SessionContext } from './session-context.js';
 
 @Injectable()

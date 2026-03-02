@@ -18,6 +18,11 @@ export class KafkaConsumerConnection {
   private readonly logger = new Logger(KafkaConsumerConnection.name);
   private consumer: Kafka.KafkaConsumer | undefined;
 
+  private resolveAssigned!: () => void;
+  public readonly partitionsAssigned = new Promise<void>((resolve) => {
+    this.resolveAssigned = resolve;
+  });
+
   public constructor(
     private readonly options: KafkaConsumerModuleOptions,
     private readonly topics: string[],
@@ -81,6 +86,7 @@ export class KafkaConsumerConnection {
           if (err.code === Kafka.CODES.ERRORS.ERR__ASSIGN_PARTITIONS) {
             this.logger.log(`Partitions assigned: ${formatAssignments(assignments)}`);
             this.consumer?.assign(assignments);
+            this.resolveAssigned();
           } else if (err.code === Kafka.CODES.ERRORS.ERR__REVOKE_PARTITIONS) {
             this.logger.log(`Partitions revoked: ${formatAssignments(assignments)}`);
             this.consumer?.unassign();

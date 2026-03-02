@@ -1,11 +1,11 @@
 /** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: test describe to long */
 import { describe, expect, it, vi } from 'vitest';
 
+import { StaticSessionContext } from '../session/session-context.js';
 import { PermissionService } from './permission-service.js';
 import type { PermissionsMap } from './permissions-store.js';
 import { PermissionsStore } from './permissions-store.js';
 import { BooleanPerm, EnumPerm } from './schema.js';
-import { StaticSessionContext } from './session-context.js';
 
 class TestPermissionsStore extends PermissionsStore {
   public constructor(private readonly map: PermissionsMap) {

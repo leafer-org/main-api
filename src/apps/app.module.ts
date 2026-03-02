@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ClsModule } from 'nestjs-cls';
 
 import { DiscoveryModule } from '../features/discovery/discovery.module.js';
 import { IDP_CONSUMER_ID } from '../features/idp/adapters/kafka/consumer-ids.js';
@@ -16,6 +17,7 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
 
 @Module({
   imports: [
+    ClsModule.forRoot({ global: true, middleware: { mount: true } }),
     MainDbModule,
     MainSearchModule,
     MainConfigModule,

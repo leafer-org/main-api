@@ -2,15 +2,10 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { loginAsAdmin, registerUser } from './actors/auth.js';
 import { startContainers, stopContainers } from './helpers/containers.js';
 import { type E2eApp } from './helpers/create-app.js';
-import {
-  ADMIN_PHONE,
-  runMigrations,
-  seedAdminUser,
-  seedStaticRoles,
-  truncateAll,
-} from './helpers/db.js';
+import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from './helpers/db.js';
 import { createBuckets } from './helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
 import { configureApp } from '@/apps/configure-app.js';
@@ -18,47 +13,6 @@ import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
-const USER_PHONE = '+79990000002';
-
-async function loginAsAdmin(agent: E2eApp['agent']) {
-  const phone = `+${ADMIN_PHONE}`;
-
-  await agent.post('/auth/request-otp').send({ phoneNumber: phone }).expect(200);
-
-  const res = await agent
-    .post('/auth/verify-otp')
-    .send({ phoneNumber: phone, code: FIXED_OTP })
-    .expect(200);
-
-  expect(res.body.type).toBe('authenticated');
-
-  return {
-    accessToken: res.body.accessToken as string,
-    refreshToken: res.body.refreshToken as string,
-  };
-}
-
-async function registerRegularUser(agent: E2eApp['agent'], phone = USER_PHONE) {
-  await agent.post('/auth/request-otp').send({ phoneNumber: phone }).expect(200);
-
-  const verifyRes = await agent
-    .post('/auth/verify-otp')
-    .send({ phoneNumber: phone, code: FIXED_OTP })
-    .expect(200);
-
-  expect(verifyRes.body.type).toBe('new_registration');
-
-  const regRes = await agent
-    .post('/auth/complete-profile')
-    .send({ registrationSessionId: verifyRes.body.registrationSessionId, fullName: 'Regular User' })
-    .expect(200);
-
-  return {
-    accessToken: regRes.body.accessToken as string,
-    refreshToken: regRes.body.refreshToken as string,
-    userId: regRes.body.user.id as string,
-  };
-}
 
 describe('Roles Controller (e2e)', () => {
   let e2e: E2eApp;
@@ -106,7 +60,7 @@ describe('Roles Controller (e2e)', () => {
 
   describe('GET /roles', () => {
     it('should return list of roles for admin user', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
         .get('/roles')
@@ -126,7 +80,7 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 403 for user without manageRole permission', async () => {
-      const { accessToken } = await registerRegularUser(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent.get('/roles').set('Authorization', `Bearer ${accessToken}`).expect(403);
     });
@@ -136,7 +90,7 @@ describe('Roles Controller (e2e)', () => {
 
   describe('GET /roles/permissions-schema', () => {
     it('should return permissions schema', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
         .get('/roles/permissions-schema')
@@ -158,7 +112,7 @@ describe('Roles Controller (e2e)', () => {
 
   describe('GET /roles/:roleId', () => {
     it('should return role by ID', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Get list to find a real role ID
       const listRes = await e2e.agent
@@ -184,7 +138,7 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 404 for non-existent role', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       await e2e.agent
         .get('/roles/00000000-0000-0000-0000-000000000000')
@@ -197,7 +151,7 @@ describe('Roles Controller (e2e)', () => {
 
   describe('POST /roles', () => {
     it('should create a new role', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
         .post('/roles')
@@ -215,7 +169,7 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 400 for duplicate role name', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create role
       await e2e.agent
@@ -239,7 +193,7 @@ describe('Roles Controller (e2e)', () => {
 
   describe('PATCH /roles/:roleId', () => {
     it('should update role permissions', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create a non-static role first
       const createRes = await e2e.agent
@@ -263,7 +217,7 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 404 for non-existent role', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       await e2e.agent
         .patch('/roles/00000000-0000-0000-0000-000000000000')
@@ -273,7 +227,7 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 403 when updating static role', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Get ADMIN role (static)
       const listRes = await e2e.agent
@@ -297,7 +251,7 @@ describe('Roles Controller (e2e)', () => {
 
   describe('DELETE /roles/:roleId', () => {
     it('should delete a non-static role', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create a role to delete
       const createRes = await e2e.agent
@@ -330,7 +284,7 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 404 for non-existent role', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Get USER role ID as replacement
       const listRes = await e2e.agent
@@ -348,7 +302,7 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 403 when deleting static role', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const listRes = await e2e.agent
         .get('/roles')
@@ -372,8 +326,8 @@ describe('Roles Controller (e2e)', () => {
 
   describe('PATCH /users/:userId/role', () => {
     it('should update user role', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
-      const { userId } = await registerRegularUser(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+      const { userId } = await registerUser(e2e.agent, FIXED_OTP);
 
       // Get ADMIN role ID
       const listRes = await e2e.agent
@@ -391,8 +345,8 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 404 for non-existent role', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent);
-      const { userId } = await registerRegularUser(e2e.agent);
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+      const { userId } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
         .patch(`/users/${userId}/role`)
@@ -402,8 +356,8 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should invalidate sessions after role change', async () => {
-      const { accessToken: adminToken } = await loginAsAdmin(e2e.agent);
-      const { accessToken: userToken, userId } = await registerRegularUser(e2e.agent);
+      const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+      const { accessToken: userToken, userId } = await registerUser(e2e.agent, FIXED_OTP);
 
       // Get a role to assign
       const listRes = await e2e.agent
@@ -425,7 +379,7 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 403 for regular user without ROLE.MANAGE', async () => {
-      const { accessToken: userToken, userId } = await registerRegularUser(e2e.agent);
+      const { accessToken: userToken, userId } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
         .patch(`/users/${userId}/role`)
@@ -439,7 +393,7 @@ describe('Roles Controller (e2e)', () => {
 
   describe('DELETE /roles/:roleId (reassignment)', () => {
     it('should reassign users to replacement role when deleting a role', async () => {
-      const { accessToken: adminToken } = await loginAsAdmin(e2e.agent);
+      const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create a custom role
       const createRes = await e2e.agent
@@ -451,7 +405,7 @@ describe('Roles Controller (e2e)', () => {
       const customRoleId = createRes.body.id;
 
       // Register a user (they get USER role by default)
-      const { userId } = await registerRegularUser(e2e.agent);
+      const { userId } = await registerUser(e2e.agent, FIXED_OTP);
 
       // Assign user to the custom role
       await e2e.agent
@@ -487,7 +441,7 @@ describe('Roles Controller (e2e)', () => {
 
   describe('Permission checks', () => {
     it('should return 403 for regular user on POST /roles', async () => {
-      const { accessToken } = await registerRegularUser(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
         .post('/roles')
@@ -497,7 +451,7 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 403 for regular user on PATCH /roles/:roleId', async () => {
-      const { accessToken } = await registerRegularUser(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
         .patch('/roles/00000000-0000-0000-0000-000000000000')
@@ -507,7 +461,7 @@ describe('Roles Controller (e2e)', () => {
     });
 
     it('should return 403 for regular user on DELETE /roles/:roleId', async () => {
-      const { accessToken } = await registerRegularUser(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
         .delete('/roles/00000000-0000-0000-0000-000000000000')

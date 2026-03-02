@@ -1,4 +1,4 @@
-import { BooleanPerm, EnumPerm } from '@/infra/auth/schema.js';
+import { BooleanPerm, EnumPerm } from '@/infra/auth/authz/schema.js';
 
 export const Permissions = {
   manageSession: EnumPerm('SESSION.MANAGE', ['self', 'all'] as const, 'self'),
