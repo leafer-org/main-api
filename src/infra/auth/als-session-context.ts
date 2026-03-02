@@ -1,16 +1,20 @@
 import { Injectable } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 
-import { JwtSessionStorage } from './jwt-session.storage.js';
-import { SessionContext } from '@/infra/lib/authorization/session-context.js';
+import type { JwtUserPayload } from './jwt-user-payload.js';
+import { SessionContext } from './session-context.js';
 
 @Injectable()
 export class AlsSessionContext extends SessionContext {
-  public constructor(private readonly sessionStorage: JwtSessionStorage) {
+  public constructor(private readonly cls: ClsService) {
     super();
   }
 
   public getRole(): string {
-    const payload = this.sessionStorage.getOrThrow();
+    const payload = this.cls.get<JwtUserPayload>('user');
+    if (!payload) {
+      throw new Error('No session in current context. Was JwtAuthGuard applied?');
+    }
     return payload.role as string;
   }
 }

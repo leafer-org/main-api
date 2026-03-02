@@ -183,7 +183,7 @@ export class TransactionHostPg extends TransactionHost {
 
 ---
 
-## Authorization (`@/infra/lib/authorization/`)
+## Authorization (`@/infra/auth/`)
 
 RBAC-система на основе TypeBox-схем.
 

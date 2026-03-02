@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { roleApply } from '../../../domain/aggregates/role/apply.js';
 import { roleDecide } from '../../../domain/aggregates/role/decide.js';
 import { IdGenerator, RoleRepository } from '../../ports.js';
-import { PermissionsStore } from '@/infra/lib/authorization/permissions-store.js';
+import { PermissionsStore } from '@/infra/auth/permissions-store.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';

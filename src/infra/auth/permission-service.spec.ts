@@ -2,9 +2,26 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { PermissionService } from './permission-service.js';
-import { ManualPermissionsStore } from './permissions-store.js';
+import type { PermissionsMap } from './permissions-store.js';
+import { PermissionsStore } from './permissions-store.js';
 import { BooleanPerm, EnumPerm } from './schema.js';
 import { StaticSessionContext } from './session-context.js';
+
+class TestPermissionsStore extends PermissionsStore {
+  public constructor(private readonly map: PermissionsMap) {
+    super();
+  }
+
+  public get(): PermissionsMap {
+    return this.map;
+  }
+
+  public async refresh(): Promise<void> {}
+}
+
+function createStore(roles: PermissionsMap['roles']): TestPermissionsStore {
+  return new TestPermissionsStore({ roles });
+}
 
 describe('PermissionService', () => {
   const testPerms = {
@@ -15,9 +32,9 @@ describe('PermissionService', () => {
 
   describe('canLocal', () => {
     it('should return true for boolean permission set to true', () => {
-      const store = new ManualPermissionsStore((can) => ({
-        ADMIN: [can(testPerms.canLogin)],
-      }));
+      const store = createStore({
+        ADMIN: { 'AUTH.CAN_LOGIN': true },
+      });
       const sessionContext = new StaticSessionContext('ADMIN');
       const service = new PermissionService(store, sessionContext);
 
@@ -27,9 +44,9 @@ describe('PermissionService', () => {
     });
 
     it('should return false for boolean permission set to false', () => {
-      const store = new ManualPermissionsStore((can) => ({
-        USER: [can(testPerms.canLogin, false), can(testPerms.accessLevel, 'all')],
-      }));
+      const store = createStore({
+        USER: { 'AUTH.CAN_LOGIN': false, 'ACCESS.LEVEL': 'all' },
+      });
       const sessionContext = new StaticSessionContext('USER');
       const service = new PermissionService(store, sessionContext);
 
@@ -39,7 +56,7 @@ describe('PermissionService', () => {
     });
 
     it('should return false for non-existent role', () => {
-      const store = new ManualPermissionsStore(() => ({}));
+      const store = createStore({});
       const sessionContext = new StaticSessionContext('UNKNOWN');
       const service = new PermissionService(store, sessionContext);
 
@@ -49,9 +66,7 @@ describe('PermissionService', () => {
     });
 
     it('should use default value when permission is not set', () => {
-      const store = new ManualPermissionsStore(() => ({
-        USER: [],
-      }));
+      const store = createStore({ USER: {} });
       const sessionContext = new StaticSessionContext('USER');
       const service = new PermissionService(store, sessionContext);
 
@@ -63,9 +78,9 @@ describe('PermissionService', () => {
     });
 
     it('should call where function for enum permission and return true', () => {
-      const store = new ManualPermissionsStore((can) => ({
-        ADMIN: [can(testPerms.accessLevel, 'all')],
-      }));
+      const store = createStore({
+        ADMIN: { 'ACCESS.LEVEL': 'all' },
+      });
       const sessionContext = new StaticSessionContext('ADMIN');
       const service = new PermissionService(store, sessionContext);
       const where = vi.fn((value: string) => value === 'all');
@@ -77,9 +92,9 @@ describe('PermissionService', () => {
     });
 
     it('should call where function for enum permission and return false', () => {
-      const store = new ManualPermissionsStore((can) => ({
-        USER: [can(testPerms.accessLevel, 'self')],
-      }));
+      const store = createStore({
+        USER: { 'ACCESS.LEVEL': 'self' },
+      });
       const sessionContext = new StaticSessionContext('USER');
       const service = new PermissionService(store, sessionContext);
       const where = vi.fn((value: string) => value === 'all');
@@ -91,9 +106,7 @@ describe('PermissionService', () => {
     });
 
     it('should use default value for enum when not set', () => {
-      const store = new ManualPermissionsStore(() => ({
-        USER: [],
-      }));
+      const store = createStore({ USER: {} });
       const sessionContext = new StaticSessionContext('USER');
       const service = new PermissionService(store, sessionContext);
       const where = vi.fn((value: string) => value === 'none');
@@ -107,10 +120,10 @@ describe('PermissionService', () => {
 
   describe('can', () => {
     it('should use role from SessionContext', () => {
-      const store = new ManualPermissionsStore((can) => ({
-        ADMIN: [can(testPerms.canLogin)],
-        USER: [can(testPerms.canLogin, false)],
-      }));
+      const store = createStore({
+        ADMIN: { 'AUTH.CAN_LOGIN': true },
+        USER: { 'AUTH.CAN_LOGIN': false },
+      });
       const sessionContext = new StaticSessionContext('ADMIN');
       const service = new PermissionService(store, sessionContext);
 
@@ -120,9 +133,9 @@ describe('PermissionService', () => {
     });
 
     it('should delegate to canLocal with current role', () => {
-      const store = new ManualPermissionsStore((can) => ({
-        USER: [can(testPerms.accessLevel, 'self')],
-      }));
+      const store = createStore({
+        USER: { 'ACCESS.LEVEL': 'self' },
+      });
       const sessionContext = new StaticSessionContext('USER');
       const service = new PermissionService(store, sessionContext);
       const where = vi.fn((value: string) => value === 'self');
@@ -134,7 +147,7 @@ describe('PermissionService', () => {
     });
 
     it('should return false when current role has no permissions', () => {
-      const store = new ManualPermissionsStore(() => ({}));
+      const store = createStore({});
       const sessionContext = new StaticSessionContext('GUEST');
       const service = new PermissionService(store, sessionContext);
 

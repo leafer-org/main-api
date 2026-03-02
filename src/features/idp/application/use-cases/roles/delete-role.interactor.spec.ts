@@ -11,7 +11,7 @@ import { FullName } from '../../../domain/vo/full-name.js';
 import { PhoneNumber } from '../../../domain/vo/phone-number.js';
 import type { RoleRepository, SessionRepository, UserRepository } from '../../ports.js';
 import { DeleteRoleInteractor } from './delete-role.interactor.js';
-import { PermissionsStore } from '@/infra/lib/authorization/permissions-store.js';
+import { PermissionsStore } from '@/infra/auth/permissions-store.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { MockPermissionCheckService, MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';

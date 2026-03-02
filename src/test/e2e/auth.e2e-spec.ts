@@ -98,7 +98,8 @@ describe('Auth Controller (e2e)', () => {
         .send({ phoneNumber: PHONE })
         .expect(429);
 
-      expect(res.body).toHaveProperty('retryAfterSec');
+      expect(res.body.type).toEqual('throttled');
+      expect(res.body.data).toHaveProperty('retryAfterSec');
     });
   });
 
@@ -142,7 +143,7 @@ describe('Auth Controller (e2e)', () => {
         .send({ phoneNumber: PHONE, code: '000000' })
         .expect(400);
 
-      expect(res.body.code).toBe('invalid_otp');
+      expect(res.body.type).toBe('invalid_otp');
     });
 
     it('should return 400 when no OTP was requested', async () => {
@@ -225,7 +226,6 @@ describe('Auth Controller (e2e)', () => {
     it('should return the current user profile', async () => {
       const { accessToken } = await registerNewUser(e2e.agent);
 
-      console.log(accessToken);
       const res = await e2e.agent
         .get('/me')
         .set('Authorization', `Bearer ${accessToken}`)
@@ -369,7 +369,7 @@ describe('Auth Controller (e2e)', () => {
           .send({ phoneNumber: PHONE, code: '000000' })
           .expect(400);
 
-        expect(res.body.code).toBe('invalid_otp');
+        expect(res.body.type).toBe('invalid_otp');
       }
 
       // 6th wrong attempt should trigger block
@@ -378,7 +378,7 @@ describe('Auth Controller (e2e)', () => {
         .send({ phoneNumber: PHONE, code: '000000' })
         .expect(403);
 
-      expect(blockedRes.body.code).toBe('login_blocked');
+      expect(blockedRes.body.type).toBe('login_blocked');
       expect(blockedRes.body.data).toHaveProperty('blockedUntil');
     });
   });

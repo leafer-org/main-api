@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import { PermissionService, type WhereArg } from '@/infra/lib/authorization/permission-service.js';
-import type { InferPermissionValue, PermissionVariant } from '@/infra/lib/authorization/schema.js';
-import { SessionContext } from '@/infra/lib/authorization/session-context.js';
+import { PermissionService, type WhereArg } from './permission-service.js';
+import type { InferPermissionValue, PermissionVariant } from './schema.js';
+import { SessionContext } from './session-context.js';
 import type { Either } from '@/infra/lib/box.js';
 import { Left, Right } from '@/infra/lib/box.js';
 import {

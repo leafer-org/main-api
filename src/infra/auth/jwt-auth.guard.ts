@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
+import { ClsService } from 'nestjs-cls';
 
-import { JwtSessionStorage } from './jwt-session.storage.js';
 import type { JwtUserPayload } from './jwt-user-payload.js';
 import { SessionValidationPort } from '@/kernel/application/ports/session-validation.js';
 import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
@@ -18,7 +18,7 @@ import { Role } from '@/kernel/domain/vo/role.js';
 export class JwtAuthGuard implements CanActivate {
   public constructor(
     private readonly jwtService: JwtService,
-    private readonly sessionStorage: JwtSessionStorage,
+    private readonly cls: ClsService,
     private readonly sessionValidation: SessionValidationPort,
   ) {}
 
@@ -47,7 +47,7 @@ export class JwtAuthGuard implements CanActivate {
       };
 
       (request as Request & { user: JwtUserPayload }).user = userPayload;
-      this.sessionStorage.store.enterWith(userPayload);
+      this.cls.set('user', userPayload);
 
       return true;
     } catch (error) {

@@ -1,8 +1,8 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: generic types */
 import { type Mock, vitest } from 'vitest';
 
-import type { WhereArg } from '@/infra/lib/authorization/permission-service.js';
-import type { InferPermissionValue, PermissionVariant } from '@/infra/lib/authorization/schema.js';
+import type { WhereArg } from '@/infra/auth/permission-service.js';
+import type { InferPermissionValue, PermissionVariant } from '@/infra/auth/schema.js';
 import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
 import {
   PermissionCheckService,

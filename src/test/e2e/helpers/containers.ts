@@ -1,9 +1,12 @@
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { RedpandaContainer, type StartedRedpandaContainer } from '@testcontainers/redpanda';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+
+import { applyTopics } from './kafka.js';
 
 let pgContainer: StartedPostgreSqlContainer | null = null;
 let minioContainer: StartedTestContainer | null = null;
-let redpandaContainer: StartedTestContainer | null = null;
+let redpandaContainer: StartedRedpandaContainer | null = null;
 let meiliContainer: StartedTestContainer | null = null;
 
 export async function startContainers() {
@@ -22,23 +25,7 @@ export async function startContainers() {
       .withWaitStrategy(Wait.forHttp('/minio/health/ready', 9000).forStatusCode(200))
       .start(),
 
-    new GenericContainer('redpandadata/redpanda:latest')
-      .withExposedPorts(9092)
-      .withCommand([
-        'redpanda',
-        'start',
-        '--smp',
-        '1',
-        '--memory',
-        '256M',
-        '--overprovisioned',
-        '--kafka-addr',
-        'PLAINTEXT://0.0.0.0:9092',
-        '--advertise-kafka-addr',
-        'PLAINTEXT://localhost:9092',
-      ])
-      .withWaitStrategy(Wait.forLogMessage(/Started Kafka API server/))
-      .start(),
+    new RedpandaContainer('redpandadata/redpanda:latest').start(),
 
     new GenericContainer('getmeili/meilisearch:latest')
       .withExposedPorts(7700)
@@ -50,9 +37,10 @@ export async function startContainers() {
       .start(),
   ]);
 
+  await applyTopics(redpandaContainer);
+
   const minioHost = minioContainer.getHost();
   const minioPort = minioContainer.getMappedPort(9000);
-  const kafkaPort = redpandaContainer.getMappedPort(9092);
   const meiliPort = meiliContainer.getMappedPort(7700);
 
   process.env.DB_URL = pgContainer.getConnectionUri();
@@ -64,7 +52,7 @@ export async function startContainers() {
   process.env.S3_FORCE_PATH_STYLE = 'true';
   process.env.MEDIA_BUCKET_PUBLIC = 'media-public';
 
-  process.env.KAFKA_BROKER = `localhost:${kafkaPort}`;
+  process.env.KAFKA_BROKER = redpandaContainer.getBootstrapServers();
 
   process.env.IDP_JWT_SECRET = 'e2e-test-jwt-secret-key';
 
