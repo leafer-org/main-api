@@ -8,7 +8,7 @@ import { userDecide } from '../../../domain/aggregates/user/decide.js';
 import { whenRoleDeletedUpdateUserRoles } from '../../../domain/policies/when-role-deleted-update-user-roles.policy.js';
 import { whenUserRoleUpdatedDeleteSessions } from '../../../domain/policies/when-user-role-updated-delete-sessions.policy.js';
 import { RoleRepository, SessionRepository, UserRepository } from '../../ports.js';
-import { PermissionsStore } from '@/infra/auth/permissions-store.js';
+import { PermissionsStore } from '@/infra/auth/authz/permissions-store.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';

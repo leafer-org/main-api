@@ -174,6 +174,12 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
+  public async waitForPartitions(): Promise<void> {
+    if (this.state.type === 'running') {
+      await this.state.connection.partitionsAssigned;
+    }
+  }
+
   public async onModuleDestroy(): Promise<void> {
     this.isHealthy = false;
     if (this.state.type === 'running') {

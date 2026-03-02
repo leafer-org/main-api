@@ -7,7 +7,7 @@ import {
 import type { RoleState } from '../../../domain/aggregates/role/state.js';
 import type { RoleRepository } from '../../ports.js';
 import { UpdateRoleInteractor } from './update-role.interactor.js';
-import { PermissionsStore } from '@/infra/auth/permissions-store.js';
+import { PermissionsStore } from '@/infra/auth/authz/permissions-store.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { MockPermissionCheckService, MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';

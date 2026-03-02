@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
+import { registerUser } from './actors/auth.js';
 import { startContainers, stopContainers } from './helpers/containers.js';
 import { type E2eApp } from './helpers/create-app.js';
 import { runMigrations, truncateAll } from './helpers/db.js';
@@ -13,30 +14,6 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 const PHONE = '+79991234567';
-
-/** Helper: full registration flow, returns tokens */
-async function registerNewUser(agent: E2eApp['agent'], phone = PHONE, fullName = 'Test User') {
-  await agent.post('/auth/request-otp').send({ phoneNumber: phone }).expect(200);
-
-  const verifyRes = await agent
-    .post('/auth/verify-otp')
-    .send({ phoneNumber: phone, code: FIXED_OTP })
-    .expect(200);
-
-  expect(verifyRes.body.type).toBe('new_registration');
-  const { registrationSessionId } = verifyRes.body;
-
-  const regRes = await agent
-    .post('/auth/complete-profile')
-    .send({ registrationSessionId, fullName })
-    .expect(200);
-
-  return {
-    accessToken: regRes.body.accessToken as string,
-    refreshToken: regRes.body.refreshToken as string,
-    user: regRes.body.user,
-  };
-}
 
 describe('Auth Controller (e2e)', () => {
   let e2e: E2eApp;
@@ -120,7 +97,7 @@ describe('Auth Controller (e2e)', () => {
 
     it('should return authenticated with tokens for an existing user', async () => {
       // Register first
-      await registerNewUser(e2e.agent);
+      await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       // Login again
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
@@ -198,7 +175,7 @@ describe('Auth Controller (e2e)', () => {
 
   describe('GET /auth/refresh', () => {
     it('should return new tokens with a valid refresh token', async () => {
-      const { refreshToken } = await registerNewUser(e2e.agent);
+      const { refreshToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       const res = await e2e.agent
         .get('/auth/refresh')
@@ -224,7 +201,7 @@ describe('Auth Controller (e2e)', () => {
 
   describe('GET /me', () => {
     it('should return the current user profile', async () => {
-      const { accessToken } = await registerNewUser(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       const res = await e2e.agent
         .get('/me')
@@ -249,7 +226,7 @@ describe('Auth Controller (e2e)', () => {
 
   describe('PATCH /me/profile', () => {
     it('should update the user full name', async () => {
-      const { accessToken } = await registerNewUser(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       const res = await e2e.agent
         .patch('/me/profile')
@@ -265,7 +242,7 @@ describe('Auth Controller (e2e)', () => {
 
   describe('POST /auth/logout', () => {
     it('should logout and invalidate the session', async () => {
-      const { accessToken } = await registerNewUser(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       await e2e.agent
         .post('/auth/logout')
@@ -281,7 +258,7 @@ describe('Auth Controller (e2e)', () => {
 
   describe('Sessions', () => {
     it('GET /me/sessions should list active sessions', async () => {
-      const { accessToken } = await registerNewUser(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       const res = await e2e.agent
         .get('/me/sessions')
@@ -295,7 +272,7 @@ describe('Auth Controller (e2e)', () => {
     });
 
     it('DELETE /me/sessions/:id should delete a specific session', async () => {
-      const { accessToken } = await registerNewUser(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       // Create a second session by logging in again
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
@@ -329,7 +306,7 @@ describe('Auth Controller (e2e)', () => {
     });
 
     it('DELETE /me/sessions should delete all sessions except current', async () => {
-      const { accessToken } = await registerNewUser(e2e.agent);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       // Create a second session
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
@@ -387,7 +364,7 @@ describe('Auth Controller (e2e)', () => {
 
   describe('Refresh token rotation', () => {
     it('should invalidate old refresh token after rotation', async () => {
-      const { refreshToken } = await registerNewUser(e2e.agent);
+      const { refreshToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       // Rotate: get new tokens using refresh
       const refreshRes = await e2e.agent

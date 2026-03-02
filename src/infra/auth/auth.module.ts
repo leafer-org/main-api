@@ -1,14 +1,13 @@
 import { Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { ClsModule } from 'nestjs-cls';
 
-import { AlsSessionContext } from './als-session-context.js';
-import { DynamicPermissionsStore } from './dynamic-permissions-store.js';
-import { JwtAuthGuard } from './jwt-auth.guard.js';
-import { PermissionCheckServiceImpl } from './permission-check.service.js';
-import { PermissionService } from './permission-service.js';
-import { PermissionsStore } from './permissions-store.js';
-import { SessionContext } from './session-context.js';
+import { JwtAuthGuard } from './authn/jwt-auth.guard.js';
+import { DynamicPermissionsStore } from './authz/dynamic-permissions-store.js';
+import { PermissionCheckServiceImpl } from './authz/permission-check.service.js';
+import { PermissionService } from './authz/permission-service.js';
+import { PermissionsStore } from './authz/permissions-store.js';
+import { AlsSessionContext } from './session/als-session-context.js';
+import { SessionContext } from './session/session-context.js';
 import { MainConfigModule } from '@/infra/config/module.js';
 import { MainConfigService } from '@/infra/config/service.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
@@ -18,7 +17,6 @@ import { PermissionCheckService } from '@/kernel/application/ports/permission.js
 @Module({
   imports: [
     MainConfigModule,
-    ClsModule.forRoot({ middleware: { mount: true } }),
     JwtModule.registerAsync({
       imports: [MainConfigModule],
       useFactory: (config: MainConfigService) => ({

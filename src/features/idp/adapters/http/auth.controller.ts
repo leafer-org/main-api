@@ -19,9 +19,9 @@ import { VerifyOtpInteractor } from '../../application/use-cases/otp-flow/verify
 import { DeleteSessionInteractor } from '../../application/use-cases/session/delete-session.interactor.js';
 import { RotateSessionInteractor } from '../../application/use-cases/session/rotate-session.interactor.js';
 import { resolveAvatarUrls } from './avatar-url.helper.js';
-import { CurrentUser } from '@/infra/auth/current-user.decorator.js';
-import { JwtAuthGuard } from '@/infra/auth/jwt-auth.guard.js';
-import type { JwtUserPayload } from '@/infra/auth/jwt-user-payload.js';
+import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
+import { JwtAuthGuard } from '@/infra/auth/authn/jwt-auth.guard.js';
+import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
