@@ -3,7 +3,6 @@ import { resolve } from 'node:path';
 import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 
-// biome-ignore lint/style/noDefaultExport: vitest config to be exported as default
 export default defineConfig({
   resolve: {
     alias: {

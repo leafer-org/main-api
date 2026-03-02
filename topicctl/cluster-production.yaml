@@ -1,0 +1,8 @@
+meta:
+  name: production-cluster
+  environment: production
+  region: us-east-1
+
+spec:
+  bootstrapAddrs:
+    - kafka-production:9092

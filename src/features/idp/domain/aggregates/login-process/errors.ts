@@ -17,4 +17,4 @@ export class RegistrationSessionMismatchError extends CreateDomainError(
   400,
 ) {}
 
-export class RegistractionError extends CreateDomainError('registration_error', 500) {}
+export class RegistractionError extends CreateDomainError('registration_error', 400) {}

@@ -74,7 +74,22 @@
       "Bash(xargs grep -l \"analytics\\\\|tracking\\\\|interaction\\\\|recommendation\")",
       "Bash(xargs grep -l \"role_already_exists\\\\|role_not_found\\\\|static_role_modification\")",
       "Bash(npx vitest run src/features/idp)",
-      "Bash(npx tsc --noEmit src/infra/lib/nest-outbox/outbox-relay.service.ts)"
+      "Bash(npx tsc --noEmit src/infra/lib/nest-outbox/outbox-relay.service.ts)",
+      "Bash(node -e \"const rp = require\\(''@testcontainers/redpanda''\\); console.log\\(Object.keys\\(rp\\)\\)\")",
+      "Bash(xargs grep -l \"IntegrationEvent\\\\|createTypeboxContract\\\\|createProtoContract\")",
+      "Bash(xargs grep -h \"Contract\\\\|topic:\")",
+      "Bash(xargs grep -l \"topic\\\\|Contract\")",
+      "Bash(xargs grep -h \"AttributeIntegrationEvent\\\\|ServiceIntegrationEvent\")",
+      "Bash(xargs grep -B5 -A5 \"AttributeIntegrationEvent\\\\|ServiceIntegrationEvent\")",
+      "Bash(xargs grep -l \"export.*Contract\\\\|createTypeboxContract\\\\|createProtoContract\")",
+      "Bash(xargs grep -l \"outbox\\\\|Contract\\\\|topic\")",
+      "Bash(xargs grep -l \"AdminClient\\\\|admin.*client\\\\|createTopic\")",
+      "Bash(xargs grep -l \"\\\\.yaml\\\\|\\\\.yml\\\\|yaml\\\\.\\\\|yml\\\\.\")",
+      "Bash(node -e \"try { require\\(''yaml''\\); console.log\\(''yaml: available''\\); } catch\\(e\\) { console.log\\(''yaml: not found''\\); }\")",
+      "Bash(node -e \"try { require\\(''js-yaml''\\); console.log\\(''js-yaml: available''\\); } catch\\(e\\) { console.log\\(''js-yaml: not found''\\); }\")",
+      "Bash(npx vitest run src/test/e2e/auth.e2e-spec.ts)",
+      "Bash(npx biome check --write src/test/e2e/helpers/kafka.ts)",
+      "Bash(yarn add nestjs-cls)"
     ]
   }
 }
