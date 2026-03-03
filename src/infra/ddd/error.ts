@@ -4,7 +4,7 @@
 
 export abstract class DomainError<
   T extends string,
-// biome-ignore lint/complexity/noBannedTypes: good type
+  // biome-ignore lint/complexity/noBannedTypes: good type
   D = {},
   StatusCode extends number = 500,
 > extends Error {
@@ -25,8 +25,8 @@ export abstract class DomainError<
       statusCode: StatusCode;
       message: string;
       isDomain: true;
-      type: T
-      data: D
+      type: T;
+      data: D;
     }
   > {
     return {
@@ -40,32 +40,6 @@ export abstract class DomainError<
     } as never;
   }
 }
-
-/**
- * 
- * errors =
-(1) [{…}]
-0 =
-{path: '/body/name', message: 'must NOT have fewer than 1 characters', errorCode: 'minLength.openapi.validation'}
-errorCode =
-'minLength.openapi.validation'
-message =
-'must NOT have fewer than 1 characters'
-path =
-'/body/name'
-[[Prototype]] =
-Object
-length =
-1
-[[Prototype]] =
-Array(0)
-[[Prototype]] =
-Object
-message =
-'request/body/name must NOT have fewer than 1 characters'
-statusCode =
-400
- */
 
 /**
  * Функция для создания доменных ошибок
@@ -98,6 +72,7 @@ export const CreateDomainError = <T extends string, HC extends number = 500>(
 
         public constructor(data: D, cause?: Error) {
           super(type, httpCode, data, cause);
+          Error.captureStackTrace(this, this.constructor);
         }
       }
 

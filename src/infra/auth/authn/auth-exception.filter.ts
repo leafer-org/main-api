@@ -25,6 +25,6 @@ export class AuthExceptionFilter implements ExceptionFilter {
         ? (payload as Record<string, unknown>).code
         : undefined) ?? (status === 401 ? 'unauthorized' : 'forbidden');
 
-    response.status(status).json({ type });
+    response.status(status).json({ type, isDomain: true });
   }
 }

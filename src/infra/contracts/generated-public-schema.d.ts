@@ -417,6 +417,8 @@ export interface components {
     ThrottledErrorResponse: {
       /** @enum {string} */
       type: 'throttled';
+      /** @enum {boolean} */
+      isDomain: true;
       message?: string;
       data: {
         /** @description Рекомендованная задержка перед повторной попыткой */
