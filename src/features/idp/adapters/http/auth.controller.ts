@@ -97,7 +97,9 @@ export class AuthController {
     @Headers('x-refresh-token') refreshToken: string,
   ): Promise<PublicResponse['refresh']> {
     if (!refreshToken) {
-      throw domainToHttpError<'refresh'>({ 401: { type: 'missing_refresh_token', isDomain: true } });
+      throw domainToHttpError<'refresh'>({
+        401: { type: 'missing_refresh_token', isDomain: true },
+      });
     }
 
     try {

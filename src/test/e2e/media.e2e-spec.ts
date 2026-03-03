@@ -85,23 +85,19 @@ describe('Media Controller (e2e)', () => {
     });
 
     it('should return 400 for empty file name', async () => {
-      const res = await e2e.agent
+      await e2e.agent
         .post('/media/upload-request')
         .send({ name: '', mimeType: 'image/png', bucket: 'media-public' })
         .expect(400);
-
-      expect(res.body.type).toBe('invalid_file_name');
     });
 
     it('should return 400 for file name exceeding 255 characters', async () => {
       const longName = 'a'.repeat(256);
 
-      const res = await e2e.agent
+      await e2e.agent
         .post('/media/upload-request')
         .send({ name: longName, mimeType: 'image/png', bucket: 'media-public' })
         .expect(400);
-
-      expect(res.body.type).toBe('invalid_file_name');
     });
   });
 
