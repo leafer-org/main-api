@@ -4,7 +4,6 @@ import { RoleAlreadyExistsError } from '../../../domain/aggregates/role/errors.j
 import type { RoleState } from '../../../domain/aggregates/role/state.js';
 import type { IdGenerator, RoleRepository } from '../../ports.js';
 import { CreateRoleInteractor } from './create-role.interactor.js';
-import { PermissionsStore } from '@/infra/auth/authz/permissions-store.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { MockPermissionCheckService, MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
@@ -39,19 +38,16 @@ const makeDeps = () => {
   const idGenerator = ServiceMock<IdGenerator>();
   idGenerator.generateRoleId.mockReturnValue(ROLE_ID);
 
-  const permissionsStore = ServiceMock<PermissionsStore>();
-  permissionsStore.refresh.mockResolvedValue(undefined);
-
   const permissionCheck = new MockPermissionCheckService();
 
-  return { roleRepo, idGenerator, permissionsStore, permissionCheck };
+  return { roleRepo, idGenerator, permissionCheck };
 };
 
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
 describe('CreateRoleInteractor', () => {
   it('создаёт роль и сохраняет состояние', async () => {
-    const { roleRepo, idGenerator, permissionsStore, permissionCheck } = makeDeps();
+    const { roleRepo, idGenerator, permissionCheck } = makeDeps();
     const txHost = new MockTransactionHost();
 
     const interactor = new CreateRoleInteractor(
@@ -59,7 +55,6 @@ describe('CreateRoleInteractor', () => {
       idGenerator,
       txHost,
       makeClock(),
-      permissionsStore,
       permissionCheck,
     );
 
@@ -78,11 +73,10 @@ describe('CreateRoleInteractor', () => {
         isStatic: false,
       }),
     );
-    expect(permissionsStore.refresh).toHaveBeenCalled();
   });
 
   it('возвращает RoleAlreadyExistsError если роль с таким именем существует', async () => {
-    const { roleRepo, idGenerator, permissionsStore, permissionCheck } = makeDeps();
+    const { roleRepo, idGenerator, permissionCheck } = makeDeps();
     roleRepo.findByName.mockResolvedValue(makeExistingRole());
 
     const interactor = new CreateRoleInteractor(
@@ -90,7 +84,6 @@ describe('CreateRoleInteractor', () => {
       idGenerator,
       new MockTransactionHost(),
       makeClock(),
-      permissionsStore,
       permissionCheck,
     );
 
@@ -107,7 +100,7 @@ describe('CreateRoleInteractor', () => {
   });
 
   it('возвращает PermissionDeniedError если нет прав', async () => {
-    const { roleRepo, idGenerator, permissionsStore, permissionCheck } = makeDeps();
+    const { roleRepo, idGenerator, permissionCheck } = makeDeps();
     permissionCheck.deny('ROLE.MANAGE', 'USER');
 
     const interactor = new CreateRoleInteractor(
@@ -115,7 +108,6 @@ describe('CreateRoleInteractor', () => {
       idGenerator,
       new MockTransactionHost(),
       makeClock(),
-      permissionsStore,
       permissionCheck,
     );
 

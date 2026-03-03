@@ -14,7 +14,9 @@
     "/auth/request-otp": {
       "post": {
         "operationId": "requestOtp",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Запрос одноразового кода подтверждения",
         "description": "Создаёт и отправляет OTP пользователю.",
         "requestBody": {
@@ -23,7 +25,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["phoneNumber"],
+                "required": [
+                  "phoneNumber"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "phoneNumber": {
@@ -33,7 +37,10 @@
                   },
                   "channel": {
                     "type": "string",
-                    "enum": ["sms", "whatsapp"],
+                    "enum": [
+                      "sms",
+                      "whatsapp"
+                    ],
                     "description": "Канал доставки OTP"
                   },
                   "locale": {
@@ -67,11 +74,18 @@
             }
           },
           "400": {
-            "description": "Некорректный запрос",
+            "description": "Ошибка валидации / Доменная ошибка",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -82,25 +96,30 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["type", "data"],
-                  "additionalProperties": false,
+                  "required": [
+                    "type",
+                    "isDomain"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["login_blocked"]
+                      "enum": [
+                        "login_blocked"
+                      ]
                     },
                     "message": {
                       "type": "string"
                     },
-                    "data": {
-                      "type": "object",
-                      "required": ["blockedUntil"],
-                      "properties": {
-                        "blockedUntil": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
+                    "isDomain": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "retryAfterSec": {
+                      "type": "number",
+                      "minimum": 1,
+                      "description": "Рекомендованная задержка перед повторной попыткой"
                     }
                   }
                 }
@@ -116,6 +135,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -123,7 +152,9 @@
     "/auth/verify-otp": {
       "post": {
         "operationId": "verifyOtp",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Подтверждение одноразового кода",
         "description": "Проверяет OTP и возвращает пару токенов.",
         "requestBody": {
@@ -132,7 +163,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["phoneNumber", "code"],
+                "required": [
+                  "phoneNumber",
+                  "code"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "phoneNumber": {
@@ -162,12 +196,18 @@
                   "oneOf": [
                     {
                       "type": "object",
-                      "required": ["type", "accessToken", "refreshToken"],
+                      "required": [
+                        "type",
+                        "accessToken",
+                        "refreshToken"
+                      ],
                       "additionalProperties": false,
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["authenticated"]
+                          "enum": [
+                            "authenticated"
+                          ]
                         },
                         "accessToken": {
                           "type": "string",
@@ -183,12 +223,17 @@
                     },
                     {
                       "type": "object",
-                      "required": ["type", "registrationSessionId"],
+                      "required": [
+                        "type",
+                        "registrationSessionId"
+                      ],
                       "additionalProperties": false,
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["new_registration"]
+                          "enum": [
+                            "new_registration"
+                          ]
                         },
                         "registrationSessionId": {
                           "type": "string",
@@ -202,11 +247,18 @@
             }
           },
           "400": {
-            "description": "Некорректный запрос",
+            "description": "Ошибка валидации / Доменная ошибка",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -217,25 +269,29 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["type", "data"],
-                  "additionalProperties": false,
+                  "required": [
+                    "type",
+                    "isDomain"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["login_blocked"]
+                      "enum": [
+                        "login_blocked"
+                      ]
                     },
                     "message": {
                       "type": "string"
                     },
-                    "data": {
-                      "type": "object",
-                      "required": ["blockedUntil"],
-                      "properties": {
-                        "blockedUntil": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      }
+                    "isDomain": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "retryAfterSec": {
+                      "type": "number",
+                      "minimum": 60
                     }
                   }
                 }
@@ -251,6 +307,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -258,7 +324,9 @@
     "/auth/refresh": {
       "get": {
         "operationId": "refresh",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Обновление токенов авторизации",
         "description": "Обновляет токены по refresh-cookie или заголовку.",
         "parameters": [
@@ -283,11 +351,18 @@
             }
           },
           "400": {
-            "description": "Некорректный запрос",
+            "description": "Ошибка валидации / Доменная ошибка",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -297,7 +372,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -308,7 +393,10 @@
     "/auth/complete-profile": {
       "post": {
         "operationId": "completeProfile",
-        "tags": ["auth", "profile"],
+        "tags": [
+          "auth",
+          "profile"
+        ],
         "summary": "Дополнение профиля пользователя",
         "description": "Обновляет профиль после первичного входа.",
         "requestBody": {
@@ -317,7 +405,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["registrationSessionId"],
+                "required": [
+                  "registrationSessionId"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "registrationSessionId": {
@@ -345,7 +435,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["user", "accessToken", "refreshToken"],
+                  "required": [
+                    "user",
+                    "accessToken",
+                    "refreshToken"
+                  ],
                   "additionalProperties": false,
                   "properties": {
                     "user": {
@@ -367,11 +461,18 @@
             }
           },
           "400": {
-            "description": "Некорректный запрос",
+            "description": "Ошибка валидации / Доменная ошибка",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -381,7 +482,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -391,7 +492,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -402,7 +503,9 @@
     "/auth/logout": {
       "post": {
         "operationId": "logout",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Выход из аккаунта",
         "description": "Удаляет текущую сессию пользователя.",
         "security": [
@@ -419,7 +522,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -430,7 +543,10 @@
     "/me": {
       "get": {
         "operationId": "getMe",
-        "tags": ["auth", "profile"],
+        "tags": [
+          "auth",
+          "profile"
+        ],
         "summary": "Получение текущего пользователя",
         "description": "Возвращает профиль текущего пользователя.",
         "security": [
@@ -454,7 +570,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -465,7 +591,10 @@
     "/me/profile": {
       "patch": {
         "operationId": "updateProfile",
-        "tags": ["auth", "profile"],
+        "tags": [
+          "auth",
+          "profile"
+        ],
         "summary": "Обновление профиля пользователя",
         "description": "Обновляет профиль текущего пользователя.",
         "security": [
@@ -479,7 +608,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["fullName"],
+                "required": [
+                  "fullName"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "fullName": {
@@ -505,11 +636,18 @@
             }
           },
           "400": {
-            "description": "Невалидное имя",
+            "description": "Ошибка валидации / Доменная ошибка",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -519,7 +657,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -530,7 +678,10 @@
     "/me/sessions": {
       "get": {
         "operationId": "getMeSessions",
-        "tags": ["auth", "sessions"],
+        "tags": [
+          "auth",
+          "sessions"
+        ],
         "summary": "Получение списка активных сессий",
         "description": "Возвращает список активных сессий текущего пользователя.",
         "security": [
@@ -545,7 +696,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["sessions"],
+                  "required": [
+                    "sessions"
+                  ],
                   "additionalProperties": false,
                   "properties": {
                     "sessions": {
@@ -564,7 +717,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -573,7 +736,10 @@
       },
       "delete": {
         "operationId": "deleteAllSessions",
-        "tags": ["auth", "sessions"],
+        "tags": [
+          "auth",
+          "sessions"
+        ],
         "summary": "Выход со всех устройств",
         "description": "Удаляет все сессии текущего пользователя, кроме текущей.",
         "security": [
@@ -590,7 +756,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -601,7 +777,10 @@
     "/me/sessions/{sessionId}": {
       "delete": {
         "operationId": "deleteSession",
-        "tags": ["auth", "sessions"],
+        "tags": [
+          "auth",
+          "sessions"
+        ],
         "summary": "Удаление сессии",
         "description": "Удаляет указанную сессию текущего пользователя.",
         "security": [
@@ -624,12 +803,22 @@
           "204": {
             "description": "Сессия удалена"
           },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Не авторизован",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -639,7 +828,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -650,7 +849,9 @@
     "/roles": {
       "get": {
         "operationId": "getRoles",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Получение списка всех ролей",
         "description": "Возвращает список всех ролей в системе.",
         "security": [
@@ -665,7 +866,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["roles"],
+                  "required": [
+                    "roles"
+                  ],
                   "properties": {
                     "roles": {
                       "type": "array",
@@ -683,7 +886,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -692,7 +905,9 @@
       },
       "post": {
         "operationId": "createRole",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Создание роли",
         "description": "Создаёт новую роль с указанными разрешениями.",
         "security": [
@@ -706,7 +921,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name"],
+                "required": [
+                  "name"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -733,11 +950,39 @@
             }
           },
           "400": {
-            "description": "Роль уже существует",
+            "description": "Ошибка валидации или роль уже существует",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "type",
+                        "isDomain"
+                      ],
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "role_already_exists"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "isDomain": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -747,7 +992,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Роль не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -758,7 +1023,9 @@
     "/roles/permissions-schema": {
       "get": {
         "operationId": "getPermissionsSchema",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Получение схемы разрешений",
         "description": "Возвращает схему всех доступных разрешений для построения UI.",
         "security": [
@@ -775,7 +1042,12 @@
                   "type": "array",
                   "items": {
                     "type": "object",
-                    "required": ["action", "key", "type", "default"],
+                    "required": [
+                      "action",
+                      "key",
+                      "type",
+                      "default"
+                    ],
                     "properties": {
                       "action": {
                         "type": "string"
@@ -785,7 +1057,10 @@
                       },
                       "type": {
                         "type": "string",
-                        "enum": ["boolean", "enum"]
+                        "enum": [
+                          "boolean",
+                          "enum"
+                        ]
                       },
                       "values": {
                         "type": "array",
@@ -805,7 +1080,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -816,7 +1101,9 @@
     "/roles/{roleId}": {
       "get": {
         "operationId": "getRole",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Получение роли по ID",
         "description": "Возвращает детальную информацию о роли.",
         "security": [
@@ -846,12 +1133,22 @@
               }
             }
           },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          },
           "403": {
             "description": "Нет доступа",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -861,7 +1158,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -870,7 +1177,9 @@
       },
       "patch": {
         "operationId": "updateRole",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Обновление разрешений роли",
         "description": "Обновляет разрешения указанной роли. Статические роли не могут быть изменены.",
         "security": [
@@ -895,7 +1204,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["permissions"],
+                "required": [
+                  "permissions"
+                ],
                 "properties": {
                   "permissions": {
                     "type": "object",
@@ -917,12 +1228,29 @@
               }
             }
           },
+          "400": {
+            "description": "Ошибка валидации / Доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "403": {
             "description": "Нельзя изменить статическую роль",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -932,7 +1260,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -941,7 +1279,9 @@
       },
       "delete": {
         "operationId": "deleteRole",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Удаление роли",
         "description": "Удаляет роль и переназначает всех пользователей на замещающую роль. Статические роли не могут быть удалены.",
         "security": [
@@ -966,7 +1306,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["replacementRoleId"],
+                "required": [
+                  "replacementRoleId"
+                ],
                 "properties": {
                   "replacementRoleId": {
                     "type": "string",
@@ -988,12 +1330,29 @@
               }
             }
           },
+          "400": {
+            "description": "Ошибка валидации / Доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "403": {
             "description": "Нельзя удалить статическую роль",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -1003,7 +1362,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -1014,7 +1383,10 @@
     "/users/{userId}/role": {
       "patch": {
         "operationId": "updateUserRole",
-        "tags": ["roles", "users"],
+        "tags": [
+          "roles",
+          "users"
+        ],
         "summary": "Назначение роли пользователю",
         "description": "Обновляет роль пользователя. Все сессии пользователя будут удалены.",
         "security": [
@@ -1039,7 +1411,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["roleId"],
+                "required": [
+                  "roleId"
+                ],
                 "properties": {
                   "roleId": {
                     "type": "string",
@@ -1061,12 +1435,39 @@
               }
             }
           },
+          "400": {
+            "description": "Ошибка валидации / Доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
           "403": {
             "description": "Нет доступа",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -1076,7 +1477,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -1087,7 +1498,10 @@
     "/admin/users": {
       "get": {
         "operationId": "searchAdminUsers",
-        "tags": ["admin", "users"],
+        "tags": [
+          "admin",
+          "users"
+        ],
         "summary": "Поиск пользователей (admin)",
         "description": "Поиск пользователей с фильтрацией по роли и текстовому запросу.",
         "security": [
@@ -1139,7 +1553,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["users", "total"],
+                  "required": [
+                    "users",
+                    "total"
+                  ],
                   "properties": {
                     "users": {
                       "type": "array",
@@ -1186,122 +1603,32 @@
               }
             }
           },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          },
           "403": {
             "description": "Нет доступа",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/avatar/upload-request": {
-      "post": {
-        "operationId": "avatarUploadRequest",
-        "tags": ["media", "profile"],
-        "summary": "Получение presigned URL для загрузки аватара",
-        "description": "Возвращает presigned URL и идентификатор медиа-объекта для аватара пользователя.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetMediaUploadUrlInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Presigned URL для загрузки",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetMediaUploadUrlResult"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
           },
-          "400": {
-            "description": "Некорректный запрос",
+          "500": {
+            "description": "Внутренняя ошибка сервера",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Не авторизован",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/media/avatar/preview-upload": {
-      "post": {
-        "operationId": "avatarPreviewUpload",
-        "tags": ["media", "profile"],
-        "summary": "Получение preview URL для загрузки аватара",
-        "description": "Возвращает preview URL для загрузки аватара.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LinkMediaData"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "URL превью аватара",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Avatar"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Не авторизован",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Файл не найден",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -1312,14 +1639,12 @@
     "/media/upload-request": {
       "post": {
         "operationId": "mediaUploadRequest",
-        "tags": ["media"],
+        "tags": [
+          "media"
+        ],
         "summary": "Получение presigned URL для загрузки файла",
         "description": "Возвращает presigned URL и идентификатор файла для загрузки.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -1342,11 +1667,18 @@
             }
           },
           "400": {
-            "description": "Некорректный запрос",
+            "description": "Ошибка валидации / Доменная ошибка",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1356,7 +1688,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Файл не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -1367,14 +1719,12 @@
     "/media/confirm-upload": {
       "post": {
         "operationId": "mediaConfirmUpload",
-        "tags": ["media"],
+        "tags": [
+          "media"
+        ],
         "summary": "Подтверждение загрузки файлов",
         "description": "Переводит загруженные файлы из временного хранилища в постоянное.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -1397,11 +1747,18 @@
             }
           },
           "400": {
-            "description": "Некорректный запрос",
+            "description": "Ошибка валидации / Доменная ошибка",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -1411,7 +1768,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -1421,7 +1778,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -1432,14 +1799,12 @@
     "/media/preview/{mediaId}": {
       "get": {
         "operationId": "mediaPreview",
-        "tags": ["media"],
+        "tags": [
+          "media"
+        ],
         "summary": "Получение preview URL для временного файла",
         "description": "Возвращает presigned URL для предпросмотра файла до подтверждения загрузки.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [
           {
             "name": "mediaId",
@@ -1462,12 +1827,22 @@
               }
             }
           },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Не авторизован",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -1477,7 +1852,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
                 }
               }
             }
@@ -1488,7 +1873,9 @@
     "/banners": {
       "get": {
         "operationId": "getBanners",
-        "tags": ["Banners"],
+        "tags": [
+          "Banners"
+        ],
         "description": "Get all banners",
         "parameters": [
           {
@@ -1528,7 +1915,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["edges", "pageInfo", "totalCount"],
+                  "required": [
+                    "edges",
+                    "pageInfo",
+                    "totalCount"
+                  ],
                   "properties": {
                     "edges": {
                       "type": "array",
@@ -1548,8 +1939,35 @@
               }
             }
           },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          },
           "404": {
-            "$ref": "#/components/responses/NotFoundError"
+            "description": "Не найдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -1564,9 +1982,70 @@
       }
     },
     "schemas": {
-      "ErrorResponse": {
+      "ErrorDetail": {
         "type": "object",
-        "required": ["type"],
+        "required": [
+          "errorCode",
+          "message",
+          "path"
+        ],
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "description": "Код ошибки для обработки на клиенте"
+          },
+          "message": {
+            "type": "string",
+            "description": "Человекочитаемое описание ошибки"
+          },
+          "path": {
+            "type": "string",
+            "description": "Путь к полю с ошибкой"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Дополнительные детали ошибки"
+          }
+        }
+      },
+      "OpenApiValidationError": {
+        "type": "object",
+        "required": [
+          "statusCode",
+          "message",
+          "errors",
+          "isDomain"
+        ],
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "description": "HTTP код ответа"
+          },
+          "isDomain": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Человекочитаемое описание ошибки"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            }
+          }
+        }
+      },
+      "DomainErrorResponse": {
+        "type": "object",
+        "required": [
+          "type",
+          "isDomain"
+        ],
         "properties": {
           "type": {
             "type": "string",
@@ -1575,6 +2054,12 @@
           "message": {
             "type": "string",
             "description": "Человекочитаемое описание ошибки"
+          },
+          "isDomain": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
           },
           "data": {
             "type": "object",
@@ -1585,18 +2070,26 @@
       },
       "ThrottledErrorResponse": {
         "type": "object",
-        "required": ["type", "data"],
+        "required": [
+          "type",
+          "retryAfterSec",
+          "data"
+        ],
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["throttled"]
+            "enum": [
+              "throttled"
+            ]
           },
           "message": {
             "type": "string"
           },
           "data": {
             "type": "object",
-            "required": ["retryAfterSec"],
+            "required": [
+              "retryAfterSec"
+            ],
             "properties": {
               "retryAfterSec": {
                 "type": "number",
@@ -1609,7 +2102,10 @@
       },
       "TokenPair": {
         "type": "object",
-        "required": ["accessToken", "refreshToken"],
+        "required": [
+          "accessToken",
+          "refreshToken"
+        ],
         "properties": {
           "accessToken": {
             "type": "string",
@@ -1625,11 +2121,19 @@
       },
       "MediaVisibility": {
         "type": "string",
-        "enum": ["PUBLIC", "PRIVATE"]
+        "enum": [
+          "PUBLIC",
+          "PRIVATE"
+        ]
       },
       "LinkMediaData": {
         "type": "object",
-        "required": ["bucket", "objectKey", "mediaId", "visibility"],
+        "required": [
+          "bucket",
+          "objectKey",
+          "mediaId",
+          "visibility"
+        ],
         "properties": {
           "bucket": {
             "type": "string"
@@ -1653,7 +2157,12 @@
       },
       "Avatar": {
         "type": "object",
-        "required": ["largeUrl", "mediumUrl", "smallUrl", "thumbUrl"],
+        "required": [
+          "largeUrl",
+          "mediumUrl",
+          "smallUrl",
+          "thumbUrl"
+        ],
         "properties": {
           "largeUrl": {
             "type": "string",
@@ -1675,7 +2184,12 @@
       },
       "User": {
         "type": "object",
-        "required": ["id", "phoneNumber", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "phoneNumber",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -1707,7 +2221,11 @@
       },
       "UserSession": {
         "type": "object",
-        "required": ["id", "createdAt", "expiresAt"],
+        "required": [
+          "id",
+          "createdAt",
+          "expiresAt"
+        ],
         "additionalProperties": false,
         "properties": {
           "id": {
@@ -1729,7 +2247,14 @@
       },
       "Role": {
         "type": "object",
-        "required": ["id", "name", "permissions", "isStatic", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "name",
+          "permissions",
+          "isStatic",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -1755,45 +2280,13 @@
           }
         }
       },
-      "GetMediaUploadUrlInput": {
-        "type": "object",
-        "properties": {
-          "contentType": {
-            "type": "string",
-            "maxLength": 255
-          }
-        }
-      },
-      "GetMediaUploadUrlResult": {
-        "type": "object",
-        "required": ["bucket", "objectKey", "mediaId", "visibility", "url"],
-        "properties": {
-          "bucket": {
-            "type": "string"
-          },
-          "objectKey": {
-            "type": "string"
-          },
-          "mediaId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "visibility": {
-            "$ref": "#/components/schemas/MediaVisibility"
-          },
-          "contentType": {
-            "type": "string",
-            "maxLength": 255
-          },
-          "url": {
-            "type": "string",
-            "format": "uri"
-          }
-        }
-      },
       "UploadRequest": {
         "type": "object",
-        "required": ["name", "mimeType", "bucket"],
+        "required": [
+          "name",
+          "mimeType",
+          "bucket"
+        ],
         "additionalProperties": false,
         "properties": {
           "name": {
@@ -1813,7 +2306,10 @@
       },
       "UploadRequestResult": {
         "type": "object",
-        "required": ["fileId", "uploadUrl"],
+        "required": [
+          "fileId",
+          "uploadUrl"
+        ],
         "properties": {
           "fileId": {
             "type": "string",
@@ -1827,7 +2323,9 @@
       },
       "ConfirmUploadInput": {
         "type": "object",
-        "required": ["fileIds"],
+        "required": [
+          "fileIds"
+        ],
         "additionalProperties": false,
         "properties": {
           "fileIds": {
@@ -1842,7 +2340,9 @@
       },
       "PreviewDownloadUrlResult": {
         "type": "object",
-        "required": ["url"],
+        "required": [
+          "url"
+        ],
         "properties": {
           "url": {
             "type": "string",
@@ -1884,7 +2384,10 @@
       },
       "SortDirection": {
         "type": "string",
-        "enum": ["ASC", "DESC"]
+        "enum": [
+          "ASC",
+          "DESC"
+        ]
       },
       "Sort": {
         "type": "object",
@@ -1899,7 +2402,10 @@
       },
       "BannerFile": {
         "type": "object",
-        "required": ["id", "url"],
+        "required": [
+          "id",
+          "url"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -1913,7 +2419,14 @@
       },
       "Banner": {
         "type": "object",
-        "required": ["createdAt", "id", "isNew", "logo", "opacity", "sequence"],
+        "required": [
+          "createdAt",
+          "id",
+          "isNew",
+          "logo",
+          "opacity",
+          "sequence"
+        ],
         "properties": {
           "createdAt": {
             "type": "string",
@@ -1938,22 +2451,36 @@
             "minimum": 0
           },
           "subtitle": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "title": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "url": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
       "BannerEdge": {
         "type": "object",
-        "required": ["node"],
+        "required": [
+          "node"
+        ],
         "properties": {
           "cursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "node": {
             "$ref": "#/components/schemas/Banner"
@@ -1962,10 +2489,16 @@
       },
       "PageInfo": {
         "type": "object",
-        "required": ["hasNextPage", "hasPreviousPage"],
+        "required": [
+          "hasNextPage",
+          "hasPreviousPage"
+        ],
         "properties": {
           "endCursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "hasNextPage": {
             "type": "boolean"
@@ -1974,34 +2507,10 @@
             "type": "boolean"
           },
           "startCursor": {
-            "type": ["string", "null"]
-          }
-        }
-      },
-      "Error": {
-        "type": "object",
-        "required": ["statusCode", "message"],
-        "properties": {
-          "statusCode": {
-            "type": "integer"
-          },
-          "message": {
-            "type": "string"
-          },
-          "error": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "responses": {
-      "NotFoundError": {
-        "description": "Resource not found",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/Error"
-            }
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       }

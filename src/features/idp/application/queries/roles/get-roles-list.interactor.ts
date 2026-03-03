@@ -13,7 +13,7 @@ export class GetRolesListInteractor {
   ) {}
 
   public async execute() {
-    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
     if (isLeft(auth)) return auth;
 
     const readModel = await this.rolesListQuery.findAll();

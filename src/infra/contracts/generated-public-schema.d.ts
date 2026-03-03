@@ -300,46 +300,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/media/avatar/upload-request': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Получение presigned URL для загрузки аватара
-     * @description Возвращает presigned URL и идентификатор медиа-объекта для аватара пользователя.
-     */
-    post: operations['avatarUploadRequest'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/media/avatar/preview-upload': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Получение preview URL для загрузки аватара
-     * @description Возвращает preview URL для загрузки аватара.
-     */
-    post: operations['avatarPreviewUpload'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/media/upload-request': {
     parameters: {
       query?: never;
@@ -421,11 +381,34 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    ErrorResponse: {
+    ErrorDetail: {
+      /** @description Код ошибки для обработки на клиенте */
+      errorCode: string;
+      /** @description Человекочитаемое описание ошибки */
+      message: string;
+      /** @description Путь к полю с ошибкой */
+      path: string;
+      /** @description Дополнительные детали ошибки */
+      data?: {
+        [key: string]: unknown;
+      };
+    };
+    OpenApiValidationError: {
+      /** @description HTTP код ответа */
+      statusCode: number;
+      /** @enum {boolean} */
+      isDomain: false;
+      /** @description Человекочитаемое описание ошибки */
+      message: string;
+      errors: components['schemas']['ErrorDetail'][];
+    };
+    DomainErrorResponse: {
       /** @description Код ошибки для обработки на клиенте */
       type: string;
       /** @description Человекочитаемое описание ошибки */
       message?: string;
+      /** @enum {boolean} */
+      isDomain: true;
       /** @description Дополнительные детали ошибки */
       data?: {
         [key: string]: unknown;
@@ -511,18 +494,6 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
-    GetMediaUploadUrlInput: {
-      contentType?: string;
-    };
-    GetMediaUploadUrlResult: {
-      bucket: string;
-      objectKey: string;
-      mediaId: string;
-      visibility: components['schemas']['MediaVisibility'];
-      contentType?: string;
-      /** Format: uri */
-      url: string;
-    };
     UploadRequest: {
       name: string;
       mimeType: string;
@@ -587,23 +558,8 @@ export interface components {
       hasPreviousPage: boolean;
       startCursor?: string | null;
     };
-    Error: {
-      statusCode: number;
-      message: string;
-      error?: string;
-    };
   };
-  responses: {
-    /** @description Resource not found */
-    NotFoundError: {
-      headers: {
-        [name: string]: unknown;
-      };
-      content: {
-        'application/json': components['schemas']['Error'];
-      };
-    };
-  };
+  responses: never;
   parameters: never;
   requestBodies: never;
   headers: never;
@@ -646,13 +602,15 @@ export interface operations {
           };
         };
       };
-      /** @description Некорректный запрос */
+      /** @description Ошибка валидации / Доменная ошибка */
       400: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Превышено количество попыток */
@@ -665,10 +623,10 @@ export interface operations {
             /** @enum {string} */
             type: 'login_blocked';
             message?: string;
-            data: {
-              /** Format: date-time */
-              blockedUntil: string;
-            };
+            /** @enum {boolean} */
+            isDomain: true;
+            /** @description Рекомендованная задержка перед повторной попыткой */
+            retryAfterSec?: number;
           };
         };
       };
@@ -679,6 +637,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ThrottledErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -724,13 +691,15 @@ export interface operations {
               };
         };
       };
-      /** @description Некорректный запрос */
+      /** @description Ошибка валидации / Доменная ошибка */
       400: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Превышено количество попыток */
@@ -743,10 +712,9 @@ export interface operations {
             /** @enum {string} */
             type: 'login_blocked';
             message?: string;
-            data: {
-              /** Format: date-time */
-              blockedUntil: string;
-            };
+            /** @enum {boolean} */
+            isDomain: true;
+            retryAfterSec?: number;
           };
         };
       };
@@ -757,6 +725,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ThrottledErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -781,13 +758,15 @@ export interface operations {
           'application/json': components['schemas']['TokenPair'];
         };
       };
-      /** @description Некорректный запрос */
+      /** @description Ошибка валидации / Доменная ошибка */
       400: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Невалидный refresh-токен */
@@ -796,7 +775,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -834,13 +822,15 @@ export interface operations {
           };
         };
       };
-      /** @description Некорректный запрос */
+      /** @description Ошибка валидации / Доменная ошибка */
       400: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Не авторизован */
@@ -849,7 +839,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Внутренняя ошибка сервера */
@@ -858,7 +848,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -885,7 +875,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -914,7 +913,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -944,13 +952,15 @@ export interface operations {
           'application/json': components['schemas']['User'];
         };
       };
-      /** @description Невалидное имя */
+      /** @description Ошибка валидации / Доменная ошибка */
       400: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Не авторизован */
@@ -959,7 +969,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -990,7 +1009,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1017,7 +1045,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1040,13 +1077,22 @@ export interface operations {
         };
         content?: never;
       };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
       /** @description Не авторизован */
       401: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Сессия не найдена */
@@ -1055,7 +1101,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1086,7 +1141,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1118,13 +1182,21 @@ export interface operations {
           'application/json': components['schemas']['Role'];
         };
       };
-      /** @description Роль уже существует */
+      /** @description Ошибка валидации или роль уже существует */
       400: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | {
+                /** @enum {string} */
+                type: 'role_already_exists';
+                message?: string;
+                /** @enum {boolean} */
+                isDomain: true;
+              };
         };
       };
       /** @description Нет доступа */
@@ -1133,7 +1205,25 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Роль не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1169,7 +1259,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1194,13 +1293,22 @@ export interface operations {
           'application/json': components['schemas']['Role'];
         };
       };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
       /** @description Нет доступа */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Роль не найдена */
@@ -1209,7 +1317,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1241,13 +1358,24 @@ export interface operations {
           'application/json': Record<string, never>;
         };
       };
+      /** @description Ошибка валидации / Доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
       /** @description Нельзя удалить статическую роль */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Роль не найдена */
@@ -1256,7 +1384,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1289,13 +1426,24 @@ export interface operations {
           'application/json': components['schemas']['Role'];
         };
       };
+      /** @description Ошибка валидации / Доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
       /** @description Нельзя изменить статическую роль */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Роль не найдена */
@@ -1304,7 +1452,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1336,13 +1493,33 @@ export interface operations {
           'application/json': Record<string, never>;
         };
       };
+      /** @description Ошибка валидации / Доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
       /** @description Нет доступа */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Пользователь или роль не найдены */
@@ -1351,7 +1528,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1396,97 +1582,31 @@ export interface operations {
           };
         };
       };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
       /** @description Нет доступа */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
-    };
-  };
-  avatarUploadRequest: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['GetMediaUploadUrlInput'];
-      };
-    };
-    responses: {
-      /** @description Presigned URL для загрузки */
-      200: {
+      /** @description Внутренняя ошибка сервера */
+      500: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['GetMediaUploadUrlResult'];
-        };
-      };
-      /** @description Некорректный запрос */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Не авторизован */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-    };
-  };
-  avatarPreviewUpload: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['LinkMediaData'];
-      };
-    };
-    responses: {
-      /** @description URL превью аватара */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['Avatar'];
-        };
-      };
-      /** @description Не авторизован */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
-        };
-      };
-      /** @description Файл не найден */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1513,13 +1633,15 @@ export interface operations {
           'application/json': components['schemas']['UploadRequestResult'];
         };
       };
-      /** @description Некорректный запрос */
+      /** @description Ошибка валидации / Доменная ошибка */
       400: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Не авторизован */
@@ -1528,7 +1650,25 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Файл не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1555,13 +1695,15 @@ export interface operations {
           'application/json': Record<string, never>;
         };
       };
-      /** @description Некорректный запрос */
+      /** @description Ошибка валидации / Доменная ошибка */
       400: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Не авторизован */
@@ -1570,7 +1712,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Файл не найден */
@@ -1579,7 +1721,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1604,13 +1755,22 @@ export interface operations {
           'application/json': components['schemas']['PreviewDownloadUrlResult'];
         };
       };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
       /** @description Не авторизован */
       401: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Файл не найден */
@@ -1619,7 +1779,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ErrorResponse'];
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };
@@ -1652,7 +1821,33 @@ export interface operations {
           };
         };
       };
-      404: components['responses']['NotFoundError'];
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      /** @description Не найдено */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
     };
   };
 }

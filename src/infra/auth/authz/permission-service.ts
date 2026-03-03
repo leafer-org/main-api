@@ -13,20 +13,20 @@ export class PermissionService {
     private readonly sessionContext: SessionContext,
   ) {}
 
-  public can<T extends PermissionVariant>(
+  public async can<T extends PermissionVariant>(
     perm: T,
     ...args: WhereArg<InferPermissionValue<T>>
-  ): boolean {
+  ): Promise<boolean> {
     const role = this.sessionContext.getRole();
     return this.canLocal(perm, role, ...args);
   }
 
-  public canLocal<T extends PermissionVariant>(
+  public async canLocal<T extends PermissionVariant>(
     perm: T,
     role: string,
     ...args: WhereArg<InferPermissionValue<T>>
-  ): boolean {
-    const map = this.store.get();
+  ): Promise<boolean> {
+    const map = await this.store.get();
     const rolePermissions = map.roles[role];
 
     if (!rolePermissions) {

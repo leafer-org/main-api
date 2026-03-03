@@ -3,32 +3,26 @@ import { Body, Controller, Get, HttpCode, Inject, Param, Post } from '@nestjs/co
 import { GetPreviewDownloadUrlInteractor } from '../../application/queries/get-preview-download-url.interactor.js';
 import { RequestUploadInteractor } from '../../application/use-cases/upload/request-upload.interactor.js';
 import { UseFilesInteractor } from '../../application/use-cases/use-files.interactor.js';
-import { MainConfigService } from '@/infra/config/service.js';
+import { Public } from '@/infra/auth/authn/public.decorator.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
-import { MediaService } from '@/kernel/application/ports/media.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import { FileId } from '@/kernel/domain/ids.js';
 
+@Public()
 @Controller('media')
 export class MediaController {
-  private readonly avatarBucket: string;
-
   public constructor(
     private readonly requestUpload: RequestUploadInteractor,
     private readonly useFiles: UseFilesInteractor,
     private readonly getPreviewDownloadUrl: GetPreviewDownloadUrlInteractor,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
-    @Inject(MediaService)
-    private readonly mediaService: MediaService,
-    config: MainConfigService,
-  ) {
-    this.avatarBucket = config.get('MEDIA_BUCKET_PUBLIC') ?? 'avatars';
-  }
+  ) {}
 
   @Post('upload-request')
+  @Public()
   @HttpCode(200)
   public async uploadRequest(
     @Body() body: PublicBody['mediaUploadRequest'],
@@ -73,56 +67,9 @@ export class MediaController {
 
     const url = result.value;
     if (!url) {
-      throw domainToHttpError<'mediaPreview'>({ 404: { type: 'file_not_found' } });
+      throw domainToHttpError<'mediaPreview'>({ 404: { type: 'file_not_found', isDomain: true } });
     }
 
     return { url };
-  }
-
-  @Post('avatar/upload-request')
-  @HttpCode(200)
-  public async avatarUploadRequest(
-    @Body() body: PublicBody['avatarUploadRequest'],
-  ): Promise<PublicResponse['avatarUploadRequest']> {
-    const mimeType = body.contentType ?? 'image/jpeg';
-    const result = await this.requestUpload.execute({
-      name: 'avatar',
-      bucket: this.avatarBucket,
-      mimeType,
-    });
-
-    if (isLeft(result)) {
-      throw domainToHttpError<'avatarUploadRequest'>(result.error.toResponse());
-    }
-
-    return {
-      bucket: this.avatarBucket,
-      objectKey: result.value.fileId,
-      mediaId: result.value.fileId,
-      visibility: 'PUBLIC',
-      contentType: mimeType,
-      url: result.value.uploadUrl,
-    };
-  }
-
-  @Post('avatar/preview-upload')
-  @HttpCode(200)
-  public async avatarPreviewUpload(
-    @Body() body: PublicBody['avatarPreviewUpload'],
-  ): Promise<PublicResponse['avatarPreviewUpload']> {
-    const fileId = FileId.raw(body.mediaId);
-
-    const [largeUrl, mediumUrl, smallUrl, thumbUrl] = await Promise.all([
-      this.mediaService.getPreviewDownloadUrl(fileId),
-      this.mediaService.getPreviewDownloadUrl(fileId),
-      this.mediaService.getPreviewDownloadUrl(fileId),
-      this.mediaService.getPreviewDownloadUrl(fileId),
-    ]);
-
-    if (!largeUrl || !mediumUrl || !smallUrl || !thumbUrl) {
-      throw domainToHttpError<'avatarPreviewUpload'>({ 404: { type: 'file_not_found' } });
-    }
-
-    return { largeUrl, mediumUrl, smallUrl, thumbUrl };
   }
 }

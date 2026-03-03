@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  Inject,
-  Param,
-  Patch,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch } from '@nestjs/common';
 
 import { GetMeInteractor } from '../../application/queries/me/get-me.interactor.js';
 import { GetUserSessionsInteractor } from '../../application/queries/user-sessions/get-user-sessions.interactor.js';
@@ -17,7 +7,6 @@ import { DeleteAllSessionsInteractor } from '../../application/use-cases/session
 import { DeleteSessionInteractor } from '../../application/use-cases/session/delete-session.interactor.js';
 import { resolveAvatarUrls } from './avatar-url.helper.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
-import { JwtAuthGuard } from '@/infra/auth/authn/jwt-auth.guard.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
@@ -26,7 +15,6 @@ import { MediaService } from '@/kernel/application/ports/media.js';
 import { SessionId } from '@/kernel/domain/ids.js';
 
 @Controller('me')
-@UseGuards(JwtAuthGuard)
 export class MeController {
   public constructor(
     private readonly getMeInteractor: GetMeInteractor,

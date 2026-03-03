@@ -27,7 +27,7 @@ export class UpdateUserRoleInteractor {
   ) {}
 
   public async execute(command: { userId: UserId; roleId: RoleId }) {
-    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {

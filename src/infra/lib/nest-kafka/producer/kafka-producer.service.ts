@@ -155,9 +155,8 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
-
-  public async poll(){
-    return this.producer.poll()
+  public async poll() {
+    return this.producer.poll();
   }
 
   public async flush(timeout = DEFAULT_FLUSH_TIMEOUT_MS): Promise<void> {
