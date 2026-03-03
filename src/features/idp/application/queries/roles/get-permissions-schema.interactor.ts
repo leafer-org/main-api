@@ -29,8 +29,8 @@ export class GetPermissionsSchemaInteractor {
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
-  public execute() {
-    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+  public async execute() {
+    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
     if (isLeft(auth)) return auth;
 
     return Right(buildPermissionsSchema());

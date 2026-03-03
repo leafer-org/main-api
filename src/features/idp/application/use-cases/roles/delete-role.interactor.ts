@@ -8,7 +8,6 @@ import { userDecide } from '../../../domain/aggregates/user/decide.js';
 import { whenRoleDeletedUpdateUserRoles } from '../../../domain/policies/when-role-deleted-update-user-roles.policy.js';
 import { whenUserRoleUpdatedDeleteSessions } from '../../../domain/policies/when-user-role-updated-delete-sessions.policy.js';
 import { RoleRepository, SessionRepository, UserRepository } from '../../ports.js';
-import { PermissionsStore } from '@/infra/auth/authz/permissions-store.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
@@ -24,12 +23,11 @@ export class DeleteRoleInteractor {
     @Inject(SessionRepository) private readonly sessionRepository: SessionRepository,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
-    @Inject(PermissionsStore) private readonly permissionsStore: PermissionsStore,
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
   public async execute(command: { roleId: RoleId; replacementRoleId: RoleId }) {
-    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {
@@ -78,8 +76,6 @@ export class DeleteRoleInteractor {
           }
         }
       }
-
-      await this.permissionsStore.refresh();
 
       return Right(undefined);
     });

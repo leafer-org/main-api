@@ -9,6 +9,5 @@ export type PermissionsMap = {
 };
 
 export abstract class PermissionsStore {
-  public abstract get(): PermissionsMap;
-  public abstract refresh(): Promise<void>;
+  public abstract get(): Promise<PermissionsMap>;
 }

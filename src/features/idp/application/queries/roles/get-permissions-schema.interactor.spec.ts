@@ -11,10 +11,10 @@ import { PermissionDeniedError } from '@/kernel/application/ports/permission.js'
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
 describe('GetPermissionsSchemaInteractor', () => {
-  it('возвращает схему разрешений', () => {
+  it('возвращает схему разрешений', async () => {
     const permissionCheck = new MockPermissionCheckService();
     const interactor = new GetPermissionsSchemaInteractor(permissionCheck);
-    const result = interactor.execute();
+    const result = await interactor.execute();
 
     expect(isRight(result)).toBe(true);
     if (isRight(result)) {
@@ -44,10 +44,10 @@ describe('GetPermissionsSchemaInteractor', () => {
     }
   });
 
-  it('возвращает PermissionDeniedError если нет прав', () => {
+  it('возвращает PermissionDeniedError если нет прав', async () => {
     const permissionCheck = new MockPermissionCheckService().deny('ROLE.MANAGE', 'USER');
     const interactor = new GetPermissionsSchemaInteractor(permissionCheck);
-    const result = interactor.execute();
+    const result = await interactor.execute();
 
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) {

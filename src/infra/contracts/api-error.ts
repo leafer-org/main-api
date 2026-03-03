@@ -10,13 +10,9 @@ type Errors<K extends keyof PublicSchema.operations> = {
   >;
 };
 
-type DomainErrorResponse = { [code: number]: { type: string; message?: string; data?: unknown } };
-
-export function domainToHttpError<K extends keyof PublicSchema.operations>(
-  error: Errors<K> | DomainErrorResponse,
-) {
+export function domainToHttpError<K extends keyof PublicSchema.operations>(error: Errors<K>) {
   const [key] = Object.keys(error);
-  const e = (error as Record<string, unknown>)[key!];
+  const e = (error as Record<string, unknown>)[key as string];
 
   return new HttpException(e as Record<string, unknown>, parseInt(key ?? '500', 10));
 }

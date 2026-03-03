@@ -11,7 +11,12 @@ export class OpenApiExceptionFilter implements ExceptionFilter {
     return response.status(exception.status).json({
       statusCode: exception.status,
       message: exception.message,
-      errors: exception.errors,
+      isDomain: false,
+      errors: exception.errors.map((e) => ({
+        errorCode: e.errorCode ?? 'openapi.validation',
+        message: e.message,
+        path: e.path ?? '/',
+      })),
     });
   }
 }

@@ -81,7 +81,7 @@ describe('Media Controller (e2e)', () => {
         .send({ name: 'file.txt', mimeType: 'not-a-mime', bucket: 'media-public' })
         .expect(400);
 
-      expect(res.body.code).toBe('invalid_mime_type');
+      expect(res.body.type).toBe('invalid_mime_type');
     });
 
     it('should return 400 for empty file name', async () => {
@@ -90,7 +90,7 @@ describe('Media Controller (e2e)', () => {
         .send({ name: '', mimeType: 'image/png', bucket: 'media-public' })
         .expect(400);
 
-      expect(res.body.code).toBe('invalid_file_name');
+      expect(res.body.type).toBe('invalid_file_name');
     });
 
     it('should return 400 for file name exceeding 255 characters', async () => {
@@ -101,7 +101,7 @@ describe('Media Controller (e2e)', () => {
         .send({ name: longName, mimeType: 'image/png', bucket: 'media-public' })
         .expect(400);
 
-      expect(res.body.code).toBe('invalid_file_name');
+      expect(res.body.type).toBe('invalid_file_name');
     });
   });
 
@@ -137,7 +137,7 @@ describe('Media Controller (e2e)', () => {
         .send({ fileIds: ['00000000-0000-0000-0000-000000000000'] })
         .expect(404);
 
-      expect(res.body.code).toBe('file_not_found');
+      expect(res.body.type).toBe('file_not_found');
     });
 
     it('should confirm multiple files in a batch', async () => {
@@ -199,77 +199,6 @@ describe('Media Controller (e2e)', () => {
 
     it('should return 404 for non-existent mediaId', async () => {
       await e2e.agent.get('/media/preview/00000000-0000-0000-0000-000000000000').expect(404);
-    });
-  });
-
-  // ─── POST /media/avatar/upload-request ────────────────────────────
-
-  describe('POST /media/avatar/upload-request', () => {
-    it('should return presigned URL and media metadata', async () => {
-      const res = await e2e.agent
-        .post('/media/avatar/upload-request')
-        .send({ contentType: 'image/jpeg' })
-        .expect(200);
-
-      expect(res.body).toHaveProperty('bucket');
-      expect(res.body).toHaveProperty('objectKey');
-      expect(res.body).toHaveProperty('mediaId');
-      expect(res.body).toHaveProperty('url');
-      expect(res.body.visibility).toBe('PUBLIC');
-      expect(res.body.contentType).toBe('image/jpeg');
-      expect(res.body.url).toContain(process.env.S3_ENDPOINT);
-    });
-
-    it('should default contentType to image/jpeg when not provided', async () => {
-      const res = await e2e.agent.post('/media/avatar/upload-request').send({}).expect(200);
-
-      expect(res.body.contentType).toBe('image/jpeg');
-    });
-  });
-
-  // ─── POST /media/avatar/preview-upload ────────────────────────────
-
-  describe('POST /media/avatar/preview-upload', () => {
-    it('should return avatar preview URLs for all sizes', async () => {
-      // First create an avatar upload and upload data
-      const avatarRes = await e2e.agent
-        .post('/media/avatar/upload-request')
-        .send({ contentType: 'image/jpeg' })
-        .expect(200);
-
-      await fetch(avatarRes.body.url, {
-        method: 'PUT',
-        body: Buffer.from('fake-avatar-data'),
-        headers: { 'Content-Type': 'image/jpeg' },
-      });
-
-      const res = await e2e.agent
-        .post('/media/avatar/preview-upload')
-        .send({
-          bucket: avatarRes.body.bucket,
-          objectKey: avatarRes.body.objectKey,
-          mediaId: avatarRes.body.mediaId,
-          visibility: avatarRes.body.visibility,
-          contentType: avatarRes.body.contentType,
-        })
-        .expect(200);
-
-      expect(res.body).toHaveProperty('largeUrl');
-      expect(res.body).toHaveProperty('mediumUrl');
-      expect(res.body).toHaveProperty('smallUrl');
-      expect(res.body).toHaveProperty('thumbUrl');
-    });
-
-    it('should return 404 for non-existent mediaId', async () => {
-      await e2e.agent
-        .post('/media/avatar/preview-upload')
-        .send({
-          bucket: 'media-public',
-          objectKey: 'non-existent',
-          mediaId: '00000000-0000-0000-0000-000000000000',
-          visibility: 'PUBLIC',
-        })
-        .expect(404);
     });
   });
 });

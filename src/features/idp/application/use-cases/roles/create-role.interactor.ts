@@ -3,7 +3,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { roleApply } from '../../../domain/aggregates/role/apply.js';
 import { roleDecide } from '../../../domain/aggregates/role/decide.js';
 import { IdGenerator, RoleRepository } from '../../ports.js';
-import { PermissionsStore } from '@/infra/auth/authz/permissions-store.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
@@ -17,12 +16,11 @@ export class CreateRoleInteractor {
     @Inject(IdGenerator) private readonly idGenerator: IdGenerator,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
-    @Inject(PermissionsStore) private readonly permissionsStore: PermissionsStore,
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
   public async execute(command: { name: string; permissions: Record<string, unknown> }) {
-    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {
@@ -42,7 +40,6 @@ export class CreateRoleInteractor {
 
       const state = roleApply(null, eventEither.value);
       await this.roleRepository.save(tx, state);
-      await this.permissionsStore.refresh();
 
       return { type: 'success' as const, value: state };
     });

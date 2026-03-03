@@ -11,7 +11,6 @@ import { FullName } from '../../../domain/vo/full-name.js';
 import { PhoneNumber } from '../../../domain/vo/phone-number.js';
 import type { RoleRepository, SessionRepository, UserRepository } from '../../ports.js';
 import { DeleteRoleInteractor } from './delete-role.interactor.js';
-import { PermissionsStore } from '@/infra/auth/authz/permissions-store.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { MockPermissionCheckService, MockTransactionHost, ServiceMock } from '@/infra/test/mock.js';
@@ -82,19 +81,16 @@ const makeDeps = () => {
   sessionRepo.findByUserId.mockResolvedValue([]);
   sessionRepo.deleteById.mockResolvedValue(undefined);
 
-  const permissionsStore = ServiceMock<PermissionsStore>();
-  permissionsStore.refresh.mockResolvedValue(undefined);
-
   const permissionCheck = new MockPermissionCheckService();
 
-  return { roleRepo, userRepo, sessionRepo, permissionsStore, permissionCheck };
+  return { roleRepo, userRepo, sessionRepo, permissionCheck };
 };
 
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
 describe('DeleteRoleInteractor', () => {
   it('удаляет роль без затронутых пользователей', async () => {
-    const { roleRepo, userRepo, sessionRepo, permissionsStore, permissionCheck } = makeDeps();
+    const { roleRepo, userRepo, sessionRepo, permissionCheck } = makeDeps();
     const txHost = new MockTransactionHost();
 
     roleRepo.findById
@@ -107,7 +103,6 @@ describe('DeleteRoleInteractor', () => {
       sessionRepo,
       txHost,
       makeClock(),
-      permissionsStore,
       permissionCheck,
     );
 
@@ -118,11 +113,10 @@ describe('DeleteRoleInteractor', () => {
 
     expect(isRight(result)).toBe(true);
     expect(roleRepo.deleteById).toHaveBeenCalledWith(txHost.transaction, ROLE_ID);
-    expect(permissionsStore.refresh).toHaveBeenCalled();
   });
 
   it('возвращает RoleNotFoundError если роль не найдена', async () => {
-    const { roleRepo, userRepo, sessionRepo, permissionsStore, permissionCheck } = makeDeps();
+    const { roleRepo, userRepo, sessionRepo, permissionCheck } = makeDeps();
 
     roleRepo.findById.mockResolvedValue(null);
 
@@ -132,7 +126,6 @@ describe('DeleteRoleInteractor', () => {
       sessionRepo,
       new MockTransactionHost(),
       makeClock(),
-      permissionsStore,
       permissionCheck,
     );
 
@@ -148,7 +141,7 @@ describe('DeleteRoleInteractor', () => {
   });
 
   it('возвращает RoleNotFoundError если замещающая роль не найдена', async () => {
-    const { roleRepo, userRepo, sessionRepo, permissionsStore, permissionCheck } = makeDeps();
+    const { roleRepo, userRepo, sessionRepo, permissionCheck } = makeDeps();
 
     roleRepo.findById
       .mockResolvedValueOnce(makeRole()) // роль для удаления найдена
@@ -160,7 +153,6 @@ describe('DeleteRoleInteractor', () => {
       sessionRepo,
       new MockTransactionHost(),
       makeClock(),
-      permissionsStore,
       permissionCheck,
     );
 
@@ -176,7 +168,7 @@ describe('DeleteRoleInteractor', () => {
   });
 
   it('возвращает StaticRoleModificationError если роль статическая', async () => {
-    const { roleRepo, userRepo, sessionRepo, permissionsStore, permissionCheck } = makeDeps();
+    const { roleRepo, userRepo, sessionRepo, permissionCheck } = makeDeps();
 
     roleRepo.findById
       .mockResolvedValueOnce(makeRole({ isStatic: true }))
@@ -188,7 +180,6 @@ describe('DeleteRoleInteractor', () => {
       sessionRepo,
       new MockTransactionHost(),
       makeClock(),
-      permissionsStore,
       permissionCheck,
     );
 
@@ -204,7 +195,7 @@ describe('DeleteRoleInteractor', () => {
   });
 
   it('обновляет роли пользователей и удаляет их сессии (policy chain)', async () => {
-    const { roleRepo, userRepo, sessionRepo, permissionsStore, permissionCheck } = makeDeps();
+    const { roleRepo, userRepo, sessionRepo, permissionCheck } = makeDeps();
     const txHost = new MockTransactionHost();
 
     roleRepo.findById
@@ -220,7 +211,6 @@ describe('DeleteRoleInteractor', () => {
       sessionRepo,
       txHost,
       makeClock(),
-      permissionsStore,
       permissionCheck,
     );
 
@@ -248,7 +238,7 @@ describe('DeleteRoleInteractor', () => {
   });
 
   it('возвращает PermissionDeniedError если нет прав', async () => {
-    const { roleRepo, userRepo, sessionRepo, permissionsStore, permissionCheck } = makeDeps();
+    const { roleRepo, userRepo, sessionRepo, permissionCheck } = makeDeps();
     permissionCheck.deny('ROLE.MANAGE', 'USER');
 
     const interactor = new DeleteRoleInteractor(
@@ -257,7 +247,6 @@ describe('DeleteRoleInteractor', () => {
       sessionRepo,
       new MockTransactionHost(),
       makeClock(),
-      permissionsStore,
       permissionCheck,
     );
 

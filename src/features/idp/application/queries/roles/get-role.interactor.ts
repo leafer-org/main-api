@@ -15,7 +15,7 @@ export class GetRoleInteractor {
   ) {}
 
   public async execute(command: { roleId: RoleId }) {
-    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
     if (isLeft(auth)) return auth;
 
     const readModel = await this.roleQuery.findRole(command.roleId);

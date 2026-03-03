@@ -18,15 +18,16 @@ export class KafkaConsumerConnection {
   private readonly logger = new Logger(KafkaConsumerConnection.name);
   private consumer: Kafka.KafkaConsumer | undefined;
 
-  private resolveAssigned!: () => void;
-  public readonly partitionsAssigned = new Promise<void>((resolve) => {
-    this.resolveAssigned = resolve;
-  });
+  private readonly partitionsAssignedResolvers = Promise.withResolvers<void>();
 
   public constructor(
     private readonly options: KafkaConsumerModuleOptions,
     private readonly topics: string[],
   ) {}
+
+  public waidPartitionsAssigned() {
+    return this.partitionsAssignedResolvers.promise;
+  }
 
   public async connect(): Promise<void> {
     const timeout = this.options.connectTimeout ?? DEFAULT_CONNECT_TIMEOUT_MS;
@@ -86,7 +87,7 @@ export class KafkaConsumerConnection {
           if (err.code === Kafka.CODES.ERRORS.ERR__ASSIGN_PARTITIONS) {
             this.logger.log(`Partitions assigned: ${formatAssignments(assignments)}`);
             this.consumer?.assign(assignments);
-            this.resolveAssigned();
+            this.partitionsAssignedResolvers.resolve();
           } else if (err.code === Kafka.CODES.ERRORS.ERR__REVOKE_PARTITIONS) {
             this.logger.log(`Partitions revoked: ${formatAssignments(assignments)}`);
             this.consumer?.unassign();

@@ -15,7 +15,7 @@ export class SearchAdminUsersInteractor {
   ) {}
 
   public async execute(params: { query?: string; role?: string; from?: number; size?: number }) {
-    const auth = this.permissionCheck.mustCan(Permissions.manageUser);
+    const auth = await this.permissionCheck.mustCan(Permissions.manageUser);
     if (isLeft(auth)) return auth;
 
     const result = await this.query.search(params);

@@ -52,17 +52,17 @@ export class MockPermissionCheckService extends PermissionCheckService {
     return this;
   }
 
-  public can<T extends PermissionVariant>(
+  public async can<T extends PermissionVariant>(
     _perm: T,
     ..._args: WhereArg<InferPermissionValue<T>>
-  ): boolean {
+  ): Promise<boolean> {
     return !isLeft(this.result);
   }
 
-  public mustCan<T extends PermissionVariant>(
+  public async mustCan<T extends PermissionVariant>(
     _perm: T,
     ..._args: WhereArg<InferPermissionValue<T>>
-  ): Either<PermissionDeniedError, void> {
+  ): Promise<Either<PermissionDeniedError, void>> {
     return this.result;
   }
 }

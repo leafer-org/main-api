@@ -60,7 +60,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
       await this.pollPromise;
     }
     await this.poll();
-    await this.producer.flush()
+    await this.producer.flush();
   }
 
   private async doPoll(): Promise<void> {
@@ -82,7 +82,6 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
             key: row.key ?? undefined,
             headers: row.headers ?? undefined,
           });
-
         }
 
         const ids = rows.map((r) => r.id);

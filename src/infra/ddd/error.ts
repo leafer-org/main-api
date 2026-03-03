@@ -2,29 +2,70 @@
  * Не наследуйтесь от этого класса напрямую, используйте CreateDomainError
  */
 
+export abstract class DomainError<
+  T extends string,
 // biome-ignore lint/complexity/noBannedTypes: good type
-export  abstract class DomainError<T extends string, D = {}, HC extends number = 500> extends Error {
+  D = {},
+  StatusCode extends number = 500,
+> extends Error {
   public readonly type: T;
   public readonly data: D;
-  public readonly httpCode: HC;
-  public constructor(type: T, httpCode: HC, data?: D, cause?: Error) {
+  public readonly statusCode: StatusCode;
+  public constructor(type: T, statusCode: StatusCode, data?: D, cause?: Error) {
     super(type, { cause });
     this.name = this.constructor.name;
     this.data = data as D;
     this.type = type;
-    this.httpCode = httpCode;
+    this.statusCode = statusCode;
   }
 
-  public toResponse(): Record<HC, { type: T; message?: string; data: D }> {
+  public toResponse(): Record<
+    StatusCode,
+    {
+      statusCode: StatusCode;
+      message: string;
+      isDomain: true;
+      type: T
+      data: D
+    }
+  > {
     return {
-      [this.httpCode]: {
-        type: this.type,
+      [this.statusCode]: {
+        statusCode: this.statusCode,
         message: this.message,
+        type: this.type,
+        isDomain: true,
         data: this.data,
       },
-    };
+    } as never;
   }
 }
+
+/**
+ * 
+ * errors =
+(1) [{…}]
+0 =
+{path: '/body/name', message: 'must NOT have fewer than 1 characters', errorCode: 'minLength.openapi.validation'}
+errorCode =
+'minLength.openapi.validation'
+message =
+'must NOT have fewer than 1 characters'
+path =
+'/body/name'
+[[Prototype]] =
+Object
+length =
+1
+[[Prototype]] =
+Array(0)
+[[Prototype]] =
+Object
+message =
+'request/body/name must NOT have fewer than 1 characters'
+statusCode =
+400
+ */
 
 /**
  * Функция для создания доменных ошибок

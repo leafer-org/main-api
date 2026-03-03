@@ -1,7 +1,7 @@
 import { expect } from 'vitest';
 
-import { ADMIN_PHONE } from '../helpers/db.js';
 import { type E2eApp } from '../helpers/create-app.js';
+import { ADMIN_PHONE } from '../helpers/db.js';
 
 export async function loginAsAdmin(agent: E2eApp['agent'], otp: string) {
   const phone = `+${ADMIN_PHONE}`;

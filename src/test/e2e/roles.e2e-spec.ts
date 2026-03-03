@@ -185,7 +185,7 @@ describe('Roles Controller (e2e)', () => {
         .send({ name: 'MODERATOR', permissions: {} })
         .expect(400);
 
-      expect(res.body.code).toBe('role_already_exists');
+      expect(res.body.type).toBe('role_already_exists');
     });
   });
 
@@ -243,7 +243,7 @@ describe('Roles Controller (e2e)', () => {
         .send({ permissions: { 'ROLE.MANAGE': false } })
         .expect(403);
 
-      expect(res.body.code).toBe('static_role_modification');
+      expect(res.body.type).toBe('static_role_modification');
     });
   });
 
@@ -318,7 +318,7 @@ describe('Roles Controller (e2e)', () => {
         .send({ replacementRoleId: userRole.id })
         .expect(403);
 
-      expect(res.body.code).toBe('static_role_modification');
+      expect(res.body.type).toBe('static_role_modification');
     });
   });
 

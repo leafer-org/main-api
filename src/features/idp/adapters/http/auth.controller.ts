@@ -8,7 +8,6 @@ import {
   Inject,
   Post,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 
@@ -20,8 +19,8 @@ import { DeleteSessionInteractor } from '../../application/use-cases/session/del
 import { RotateSessionInteractor } from '../../application/use-cases/session/rotate-session.interactor.js';
 import { resolveAvatarUrls } from './avatar-url.helper.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
-import { JwtAuthGuard } from '@/infra/auth/authn/jwt-auth.guard.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
+import { Public } from '@/infra/auth/authn/public.decorator.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
@@ -40,6 +39,7 @@ export class AuthController {
     private readonly mediaService: MediaService,
   ) {}
 
+  @Public()
   @Post('request-otp')
   @HttpCode(200)
   public async requestOtp(
@@ -58,6 +58,7 @@ export class AuthController {
     return {};
   }
 
+  @Public()
   @Post('verify-otp')
   @HttpCode(200)
   public async verifyOtpEndpoint(
@@ -90,12 +91,13 @@ export class AuthController {
     };
   }
 
+  @Public()
   @Get('refresh')
   public async refresh(
     @Headers('x-refresh-token') refreshToken: string,
   ): Promise<PublicResponse['refresh']> {
     if (!refreshToken) {
-      throw domainToHttpError<'refresh'>({ 401: { type: 'missing_refresh_token' } });
+      throw domainToHttpError<'refresh'>({ 401: { type: 'missing_refresh_token', isDomain: true } });
     }
 
     try {
@@ -111,10 +113,11 @@ export class AuthController {
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw domainToHttpError<'refresh'>({ 401: { type: 'invalid_token' } });
+      throw domainToHttpError<'refresh'>({ 401: { type: 'invalid_token', isDomain: true } });
     }
   }
 
+  @Public()
   @Post('complete-profile')
   @HttpCode(200)
   public async completeProfile(
@@ -156,7 +159,6 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(204)
-  @UseGuards(JwtAuthGuard)
   public async logout(@CurrentUser() user: JwtUserPayload): Promise<void> {
     const result = await this.deleteSession.execute({
       sessionId: user.sessionId,

@@ -4,7 +4,6 @@ import { roleApply } from '../../../domain/aggregates/role/apply.js';
 import { roleDecide } from '../../../domain/aggregates/role/decide.js';
 import { RoleNotFoundError } from '../../../domain/aggregates/role/errors.js';
 import { RoleRepository } from '../../ports.js';
-import { PermissionsStore } from '@/infra/auth/authz/permissions-store.js';
 import { isLeft, Left } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
@@ -18,12 +17,11 @@ export class UpdateRoleInteractor {
     @Inject(RoleRepository) private readonly roleRepository: RoleRepository,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
-    @Inject(PermissionsStore) private readonly permissionsStore: PermissionsStore,
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
   public async execute(command: { roleId: RoleId; permissions: Record<string, unknown> }) {
-    const auth = this.permissionCheck.mustCan(Permissions.manageRole);
+    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {
@@ -42,7 +40,6 @@ export class UpdateRoleInteractor {
 
       const newState = roleApply(state, eventEither.value);
       await this.roleRepository.save(tx, newState);
-      await this.permissionsStore.refresh();
 
       return { type: 'success' as const, value: newState };
     });

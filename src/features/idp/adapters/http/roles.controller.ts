@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
 
 import { GetPermissionsSchemaInteractor } from '../../application/queries/roles/get-permissions-schema.interactor.js';
 import { GetRoleInteractor } from '../../application/queries/roles/get-role.interactor.js';
@@ -18,7 +8,6 @@ import { DeleteRoleInteractor } from '../../application/use-cases/roles/delete-r
 import { UpdateRoleInteractor } from '../../application/use-cases/roles/update-role.interactor.js';
 import { UpdateUserRoleInteractor } from '../../application/use-cases/roles/update-user-role.interactor.js';
 import type { RoleReadModel } from '../../domain/read-models/role.read-model.js';
-import { JwtAuthGuard } from '@/infra/auth/authn/jwt-auth.guard.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse, PublicSchemas } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
@@ -36,7 +25,6 @@ function serializeRole(role: RoleReadModel): PublicSchemas['Role'] {
 }
 
 @Controller('roles')
-@UseGuards(JwtAuthGuard)
 export class RolesController {
   public constructor(
     private readonly createRole: CreateRoleInteractor,
@@ -59,8 +47,8 @@ export class RolesController {
   }
 
   @Get('permissions-schema')
-  public getSchema(): PublicResponse['getPermissionsSchema'] {
-    const result = this.getPermissionsSchema.execute();
+  public async getSchema(): Promise<PublicResponse['getPermissionsSchema']> {
+    const result = await this.getPermissionsSchema.execute();
 
     if (isLeft(result)) {
       throw domainToHttpError<'getPermissionsSchema'>(result.error.toResponse());
@@ -133,7 +121,6 @@ export class RolesController {
 }
 
 @Controller('users')
-@UseGuards(JwtAuthGuard)
 export class UsersRoleController {
   public constructor(private readonly updateUserRole: UpdateUserRoleInteractor) {}
 

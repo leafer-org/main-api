@@ -19,18 +19,18 @@ export class PermissionCheckServiceImpl extends PermissionCheckService {
     super();
   }
 
-  public can<T extends PermissionVariant>(
+  public async can<T extends PermissionVariant>(
     perm: T,
     ...args: WhereArg<InferPermissionValue<T>>
-  ): boolean {
+  ): Promise<boolean> {
     return this.inner.can(perm, ...args);
   }
 
-  public mustCan<T extends PermissionVariant>(
+  public async mustCan<T extends PermissionVariant>(
     perm: T,
     ...args: WhereArg<InferPermissionValue<T>>
-  ): Either<PermissionDeniedError, void> {
-    if (!this.inner.can(perm, ...args)) {
+  ): Promise<Either<PermissionDeniedError, void>> {
+    if (!(await this.inner.can(perm, ...args))) {
       const role = this.sessionContext.getRole();
       return Left(new PermissionDeniedError({ action: perm.action, role }));
     }

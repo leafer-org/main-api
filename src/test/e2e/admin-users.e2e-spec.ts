@@ -13,7 +13,6 @@ import { configureApp } from '@/apps/configure-app.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 import { KafkaConsumerService } from '@/infra/lib/nest-kafka/consumer/kafka-consumer.service.js';
-import { PermissionsStore } from '@/infra/auth/authz/permissions-store.js';
 
 const FIXED_OTP = '123456';
 
@@ -48,7 +47,6 @@ describe('Admin Users Controller (e2e)', () => {
     if (!process.env.DB_URL) throw new Error('DB_URL not set');
     await seedStaticRoles(process.env.DB_URL);
     await seedAdminUser(process.env.DB_URL);
-    await e2e.app.get(PermissionsStore).refresh();
   });
 
   afterEach(async () => {
@@ -91,7 +89,10 @@ describe('Admin Users Controller (e2e)', () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Register a user — this triggers outbox → Kafka → MeiliSearch projection
-      await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000003', fullName: 'Searchable User' });
+      await registerUser(e2e.agent, FIXED_OTP, {
+        phone: '+79990000003',
+        fullName: 'Searchable User',
+      });
       await flushOutbox(e2e.app);
 
       // Wait for the projection to complete (async: Kafka consumer → MeiliSearch)
