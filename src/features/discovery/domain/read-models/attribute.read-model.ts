@@ -5,6 +5,7 @@ export type AttributeReadModel = {
   attributeId: AttributeId;
   categoryId: CategoryId;
   name: string;
+  required: boolean;
   schema: AttributeSchema;
   createdAt: Date;
   updatedAt: Date;
