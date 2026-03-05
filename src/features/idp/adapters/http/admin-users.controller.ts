@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 
-import { SearchAdminUsersInteractor } from '../../application/queries/admin-users-list/search-admin-users.interactor.js';
+import { SearchAdminUsersInteractor } from '../../application/use-cases/admin-users-list/search-admin-users.interactor.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';

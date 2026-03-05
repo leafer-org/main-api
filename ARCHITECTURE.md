@@ -2,6 +2,16 @@
 
 Проект построен на Hexagonal Architecture + CQRS + функциональном Decider-паттерне.
 
+## Spec driven development
+
+Если в дирректории находится файл MODULE_SPEC.md
+
+Значит это модуль. И там описаны требования и архитектура модуля.
+
+Если пункт спеки помечен TODO: значит это ещё не готово и требует реализации.
+
+MODULE_SPEC.md это источник истины. Если код расходится со спекой, значит нужно изменить код!
+
 ## Разделы
 
 1. **[Domain](architecture/1-domain.md)** — агрегаты (Decide + Apply), state, events, commands, value objects, policies, read models

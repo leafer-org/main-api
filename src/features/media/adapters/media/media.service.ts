@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import { GetDownloadUrlInteractor } from '../../application/queries/get-download-url.interactor.js';
-import { GetPreviewDownloadUrlInteractor } from '../../application/queries/get-preview-download-url.interactor.js';
+import { GetDownloadUrlInteractor } from '../../application/use-cases/get-download-url.interactor.js';
+import { GetPreviewDownloadUrlInteractor } from '../../application/use-cases/get-preview-download-url.interactor.js';
 import { FreeFilesInteractor } from '../../application/use-cases/free-files.interactor.js';
 import { UseFilesInteractor } from '../../application/use-cases/use-files.interactor.js';
 import { isLeft, unwrap } from '@/infra/lib/box.js';

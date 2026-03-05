@@ -21,7 +21,7 @@ import { CryptoOtpGenerator } from './adapters/otp/otp-generator.service.js';
 import { MockOtpSender } from './adapters/otp/otp-sender.service.js';
 import { MeiliAdminUsersListQuery } from './adapters/search/admin-users-list.query.js';
 import { MeiliAdminUsersListRepository } from './adapters/search/admin-users-list.repository.js';
-import { OnUserEventHandler } from './application/handlers/on-user-event.handler.js';
+import { OnUserEventHandler } from './application/use-cases/admin-users-list/on-user-event.handler.js';
 import {
   AdminUsersListQueryPort,
   AdminUsersListRepository,
@@ -39,12 +39,12 @@ import {
   UserRepository,
   UserSessionsQueryPort,
 } from './application/ports.js';
-import { SearchAdminUsersInteractor } from './application/queries/admin-users-list/search-admin-users.interactor.js';
-import { GetMeInteractor } from './application/queries/me/get-me.interactor.js';
-import { GetPermissionsSchemaInteractor } from './application/queries/roles/get-permissions-schema.interactor.js';
-import { GetRoleInteractor } from './application/queries/roles/get-role.interactor.js';
-import { GetRolesListInteractor } from './application/queries/roles/get-roles-list.interactor.js';
-import { GetUserSessionsInteractor } from './application/queries/user-sessions/get-user-sessions.interactor.js';
+import { SearchAdminUsersInteractor } from './application/use-cases/admin-users-list/search-admin-users.interactor.js';
+import { GetMeInteractor } from './application/use-cases/me/get-me.interactor.js';
+import { GetPermissionsSchemaInteractor } from './application/use-cases/roles/get-permissions-schema.interactor.js';
+import { GetRoleInteractor } from './application/use-cases/roles/get-role.interactor.js';
+import { GetRolesListInteractor } from './application/use-cases/roles/get-roles-list.interactor.js';
+import { GetUserSessionsInteractor } from './application/use-cases/user-sessions/get-user-sessions.interactor.js';
 import { UpdateProfileInteractor } from './application/use-cases/manage-profile/update-profile.interactor.js';
 import { CreateOtpInteractor } from './application/use-cases/otp-flow/create-otp.interactor.js';
 import { RegisterInteractor } from './application/use-cases/otp-flow/register.interactor.js';
@@ -104,7 +104,6 @@ import { SessionValidationPort } from '@/kernel/application/ports/session-valida
     UpdateRoleInteractor,
     DeleteRoleInteractor,
     UpdateUserRoleInteractor,
-    // Queries
     GetMeInteractor,
     GetUserSessionsInteractor,
     GetRoleInteractor,

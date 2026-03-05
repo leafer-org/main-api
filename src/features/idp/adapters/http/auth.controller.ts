@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-import { GetMeInteractor } from '../../application/queries/me/get-me.interactor.js';
+import { GetMeInteractor } from '../../application/use-cases/me/get-me.interactor.js';
 import { CreateOtpInteractor } from '../../application/use-cases/otp-flow/create-otp.interactor.js';
 import { RegisterInteractor } from '../../application/use-cases/otp-flow/register.interactor.js';
 import { VerifyOtpInteractor } from '../../application/use-cases/otp-flow/verify-otp.interactor.js';
