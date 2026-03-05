@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { UserStreamingMessage } from '../../adapters/kafka/topics.js';
-import type { AdminUsersListReadModel } from '../../domain/read-models/admin-users-list/admin-users-list.read-model.js';
-import { AdminUsersListRepository } from '../ports.js';
+import type { UserStreamingMessage } from '../../../adapters/kafka/topics.js';
+import type { AdminUsersListReadModel } from '../../../domain/read-models/admin-users-list/admin-users-list.read-model.js';
+import { AdminUsersListRepository } from '../../ports.js';
 
 @Injectable()
 export class OnUserEventHandler {

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Inject, Param, Post } from '@nestjs/common';
 
-import { GetPreviewDownloadUrlInteractor } from '../../application/queries/get-preview-download-url.interactor.js';
+import { GetPreviewDownloadUrlInteractor } from '../../application/use-cases/get-preview-download-url.interactor.js';
 import { RequestUploadInteractor } from '../../application/use-cases/upload/request-upload.interactor.js';
 import { UseFilesInteractor } from '../../application/use-cases/use-files.interactor.js';
 import { Public } from '@/infra/auth/authn/public.decorator.js';

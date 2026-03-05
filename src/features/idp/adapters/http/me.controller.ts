@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch } from '@nestjs/common';
 
-import { GetMeInteractor } from '../../application/queries/me/get-me.interactor.js';
-import { GetUserSessionsInteractor } from '../../application/queries/user-sessions/get-user-sessions.interactor.js';
+import { GetMeInteractor } from '../../application/use-cases/me/get-me.interactor.js';
+import { GetUserSessionsInteractor } from '../../application/use-cases/user-sessions/get-user-sessions.interactor.js';
 import { UpdateProfileInteractor } from '../../application/use-cases/manage-profile/update-profile.interactor.js';
 import { DeleteAllSessionsInteractor } from '../../application/use-cases/session/delete-all-sessions.interactor.js';
 import { DeleteSessionInteractor } from '../../application/use-cases/session/delete-session.interactor.js';

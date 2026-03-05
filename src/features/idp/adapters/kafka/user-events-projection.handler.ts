@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { OnUserEventHandler } from '../../application/handlers/on-user-event.handler.js';
+import { OnUserEventHandler } from '../../application/use-cases/admin-users-list/on-user-event.handler.js';
 import { IDP_CONSUMER_ID } from './consumer-ids.js';
 import { userStreamingContract } from './topics.js';
 import {

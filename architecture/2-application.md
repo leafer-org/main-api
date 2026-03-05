@@ -1,4 +1,4 @@
-# Application — Use Cases, Queries, Handlers
+# Application — Use Cases, Handlers, Ports
 
 Application-слой оркестрирует I/O и вызывает чистый домен. Содержит interactor'ы, handler'ы и определения портов.
 
@@ -9,16 +9,18 @@ Application-слой оркестрирует I/O и вызывает чисты
 ```
 application/
 ├── ports.ts                              ← все порты feature
-├── use-cases/                            ← write side
-│   └── otp-flow/
-│       ├── create-otp.interactor.ts
-│       ├── verify-otp.interactor.ts
-│       └── register.interactor.ts
-└── queries/                              ← read side
+└── use-cases/                            ← write + read + event handlers
+    ├── otp-flow/
+    │   ├── create-otp.interactor.ts      ← write interactor
+    │   ├── verify-otp.interactor.ts
+    │   └── register.interactor.ts
     ├── me/
-    │   └── get-me.interactor.ts          ← HTTP → query port → ReadModel
-    └── user-sessions/
-        └── get-user-sessions.interactor.ts
+    │   └── get-me.interactor.ts          ← query interactor
+    ├── user-sessions/
+    │   └── get-user-sessions.interactor.ts
+    └── admin-users-list/
+        ├── search-admin-users.interactor.ts  ← query interactor
+        └── on-user-event.handler.ts          ← event handler рядом с use case
 ```
 
 ---

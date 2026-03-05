@@ -12,8 +12,8 @@ import {
 import { S3FileStorageService } from './adapters/s3/file-storage.service.js';
 import { S3ClientService } from './adapters/s3/s3-client.service.js';
 import { FileIdGenerator, FileRepository, FileStorageService } from './application/ports.js';
-import { GetDownloadUrlInteractor } from './application/queries/get-download-url.interactor.js';
-import { GetPreviewDownloadUrlInteractor } from './application/queries/get-preview-download-url.interactor.js';
+import { GetDownloadUrlInteractor } from './application/use-cases/get-download-url.interactor.js';
+import { GetPreviewDownloadUrlInteractor } from './application/use-cases/get-preview-download-url.interactor.js';
 import { FreeFileInteractor } from './application/use-cases/free-file.interactor.js';
 import { FreeFilesInteractor } from './application/use-cases/free-files.interactor.js';
 import { RequestUploadInteractor } from './application/use-cases/upload/request-upload.interactor.js';
@@ -52,7 +52,6 @@ import { MediaService } from '@/kernel/application/ports/media.js';
     UseFilesInteractor,
     FreeFileInteractor,
     FreeFilesInteractor,
-    // queries
     GetDownloadUrlInteractor,
     GetPreviewDownloadUrlInteractor,
   ],

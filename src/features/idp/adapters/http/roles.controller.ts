@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
 
-import { GetPermissionsSchemaInteractor } from '../../application/queries/roles/get-permissions-schema.interactor.js';
-import { GetRoleInteractor } from '../../application/queries/roles/get-role.interactor.js';
-import { GetRolesListInteractor } from '../../application/queries/roles/get-roles-list.interactor.js';
+import { GetPermissionsSchemaInteractor } from '../../application/use-cases/roles/get-permissions-schema.interactor.js';
+import { GetRoleInteractor } from '../../application/use-cases/roles/get-role.interactor.js';
+import { GetRolesListInteractor } from '../../application/use-cases/roles/get-roles-list.interactor.js';
 import { CreateRoleInteractor } from '../../application/use-cases/roles/create-role.interactor.js';
 import { DeleteRoleInteractor } from '../../application/use-cases/roles/delete-role.interactor.js';
 import { UpdateRoleInteractor } from '../../application/use-cases/roles/update-role.interactor.js';
