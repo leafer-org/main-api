@@ -1,4 +1,4 @@
-import type { CategoryId, ServiceId, UserId } from '@/kernel/domain/ids.js';
+import type { CategoryId, ItemId, UserId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
 import type { CategoryFiltersReadModel } from '../domain/read-models/category-filters.read-model.js';
@@ -31,11 +31,11 @@ export abstract class NewSellerItemsPort {
     cityId: string;
     ageGroup: AgeGroup;
     limit: number;
-  }): Promise<ServiceId[]>;
+  }): Promise<ItemId[]>;
 }
 
 export abstract class ItemQueryPort {
-  public abstract findByIds(ids: ServiceId[]): Promise<ItemReadModel[]>;
+  public abstract findByIds(ids: ItemId[]): Promise<ItemReadModel[]>;
 
   public abstract findCategoryItemsSorted(params: {
     categoryId: CategoryId;
@@ -84,17 +84,17 @@ export abstract class RecommendationService {
     ageGroup: AgeGroup;
     offset: number;
     limit: number;
-  }): Promise<ServiceId[]>;
+  }): Promise<ItemId[]>;
 
   public abstract rank(params: {
     userId?: UserId;
-    itemIds: ServiceId[];
-  }): Promise<ServiceId[]>;
+    itemIds: ItemId[];
+  }): Promise<ItemId[]>;
 }
 
 export abstract class RankedListCachePort {
-  public abstract get(key: string): Promise<ServiceId[] | null>;
-  public abstract set(key: string, itemIds: ServiceId[], ttlMs: number): Promise<void>;
+  public abstract get(key: string): Promise<ItemId[] | null>;
+  public abstract set(key: string, itemIds: ItemId[], ttlMs: number): Promise<void>;
 }
 
 export abstract class SearchPort {

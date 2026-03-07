@@ -1,8 +1,8 @@
-import type { OwnerId, ServiceId } from '@/kernel/domain/ids.js';
+import type { OrganizationId, ItemId } from '@/kernel/domain/ids.js';
 
 export type PostRankingCandidate = {
-  itemId: ServiceId;
-  ownerId: OwnerId;
+  itemId: ItemId;
+  ownerId: OrganizationId;
   nextEventDate: Date | null;
   hasSchedule: boolean;
 };

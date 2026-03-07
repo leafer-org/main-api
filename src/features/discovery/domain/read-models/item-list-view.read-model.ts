@@ -1,9 +1,9 @@
-import type { CategoryId, FileId, ServiceId, TypeId } from '@/kernel/domain/ids.js';
+import type { CategoryId, FileId, ItemId, TypeId } from '@/kernel/domain/ids.js';
 
 import type { ItemPayment } from './item.read-model.js';
 
 export type ItemListView = {
-  itemId: ServiceId;
+  itemId: ItemId;
   typeId: TypeId;
   title: string;
   description: string | null;

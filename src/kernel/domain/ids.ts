@@ -5,12 +5,12 @@ export type UserId = EntityId<'User'>;
 export type SessionId = EntityId<'Session'>;
 export type RoleId = EntityId<'Role'>;
 export type ServiceId = EntityId<'Service'>;
+export type ItemId = EntityId<'Item'>;
 export type CategoryId = EntityId<'Category'>;
 export type ServiceComponentId = EntityId<'ServiceComponent'>;
 export type AttributeId = EntityId<'Attribute'>;
 export type OrganizationId = EntityId<'Organization'>;
 export type TypeId = EntityId<'Type'>;
-export type OwnerId = EntityId<'Owner'>;
 
 export const FileId = {
   raw(id: string): FileId {
@@ -42,6 +42,12 @@ export const ServiceId = {
   },
 };
 
+export const ItemId = {
+  raw(id: string): ItemId {
+    return id as ItemId;
+  },
+};
+
 export const CategoryId = {
   raw(id: string): CategoryId {
     return id as CategoryId;
@@ -69,11 +75,5 @@ export const OrganizationId = {
 export const TypeId = {
   raw(id: string): TypeId {
     return id as TypeId;
-  },
-};
-
-export const OwnerId = {
-  raw(id: string): OwnerId {
-    return id as OwnerId;
   },
 };

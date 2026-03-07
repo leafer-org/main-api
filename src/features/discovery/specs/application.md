@@ -4,9 +4,10 @@
 
 ## Ports
 
-Все порты определены в [application/ports.ts](../application/ports.ts).
+### Query Ports
 
-**Query Ports (read-only):**
+Определены в [application/ports.ts](../application/ports.ts).
+
 - `ItemCandidatesPort` — top-N кандидатов для категории с метаданными для пост-ранкинга
 - `NewSellerItemsPort` — товары новых продавцов для injection в ленту
 - `ItemQueryPort` — findByIds, findCategoryItemsSorted, findPopular
@@ -14,10 +15,32 @@
 - `CategoryListQueryPort` — список категорий по parentId
 - `CategoryFiltersQueryPort` — фильтры категории
 
-**Service Ports:**
+### Service Ports
+
+Определены в [application/ports.ts](../application/ports.ts).
+
 - `RecommendationService` — Gorse recommend + rank
 - `RankedListCachePort` — Redis кэш ранжированных списков
 - `SearchPort` — Meilisearch полнотекстовый поиск + фасеты
+
+### Projection Ports
+
+Определены в [application/projection-ports.ts](../application/projection-ports.ts). Абстрактные порты для записи read models из event handlers.
+
+- `ItemProjectionPort` — upsert/delete items, обновление owner data и review
+- `CategoryProjectionPort` — upsert/delete categories
+- `ItemTypeProjectionPort` — upsert item types
+- `OwnerProjectionPort` — upsert/delete owners
+- `AttributeProjectionPort` — upsert/delete attributes (batch по categoryId)
+- `UserLikeProjectionPort` — save/remove user likes
+- `IdempotencyPort` — дедупликация обработки событий по eventId
+
+### Sync Ports
+
+Определены в [application/sync-ports.ts](../application/sync-ports.ts). Абстрактные порты для синхронизации с внешними системами.
+
+- `GorseSyncPort` — upsert/delete items, send/delete feedback
+- `MeilisearchSyncPort` — upsert/delete items (включая batch upsert)
 
 ## Queries
 
@@ -31,10 +54,10 @@
 
 **Flow:**
 1. Параллельно:
-   - `RecommendationService.recommend({ userId, cityId, ageGroup, offset, limit: limit × 2 })` → `ServiceId[]`
+   - `RecommendationService.recommend({ userId, cityId, ageGroup, offset, limit: limit × 2 })` → `ItemId[]`
      Gorse native recommend — запрашиваем с запасом ×2 для компенсации потерь на пост-ранкинге.
      **Fallback:** если Gorse недоступен — пропускаем этот шаг, используем только new seller items + популярные из PG.
-   - `NewSellerItemsPort.findNewSellerItems({ cityId, ageGroup, limit: N })` → `ServiceId[]`
+   - `NewSellerItemsPort.findNewSellerItems({ cityId, ageGroup, limit: N })` → `ItemId[]`
      Гарантированные слоты для товаров новых продавцов (cold start injection).
 2. Merge списков: рекомендации + new seller items (дедупликация). При fallback: `ItemQueryPort.findPopular({ cityId, ageGroup, limit: limit × 2 })`.
 3. `ItemQueryPort.findByIds(mergedIds)` → `ItemReadModel[]`
@@ -62,7 +85,7 @@
    Возвращает top-N кандидатов (capping) с метаданными для пост-ранкинга, отсортированных по базовому скору (свежесть × популярность).
    Pre-ranking фильтры применяются на уровне SQL: просроченные товары исключены (`next_event_date > now() OR has_schedule = true`).
    New seller injection: товары новых продавцов (< 30 дней) получают boost factor в базовом скоре, гарантируя попадание в кандидаты.
-3. `RecommendationService.rank({ userId, itemIds })` → `ServiceId[]`
+3. `RecommendationService.rank({ userId, itemIds })` → `ItemId[]`
    **Fallback:** если Gorse недоступен — пропускаем, кандидаты идут на пост-ранкинг в порядке базового скора.
 4. `PostRankingService.apply(rankedCandidates)` → переупорядоченные IDs
    Результат сохраняется в `RankedListCachePort.set(cacheKey, postRankedIds, ttl: 5 мин)`.
@@ -136,6 +159,43 @@
    Сортировка по `likedAt DESC` (новые лайки первыми). Cursor — по `likedAt`.
    Если `search` указан — фильтрация по `title ILIKE '%search%'`.
    Просроченные товары **не исключаются** (пользователь должен видеть всё, что лайкнул).
+
+---
+
+## Projection Handlers
+
+Обработчики Kafka-событий, проецирующие данные в PG, Gorse и Meilisearch. Все handlers используют `IdempotencyPort` для дедупликации.
+
+### [ProjectItemHandler](../application/use-cases/project-item/project-item.handler.ts)
+
+Обрабатывает `item.published` и `item.unpublished`. При публикации — проецирует виджеты в `ItemReadModel`, синхронизирует в Gorse и Meilisearch. При снятии — удаляет из всех хранилищ.
+
+### [ProjectCategoryHandler](../application/use-cases/project-category/project-category.handler.ts)
+
+Обрабатывает `category.published` и `category.unpublished`. При публикации — проецирует категорию и её атрибуты. При снятии — удаляет категорию и атрибуты.
+
+### [ProjectItemTypeHandler](../application/use-cases/project-item-type/project-item-type.handler.ts)
+
+Обрабатывает `item-type.created` и `item-type.updated`. Проецирует тип товара с доступными/обязательными виджетами.
+
+### [ProjectOwnerHandler](../application/use-cases/project-owner/project-owner.handler.ts)
+
+Обрабатывает события организаций и пользователей:
+- `organization.published` — upsert owner; если `republished` — каскадное обновление owner data в items + Meilisearch
+- `organization.unpublished` — delete owner + каскадное удаление всех items организации из PG, Gorse, Meilisearch
+- `user.created` / `user.updated` — upsert owner (без каскада, товары не привязаны к user)
+- `user.deleted` — delete owner
+
+### [ProjectReviewHandler](../application/use-cases/project-review/project-review.handler.ts)
+
+Обрабатывает `review.created` и `review.deleted`. Обновляет `itemReview` или `ownerReview` в зависимости от `ReviewTarget`.
+
+### [ProjectInteractionHandler](../application/use-cases/project-interaction/project-interaction.handler.ts)
+
+Обрабатывает `interaction.recorded`:
+- `unlike` → удаляет лайк из PG + feedback `like` из Gorse
+- `like` → сохраняет лайк в PG + feedback в Gorse
+- остальные (`view`, `click`, `purchase`, `booking`) → только feedback в Gorse
 
 ---
 

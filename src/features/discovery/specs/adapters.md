@@ -11,13 +11,13 @@
 
 ## Meilisearch
 
-Полнотекстовый поиск и динамические фильтры. Синхронизация — синхронно при проекции Kafka-событий (через `MeilisearchSyncPort`). При `owner.updated` — batch-обновление всех товаров владельца.
+Полнотекстовый поиск и динамические фильтры. Синхронизация — синхронно при проекции Kafka-событий (через `MeilisearchSyncPort`). При `organization.published` с `republished: true` — batch-обновление всех товаров владельца в Meilisearch.
 
 ## Gorse
 
 https://github.com/gorse-io/gorse
 
-Рекомендательный движок. Синхронизация items — синхронно при проекции (через `GorseSyncPort`). User feedback (view, click, like, purchase, booking) отправляется при обработке `interaction.recorded` событий. Item labels в Gorse: `cityId`, `ageGroup`, `categoryIds[]`, `typeId`.
+Рекомендательный движок. Синхронизация items — синхронно при проекции (через `GorseSyncPort`). User feedback (view, click, like, purchase, booking) отправляется при обработке `interaction.recorded` событий. `unlike` удаляет feedback `like`. Item labels в Gorse: `cityId`, `ageGroup`, `categoryIds[]`, `typeId`.
 
 ## Redis
 

@@ -1,0 +1,43 @@
+import { Inject, Injectable } from '@nestjs/common';
+
+import type { ReviewCreatedEvent, ReviewDeletedEvent } from '@/kernel/domain/events/review.events.js';
+
+import { IdempotencyPort, ItemProjectionPort } from '../../projection-ports.js';
+
+@Injectable()
+export class ProjectReviewHandler {
+  public constructor(
+    @Inject(IdempotencyPort) private readonly idempotency: IdempotencyPort,
+    @Inject(ItemProjectionPort) private readonly itemProjection: ItemProjectionPort,
+  ) {}
+
+  public async handleReviewCreated(eventId: string, payload: ReviewCreatedEvent): Promise<void> {
+    if (await this.idempotency.isProcessed(eventId)) return;
+
+    await this.applyReview(payload.target, payload.newRating, payload.newReviewCount);
+    await this.idempotency.markProcessed(eventId);
+  }
+
+  public async handleReviewDeleted(eventId: string, payload: ReviewDeletedEvent): Promise<void> {
+    if (await this.idempotency.isProcessed(eventId)) return;
+
+    await this.applyReview(payload.target, payload.newRating, payload.newReviewCount);
+    await this.idempotency.markProcessed(eventId);
+  }
+
+  private async applyReview(
+    target: ReviewCreatedEvent['target'],
+    newRating: number | null,
+    newReviewCount: number,
+  ): Promise<void> {
+    if (target.targetType === 'item') {
+      await this.itemProjection.updateItemReview(target.itemId, newRating, newReviewCount);
+    } else {
+      await this.itemProjection.updateOwnerReview(
+        target.organizationId,
+        newRating,
+        newReviewCount,
+      );
+    }
+  }
+}

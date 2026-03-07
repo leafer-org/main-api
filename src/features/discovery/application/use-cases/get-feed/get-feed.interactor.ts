@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { Right } from '@/infra/lib/box.js';
-import type { ServiceId, UserId } from '@/kernel/domain/ids.js';
+import type { ItemId, UserId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
 import { toListView } from '../../../domain/mappers/item-list-view.mapper.js';
@@ -36,7 +36,7 @@ export class GetFeedInteractor {
           offset,
           limit: query.limit * 2,
         })
-        .catch((): ServiceId[] => []),
+        .catch((): ItemId[] => []),
       this.newSellerItems.findNewSellerItems({
         cityId: query.cityId,
         ageGroup: query.ageGroup,
@@ -44,7 +44,7 @@ export class GetFeedInteractor {
       }),
     ]);
 
-    const seen = new Set<ServiceId>(recommendedIds);
+    const seen = new Set<ItemId>(recommendedIds);
     const mergedIds = [...recommendedIds];
     for (const id of newSellerIds) {
       if (!seen.has(id)) {

@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as crypto from 'node:crypto';
 
 import { Right } from '@/infra/lib/box.js';
-import type { CategoryId, ServiceId, UserId } from '@/kernel/domain/ids.js';
+import type { CategoryId, ItemId, UserId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
 import { toListView } from '../../../domain/mappers/item-list-view.mapper.js';
@@ -84,7 +84,7 @@ export class GetCategoryItemsInteractor {
 
       const gorseRanked = await this.recommendation
         .rank({ userId: query.userId, itemIds: candidateIds })
-        .catch((): ServiceId[] => candidateIds);
+        .catch((): ItemId[] => candidateIds);
 
       const candidateMap = new Map(candidates.map((c) => [c.itemId, c]));
       const reorderedCandidates = gorseRanked
