@@ -1,8 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { Clock } from '@/infra/lib/clock.js';
-
 import type { PostRankingCandidate } from '../read-models/post-ranking-candidate.read-model.js';
+import { Clock } from '@/infra/lib/clock.js';
 
 const MS_IN_HOUR = 3_600_000;
 const STRONG_BOOST_HOURS = 24;
@@ -73,9 +72,7 @@ export class PostRankingService {
       const windowStart = Math.max(0, result.length - DIVERSITY_WINDOW + 1);
       const window = result.slice(windowStart);
 
-      const ownerCountInWindow = window.filter(
-        (c) => c.ownerId === next.ownerId,
-      ).length;
+      const ownerCountInWindow = window.filter((c) => c.ownerId === next.ownerId).length;
 
       if (ownerCountInWindow < MAX_OWNER_IN_WINDOW) {
         result.push(next);

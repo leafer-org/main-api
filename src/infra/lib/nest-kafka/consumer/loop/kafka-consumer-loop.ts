@@ -1,5 +1,5 @@
+import type Kafka from '@confluentinc/kafka-javascript';
 import { Logger } from '@nestjs/common';
-import type Kafka from 'node-rdkafka';
 
 import { KafkaConnectionError } from '../../errors/kafka.errors.js';
 import type { KafkaErrorHandlingStrategy } from '../kafka-error-handling-strategy.js';

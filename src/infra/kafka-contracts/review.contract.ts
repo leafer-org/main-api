@@ -4,16 +4,10 @@ import { createTypeboxContract } from '@/infra/lib/nest-kafka/contract/create-ty
 
 const ReviewStreamingMessage = Type.Object({
   id: Type.String(),
-  type: Type.Union([
-    Type.Literal('review.created'),
-    Type.Literal('review.deleted'),
-  ]),
+  type: Type.Union([Type.Literal('review.created'), Type.Literal('review.deleted')]),
   reviewId: Type.String(),
   target: Type.Object({
-    targetType: Type.Union([
-      Type.Literal('item'),
-      Type.Literal('organization'),
-    ]),
+    targetType: Type.Union([Type.Literal('item'), Type.Literal('organization')]),
     itemId: Type.Optional(Type.String()),
     organizationId: Type.Optional(Type.String()),
   }),

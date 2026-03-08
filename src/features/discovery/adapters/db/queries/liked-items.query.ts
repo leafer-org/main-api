@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { and, desc, eq, asc, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 import { LikedItemsQueryPort } from '../../../application/ports.js';
 import type { LikedItemView } from '../../../domain/read-models/liked-item-view.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
 import { discoveryItems, discoveryUserLikes } from '../schema.js';
-import { ItemId, TypeId, CategoryId, FileId } from '@/kernel/domain/ids.js';
 import type { UserId } from '@/kernel/domain/ids.js';
+import { CategoryId, FileId, ItemId, TypeId } from '@/kernel/domain/ids.js';
 import type { PaymentStrategy } from '@/kernel/domain/vo/widget.js';
 
 @Injectable()
@@ -20,10 +20,11 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
     cursor?: string;
     limit: number;
   }): Promise<{ items: LikedItemView[]; nextCursor: string | null }> {
-    const conditions: SQL[] = [eq(discoveryUserLikes.userId, String(params.userId))];
+    const userId: string = params.userId as string;
+    const conditions: SQL[] = [sql`${discoveryUserLikes.userId} = ${userId}::text`];
 
     if (params.search) {
-      conditions.push(sql`${discoveryItems.title} ILIKE ${'%' + params.search + '%'}`);
+      conditions.push(sql`${discoveryItems.title} ILIKE ${`%${params.search}%`}`);
     }
 
     if (params.cursor) {
@@ -61,9 +62,7 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
     const resultRows = hasMore ? rows.slice(0, params.limit) : rows;
 
     const items = resultRows.map((row) => this.toView(row));
-    const nextCursor = hasMore
-      ? this.encodeCursor(resultRows[resultRows.length - 1]!)
-      : null;
+    const nextCursor = hasMore ? this.encodeCursor(resultRows.at(-1)!) : null;
 
     return { items, nextCursor };
   }
@@ -92,16 +91,19 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
       description: row.description,
       imageId: row.imageId ? FileId.raw(row.imageId) : null,
       price:
-        row.paymentStrategy != null
+        row.paymentStrategy !== null
           ? {
               strategy: row.paymentStrategy as PaymentStrategy,
-              price: row.price != null ? Number(row.price) : null,
+              price: row.price !== null ? Number(row.price) : null,
             }
           : null,
-      rating: row.itemRating != null ? Number(row.itemRating) : null,
+      rating: row.itemRating !== null ? Number(row.itemRating) : null,
       reviewCount: row.itemReviewCount,
       owner: row.ownerName
-        ? { name: row.ownerName, avatarId: row.ownerAvatarId ? FileId.raw(row.ownerAvatarId) : null }
+        ? {
+            name: row.ownerName,
+            avatarId: row.ownerAvatarId ? FileId.raw(row.ownerAvatarId) : null,
+          }
         : null,
       location: row.cityId ? { cityId: row.cityId, address: row.address } : null,
       categoryIds: row.categoryIds.map((id) => CategoryId.raw(id)),

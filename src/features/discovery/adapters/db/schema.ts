@@ -45,9 +45,10 @@ export const discoveryItems = pgTable(
     ownerRating: numeric('owner_rating'),
     ownerReviewCount: integer('owner_review_count').notNull().default(0),
     eventDates: jsonb('event_dates').$type<string[]>(),
-    scheduleEntries: jsonb('schedule_entries').$type<
-      { dayOfWeek: number; startTime: string; endTime: string }[]
-    >(),
+    scheduleEntries:
+      jsonb('schedule_entries').$type<
+        { dayOfWeek: number; startTime: string; endTime: string }[]
+      >(),
     publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
   },
@@ -107,7 +108,7 @@ export const discoveryUserLikes = pgTable(
   'discovery_user_likes',
   {
     userId: text('user_id').notNull(),
-    itemId: text('item_id').notNull(),
+    itemId: uuid('item_id').notNull(),
     likedAt: timestamp('liked_at', { withTimezone: true }).notNull(),
   },
   (table) => [primaryKey({ columns: [table.userId, table.itemId] })],

@@ -1,4 +1,4 @@
-import type Kafka from 'node-rdkafka';
+import type Kafka from '@confluentinc/kafka-javascript';
 
 export type KafkaProducerModuleOptions = {
   producerConfig: Kafka.ProducerGlobalConfig;

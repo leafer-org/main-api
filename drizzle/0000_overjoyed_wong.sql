@@ -65,7 +65,7 @@ CREATE TABLE "discovery_processed_events" (
 --> statement-breakpoint
 CREATE TABLE "discovery_user_likes" (
 	"user_id" text NOT NULL,
-	"item_id" text NOT NULL,
+	"item_id" uuid NOT NULL,
 	"liked_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "discovery_user_likes_user_id_item_id_pk" PRIMARY KEY("user_id","item_id")
 );

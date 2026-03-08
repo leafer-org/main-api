@@ -1,9 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { LikedItemsQueryPort } from '../../ports.js';
 import { Right } from '@/infra/lib/box.js';
 import type { UserId } from '@/kernel/domain/ids.js';
-
-import { LikedItemsQueryPort } from '../../ports.js';
 
 /** Лайкнутые товары пользователя. Сортировка по likedAt DESC, cursor-based пагинация, поиск по title (ILIKE). */
 @Injectable()

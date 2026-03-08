@@ -1,9 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { InteractionRecordedEvent } from '@/kernel/domain/events/interaction.events.js';
-
 import { IdempotencyPort } from '../../projection-ports.js';
 import { GorseSyncPort } from '../../sync-ports.js';
+import type { InteractionRecordedEvent } from '@/kernel/domain/events/interaction.events.js';
 
 /**
  * interaction.recorded → feedback в Gorse. unlike → удаляет feedback 'like'.

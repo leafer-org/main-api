@@ -8,7 +8,11 @@ import {
   type ContractKafkaMessage,
   KafkaConsumerHandlers,
 } from '@/infra/lib/nest-kafka/index.js';
-import type { ReviewCreatedEvent, ReviewDeletedEvent, ReviewTarget } from '@/kernel/domain/events/review.events.js';
+import type {
+  ReviewCreatedEvent,
+  ReviewDeletedEvent,
+  ReviewTarget,
+} from '@/kernel/domain/events/review.events.js';
 import { ItemId, OrganizationId } from '@/kernel/domain/ids.js';
 
 @KafkaConsumerHandlers(DISCOVERY_CONSUMER_ID)
@@ -46,10 +50,17 @@ export class ReviewProjectionKafkaHandler {
     }
   }
 
-  private mapTarget(target: { targetType: 'item' | 'organization'; itemId?: string; organizationId?: string }): ReviewTarget {
+  private mapTarget(target: {
+    targetType: 'item' | 'organization';
+    itemId?: string;
+    organizationId?: string;
+  }): ReviewTarget {
     if (target.targetType === 'item') {
       return { targetType: 'item', itemId: ItemId.raw(target.itemId!) };
     }
-    return { targetType: 'organization', organizationId: OrganizationId.raw(target.organizationId!) };
+    return {
+      targetType: 'organization',
+      organizationId: OrganizationId.raw(target.organizationId!),
+    };
   }
 }

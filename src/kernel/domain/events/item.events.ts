@@ -1,4 +1,4 @@
-import type { ItemId, TypeId, OrganizationId } from '../ids.js';
+import type { ItemId, OrganizationId, TypeId } from '../ids.js';
 import type { ItemWidget } from '../vo/widget.js';
 
 export type { ItemWidget } from '../vo/widget.js';

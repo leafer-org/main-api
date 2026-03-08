@@ -1,6 +1,5 @@
-import type { ItemId, UserId } from '@/kernel/domain/ids.js';
-
 import type { ItemReadModel } from '../domain/read-models/item.read-model.js';
+import type { ItemId, UserId } from '@/kernel/domain/ids.js';
 
 /**
  * Синхронизация items и user feedback в Gorse.
@@ -16,7 +15,11 @@ export abstract class GorseSyncPort {
     feedbackType: string,
     timestamp: Date,
   ): Promise<void>;
-  public abstract deleteFeedback(userId: UserId, itemId: ItemId, feedbackType: string): Promise<void>;
+  public abstract deleteFeedback(
+    userId: UserId,
+    itemId: ItemId,
+    feedbackType: string,
+  ): Promise<void>;
 }
 
 /** Синхронизация денормализованных данных для полнотекстового поиска. `upsertItems` — batch при обновлении owner. */

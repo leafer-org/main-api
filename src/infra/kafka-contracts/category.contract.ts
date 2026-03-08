@@ -4,10 +4,7 @@ import { createTypeboxContract } from '@/infra/lib/nest-kafka/contract/create-ty
 
 const CategoryStreamingMessage = Type.Object({
   id: Type.String(),
-  type: Type.Union([
-    Type.Literal('category.published'),
-    Type.Literal('category.unpublished'),
-  ]),
+  type: Type.Union([Type.Literal('category.published'), Type.Literal('category.unpublished')]),
   categoryId: Type.String(),
   parentCategoryId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   name: Type.Optional(Type.String()),

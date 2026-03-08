@@ -1,17 +1,15 @@
-import type { AttributeId, CategoryId, ItemId, TypeId, UserId } from '@/kernel/domain/ids.js';
-import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 import type { CategoryListReadModel } from '../domain/read-models/category-list.read-model.js';
-import type { ItemListView } from '../domain/read-models/item-list-view.read-model.js';
 import type { ItemReadModel } from '../domain/read-models/item.read-model.js';
+import type { ItemListView } from '../domain/read-models/item-list-view.read-model.js';
 import type { LikedItemView } from '../domain/read-models/liked-item-view.read-model.js';
 import type { PostRankingCandidate } from '../domain/read-models/post-ranking-candidate.read-model.js';
 import type { SearchFacets } from '../domain/read-models/search-result.read-model.js';
-import type {
-  CategoryItemFilters,
-  SortOption,
-} from './use-cases/get-category-items/types.js';
+import type { CategoryItemFilters, SortOption } from './use-cases/get-category-items/types.js';
 import type { DynamicSearchFilters } from './use-cases/search-items/types.js';
+import type { Transaction } from '@/kernel/application/ports/tx-host.js';
+import type { AttributeId, CategoryId, ItemId, TypeId, UserId } from '@/kernel/domain/ids.js';
+import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
+import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
 // --- Query Ports ---
 
@@ -81,7 +79,12 @@ export abstract class CategoryListQueryPort {
 export type CategoryWithAttributes = {
   categoryId: CategoryId;
   allowedTypeIds: TypeId[];
-  attributes: { attributeId: AttributeId; name: string; required: boolean; schema: AttributeSchema }[];
+  attributes: {
+    attributeId: AttributeId;
+    name: string;
+    required: boolean;
+    schema: AttributeSchema;
+  }[];
 };
 
 export abstract class CategoryFiltersQueryPort {
@@ -89,9 +92,20 @@ export abstract class CategoryFiltersQueryPort {
     categoryId: CategoryId,
   ): Promise<{ category: CategoryWithAttributes; ancestors: CategoryWithAttributes[] } | null>;
 
-  public abstract findTypesByIds(
-    typeIds: TypeId[],
-  ): Promise<{ typeId: TypeId; name: string }[]>;
+  public abstract findTypesByIds(typeIds: TypeId[]): Promise<{ typeId: TypeId; name: string }[]>;
+}
+
+// --- Write Ports ---
+
+/** Запись лайков пользователя. Используется интеракторами like/unlike. */
+export abstract class LikeWritePort {
+  public abstract saveLike(
+    tx: Transaction,
+    userId: UserId,
+    itemId: ItemId,
+    likedAt: Date,
+  ): Promise<void>;
+  public abstract removeLike(tx: Transaction, userId: UserId, itemId: ItemId): Promise<void>;
 }
 
 // --- Service Ports ---
@@ -106,10 +120,7 @@ export abstract class RecommendationService {
     limit: number;
   }): Promise<ItemId[]>;
 
-  public abstract rank(params: {
-    userId?: UserId;
-    itemIds: ItemId[];
-  }): Promise<ItemId[]>;
+  public abstract rank(params: { userId?: UserId; itemIds: ItemId[] }): Promise<ItemId[]>;
 }
 
 /** Redis кэш ранжированных списков для cursor-пагинации по категориям (TTL ~5 мин). */

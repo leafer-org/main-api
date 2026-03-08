@@ -1,3 +1,4 @@
+import Kafka from '@confluentinc/kafka-javascript';
 import {
   Inject,
   Injectable,
@@ -5,7 +6,6 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
-import Kafka from 'node-rdkafka';
 
 const { Producer } = Kafka;
 

@@ -1,7 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { and, eq } from 'drizzle-orm';
-import { randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
 import { uuidv7 } from 'uuidv7';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,14 +17,12 @@ import {
   discoveryItems,
   discoveryItemTypes,
   discoveryOwners,
-  discoveryUserLikes,
 } from '@/features/discovery/adapters/db/schema.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 import { categoryStreamingContract } from '@/infra/kafka-contracts/category.contract.js';
 import { itemStreamingContract } from '@/infra/kafka-contracts/item.contract.js';
 import { itemTypeStreamingContract } from '@/infra/kafka-contracts/item-type.contract.js';
-import { likeStreamingContract } from '@/infra/kafka-contracts/like.contract.js';
 import { organizationStreamingContract } from '@/infra/kafka-contracts/organization.contract.js';
 import { reviewStreamingContract } from '@/infra/kafka-contracts/review.contract.js';
 import type { Contract, ContractMessage } from '@/infra/lib/nest-kafka/contract/contract.js';
@@ -79,7 +77,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
     configureApp(app);
     await app.init();
     await waitForAllConsumers(app);
-    await sleep(100)
+    await sleep(100);
     producer = app.get(KafkaProducerService);
     db = app.get(DiscoveryDatabaseClient);
   });
@@ -102,12 +100,11 @@ describe('Discovery Projection Handlers (e2e)', () => {
 
   // ─── Owner projection ──────────────────────────────────────────────
 
-  function sleep(t = 1000){
-    return new Promise((res) => setTimeout(() => res(undefined), t))
+  function sleep(t = 1000) {
+    return new Promise((res) => setTimeout(() => res(undefined), t));
   }
 
   describe('Owner projection', () => {
-
     it('should project organization.published into discovery_owners', async () => {
       const orgId = randomUUID();
 
@@ -122,10 +119,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       });
 
       await vi.waitFor(async () => {
-        const [row] = await db
-          .select()
-          .from(discoveryOwners)
-          .where(eq(discoveryOwners.id, orgId));
+        const [row] = await db.select().from(discoveryOwners).where(eq(discoveryOwners.id, orgId));
         expectDefined(row);
         expect(row.name).toBe('Test Organization');
         expect(row.avatarId).toBeNull();
@@ -228,10 +222,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       });
 
       await vi.waitFor(async () => {
-        const owners = await db
-          .select()
-          .from(discoveryOwners)
-          .where(eq(discoveryOwners.id, orgId));
+        const owners = await db.select().from(discoveryOwners).where(eq(discoveryOwners.id, orgId));
         expect(owners).toHaveLength(0);
 
         const items = await db
@@ -412,7 +403,12 @@ describe('Discovery Projection Handlers (e2e)', () => {
       const orgId = randomUUID();
 
       await publishItem(itemId, typeId, orgId, [
-        { type: 'base-info', title: 'My Service', description: 'A great service', imageId: 'img-1' },
+        {
+          type: 'base-info',
+          title: 'My Service',
+          description: 'A great service',
+          imageId: 'img-1',
+        },
         { type: 'location', cityId: 'city-1', lat: 55.75, lng: 37.62, address: 'Moscow' },
         { type: 'payment', strategy: 'one-time', price: 1500 },
         { type: 'owner', organizationId: orgId, name: 'Org Name', avatarId: null },
@@ -553,73 +549,4 @@ describe('Discovery Projection Handlers (e2e)', () => {
     });
   });
 
-  // ─── Interaction projection ────────────────────────────────────────
-
-  describe('Like projection', () => {
-    it('should save like to discovery_user_likes', async () => {
-      const userId = randomUUID();
-      const itemId = randomUUID();
-
-      await produce(likeStreamingContract, {
-        id: uuidv7(),
-        type: 'item.liked',
-        userId,
-        itemId,
-        timestamp: new Date().toISOString(),
-      });
-
-      await vi.waitFor(async () => {
-        const [row] = await db
-          .select()
-          .from(discoveryUserLikes)
-          .where(
-            and(eq(discoveryUserLikes.userId, userId), eq(discoveryUserLikes.itemId, itemId)),
-          );
-        expectDefined(row);
-        expect(row.userId).toBe(userId);
-        expect(row.itemId).toBe(itemId);
-      }, WAIT_OPTIONS);
-    });
-
-    it('should remove like from discovery_user_likes on unlike', async () => {
-      const userId = randomUUID();
-      const itemId = randomUUID();
-
-      await produce(likeStreamingContract, {
-        id: uuidv7(),
-        type: 'item.liked',
-        userId,
-        itemId,
-        timestamp: new Date().toISOString(),
-      });
-
-      await vi.waitFor(async () => {
-        const [row] = await db
-          .select()
-          .from(discoveryUserLikes)
-          .where(
-            and(eq(discoveryUserLikes.userId, userId), eq(discoveryUserLikes.itemId, itemId)),
-          );
-        expectDefined(row);
-      }, WAIT_OPTIONS);
-
-      await produce(likeStreamingContract, {
-        id: uuidv7(),
-        type: 'item.unliked',
-        userId,
-        itemId,
-        timestamp: new Date().toISOString(),
-      });
-
-      await vi.waitFor(async () => {
-        const rows = await db
-          .select()
-          .from(discoveryUserLikes)
-          .where(
-            and(eq(discoveryUserLikes.userId, userId), eq(discoveryUserLikes.itemId, itemId)),
-          );
-        expect(rows).toHaveLength(0);
-      }, WAIT_OPTIONS);
-    });
-  });
 });

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { ItemProjectionPort } from '../../../application/projection-ports.js';
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
@@ -26,18 +26,19 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
         lng: item.location?.coordinates.lng ?? null,
         address: item.location?.address ?? null,
         paymentStrategy: item.payment?.strategy ?? null,
-        price: item.payment?.price != null ? String(item.payment.price) : null,
+        price: item.payment?.price !== undefined && item.payment?.price !== null ? String(item.payment.price) : null,
         categoryIds: (item.category?.categoryIds as string[]) ?? [],
-        attributeValues: item.category?.attributeValues.map((a) => ({
-          attributeId: a.attributeId as string,
-          value: a.value,
-        })) ?? [],
+        attributeValues:
+          item.category?.attributeValues.map((a) => ({
+            attributeId: a.attributeId as string,
+            value: a.value,
+          })) ?? [],
         organizationId: item.owner?.organizationId as string | null,
         ownerName: item.owner?.name ?? null,
         ownerAvatarId: item.owner?.avatarId as string | null,
-        itemRating: item.itemReview?.rating != null ? String(item.itemReview.rating) : null,
+        itemRating: item.itemReview?.rating !== undefined && item.itemReview?.rating !== null ? String(item.itemReview.rating) : null,
         itemReviewCount: item.itemReview?.reviewCount ?? 0,
-        ownerRating: item.ownerReview?.rating != null ? String(item.ownerReview.rating) : null,
+        ownerRating: item.ownerReview?.rating !== undefined && item.ownerReview?.rating !== null ? String(item.ownerReview.rating) : null,
         ownerReviewCount: item.ownerReview?.reviewCount ?? 0,
         eventDates: item.eventDateTime?.dates.map((d) => d.toISOString()) ?? null,
         scheduleEntries: item.schedule?.entries ?? null,
@@ -57,18 +58,19 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
           lng: item.location?.coordinates.lng ?? null,
           address: item.location?.address ?? null,
           paymentStrategy: item.payment?.strategy ?? null,
-          price: item.payment?.price != null ? String(item.payment.price) : null,
+          price: item.payment?.price !== undefined && item.payment?.price !== null ? String(item.payment.price) : null,
           categoryIds: (item.category?.categoryIds as string[]) ?? [],
-          attributeValues: item.category?.attributeValues.map((a) => ({
-            attributeId: a.attributeId as string,
-            value: a.value,
-          })) ?? [],
+          attributeValues:
+            item.category?.attributeValues.map((a) => ({
+              attributeId: a.attributeId as string,
+              value: a.value,
+            })) ?? [],
           organizationId: item.owner?.organizationId as string | null,
           ownerName: item.owner?.name ?? null,
           ownerAvatarId: item.owner?.avatarId as string | null,
-          itemRating: item.itemReview?.rating != null ? String(item.itemReview.rating) : null,
+          itemRating: item.itemReview?.rating !== undefined && item.itemReview?.rating !== null ? String(item.itemReview.rating) : null,
           itemReviewCount: item.itemReview?.reviewCount ?? 0,
-          ownerRating: item.ownerReview?.rating != null ? String(item.ownerReview.rating) : null,
+          ownerRating: item.ownerReview?.rating !== undefined && item.ownerReview?.rating !== null ? String(item.ownerReview.rating) : null,
           ownerReviewCount: item.ownerReview?.reviewCount ?? 0,
           eventDates: item.eventDateTime?.dates.map((d) => d.toISOString()) ?? null,
           scheduleEntries: item.schedule?.entries ?? null,
@@ -114,7 +116,7 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
     await this.dbClient.db
       .update(discoveryItems)
       .set({
-        itemRating: rating != null ? String(rating) : null,
+        itemRating: rating !== null ? String(rating) : null,
         itemReviewCount: reviewCount,
       })
       .where(eq(discoveryItems.id, itemId as string));
@@ -128,10 +130,9 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
     await this.dbClient.db
       .update(discoveryItems)
       .set({
-        ownerRating: rating != null ? String(rating) : null,
+        ownerRating: rating !== null ? String(rating) : null,
         ownerReviewCount: reviewCount,
       })
       .where(eq(discoveryItems.organizationId, organizationId as string));
   }
-
 }

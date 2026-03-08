@@ -805,6 +805,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@confluentinc/kafka-javascript@npm:^1.8.2":
+  version: 1.8.2
+  resolution: "@confluentinc/kafka-javascript@npm:1.8.2"
+  dependencies:
+    "@mapbox/node-pre-gyp": "npm:^2.0.3"
+    bindings: "npm:^1.3.1"
+    nan: "npm:^2.22.0"
+    node-gyp: "npm:latest"
+  checksum: 10c0/2ff0f526e17bce07a509ff6b04554385ccf684a7f3bd7d3e0786e5ae9113fb97b4a63f838e00d605ea4a732cf7bfcca05a8a0d8d1fcf602475dc0cfab7facf5a
+  languageName: node
+  linkType: hard
+
 "@dotenvx/dotenvx@npm:^1.52.0":
   version: 1.52.0
   resolution: "@dotenvx/dotenvx@npm:1.52.0"
@@ -1570,6 +1582,23 @@ __metadata:
   version: 1.1.0
   resolution: "@lukeed/csprng@npm:1.1.0"
   checksum: 10c0/5d6dcf478af732972083ab2889c294b57f1028fa13c2c240d7a4aaa079c2c75df7ef0dcbdda5419147fc6704b4adf96b2de92f1a9a72ac21c6350c4014fffe6c
+  languageName: node
+  linkType: hard
+
+"@mapbox/node-pre-gyp@npm:^2.0.3":
+  version: 2.0.3
+  resolution: "@mapbox/node-pre-gyp@npm:2.0.3"
+  dependencies:
+    consola: "npm:^3.2.3"
+    detect-libc: "npm:^2.0.0"
+    https-proxy-agent: "npm:^7.0.5"
+    node-fetch: "npm:^2.6.7"
+    nopt: "npm:^8.0.0"
+    semver: "npm:^7.5.3"
+    tar: "npm:^7.4.0"
+  bin:
+    node-pre-gyp: bin/node-pre-gyp
+  checksum: 10c0/6243c60f0d7327772c679aad20f17bcbf771b362fb7fbf1ae6dcf8dd379bb852e5af26180ab1e987a75dffa7cd5445414dc47e2acbcfe820cb08374deebecbc3
   languageName: node
   linkType: hard
 
@@ -3848,6 +3877,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"abbrev@npm:^3.0.0":
+  version: 3.0.1
+  resolution: "abbrev@npm:3.0.1"
+  checksum: 10c0/21ba8f574ea57a3106d6d35623f2c4a9111d9ee3e9a5be47baed46ec2457d2eac46e07a5c4a60186f88cb98abbe3e24f2d4cca70bc2b12f1692523e2209a9ccf
+  languageName: node
+  linkType: hard
+
 "abbrev@npm:^4.0.0":
   version: 4.0.0
   resolution: "abbrev@npm:4.0.0"
@@ -4853,6 +4889,13 @@ __metadata:
   version: 2.0.0
   resolution: "depd@npm:2.0.0"
   checksum: 10c0/58bd06ec20e19529b06f7ad07ddab60e504d9e0faca4bd23079fac2d279c3594334d736508dc350e06e510aba5e22e4594483b3a6562ce7c17dd797f4cc4ad2c
+  languageName: node
+  linkType: hard
+
+"detect-libc@npm:^2.0.0":
+  version: 2.1.2
+  resolution: "detect-libc@npm:2.1.2"
+  checksum: 10c0/acc675c29a5649fa1fb6e255f993b8ee829e510b6b56b0910666949c80c364738833417d0edb5f90e4e46be17228b0f2b66a010513984e18b15deeeac49369c4
   languageName: node
   linkType: hard
 
@@ -6601,6 +6644,7 @@ __metadata:
     "@aws-sdk/client-s3": "npm:^3.775.0"
     "@aws-sdk/s3-request-presigner": "npm:^3.775.0"
     "@biomejs/biome": "npm:2.3.11"
+    "@confluentinc/kafka-javascript": "npm:^1.8.2"
     "@dotenvx/dotenvx": "npm:^1.52.0"
     "@nestjs/common": "npm:^11.0.1"
     "@nestjs/core": "npm:^11.0.1"
@@ -6629,7 +6673,6 @@ __metadata:
     ioredis: "npm:^5.10.0"
     meilisearch: "npm:^0.55.0"
     nestjs-cls: "npm:^6.2.0"
-    node-rdkafka: "npm:^3.6.1"
     openapi-typescript: "npm:^7.10.1"
     p-limit: "npm:^7.3.0"
     pg: "npm:^8.18.0"
@@ -7012,7 +7055,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nan@npm:^2.19.0, nan@npm:^2.23.0, nan@npm:^2.24.0":
+"nan@npm:^2.19.0, nan@npm:^2.22.0, nan@npm:^2.23.0":
   version: 2.25.0
   resolution: "nan@npm:2.25.0"
   dependencies:
@@ -7074,7 +7117,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-fetch@npm:^2.6.1":
+"node-fetch@npm:^2.6.1, node-fetch@npm:^2.6.7":
   version: 2.7.0
   resolution: "node-fetch@npm:2.7.0"
   dependencies:
@@ -7119,23 +7162,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-rdkafka@npm:^3.6.1":
-  version: 3.6.1
-  resolution: "node-rdkafka@npm:3.6.1"
-  dependencies:
-    bindings: "npm:^1.3.1"
-    nan: "npm:^2.24.0"
-    node-gyp: "npm:latest"
-  checksum: 10c0/96983533cb2f0143b3e2a8fd16cba83753916b226f34b8ba80baa3bbbb8aee1c890f45a8b5fd5010fe7463b8ec0a1e8cf9546936f79d2ea12759d5830bfc778a
-  languageName: node
-  linkType: hard
-
 "node-readfiles@npm:^0.2.0":
   version: 0.2.0
   resolution: "node-readfiles@npm:0.2.0"
   dependencies:
     es6-promise: "npm:^3.2.1"
   checksum: 10c0/9de2f741baae29f2422b22ef4399b5f7cb6c20372d4e88447a98d00a92cf1a35efdf942d24eee153a87d885aa7e7442b4bc6de33d4b91c47ba9da501780c76a1
+  languageName: node
+  linkType: hard
+
+"nopt@npm:^8.0.0":
+  version: 8.1.0
+  resolution: "nopt@npm:8.1.0"
+  dependencies:
+    abbrev: "npm:^3.0.0"
+  bin:
+    nopt: bin/nopt.js
+  checksum: 10c0/62e9ea70c7a3eb91d162d2c706b6606c041e4e7b547cbbb48f8b3695af457dd6479904d7ace600856bf923dd8d1ed0696f06195c8c20f02ac87c1da0e1d315ef
   languageName: node
   linkType: hard
 
@@ -8807,6 +8850,19 @@ __metadata:
     fast-fifo: "npm:^1.2.0"
     streamx: "npm:^2.15.0"
   checksum: 10c0/c4bf369de2302fcf30218d091167a5372ee79b69a1b5bb493ddb7714193ca805719558966334bab1f2775c8142826865f24e25459ff1c5f0a096bc3a3d5c5ce2
+  languageName: node
+  linkType: hard
+
+"tar@npm:^7.4.0":
+  version: 7.5.10
+  resolution: "tar@npm:7.5.10"
+  dependencies:
+    "@isaacs/fs-minipass": "npm:^4.0.0"
+    chownr: "npm:^3.0.0"
+    minipass: "npm:^7.1.2"
+    minizlib: "npm:^3.1.0"
+    yallist: "npm:^5.0.0"
+  checksum: 10c0/ed905e4b33886377df6e9206e5d1bd34458c21666e27943f946799416f86348c938590d573d6a69312cb29c583b122647a64ec92782f2b7e24e68d985dd72531
   languageName: node
   linkType: hard
 

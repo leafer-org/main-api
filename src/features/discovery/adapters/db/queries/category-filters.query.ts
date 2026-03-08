@@ -41,9 +41,7 @@ export class DrizzleCategoryFiltersQuery implements CategoryFiltersQueryPort {
     return { category, ancestors };
   }
 
-  public async findTypesByIds(
-    typeIds: TypeId[],
-  ): Promise<{ typeId: TypeId; name: string }[]> {
+  public async findTypesByIds(typeIds: TypeId[]): Promise<{ typeId: TypeId; name: string }[]> {
     if (typeIds.length === 0) return [];
 
     const rows = await this.dbClient.db

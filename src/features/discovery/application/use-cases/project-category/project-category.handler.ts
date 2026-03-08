@@ -1,15 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { projectCategory } from '../../../domain/read-models/category.read-model.js';
+import { CategoryProjectionPort, IdempotencyPort } from '../../projection-ports.js';
 import type {
   CategoryPublishedEvent,
   CategoryUnpublishedEvent,
 } from '@/kernel/domain/events/category.events.js';
-
-import { projectCategory } from '../../../domain/read-models/category.read-model.js';
-import {
-  CategoryProjectionPort,
-  IdempotencyPort,
-} from '../../projection-ports.js';
 
 /** Проецирует category.published / category.unpublished в PG. Атрибуты хранятся как JSONB внутри категории. */
 @Injectable()

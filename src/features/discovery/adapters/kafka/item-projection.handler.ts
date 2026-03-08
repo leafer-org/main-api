@@ -8,8 +8,12 @@ import {
   type ContractKafkaMessage,
   KafkaConsumerHandlers,
 } from '@/infra/lib/nest-kafka/index.js';
-import type { ItemPublishedEvent, ItemUnpublishedEvent, ItemWidget } from '@/kernel/domain/events/item.events.js';
-import { ItemId, TypeId, OrganizationId } from '@/kernel/domain/ids.js';
+import type {
+  ItemPublishedEvent,
+  ItemUnpublishedEvent,
+  ItemWidget,
+} from '@/kernel/domain/events/item.events.js';
+import { ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
 
 @KafkaConsumerHandlers(DISCOVERY_CONSUMER_ID)
 @Injectable()
@@ -17,9 +21,7 @@ export class ItemProjectionKafkaHandler {
   public constructor(private readonly handler: ProjectItemHandler) {}
 
   @ContractHandler(itemStreamingContract)
-  public async handle(
-    message: ContractKafkaMessage<typeof itemStreamingContract>,
-  ): Promise<void> {
+  public async handle(message: ContractKafkaMessage<typeof itemStreamingContract>): Promise<void> {
     const payload = message.value;
 
     if (payload.type === 'item.published') {

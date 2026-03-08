@@ -1,5 +1,5 @@
-import type { ItemListView } from '../read-models/item-list-view.read-model.js';
 import type { ItemReadModel } from '../read-models/item.read-model.js';
+import type { ItemListView } from '../read-models/item-list-view.read-model.js';
 
 /** ItemReadModel → ItemListView. Переиспользуется всеми interactors, возвращающими списки товаров. */
 export function toListView(item: ItemReadModel): ItemListView {

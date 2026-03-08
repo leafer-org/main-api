@@ -31,7 +31,7 @@ export class OwnerProjectionKafkaHandler {
         type: 'organization.published',
         organizationId: OrganizationId.raw(payload.organizationId),
         name: payload.name!,
-        avatarId: payload.avatarId != null ? FileId.raw(payload.avatarId) : null,
+        avatarId: payload.avatarId !== null ? FileId.raw(payload.avatarId) : null,
         republished: payload.republished ?? false,
         publishedAt: new Date(payload.publishedAt!),
       } satisfies OrganizationPublishedEvent);

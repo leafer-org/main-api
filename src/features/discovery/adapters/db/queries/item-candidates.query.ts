@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, eq, gte, lte, inArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 
 import { ItemCandidatesPort } from '../../../application/ports.js';
 import type { CategoryItemFilters } from '../../../application/use-cases/get-category-items/types.js';
@@ -58,20 +58,17 @@ export class DrizzleItemCandidatesQuery implements ItemCandidatesPort {
     return future[0] ?? null;
   }
 
-  private applyFilters(
-    conditions: ReturnType<typeof eq>[],
-    filters: CategoryItemFilters,
-  ): void {
+  private applyFilters(conditions: ReturnType<typeof eq>[], filters: CategoryItemFilters): void {
     if (filters.typeIds && filters.typeIds.length > 0) {
       conditions.push(inArray(discoveryItems.typeId, filters.typeIds as string[]));
     }
-    if (filters.priceRange?.min != null) {
+    if (filters.priceRange?.min !== null) {
       conditions.push(gte(discoveryItems.price, String(filters.priceRange.min)));
     }
-    if (filters.priceRange?.max != null) {
+    if (filters.priceRange?.max !== null) {
       conditions.push(lte(discoveryItems.price, String(filters.priceRange.max)));
     }
-    if (filters.minRating != null) {
+    if (filters.minRating !== null) {
       conditions.push(gte(discoveryItems.itemRating, String(filters.minRating)));
     }
   }

@@ -1,12 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { Left, Right } from '@/infra/lib/box.js';
-import type { AttributeId, CategoryId } from '@/kernel/domain/ids.js';
-import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
-
 import type { CategoryFiltersReadModel } from '../../../domain/read-models/category-filters.read-model.js';
 import { CategoryFiltersQueryPort, type CategoryWithAttributes } from '../../ports.js';
 import { CategoryNotFoundError } from './errors.js';
+import { Left, Right } from '@/infra/lib/box.js';
+import type { AttributeId, CategoryId } from '@/kernel/domain/ids.js';
+import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 
 @Injectable()
 export class GetCategoryFiltersInteractor {
@@ -23,9 +22,10 @@ export class GetCategoryFiltersInteractor {
 
     const attributeFilters = this.mergeAttributes(category, ancestors);
 
-    const typeFilters = category.allowedTypeIds.length > 0
-      ? await this.categoryFiltersQuery.findTypesByIds(category.allowedTypeIds)
-      : [];
+    const typeFilters =
+      category.allowedTypeIds.length > 0
+        ? await this.categoryFiltersQuery.findTypesByIds(category.allowedTypeIds)
+        : [];
 
     // TODO: commonFilters захардкожены, нужно определять динамически на основе данных категории
     const filters: CategoryFiltersReadModel = {

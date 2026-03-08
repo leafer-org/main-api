@@ -4,10 +4,7 @@ import { createTypeboxContract } from '@/infra/lib/nest-kafka/contract/create-ty
 
 const ItemTypeStreamingMessage = Type.Object({
   id: Type.String(),
-  type: Type.Union([
-    Type.Literal('item-type.created'),
-    Type.Literal('item-type.updated'),
-  ]),
+  type: Type.Union([Type.Literal('item-type.created'), Type.Literal('item-type.updated')]),
   typeId: Type.String(),
   name: Type.Optional(Type.String()),
   availableWidgetTypes: Type.Optional(Type.Array(Type.String())),

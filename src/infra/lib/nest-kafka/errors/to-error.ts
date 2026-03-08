@@ -1,4 +1,4 @@
-import Kafka from 'node-rdkafka';
+import Kafka from '@confluentinc/kafka-javascript';
 
 export function toError(kafkaError: Kafka.LibrdKafkaError): Error {
   const error = new Error(kafkaError.message);

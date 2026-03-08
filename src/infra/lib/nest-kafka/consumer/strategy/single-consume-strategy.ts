@@ -1,5 +1,5 @@
+import type Kafka from '@confluentinc/kafka-javascript';
 import { Logger } from '@nestjs/common';
-import type Kafka from 'node-rdkafka';
 import pLimit from 'p-limit';
 
 import type { Contract } from '../../contract/contract.js';

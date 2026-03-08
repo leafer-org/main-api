@@ -21,7 +21,6 @@ import { CryptoOtpGenerator } from './adapters/otp/otp-generator.service.js';
 import { MockOtpSender } from './adapters/otp/otp-sender.service.js';
 import { MeiliAdminUsersListQuery } from './adapters/search/admin-users-list.query.js';
 import { MeiliAdminUsersListRepository } from './adapters/search/admin-users-list.repository.js';
-import { OnUserEventHandler } from './application/use-cases/admin-users-list/on-user-event.handler.js';
 import {
   AdminUsersListQueryPort,
   AdminUsersListRepository,
@@ -39,23 +38,24 @@ import {
   UserRepository,
   UserSessionsQueryPort,
 } from './application/ports.js';
+import { OnUserEventHandler } from './application/use-cases/admin-users-list/on-user-event.handler.js';
 import { SearchAdminUsersInteractor } from './application/use-cases/admin-users-list/search-admin-users.interactor.js';
-import { GetMeInteractor } from './application/use-cases/me/get-me.interactor.js';
-import { GetPermissionsSchemaInteractor } from './application/use-cases/roles/get-permissions-schema.interactor.js';
-import { GetRoleInteractor } from './application/use-cases/roles/get-role.interactor.js';
-import { GetRolesListInteractor } from './application/use-cases/roles/get-roles-list.interactor.js';
-import { GetUserSessionsInteractor } from './application/use-cases/user-sessions/get-user-sessions.interactor.js';
 import { UpdateProfileInteractor } from './application/use-cases/manage-profile/update-profile.interactor.js';
+import { GetMeInteractor } from './application/use-cases/me/get-me.interactor.js';
 import { CreateOtpInteractor } from './application/use-cases/otp-flow/create-otp.interactor.js';
 import { RegisterInteractor } from './application/use-cases/otp-flow/register.interactor.js';
 import { VerifyOtpInteractor } from './application/use-cases/otp-flow/verify-otp.interactor.js';
 import { CreateRoleInteractor } from './application/use-cases/roles/create-role.interactor.js';
 import { DeleteRoleInteractor } from './application/use-cases/roles/delete-role.interactor.js';
+import { GetPermissionsSchemaInteractor } from './application/use-cases/roles/get-permissions-schema.interactor.js';
+import { GetRoleInteractor } from './application/use-cases/roles/get-role.interactor.js';
+import { GetRolesListInteractor } from './application/use-cases/roles/get-roles-list.interactor.js';
 import { UpdateRoleInteractor } from './application/use-cases/roles/update-role.interactor.js';
 import { UpdateUserRoleInteractor } from './application/use-cases/roles/update-user-role.interactor.js';
 import { DeleteAllSessionsInteractor } from './application/use-cases/session/delete-all-sessions.interactor.js';
 import { DeleteSessionInteractor } from './application/use-cases/session/delete-session.interactor.js';
 import { RotateSessionInteractor } from './application/use-cases/session/rotate-session.interactor.js';
+import { GetUserSessionsInteractor } from './application/use-cases/user-sessions/get-user-sessions.interactor.js';
 import { MainConfigModule } from '@/infra/config/module.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 import { SessionValidationPort } from '@/kernel/application/ports/session-validation.js';

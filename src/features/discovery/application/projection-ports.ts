@@ -1,9 +1,8 @@
-import type { CategoryId, FileId, ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
-
 import type { CategoryReadModel } from '../domain/read-models/category.read-model.js';
-import type { ItemTypeReadModel } from '../domain/read-models/item-type.read-model.js';
 import type { ItemReadModel } from '../domain/read-models/item.read-model.js';
+import type { ItemTypeReadModel } from '../domain/read-models/item-type.read-model.js';
 import type { OwnerReadModel } from '../domain/read-models/owner.read-model.js';
+import type { CategoryId, FileId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
 
 /**
  * Проекция товаров в PG. `updateOwnerData` / `deleteByOrganizationId` возвращают
@@ -51,11 +50,6 @@ export abstract class OwnerProjectionPort {
     reviewCount: number,
   ): Promise<void>;
   public abstract delete(ownerId: OrganizationId): Promise<void>;
-}
-
-export abstract class UserLikeProjectionPort {
-  public abstract saveLike(userId: UserId, itemId: ItemId, likedAt: Date): Promise<void>;
-  public abstract removeLike(userId: UserId, itemId: ItemId): Promise<void>;
 }
 
 /** Дедупликация Kafka at-least-once доставки по eventId (таблица processed_events). */

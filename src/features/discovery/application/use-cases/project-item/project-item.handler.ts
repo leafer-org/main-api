@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { ItemPublishedEvent, ItemUnpublishedEvent } from '@/kernel/domain/events/item.events.js';
-
 import { projectItemFromEvent } from '../../../domain/read-models/item.read-model.js';
 import { IdempotencyPort, ItemProjectionPort } from '../../projection-ports.js';
 import { GorseSyncPort, MeilisearchSyncPort } from '../../sync-ports.js';
+import type {
+  ItemPublishedEvent,
+  ItemUnpublishedEvent,
+} from '@/kernel/domain/events/item.events.js';
 
 /**
  * Проецирует item.published / item.unpublished в PG + Gorse + Meilisearch.
@@ -31,7 +33,10 @@ export class ProjectItemHandler {
     await this.idempotency.markProcessed(eventId);
   }
 
-  public async handleItemUnpublished(eventId: string, payload: ItemUnpublishedEvent): Promise<void> {
+  public async handleItemUnpublished(
+    eventId: string,
+    payload: ItemUnpublishedEvent,
+  ): Promise<void> {
     if (await this.idempotency.isProcessed(eventId)) return;
 
     await this.itemProjection.delete(payload.itemId);

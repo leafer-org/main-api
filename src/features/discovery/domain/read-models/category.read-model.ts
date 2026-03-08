@@ -1,4 +1,7 @@
-import type { CategoryAttribute, CategoryPublishedEvent } from '@/kernel/domain/events/category.events.js';
+import type {
+  CategoryAttribute,
+  CategoryPublishedEvent,
+} from '@/kernel/domain/events/category.events.js';
 import type { CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
 
 /**

@@ -2448,6 +2448,75 @@
           }
         }
       }
+    },
+    "/items/{itemId}/like": {
+      "post": {
+        "operationId": "likeItem",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Поставить лайк на товар",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID товара"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Лайк поставлен"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "unlikeItem",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Убрать лайк с товара",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID товара"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Лайк убран"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3531,6 +3600,16 @@
     "responses": {
       "UnauthorizedError": {
         "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Resource not found",
         "content": {
           "application/json": {
             "schema": {

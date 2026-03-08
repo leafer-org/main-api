@@ -1,13 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { Right } from '@/infra/lib/box.js';
-import type { ItemId, UserId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
-
 import { toListView } from '../../../domain/mappers/item-list-view.mapper.js';
 import { toRankingCandidate } from '../../../domain/mappers/post-ranking-candidate.mapper.js';
 import { PostRankingService } from '../../../domain/services/post-ranking.service.js';
 import { ItemQueryPort, NewSellerItemsPort, RecommendationService } from '../../ports.js';
+import { Right } from '@/infra/lib/box.js';
+import type { ItemId, UserId } from '@/kernel/domain/ids.js';
+import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
 /**
  * Персонализированная лента рекомендаций по всему каталогу.

@@ -1,7 +1,6 @@
-import { OrganizationId } from '@/kernel/domain/ids.js';
-
 import type { ItemReadModel } from '../read-models/item.read-model.js';
 import type { PostRankingCandidate } from '../read-models/post-ranking-candidate.read-model.js';
+import { OrganizationId } from '@/kernel/domain/ids.js';
 
 /** ItemReadModel → PostRankingCandidate. Используется в GetFeed для маппинга перед PostRankingService. */
 export function toRankingCandidate(item: ItemReadModel): PostRankingCandidate {

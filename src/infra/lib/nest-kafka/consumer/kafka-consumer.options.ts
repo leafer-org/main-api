@@ -1,4 +1,4 @@
-import type Kafka from 'node-rdkafka';
+import type Kafka from '@confluentinc/kafka-javascript';
 
 import type { KafkaErrorHandlingStrategy } from './kafka-error-handling-strategy.js';
 

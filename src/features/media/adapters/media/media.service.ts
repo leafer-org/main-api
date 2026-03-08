@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
+import { FreeFilesInteractor } from '../../application/use-cases/free-files.interactor.js';
 import { GetDownloadUrlInteractor } from '../../application/use-cases/get-download-url.interactor.js';
 import { GetPreviewDownloadUrlInteractor } from '../../application/use-cases/get-preview-download-url.interactor.js';
-import { FreeFilesInteractor } from '../../application/use-cases/free-files.interactor.js';
 import { UseFilesInteractor } from '../../application/use-cases/use-files.interactor.js';
 import { isLeft, unwrap } from '@/infra/lib/box.js';
 import type { GetDownloadUrlOptions } from '@/kernel/application/ports/media.js';

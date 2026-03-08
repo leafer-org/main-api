@@ -1,12 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { projectItemType } from '../../../domain/read-models/item-type.read-model.js';
+import { IdempotencyPort, ItemTypeProjectionPort } from '../../projection-ports.js';
 import type {
   ItemTypeCreatedEvent,
   ItemTypeUpdatedEvent,
 } from '@/kernel/domain/events/item-type.events.js';
-
-import { projectItemType } from '../../../domain/read-models/item-type.read-model.js';
-import { IdempotencyPort, ItemTypeProjectionPort } from '../../projection-ports.js';
 
 @Injectable()
 export class ProjectItemTypeHandler {

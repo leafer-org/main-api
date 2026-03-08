@@ -1,4 +1,4 @@
-import type { OrganizationId, ItemId } from '@/kernel/domain/ids.js';
+import type { ItemId, OrganizationId } from '@/kernel/domain/ids.js';
 
 /**
  * Лёгкие метаданные для пост-ранкинга без загрузки полного ItemReadModel.

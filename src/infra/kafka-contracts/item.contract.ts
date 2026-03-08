@@ -93,10 +93,7 @@ const WidgetSchema = Type.Union([
 
 const ItemStreamingMessage = Type.Object({
   id: Type.String(),
-  type: Type.Union([
-    Type.Literal('item.published'),
-    Type.Literal('item.unpublished'),
-  ]),
+  type: Type.Union([Type.Literal('item.published'), Type.Literal('item.unpublished')]),
   itemId: Type.String(),
   typeId: Type.Optional(Type.String()),
   organizationId: Type.Optional(Type.String()),

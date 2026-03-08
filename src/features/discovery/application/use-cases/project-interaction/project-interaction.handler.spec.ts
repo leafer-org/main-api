@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { ServiceMock } from '@/infra/test/mock.js';
-import { ItemId, UserId } from '@/kernel/domain/ids.js';
-
 import type { IdempotencyPort } from '../../projection-ports.js';
 import type { GorseSyncPort } from '../../sync-ports.js';
 import { ProjectInteractionHandler } from './project-interaction.handler.js';
+import { ServiceMock } from '@/infra/test/mock.js';
+import { ItemId, UserId } from '@/kernel/domain/ids.js';
 
 const USER_ID = UserId.raw('user-1');
 const ITEM_ID = ItemId.raw('item-1');

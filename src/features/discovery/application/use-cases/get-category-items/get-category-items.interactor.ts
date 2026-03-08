@@ -1,9 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
 import * as crypto from 'node:crypto';
-
-import { Right } from '@/infra/lib/box.js';
-import type { CategoryId, ItemId, UserId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { toListView } from '../../../domain/mappers/item-list-view.mapper.js';
 import { PostRankingService } from '../../../domain/services/post-ranking.service.js';
@@ -14,6 +10,9 @@ import {
   RecommendationService,
 } from '../../ports.js';
 import type { CategoryItemFilters, SortOption } from './types.js';
+import { Right } from '@/infra/lib/box.js';
+import type { CategoryId, ItemId, UserId } from '@/kernel/domain/ids.js';
+import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
 const CANDIDATE_CAP = 500;
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -113,9 +112,7 @@ export class GetCategoryItemsInteractor {
     const items = await this.itemQuery.findByIds(pageIds);
 
     const itemMap = new Map(items.map((i) => [i.itemId, i]));
-    const orderedItems = pageIds
-      .map((id) => itemMap.get(id))
-      .filter((i) => i !== undefined);
+    const orderedItems = pageIds.map((id) => itemMap.get(id)).filter((i) => i !== undefined);
 
     const nextOffset = offset + orderedItems.length;
     const nextCursor =

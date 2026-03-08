@@ -1,9 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { eq } from 'drizzle-orm';
-import { randomUUID } from 'node:crypto';
-import { uuidv7 } from 'uuidv7';
 import request from 'supertest';
+import { uuidv7 } from 'uuidv7';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { startContainers, stopContainers } from '../../helpers/containers.js';
@@ -119,10 +119,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
     });
 
     await vi.waitFor(async () => {
-      const [row] = await db
-        .select()
-        .from(discoveryItems)
-        .where(eq(discoveryItems.id, itemId));
+      const [row] = await db.select().from(discoveryItems).where(eq(discoveryItems.id, itemId));
       expectDefined(row);
     }, WAIT_OPTIONS);
   }
@@ -329,7 +326,9 @@ describe('Discovery Categories HTTP (e2e)', () => {
         parentCategoryId: null,
         name: 'With Filters',
         allowedTypeIds: [typeId],
-        attributes: [{ attributeId: attrId, name: 'Color', required: true, schema: { type: 'text' } }],
+        attributes: [
+          { attributeId: attrId, name: 'Color', required: true, schema: { type: 'text' } },
+        ],
       });
 
       const res = await agent.get(`/categories/${categoryId}/filters`).expect(200);
@@ -361,14 +360,18 @@ describe('Discovery Categories HTTP (e2e)', () => {
         categoryId: grandparentId,
         parentCategoryId: null,
         name: 'Grandparent',
-        attributes: [{ attributeId: attrA, name: 'Color', required: false, schema: { type: 'text' } }],
+        attributes: [
+          { attributeId: attrA, name: 'Color', required: false, schema: { type: 'text' } },
+        ],
       });
       await seedCategory({
         categoryId: parentId,
         parentCategoryId: grandparentId,
         name: 'Parent',
         ancestorIds: [grandparentId],
-        attributes: [{ attributeId: attrB, name: 'Size', required: true, schema: { type: 'number' } }],
+        attributes: [
+          { attributeId: attrB, name: 'Size', required: true, schema: { type: 'number' } },
+        ],
       });
       await seedCategory({
         categoryId: childId,

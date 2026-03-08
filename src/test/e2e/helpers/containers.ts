@@ -11,37 +11,39 @@ let meiliContainer: StartedTestContainer | null = null;
 let redisContainer: StartedTestContainer | null = null;
 
 export async function startContainers() {
-  if (pgContainer && minioContainer && redpandaContainer && meiliContainer && redisContainer) return;
+  if (pgContainer && minioContainer && redpandaContainer && meiliContainer && redisContainer)
+    return;
 
-  [pgContainer, minioContainer, redpandaContainer, meiliContainer, redisContainer] = await Promise.all([
-    new PostgreSqlContainer('postgres:18-alpine').start(),
+  [pgContainer, minioContainer, redpandaContainer, meiliContainer, redisContainer] =
+    await Promise.all([
+      new PostgreSqlContainer('postgres:18-alpine').start(),
 
-    new GenericContainer('minio/minio:latest')
-      .withExposedPorts(9000)
-      .withEnvironment({
-        MINIO_ROOT_USER: 'minioadmin',
-        MINIO_ROOT_PASSWORD: 'minioadmin',
-      })
-      .withCommand(['server', '/data'])
-      .withWaitStrategy(Wait.forHttp('/minio/health/ready', 9000).forStatusCode(200))
-      .start(),
+      new GenericContainer('minio/minio:latest')
+        .withExposedPorts(9000)
+        .withEnvironment({
+          MINIO_ROOT_USER: 'minioadmin',
+          MINIO_ROOT_PASSWORD: 'minioadmin',
+        })
+        .withCommand(['server', '/data'])
+        .withWaitStrategy(Wait.forHttp('/minio/health/ready', 9000).forStatusCode(200))
+        .start(),
 
-    new RedpandaContainer('redpandadata/redpanda:latest').start(),
+      new RedpandaContainer('redpandadata/redpanda:latest').start(),
 
-    new GenericContainer('getmeili/meilisearch:latest')
-      .withExposedPorts(7700)
-      .withEnvironment({
-        MEILI_MASTER_KEY: 'e2e-test-master-key-1234',
-        MEILI_ENV: 'development',
-      })
-      .withWaitStrategy(Wait.forHttp('/health', 7700).forStatusCode(200))
-      .start(),
+      new GenericContainer('getmeili/meilisearch:latest')
+        .withExposedPorts(7700)
+        .withEnvironment({
+          MEILI_MASTER_KEY: 'e2e-test-master-key-1234',
+          MEILI_ENV: 'development',
+        })
+        .withWaitStrategy(Wait.forHttp('/health', 7700).forStatusCode(200))
+        .start(),
 
-    new GenericContainer('redis:7-alpine')
-      .withExposedPorts(6379)
-      .withWaitStrategy(Wait.forListeningPorts())
-      .start(),
-  ]);
+      new GenericContainer('redis:7-alpine')
+        .withExposedPorts(6379)
+        .withWaitStrategy(Wait.forListeningPorts())
+        .start(),
+    ]);
 
   await applyTopics(redpandaContainer);
 

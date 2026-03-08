@@ -1,9 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
-import { RedisConnection } from '@/infra/lib/nest-redis/index.js';
-
 import { CategoryProjectionPort } from '../../application/projection-ports.js';
+import { RedisConnection } from '@/infra/lib/nest-redis/index.js';
 
 const LOCK_KEY = 'discovery:category-counts:lock';
 const LOCK_TTL_SECONDS = 30 * 60;
@@ -17,7 +16,13 @@ export class CategoryCountsCron {
 
   @Cron(CronExpression.EVERY_MINUTE)
   public async recalcCounts(): Promise<void> {
-    const acquired = await this.redisConnection.redis.set(LOCK_KEY, '1', 'EX', LOCK_TTL_SECONDS, 'NX');
+    const acquired = await this.redisConnection.redis.set(
+      LOCK_KEY,
+      '1',
+      'EX',
+      LOCK_TTL_SECONDS,
+      'NX',
+    );
     if (acquired === null) return;
 
     try {

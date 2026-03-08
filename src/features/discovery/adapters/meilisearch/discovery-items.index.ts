@@ -7,14 +7,7 @@ export const discoveryItemsIndexDefinition: IndexDefinition = {
   name: DISCOVERY_ITEMS_INDEX,
   primaryKey: 'itemId',
   searchableAttributes: ['title', 'description', 'ownerName', 'address'],
-  filterableAttributes: [
-    'cityId',
-    'ageGroup',
-    'categoryIds',
-    'typeId',
-    'price',
-    'attributeValues',
-  ],
+  filterableAttributes: ['cityId', 'ageGroup', 'categoryIds', 'typeId', 'price', 'attributeValues'],
   sortableAttributes: ['price', 'publishedAt'],
 };
 

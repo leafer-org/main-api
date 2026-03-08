@@ -2,11 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { MeilisearchSyncPort } from '../../application/sync-ports.js';
 import type { ItemReadModel } from '../../domain/read-models/item.read-model.js';
+import { DISCOVERY_ITEMS_INDEX, DiscoveryItemsSearchClient } from './discovery-items.index.js';
 import type { ItemId } from '@/kernel/domain/ids.js';
-import {
-  DiscoveryItemsSearchClient,
-  DISCOVERY_ITEMS_INDEX,
-} from './discovery-items.index.js';
 
 type DiscoveryItemDocument = {
   itemId: string;

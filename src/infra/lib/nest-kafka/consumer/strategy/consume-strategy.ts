@@ -1,4 +1,4 @@
-import type Kafka from 'node-rdkafka';
+import type Kafka from '@confluentinc/kafka-javascript';
 
 import type { KafkaConsumerConnection } from '../loop/kafka-consumer-connection.js';
 

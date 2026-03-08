@@ -479,6 +479,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/items/{itemId}/like': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Поставить лайк на товар */
+    post: operations['likeItem'];
+    /** @description Убрать лайк с товара */
+    delete: operations['unlikeItem'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -786,6 +804,15 @@ export interface components {
   responses: {
     /** @description Unauthorized */
     UnauthorizedError: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        'application/json': components['schemas']['Error'];
+      };
+    };
+    /** @description Resource not found */
+    NotFoundError: {
       headers: {
         [name: string]: unknown;
       };
@@ -2278,6 +2305,51 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CursorPaginatedLikedItems'];
         };
+      };
+      401: components['responses']['UnauthorizedError'];
+    };
+  };
+  likeItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description ID товара */
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Лайк поставлен */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components['responses']['UnauthorizedError'];
+      404: components['responses']['NotFoundError'];
+    };
+  };
+  unlikeItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description ID товара */
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Лайк убран */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       401: components['responses']['UnauthorizedError'];
     };

@@ -4,10 +4,7 @@ import { createTypeboxContract } from '@/infra/lib/nest-kafka/contract/create-ty
 
 const LikeStreamingMessage = Type.Object({
   id: Type.String(),
-  type: Type.Union([
-    Type.Literal('item.liked'),
-    Type.Literal('item.unliked'),
-  ]),
+  type: Type.Union([Type.Literal('item.liked'), Type.Literal('item.unliked')]),
   userId: Type.String(),
   itemId: Type.String(),
   timestamp: Type.String(),

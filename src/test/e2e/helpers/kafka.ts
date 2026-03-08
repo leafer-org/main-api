@@ -1,6 +1,6 @@
-import type { INestApplication } from '@nestjs/common';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import type { INestApplication } from '@nestjs/common';
 import type { StartedRedpandaContainer } from '@testcontainers/redpanda';
 import { parse } from 'yaml';
 
@@ -48,5 +48,5 @@ export async function waitForAllConsumers(app: INestApplication): Promise<void> 
   }
   console.log(`[waitForAllConsumers] waiting for ${promises.length} consumers`);
   await Promise.all(promises);
-  console.log(`[waitForAllConsumers] all consumers ready`);
+  console.log('[waitForAllConsumers] all consumers ready');
 }

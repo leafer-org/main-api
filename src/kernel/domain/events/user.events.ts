@@ -22,7 +22,4 @@ export type UserDeletedEvent = {
   deletedAt: Date;
 };
 
-export type UserIntegrationEvent =
-  | UserCreatedEvent
-  | UserUpdatedEvent
-  | UserDeletedEvent;
+export type UserIntegrationEvent = UserCreatedEvent | UserUpdatedEvent | UserDeletedEvent;

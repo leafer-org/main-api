@@ -1,5 +1,5 @@
 {
-  "id": "a93d715e-6e17-4dfe-a9fd-d6ba05a6335e",
+  "id": "65b5ed3b-5e9a-4904-a389-2cb9428c186a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -476,7 +476,7 @@
         },
         "item_id": {
           "name": "item_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },

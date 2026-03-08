@@ -1,16 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { projectOwnerFromOrganization } from '../../../domain/read-models/owner.read-model.js';
+import { ItemQueryPort } from '../../ports.js';
+import {
+  IdempotencyPort,
+  ItemProjectionPort,
+  OwnerProjectionPort,
+} from '../../projection-ports.js';
+import { GorseSyncPort, MeilisearchSyncPort } from '../../sync-ports.js';
 import type {
   OrganizationPublishedEvent,
   OrganizationUnpublishedEvent,
 } from '@/kernel/domain/events/organization.events.js';
-
 import { OrganizationId } from '@/kernel/domain/ids.js';
-
-import { projectOwnerFromOrganization } from '../../../domain/read-models/owner.read-model.js';
-import { IdempotencyPort, ItemProjectionPort, OwnerProjectionPort } from '../../projection-ports.js';
-import { ItemQueryPort } from '../../ports.js';
-import { GorseSyncPort, MeilisearchSyncPort } from '../../sync-ports.js';
 
 /**
  * Проецирует события организаций в PG + Gorse + Meilisearch.
