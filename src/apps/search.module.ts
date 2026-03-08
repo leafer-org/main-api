@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 
+import { DiscoveryItemsSearchClient } from '../features/discovery/adapters/meilisearch/discovery-items.index.js';
 import { AdminUsersSearchClient } from '../features/idp/adapters/search/admin-users.index.js';
 import { MainConfigModule } from '@/infra/config/module.js';
 import { MainConfigService } from '@/infra/config/service.js';
@@ -9,7 +10,7 @@ import { SearchModule } from '@/infra/lib/nest-search/index.js';
 @Module({
   imports: [
     SearchModule.registerAsync({
-      clients: [AdminUsersSearchClient],
+      clients: [AdminUsersSearchClient, DiscoveryItemsSearchClient],
       imports: [MainConfigModule],
       useFactory: (config: MainConfigService) => ({
         host: config.get('MEILI_URL'),

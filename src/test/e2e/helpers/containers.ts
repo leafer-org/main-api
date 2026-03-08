@@ -8,11 +8,12 @@ let pgContainer: StartedPostgreSqlContainer | null = null;
 let minioContainer: StartedTestContainer | null = null;
 let redpandaContainer: StartedRedpandaContainer | null = null;
 let meiliContainer: StartedTestContainer | null = null;
+let redisContainer: StartedTestContainer | null = null;
 
 export async function startContainers() {
-  if (pgContainer && minioContainer && redpandaContainer && meiliContainer) return;
+  if (pgContainer && minioContainer && redpandaContainer && meiliContainer && redisContainer) return;
 
-  [pgContainer, minioContainer, redpandaContainer, meiliContainer] = await Promise.all([
+  [pgContainer, minioContainer, redpandaContainer, meiliContainer, redisContainer] = await Promise.all([
     new PostgreSqlContainer('postgres:18-alpine').start(),
 
     new GenericContainer('minio/minio:latest')
@@ -34,6 +35,11 @@ export async function startContainers() {
         MEILI_ENV: 'development',
       })
       .withWaitStrategy(Wait.forHttp('/health', 7700).forStatusCode(200))
+      .start(),
+
+    new GenericContainer('redis:7-alpine')
+      .withExposedPorts(6379)
+      .withWaitStrategy(Wait.forListeningPorts())
       .start(),
   ]);
 
@@ -58,6 +64,10 @@ export async function startContainers() {
 
   process.env.MEILI_URL = `http://${meiliContainer.getHost()}:${meiliPort}`;
   process.env.MEILI_API_KEY = 'e2e-test-master-key-1234';
+
+  const redisHost = redisContainer.getHost();
+  const redisPort = redisContainer.getMappedPort(6379);
+  process.env.REDIS_URL = `redis://${redisHost}:${redisPort}`;
 }
 
 export async function stopContainers() {
@@ -66,9 +76,11 @@ export async function stopContainers() {
     minioContainer?.stop(),
     redpandaContainer?.stop(),
     meiliContainer?.stop(),
+    redisContainer?.stop(),
   ]);
   pgContainer = null;
   minioContainer = null;
   redpandaContainer = null;
   meiliContainer = null;
+  redisContainer = null;
 }

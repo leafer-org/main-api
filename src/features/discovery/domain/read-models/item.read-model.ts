@@ -43,6 +43,11 @@ export type ItemReview = {
   reviewCount: number;
 };
 
+/**
+ * Денормализованная проекция товара. Все блоки виджетов optional — зависят от типа товара.
+ * Owner денормализован в item для быстрого отображения в карточке.
+ * При обновлении owner — данные каскадно обновляются через ProjectOwnerHandler.
+ */
 export type ItemReadModel = {
   itemId: ItemId;
   typeId: TypeId;
@@ -62,6 +67,7 @@ export type ItemReadModel = {
   updatedAt: Date;
 };
 
+/** Извлекает данные из массива виджетов {@link ItemPublishedEvent} в плоскую структуру. */
 export function projectItemFromEvent(event: ItemPublishedEvent): ItemReadModel {
   const model: ItemReadModel = {
     itemId: event.itemId,

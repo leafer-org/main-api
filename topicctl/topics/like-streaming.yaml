@@ -1,0 +1,9 @@
+meta:
+  name: like.streaming
+  cluster: local-cluster
+  environment: local
+  description: user like/unlike CDC stream
+
+spec:
+  partitions: 1
+  replicationFactor: 1

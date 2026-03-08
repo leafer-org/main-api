@@ -1,0 +1,3 @@
+[submodule "http-contracts"]
+	path = http-contracts
+	url = https://github.com/leafer-org/http-contracts

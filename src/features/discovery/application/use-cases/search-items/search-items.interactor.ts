@@ -6,6 +6,7 @@ import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 import { SearchPort } from '../../ports.js';
 import type { DynamicSearchFilters } from './types.js';
 
+/** Полнотекстовый поиск через Meilisearch с динамическими фасетными фильтрами. */
 @Injectable()
 export class SearchItemsInteractor {
   public constructor(@Inject(SearchPort) private readonly searchPort: SearchPort) {}

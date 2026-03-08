@@ -4,17 +4,10 @@ import type {
   OrganizationPublishedEvent,
   OrganizationUnpublishedEvent,
 } from '@/kernel/domain/events/organization.events.js';
-import type {
-  UserCreatedEvent,
-  UserDeletedEvent,
-  UserUpdatedEvent,
-} from '@/kernel/domain/events/user.events.js';
+
 import { OrganizationId } from '@/kernel/domain/ids.js';
 
-import {
-  projectOwnerFromOrganization,
-  projectOwnerFromUser,
-} from '../../../domain/read-models/owner.read-model.js';
+import { projectOwnerFromOrganization } from '../../../domain/read-models/owner.read-model.js';
 import { IdempotencyPort, ItemProjectionPort, OwnerProjectionPort } from '../../projection-ports.js';
 import { ItemQueryPort } from '../../ports.js';
 import { GorseSyncPort, MeilisearchSyncPort } from '../../sync-ports.js';
@@ -36,16 +29,24 @@ export class ProjectOwnerHandler {
   ): Promise<void> {
     if (await this.idempotency.isProcessed(eventId)) return;
 
-    const owner = projectOwnerFromOrganization(payload);
-    await this.ownerProjection.upsert(owner);
+    const ownerId = OrganizationId.raw(payload.organizationId);
 
     if (payload.republished) {
-      const affectedItemIds = await this.itemProjection.updateOwnerData(
-        payload.organizationId,
-        { name: payload.name, avatarId: payload.avatarId },
-      );
+      await this.ownerProjection.updateData(ownerId, {
+        name: payload.name,
+        avatarId: payload.avatarId,
+        updatedAt: payload.publishedAt,
+      });
+
+      const affectedItemIds = await this.itemProjection.updateOwnerData(ownerId, {
+        name: payload.name,
+        avatarId: payload.avatarId,
+      });
       const items = await this.itemQuery.findByIds(affectedItemIds);
       await this.meilisearch.upsertItems(items);
+    } else {
+      const owner = projectOwnerFromOrganization(payload);
+      await this.ownerProjection.upsert(owner);
     }
 
     await this.idempotency.markProcessed(eventId);
@@ -57,39 +58,17 @@ export class ProjectOwnerHandler {
   ): Promise<void> {
     if (await this.idempotency.isProcessed(eventId)) return;
 
-    await this.ownerProjection.delete(OrganizationId.raw(payload.organizationId));
+    const ownerId = OrganizationId.raw(payload.organizationId);
+    await this.ownerProjection.delete(ownerId);
 
-    const affectedItemIds = await this.itemProjection.deleteByOrganizationId(
-      payload.organizationId,
+    const affectedItemIds = await this.itemProjection.deleteByOrganizationId(ownerId);
+    await Promise.all(
+      affectedItemIds.map(async (itemId) => {
+        await this.gorse.deleteItem(itemId);
+        await this.meilisearch.deleteItem(itemId);
+      }),
     );
-    for (const itemId of affectedItemIds) {
-      await this.gorse.deleteItem(itemId);
-      await this.meilisearch.deleteItem(itemId);
-    }
 
-    await this.idempotency.markProcessed(eventId);
-  }
-
-  public async handleUserCreated(eventId: string, payload: UserCreatedEvent): Promise<void> {
-    if (await this.idempotency.isProcessed(eventId)) return;
-
-    const owner = projectOwnerFromUser(payload);
-    await this.ownerProjection.upsert(owner);
-    await this.idempotency.markProcessed(eventId);
-  }
-
-  public async handleUserUpdated(eventId: string, payload: UserUpdatedEvent): Promise<void> {
-    if (await this.idempotency.isProcessed(eventId)) return;
-
-    const owner = projectOwnerFromUser(payload);
-    await this.ownerProjection.upsert(owner);
-    await this.idempotency.markProcessed(eventId);
-  }
-
-  public async handleUserDeleted(eventId: string, payload: UserDeletedEvent): Promise<void> {
-    if (await this.idempotency.isProcessed(eventId)) return;
-
-    await this.ownerProjection.delete(OrganizationId.raw(payload.userId));
     await this.idempotency.markProcessed(eventId);
   }
 }

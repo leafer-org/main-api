@@ -9,6 +9,7 @@ export type CategoryAttribute = {
 };
 
 export type CategoryPublishedEvent = {
+  id: string;
   type: 'category.published';
   categoryId: CategoryId;
   parentCategoryId: CategoryId | null;
@@ -22,6 +23,7 @@ export type CategoryPublishedEvent = {
 };
 
 export type CategoryUnpublishedEvent = {
+  id: string;
   type: 'category.unpublished';
   categoryId: CategoryId;
   unpublishedAt: Date;

@@ -1,6 +1,6 @@
 # Application
 
-Модуль — **read-only**. Все данные поступают через Kafka. Единственная запись — сохранение `like` в PG при обработке `interaction.recorded` события.
+Модуль — **read-only**. Все данные поступают через Kafka. Единственная запись — сохранение `like` в PG при обработке `like.streaming` событий.
 
 ## Ports
 
@@ -13,7 +13,7 @@
 - `ItemQueryPort` — findByIds, findCategoryItemsSorted, findPopular
 - `LikedItemsQueryPort` — лайкнутые товары пользователя
 - `CategoryListQueryPort` — список категорий по parentId
-- `CategoryFiltersQueryPort` — фильтры категории
+- `CategoryFiltersQueryPort` — категория с предками (findWithAncestors) + типы по IDs (findTypesByIds)
 
 ### Service Ports
 
@@ -31,7 +31,6 @@
 - `CategoryProjectionPort` — upsert/delete categories
 - `ItemTypeProjectionPort` — upsert item types
 - `OwnerProjectionPort` — upsert/delete owners
-- `AttributeProjectionPort` — upsert/delete attributes (batch по categoryId)
 - `UserLikeProjectionPort` — save/remove user likes
 - `IdempotencyPort` — дедупликация обработки событий по eventId
 
@@ -113,7 +112,10 @@
 **Output:** `CategoryFiltersReadModel`
 
 **Flow:**
-1. `CategoryFiltersQueryPort.findByCategoryId(categoryId)` → filters
+1. `CategoryFiltersQueryPort.findWithAncestors(categoryId)` → категория + предки
+2. Merge атрибутов: собственные + от предков (дедупликация по `attributeId`, собственные приоритетнее)
+3. `CategoryFiltersQueryPort.findTypesByIds(allowedTypeIds)` → типы (если есть)
+4. Формирование `CategoryFiltersReadModel`
 
 ---
 
@@ -172,7 +174,7 @@
 
 ### [ProjectCategoryHandler](../application/use-cases/project-category/project-category.handler.ts)
 
-Обрабатывает `category.published` и `category.unpublished`. При публикации — проецирует категорию и её атрибуты. При снятии — удаляет категорию и атрибуты.
+Обрабатывает `category.published` и `category.unpublished`. При публикации — проецирует категорию (включая атрибуты как JSONB). При снятии — удаляет категорию.
 
 ### [ProjectItemTypeHandler](../application/use-cases/project-item-type/project-item-type.handler.ts)
 
@@ -180,22 +182,25 @@
 
 ### [ProjectOwnerHandler](../application/use-cases/project-owner/project-owner.handler.ts)
 
-Обрабатывает события организаций и пользователей:
-- `organization.published` — upsert owner; если `republished` — каскадное обновление owner data в items + Meilisearch
+Обрабатывает события организаций:
+- `organization.published` — upsert owner; если `republished` — обновление только name/avatarId (без перезаписи рейтинга) + каскадное обновление owner data в items + Meilisearch
 - `organization.unpublished` — delete owner + каскадное удаление всех items организации из PG, Gorse, Meilisearch
-- `user.created` / `user.updated` — upsert owner (без каскада, товары не привязаны к user)
-- `user.deleted` — delete owner
 
 ### [ProjectReviewHandler](../application/use-cases/project-review/project-review.handler.ts)
 
-Обрабатывает `review.created` и `review.deleted`. Обновляет `itemReview` или `ownerReview` в зависимости от `ReviewTarget`.
+Обрабатывает `review.created` и `review.deleted`. Обновляет `itemReview` в `ItemReadModel` или `ownerReview` в `ItemReadModel` + `rating`/`reviewCount` в `OwnerReadModel` в зависимости от `ReviewTarget`.
 
 ### [ProjectInteractionHandler](../application/use-cases/project-interaction/project-interaction.handler.ts)
 
 Обрабатывает `interaction.recorded`:
-- `unlike` → удаляет лайк из PG + feedback `like` из Gorse
-- `like` → сохраняет лайк в PG + feedback в Gorse
-- остальные (`view`, `click`, `purchase`, `booking`) → только feedback в Gorse
+- `unlike` → удаляет feedback `like` из Gorse
+- остальные (`view`, `click`, `like`, `purchase`, `booking`) → feedback в Gorse
+
+### [ProjectLikeHandler](../application/use-cases/project-like/project-like.handler.ts)
+
+Обрабатывает события из `like.streaming`:
+- `item.liked` → сохраняет лайк в PG (`UserLikeProjectionPort.saveLike`)
+- `item.unliked` → удаляет лайк из PG (`UserLikeProjectionPort.removeLike`)
 
 ---
 

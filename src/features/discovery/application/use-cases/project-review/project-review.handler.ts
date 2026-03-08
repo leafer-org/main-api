@@ -2,13 +2,14 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import type { ReviewCreatedEvent, ReviewDeletedEvent } from '@/kernel/domain/events/review.events.js';
 
-import { IdempotencyPort, ItemProjectionPort } from '../../projection-ports.js';
+import { IdempotencyPort, ItemProjectionPort, OwnerProjectionPort } from '../../projection-ports.js';
 
 @Injectable()
 export class ProjectReviewHandler {
   public constructor(
     @Inject(IdempotencyPort) private readonly idempotency: IdempotencyPort,
     @Inject(ItemProjectionPort) private readonly itemProjection: ItemProjectionPort,
+    @Inject(OwnerProjectionPort) private readonly ownerProjection: OwnerProjectionPort,
   ) {}
 
   public async handleReviewCreated(eventId: string, payload: ReviewCreatedEvent): Promise<void> {
@@ -34,6 +35,11 @@ export class ProjectReviewHandler {
       await this.itemProjection.updateItemReview(target.itemId, newRating, newReviewCount);
     } else {
       await this.itemProjection.updateOwnerReview(
+        target.organizationId,
+        newRating,
+        newReviewCount,
+      );
+      await this.ownerProjection.updateReview(
         target.organizationId,
         newRating,
         newReviewCount,

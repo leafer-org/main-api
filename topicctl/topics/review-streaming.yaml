@@ -1,0 +1,9 @@
+meta:
+  name: review.streaming
+  cluster: local-cluster
+  environment: local
+  description: review snapshot CDC stream
+
+spec:
+  partitions: 1
+  replicationFactor: 1

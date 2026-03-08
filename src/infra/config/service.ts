@@ -45,4 +45,6 @@ export class MainConfigService extends CreateConfigService({
   // Search / Meilisearch
   MEILI_URL: Type.String({ default: 'http://localhost:7700' }),
   MEILI_API_KEY: Type.String({ default: 'devMasterKey123456' }),
+  // Redis
+  REDIS_URL: Type.String({ default: 'redis://localhost:6379' }),
 }) {}

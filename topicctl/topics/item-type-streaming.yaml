@@ -1,0 +1,9 @@
+meta:
+  name: item-type.streaming
+  cluster: local-cluster
+  environment: local
+  description: item-type snapshot CDC stream
+
+spec:
+  partitions: 1
+  replicationFactor: 1

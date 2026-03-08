@@ -5,10 +5,8 @@ import type {
   CategoryUnpublishedEvent,
 } from '@/kernel/domain/events/category.events.js';
 
-import { projectAttributes } from '../../../domain/read-models/attribute.read-model.js';
 import { projectCategory } from '../../../domain/read-models/category.read-model.js';
 import {
-  AttributeProjectionPort,
   CategoryProjectionPort,
   IdempotencyPort,
 } from '../../projection-ports.js';
@@ -18,7 +16,6 @@ export class ProjectCategoryHandler {
   public constructor(
     @Inject(IdempotencyPort) private readonly idempotency: IdempotencyPort,
     @Inject(CategoryProjectionPort) private readonly categoryProjection: CategoryProjectionPort,
-    @Inject(AttributeProjectionPort) private readonly attributeProjection: AttributeProjectionPort,
   ) {}
 
   public async handleCategoryPublished(
@@ -30,9 +27,6 @@ export class ProjectCategoryHandler {
     const category = projectCategory(payload);
     await this.categoryProjection.upsert(category);
 
-    const attributes = projectAttributes(payload.categoryId, payload.attributes, payload.publishedAt);
-    await this.attributeProjection.upsertBatch(payload.categoryId, attributes);
-
     await this.idempotency.markProcessed(eventId);
   }
 
@@ -43,7 +37,7 @@ export class ProjectCategoryHandler {
     if (await this.idempotency.isProcessed(eventId)) return;
 
     await this.categoryProjection.delete(payload.categoryId);
-    await this.attributeProjection.deleteByCategoryId(payload.categoryId);
+
     await this.idempotency.markProcessed(eventId);
   }
 }

@@ -14,7 +14,7 @@ src/test/e2e/
 │   ├── containers.ts     # Запуск/остановка контейнеров
 │   ├── create-app.ts     # Bootstrap NestJS-приложения
 │   ├── db.ts             # Миграции, truncate, сиды
-│   ├── kafka.ts          # Создание топиков из YAML
+│   ├── kafka.ts          # Создание топиков из YAML, ожидание consumer'ов
 │   ├── outbox.ts         # Flush outbox + producer
 │   └── s3.ts             # Создание S3-бакетов
 ├── actors/               # Бизнес-хелперы (действия пользователей)
@@ -148,12 +148,27 @@ beforeAll(async () => {
 
 После `app.init()` Kafka consumer подключен к брокеру, но **ещё не получил partition assignment**. Сообщения, отправленные до assignment, будут пропущены (rdkafka по умолчанию стартует с `auto.offset.reset=largest`).
 
+### Один consumer (один модуль)
+
 ```ts
 import { KafkaConsumerService } from '@/infra/lib/nest-kafka/consumer/kafka-consumer.service.js';
 
 await app.init();
 await app.get(KafkaConsumerService).waitForPartitions();
 ```
+
+### Несколько consumer'ов (несколько модулей)
+
+Когда в приложении несколько модулей с собственными `KafkaConsumerService` (например, `DiscoveryModule` + другой модуль), `app.get(KafkaConsumerService)` вернёт только один из них. Для ожидания **всех** consumer'ов используется хелпер `waitForAllConsumers`:
+
+```ts
+import { waitForAllConsumers } from './helpers/kafka.js';
+
+await app.init();
+await waitForAllConsumers(app);
+```
+
+`waitForAllConsumers()` обходит внутренний DI-контейнер NestJS, находит все экземпляры `KafkaConsumerService` во всех модулях и вызывает `waitForPartitions()` у каждого.
 
 `waitForPartitions()` ждёт первого `rebalance` callback с `ERR__ASSIGN_PARTITIONS`. Без этого вызова тесты, зависящие от Kafka-проекций, будут нестабильны.
 

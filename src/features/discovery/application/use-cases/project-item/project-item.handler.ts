@@ -22,6 +22,7 @@ export class ProjectItemHandler {
     await this.itemProjection.upsert(readModel);
     await this.gorse.upsertItem(readModel);
     await this.meilisearch.upsertItem(readModel);
+
     await this.idempotency.markProcessed(eventId);
   }
 
@@ -31,6 +32,7 @@ export class ProjectItemHandler {
     await this.itemProjection.delete(payload.itemId);
     await this.gorse.deleteItem(payload.itemId);
     await this.meilisearch.deleteItem(payload.itemId);
+
     await this.idempotency.markProcessed(eventId);
   }
 }

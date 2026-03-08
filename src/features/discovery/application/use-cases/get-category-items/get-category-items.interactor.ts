@@ -18,6 +18,14 @@ import type { CategoryItemFilters, SortOption } from './types.js';
 const CANDIDATE_CAP = 500;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
+/**
+ * Товары в категории с фильтрами и сортировкой.
+ *
+ * sort='personal': candidates (cap 500) → Gorse rank → PostRanking → Redis cache (5 мин) →
+ * cursor-пагинация. При исчерпании кэша — автоматический fallback на sort='newest'.
+ *
+ * sort≠'personal': прямая SQL cursor-пагинация с сортировкой.
+ */
 @Injectable()
 export class GetCategoryItemsInteractor {
   public constructor(
@@ -97,6 +105,10 @@ export class GetCategoryItemsInteractor {
       await this.rankedListCache.set(cacheKey, rankedIds, CACHE_TTL_MS);
     }
 
+    if (offset >= rankedIds.length) {
+      return this.executeSqlFallback(query);
+    }
+
     const pageIds = rankedIds.slice(offset, offset + query.limit);
     const items = await this.itemQuery.findByIds(pageIds);
 
@@ -114,6 +126,29 @@ export class GetCategoryItemsInteractor {
     return Right({
       items: orderedItems.map(toListView),
       nextCursor,
+    });
+  }
+
+  private async executeSqlFallback(query: {
+    categoryId: CategoryId;
+    cityId: string;
+    ageGroup: AgeGroup;
+    filters: CategoryItemFilters;
+    cursor?: string;
+    limit: number;
+  }) {
+    const result = await this.itemQuery.findCategoryItemsSorted({
+      categoryId: query.categoryId,
+      cityId: query.cityId,
+      ageGroup: query.ageGroup,
+      filters: query.filters,
+      sort: 'newest',
+      cursor: query.cursor,
+      limit: query.limit,
+    });
+    return Right({
+      items: result.items.map(toListView),
+      nextCursor: result.nextCursor,
     });
   }
 

@@ -1,5 +1,6 @@
 import type { AttributeId, CategoryId, TypeId } from '@/kernel/domain/ids.js';
 
+/** Фасеты поиска — доступные фильтры с количеством значений в текущей выборке. */
 export type SearchFacets = {
   categories: { categoryId: CategoryId; name: string; count: number }[];
   types: { typeId: TypeId; name: string; count: number }[];

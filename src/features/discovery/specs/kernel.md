@@ -11,9 +11,10 @@ Streaming события содержат информацию о:
 1. Дереве категорий с атрибутами
 2. Товарах с виджетами
 3. Типах товаров
-4. Владельцах (организации + пользователи)
+4. Владельцах (организации)
 5. Отзывах и рейтингах
 6. Взаимодействиях пользователей (view, click, like, unlike, purchase, booking)
+7. Лайках пользователей (like, unlike) — отдельный поток для надёжной проекции
 
 ## Kafka Event Format
 
@@ -24,7 +25,7 @@ Streaming события содержат информацию о:
 | `eventId` | string | UUID, для идемпотентности |
 | `eventType` | string | напр. `item.published`, `organization.published` |
 | `aggregateId` | string | ID сущности-источника |
-| `aggregateType` | string | `item` / `category` / `item-type` / `organization` / `user` / `review` / `interaction` |
+| `aggregateType` | string | `item` / `category` / `item-type` / `organization` / `review` / `interaction` |
 | `version` | number | версия агрегата (для ordering) |
 | `timestamp` | Date | |
 | `payload` | T | |
@@ -41,12 +42,11 @@ Streaming события содержат информацию о:
 | `item-type` | `item-type.updated` | Обновление типа |
 | `organization` | `organization.published` | Публикация организации (`republished: true` = обновление данных) |
 | `organization` | `organization.unpublished` | Снятие организации с публикации |
-| `user` | `user.created` | Новый пользователь |
-| `user` | `user.updated` | Обновление данных пользователя |
-| `user` | `user.deleted` | Удаление пользователя |
 | `review` | `review.created` | Новый отзыв → pre-computed `newRating` + `newReviewCount` |
 | `review` | `review.deleted` | Удаление отзыва → пересчёт рейтинга |
 | `interaction` | `interaction.recorded` | Взаимодействие пользователя с товаром |
+| `like` | `item.liked` | Пользователь лайкнул товар |
+| `like` | `item.unliked` | Пользователь убрал лайк |
 
 Виджеты приходят **внутри** payload события `item.published` как массив `widgets[]`. Типы виджетов определены в [@/kernel/domain/vo/widget.ts](../../../kernel/domain/vo/widget.ts).
 
@@ -62,12 +62,14 @@ Streaming события содержат информацию о:
 
 **При ошибке синхронизации** (Gorse/Meilisearch недоступен): событие отправляется в DLQ с указанием, какой шаг упал. При retry DLQ-процессор выполняет только упавший шаг (PG уже записан).
 
-**interaction** события: отправляются только в Gorse (feedback). `like` дополнительно сохраняется в PG (таблица `user_likes`) для GetLikedItems. `unlike` удаляет лайк из PG и feedback `like` из Gorse.
+**interaction** события: отправляются только в Gorse (feedback). `unlike` удаляет feedback `like` из Gorse.
+
+**like.streaming** — отдельный топик для надёжной проекции лайков в PG (таблица `user_likes`). `item.liked` сохраняет лайк, `item.unliked` удаляет. Используется для GetLikedItems. Отделён от `interaction.streaming`, у которого низкие гарантии доставки.
 
 ## Обновление данных владельца
 
 При получении `organization.published` с `republished: true`:
-1. Обновить `OwnerReadModel` в PG
+1. Обновить name/avatarId в `OwnerReadModel` в PG (без перезаписи рейтинга)
 2. Обновить денормализованные данные owner во **всех** `ItemReadModel` этого владельца (batch update по `organizationId`)
 3. Обновить данные в Meilisearch для всех товаров владельца
 

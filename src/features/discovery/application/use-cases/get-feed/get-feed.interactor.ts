@@ -9,6 +9,13 @@ import { toRankingCandidate } from '../../../domain/mappers/post-ranking-candida
 import { PostRankingService } from '../../../domain/services/post-ranking.service.js';
 import { ItemQueryPort, NewSellerItemsPort, RecommendationService } from '../../ports.js';
 
+/**
+ * Персонализированная лента рекомендаций по всему каталогу.
+ *
+ * Flow: Gorse recommend (×2 запас) ∥ new sellers (5 шт) → merge (dedup) →
+ * fallback findPopular при пустом результате → load items → PostRanking → slice limit.
+ * Пре-фильтры (город, возраст) задаются как item labels в Gorse.
+ */
 @Injectable()
 export class GetFeedInteractor {
   public constructor(
@@ -18,6 +25,7 @@ export class GetFeedInteractor {
     @Inject(PostRankingService) private readonly postRanking: PostRankingService,
   ) {}
 
+  // Задать вопрос по стабильности пагинации
   public async execute(query: {
     userId?: UserId;
     cityId: string;

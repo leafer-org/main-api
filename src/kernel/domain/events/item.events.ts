@@ -4,6 +4,7 @@ import type { ItemWidget } from '../vo/widget.js';
 export type { ItemWidget } from '../vo/widget.js';
 
 export type ItemPublishedEvent = {
+  id: string;
   type: 'item.published';
   itemId: ItemId;
   typeId: TypeId;
@@ -14,6 +15,7 @@ export type ItemPublishedEvent = {
 };
 
 export type ItemUnpublishedEvent = {
+  id: string;
   type: 'item.unpublished';
   itemId: ItemId;
   unpublishedAt: Date;

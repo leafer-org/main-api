@@ -1,0 +1,9 @@
+meta:
+  name: organization.streaming
+  cluster: local-cluster
+  environment: local
+  description: organization snapshot CDC stream
+
+spec:
+  partitions: 1
+  replicationFactor: 1

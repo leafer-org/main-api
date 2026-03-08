@@ -1,0 +1,41 @@
+import { Injectable } from '@nestjs/common';
+import { eq, isNull } from 'drizzle-orm';
+
+import { CategoryListQueryPort } from '../../../application/ports.js';
+import type { CategoryListReadModel } from '../../../domain/read-models/category-list.read-model.js';
+import { DiscoveryDatabaseClient } from '../client.js';
+import { discoveryCategories } from '../schema.js';
+import { CategoryId, FileId } from '@/kernel/domain/ids.js';
+
+@Injectable()
+export class DrizzleCategoryListQuery implements CategoryListQueryPort {
+  public constructor(private readonly dbClient: DiscoveryDatabaseClient) {}
+
+  public async findByParentId(
+    parentCategoryId: CategoryId | null,
+  ): Promise<CategoryListReadModel[]> {
+    const condition =
+      parentCategoryId !== null
+        ? eq(discoveryCategories.parentCategoryId, parentCategoryId as string)
+        : isNull(discoveryCategories.parentCategoryId);
+
+    const categories = await this.dbClient.db
+      .select({
+        categoryId: discoveryCategories.id,
+        name: discoveryCategories.name,
+        iconId: discoveryCategories.iconId,
+        childCount: discoveryCategories.childCount,
+        itemCount: discoveryCategories.itemCount,
+      })
+      .from(discoveryCategories)
+      .where(condition);
+
+    return categories.map((cat) => ({
+      categoryId: CategoryId.raw(cat.categoryId),
+      name: cat.name,
+      iconId: cat.iconId ? FileId.raw(cat.iconId) : null,
+      childCount: cat.childCount,
+      itemCount: cat.itemCount,
+    }));
+  }
+}

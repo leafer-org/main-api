@@ -16,6 +16,15 @@ const WEAK_BOOST = 1;
 const DIVERSITY_WINDOW = 5;
 const MAX_OWNER_IN_WINDOW = 2;
 
+/**
+ * Пост-ранкинг — применяется только при sort='personal' (лента + категория).
+ *
+ * Правила (порядок важен):
+ * 1. **Urgency boost** — товары с event-date-time в ближайшем будущем
+ *    (< 24ч → сильный, < 48ч → средний, < 7д → слабый). Не для schedule.
+ * 2. **Owner diversity** — макс 2 товара одного владельца в окне 5 позиций.
+ *    Diversity последним, чтобы бусты не скопили товары одного владельца.
+ */
 @Injectable()
 export class PostRankingService {
   public constructor(@Inject(Clock) private readonly clock: Clock) {}

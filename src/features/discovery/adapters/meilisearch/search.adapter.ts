@@ -1,0 +1,136 @@
+import { Inject, Injectable } from '@nestjs/common';
+
+import { SearchPort } from '../../application/ports.js';
+import type { ItemListView } from '../../domain/read-models/item-list-view.read-model.js';
+import type { SearchFacets } from '../../domain/read-models/search-result.read-model.js';
+import type { DynamicSearchFilters } from '../../application/use-cases/search-items/types.js';
+import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import { ItemId, TypeId, CategoryId, FileId } from '@/kernel/domain/ids.js';
+import type { PaymentStrategy } from '@/kernel/domain/vo/widget.js';
+import {
+  DiscoveryItemsSearchClient,
+  DISCOVERY_ITEMS_INDEX,
+} from './discovery-items.index.js';
+
+type DiscoveryItemHit = {
+  itemId: string;
+  typeId: string;
+  title: string;
+  description: string;
+  imageId: string | null;
+  price: number | null;
+  paymentStrategy: string | null;
+  rating: number | null;
+  reviewCount: number;
+  ownerName: string;
+  ownerAvatarId: string | null;
+  cityId: string | null;
+  address: string;
+  categoryIds: string[];
+};
+
+@Injectable()
+export class MeiliSearchQuery implements SearchPort {
+  public constructor(
+    @Inject(DiscoveryItemsSearchClient)
+    private readonly searchClient: InstanceType<typeof DiscoveryItemsSearchClient>,
+  ) {}
+
+  public async search(params: {
+    query: string;
+    cityId: string;
+    ageGroup: AgeGroup;
+    filters?: DynamicSearchFilters;
+    cursor?: string;
+    limit: number;
+  }): Promise<{
+    items: ItemListView[];
+    facets: SearchFacets;
+    nextCursor: string | null;
+    total: number;
+  }> {
+    const filterParts: string[] = [
+      `cityId = "${params.cityId}"`,
+      `(ageGroup = "${params.ageGroup}" OR ageGroup = "all")`,
+    ];
+
+    if (params.filters) {
+      this.applyDynamicFilters(filterParts, params.filters);
+    }
+
+    const offset = params.cursor ? this.decodeCursor(params.cursor) : 0;
+
+    const result = await this.searchClient.search<DiscoveryItemHit>(DISCOVERY_ITEMS_INDEX, {
+      q: params.query,
+      filter: filterParts.join(' AND '),
+      offset,
+      limit: params.limit,
+    });
+
+    const items = result.hits.map((hit) => this.toItemListView(hit));
+    const nextCursor =
+      result.total > offset + params.limit
+        ? this.encodeCursor(offset + params.limit)
+        : null;
+
+    return {
+      items,
+      facets: { categories: [], types: [], priceRange: null, attributes: [] },
+      nextCursor,
+      total: result.total,
+    };
+  }
+
+  private applyDynamicFilters(parts: string[], filters: DynamicSearchFilters): void {
+    if (filters.categoryIds && filters.categoryIds.length > 0) {
+      const ids = filters.categoryIds.map((id) => `"${String(id)}"`).join(', ');
+      parts.push(`categoryIds IN [${ids}]`);
+    }
+    if (filters.typeIds && filters.typeIds.length > 0) {
+      const ids = filters.typeIds.map((id) => `"${String(id)}"`).join(', ');
+      parts.push(`typeId IN [${ids}]`);
+    }
+    if (filters.priceRange?.min != null) {
+      parts.push(`price >= ${filters.priceRange.min}`);
+    }
+    if (filters.priceRange?.max != null) {
+      parts.push(`price <= ${filters.priceRange.max}`);
+    }
+    if (filters.attributeValues && filters.attributeValues.length > 0) {
+      const vals = filters.attributeValues
+        .map((av) => `"${String(av.attributeId)}:${av.value}"`)
+        .join(', ');
+      parts.push(`attributeValues IN [${vals}]`);
+    }
+  }
+
+  private toItemListView(hit: DiscoveryItemHit): ItemListView {
+    return {
+      itemId: ItemId.raw(hit.itemId),
+      typeId: TypeId.raw(hit.typeId),
+      title: hit.title,
+      description: hit.description || null,
+      imageId: hit.imageId ? FileId.raw(hit.imageId) : null,
+      price:
+        hit.paymentStrategy != null
+          ? { strategy: hit.paymentStrategy as PaymentStrategy, price: hit.price }
+          : null,
+      rating: hit.rating,
+      reviewCount: hit.reviewCount,
+      owner: hit.ownerName ? { name: hit.ownerName, avatarId: hit.ownerAvatarId ? FileId.raw(hit.ownerAvatarId) : null } : null,
+      location: hit.cityId ? { cityId: hit.cityId, address: hit.address || null } : null,
+      categoryIds: hit.categoryIds.map((id) => CategoryId.raw(id)),
+    };
+  }
+
+  private encodeCursor(offset: number): string {
+    return Buffer.from(JSON.stringify({ offset })).toString('base64url');
+  }
+
+  private decodeCursor(cursor: string): number {
+    const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8')) as {
+      offset: number;
+    };
+    return parsed.offset;
+  }
+}

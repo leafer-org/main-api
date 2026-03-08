@@ -377,6 +377,108 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/categories': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Список дочерних категорий с количеством товаров */
+    get: operations['getCategories'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/categories/{id}/items': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Товары в категории с фильтрами и сортировкой */
+    get: operations['getCategoryItems'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/categories/{id}/filters': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Доступные фильтры для страницы категории */
+    get: operations['getCategoryFilters'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/feed': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Персонализированная лента рекомендаций по всему каталогу */
+    get: operations['getFeed'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Полнотекстовый поиск товаров через Meilisearch с динамическими фасетными фильтрами */
+    get: operations['searchItems'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/liked-items': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Список лайкнутых товаров пользователя с поиском по названию */
+    get: operations['getLikedItems'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -560,8 +662,138 @@ export interface components {
       hasPreviousPage: boolean;
       startCursor?: string | null;
     };
+    CategoryListItem: {
+      categoryId: string;
+      name: string;
+      iconId?: string | null;
+      childCount: number;
+      itemCount: number;
+    };
+    ItemPayment: {
+      /** @enum {string} */
+      strategy: 'free' | 'one-time' | 'subscription';
+      price?: number | null;
+    };
+    ItemOwnerSummary: {
+      name: string;
+      avatarId?: string | null;
+    };
+    ItemLocationSummary: {
+      cityId: string;
+      address?: string | null;
+    };
+    ItemListView: {
+      itemId: string;
+      typeId: string;
+      title: string;
+      description?: string | null;
+      imageId?: string | null;
+      price?: components['schemas']['ItemPayment'] | null;
+      rating?: number | null;
+      reviewCount: number;
+      owner?: components['schemas']['ItemOwnerSummary'] | null;
+      location?: components['schemas']['ItemLocationSummary'] | null;
+      categoryIds: string[];
+    };
+    CursorPaginatedItems: {
+      items: components['schemas']['ItemListView'][];
+      nextCursor?: string | null;
+    };
+    AttributeSchema:
+      | {
+          /** @enum {string} */
+          type: 'text';
+        }
+      | {
+          /** @enum {string} */
+          type: 'boolean';
+        }
+      | {
+          /** @enum {string} */
+          type: 'enum';
+          options: string[];
+        }
+      | {
+          /** @enum {string} */
+          type: 'number';
+          min?: number;
+          max?: number;
+        };
+    AttributeFilter: {
+      attributeId: string;
+      name: string;
+      schema: components['schemas']['AttributeSchema'];
+    };
+    TypeFilter: {
+      typeId: string;
+      name: string;
+    };
+    CommonFilters: {
+      hasPriceRange: boolean;
+      hasRating: boolean;
+      hasLocation: boolean;
+      hasSchedule: boolean;
+      hasEventDateTime: boolean;
+    };
+    CategoryFilters: {
+      categoryId: string;
+      attributeFilters: components['schemas']['AttributeFilter'][];
+      typeFilters: components['schemas']['TypeFilter'][];
+      commonFilters: components['schemas']['CommonFilters'];
+    };
+    SearchFacetCategory: {
+      categoryId: string;
+      name: string;
+      count: number;
+    };
+    SearchFacetType: {
+      typeId: string;
+      name: string;
+      count: number;
+    };
+    SearchFacetAttributeValue: {
+      value: string;
+      count: number;
+    };
+    SearchFacetAttribute: {
+      attributeId: string;
+      name: string;
+      values: components['schemas']['SearchFacetAttributeValue'][];
+    };
+    SearchFacets: {
+      categories: components['schemas']['SearchFacetCategory'][];
+      types: components['schemas']['SearchFacetType'][];
+      priceRange?: {
+        min: number;
+        max: number;
+      } | null;
+      attributes: components['schemas']['SearchFacetAttribute'][];
+    };
+    LikedItemView: components['schemas']['ItemListView'] & {
+      /** Format: date-time */
+      likedAt: string;
+    };
+    CursorPaginatedLikedItems: {
+      items: components['schemas']['LikedItemView'][];
+      nextCursor?: string | null;
+    };
+    Error: {
+      statusCode: number;
+      message: string;
+      error?: string;
+    };
   };
-  responses: never;
+  responses: {
+    /** @description Unauthorized */
+    UnauthorizedError: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        'application/json': components['schemas']['Error'];
+      };
+    };
+  };
   parameters: never;
   requestBodies: never;
   headers: never;
@@ -1850,6 +2082,204 @@ export interface operations {
           'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
+    };
+  };
+  getCategories: {
+    parameters: {
+      query?: {
+        /** @description ID родительской категории. Если не указан — возвращает корневые категории. */
+        parentCategoryId?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список категорий */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryListItem'][];
+        };
+      };
+    };
+  };
+  getCategoryItems: {
+    parameters: {
+      query?: {
+        /** @description Режим сортировки */
+        sort?: 'personal' | 'price-asc' | 'price-desc' | 'rating-desc' | 'newest';
+        /** @description Курсор для пагинации */
+        cursor?: string;
+        /** @description Количество элементов на странице */
+        limit?: number;
+        /** @description ID города для гео-фильтрации */
+        cityId?: string;
+        /** @description Возрастная группа */
+        ageGroup?: 'adults' | 'children' | 'all';
+        /** @description Фильтр по типам товара (через запятую) */
+        typeIds?: string;
+        /** @description Минимальная цена */
+        priceMin?: number;
+        /** @description Максимальная цена */
+        priceMax?: number;
+        /** @description Минимальный рейтинг */
+        minRating?: number;
+      };
+      header?: never;
+      path: {
+        /** @description ID категории */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список товаров с курсором */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CursorPaginatedItems'];
+        };
+      };
+    };
+  };
+  getCategoryFilters: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description ID категории */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Фильтры категории */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryFilters'];
+        };
+      };
+      /** @description Категория не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getFeed: {
+    parameters: {
+      query: {
+        /** @description ID города */
+        cityId: string;
+        /** @description Возрастная группа */
+        ageGroup?: 'adults' | 'children' | 'all';
+        /** @description Курсор для пагинации */
+        cursor?: string;
+        /** @description Количество элементов на странице */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Лента товаров с курсором */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CursorPaginatedItems'];
+        };
+      };
+    };
+  };
+  searchItems: {
+    parameters: {
+      query: {
+        /** @description Поисковый запрос */
+        query: string;
+        /** @description ID города */
+        cityId: string;
+        /** @description Возрастная группа */
+        ageGroup?: 'adults' | 'children' | 'all';
+        /** @description Фильтр по категориям (через запятую) */
+        categoryIds?: string;
+        /** @description Фильтр по типам товара (через запятую) */
+        typeIds?: string;
+        /** @description Минимальная цена */
+        priceMin?: number;
+        /** @description Максимальная цена */
+        priceMax?: number;
+        /** @description Курсор для пагинации */
+        cursor?: string;
+        /** @description Количество элементов на странице */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Результаты поиска с фасетами */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: components['schemas']['ItemListView'][];
+            facets: components['schemas']['SearchFacets'];
+            nextCursor?: string | null;
+            total: number;
+          };
+        };
+      };
+    };
+  };
+  getLikedItems: {
+    parameters: {
+      query?: {
+        /** @description Поиск по названию товара */
+        search?: string;
+        /** @description Курсор для пагинации */
+        cursor?: string;
+        /** @description Количество элементов на странице */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список лайкнутых товаров */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CursorPaginatedLikedItems'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
     };
   };
 }

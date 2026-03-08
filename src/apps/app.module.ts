@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ClsModule } from 'nestjs-cls';
 
+import { DISCOVERY_CONSUMER_ID } from '../features/discovery/adapters/kafka/consumer-ids.js';
 import { DiscoveryModule } from '../features/discovery/discovery.module.js';
 import { IDP_CONSUMER_ID } from '../features/idp/adapters/kafka/consumer-ids.js';
 import { IdpModule } from '../features/idp/idp.module.js';
 import { MediaModule } from '../features/media/media.module.js';
 import { MainDbModule } from './db.module.js';
+import { MainRedisModule } from './redis.module.js';
 import { MainSearchModule } from './search.module.js';
 import { AuthModule } from '@/infra/auth/auth.module.js';
 import { MainConfigModule } from '@/infra/config/module.js';
@@ -18,7 +21,9 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
 @Module({
   imports: [
     ClsModule.forRoot({ global: true, middleware: { mount: true } }),
+    ScheduleModule.forRoot(),
     MainDbModule,
+    MainRedisModule,
     MainSearchModule,
     MainConfigModule,
     AuthModule,
@@ -42,6 +47,18 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
         consumerConfig: {
           'metadata.broker.list': config.get('KAFKA_BROKER'),
           'group.id': 'idp-consumer',
+        },
+      }),
+      inject: [MainConfigService],
+    }),
+    KafkaConsumerModule.registerAsync({
+      consumerId: DISCOVERY_CONSUMER_ID,
+      mode: { type: 'single' },
+      imports: [MainConfigModule],
+      useFactory: (config: MainConfigService) => ({
+        consumerConfig: {
+          'metadata.broker.list': config.get('KAFKA_BROKER'),
+          'group.id': 'discovery-consumer',
         },
       }),
       inject: [MainConfigService],

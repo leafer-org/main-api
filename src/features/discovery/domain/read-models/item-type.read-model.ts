@@ -2,6 +2,7 @@ import type { ItemTypeCreatedEvent, ItemTypeUpdatedEvent } from '@/kernel/domain
 import type { TypeId } from '@/kernel/domain/ids.js';
 import type { WidgetType } from '@/kernel/domain/vo/widget.js';
 
+/** Тип товара. Определяет доступные и обязательные виджеты. Создаётся динамически через админку. */
 export type ItemTypeReadModel = {
   typeId: TypeId;
   name: string;

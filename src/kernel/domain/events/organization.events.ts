@@ -1,6 +1,7 @@
 import type { FileId, OrganizationId } from '../ids.js';
 
 export type OrganizationPublishedEvent = {
+  id: string;
   type: 'organization.published';
   organizationId: OrganizationId;
   name: string;
@@ -10,6 +11,7 @@ export type OrganizationPublishedEvent = {
 };
 
 export type OrganizationUnpublishedEvent = {
+  id: string;
   type: 'organization.unpublished';
   organizationId: OrganizationId;
   unpublishedAt: Date;

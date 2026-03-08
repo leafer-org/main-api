@@ -1,0 +1,9 @@
+meta:
+  name: category.streaming
+  cluster: local-cluster
+  environment: local
+  description: category snapshot CDC stream
+
+spec:
+  partitions: 1
+  replicationFactor: 1

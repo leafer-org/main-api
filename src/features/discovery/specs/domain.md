@@ -12,7 +12,7 @@
 
 ### [CategoryReadModel](../domain/read-models/category.read-model.ts)
 
-Хранит узел дерева категорий. `ancestorIds` — путь от корня для эффективного показа товара в родительских категориях.
+Хранит узел дерева категорий. `ancestorIds` — путь от корня для эффективного показа товара в родительских категориях. `attributes` — денормализованные атрибуты категории (JSONB), используются для наследования фильтров дочерними категориями.
 
 **Projection:** `projectCategory(CategoryPublishedEvent)` → `CategoryReadModel`.
 
@@ -22,13 +22,7 @@
 
 ### [CategoryFiltersReadModel](../domain/read-models/category-filters.read-model.ts)
 
-Доступные фильтры для страницы категории. Строится на основе атрибутов категории (+ унаследованных) и параметров допустимых типов.
-
-### [AttributeReadModel](../domain/read-models/attribute.read-model.ts)
-
-Атрибут категории. Наследуется дочерними категориями. Определяет фильтры в каталоге.
-
-**Projection:** `projectAttributes(categoryId, CategoryAttribute[], now)` → `AttributeReadModel[]`.
+Доступные фильтры для страницы категории. Собирается интерактором из атрибутов категории (собственные + унаследованные от предков через `ancestorIds`) и параметров допустимых типов.
 
 ### [ItemTypeReadModel](../domain/read-models/item-type.read-model.ts)
 
@@ -38,11 +32,10 @@
 
 ### [OwnerReadModel](../domain/read-models/owner.read-model.ts)
 
-Отдельная read model владельца — нужна для обновления данных владельца (рейтинг, имя) независимо от товаров. Discovery маппит организации и пользователей в единую модель.
+Отдельная read model владельца-организации — нужна для обновления данных владельца (рейтинг, имя) независимо от товаров.
 
 **Projection:**
 - `projectOwnerFromOrganization(OrganizationPublishedEvent)` → `OwnerReadModel`
-- `projectOwnerFromUser(UserCreatedEvent | UserUpdatedEvent)` → `OwnerReadModel`
 
 ### [ItemListView](../domain/read-models/item-list-view.read-model.ts)
 
@@ -67,17 +60,15 @@ ItemReadModel
   ├── typeId                       → ItemTypeReadModel
   ├── category.categoryIds[]       → CategoryReadModel
   ├── owner.organizationId         → OwnerReadModel (данные денормализованы в item)
-  └── category.attributeValues[].attributeId → AttributeReadModel
+  └── category.attributeValues[].attributeId → CategoryReadModel.attributes[]
 
 CategoryReadModel
   ├── parentCategoryId             → CategoryReadModel (self)
-  └── allowedTypeIds[]             → ItemTypeReadModel
+  ├── allowedTypeIds[]             → ItemTypeReadModel
+  └── attributes[]                 — денормализованные атрибуты (JSONB)
 
 CategoryListReadModel               — проекция CategoryReadModel для UI каталога
-CategoryFiltersReadModel            — собирается из AttributeReadModel + ItemTypeReadModel + ItemReadModel
-
-AttributeReadModel
-  └── categoryId                   → CategoryReadModel
+CategoryFiltersReadModel            — собирается интерактором из CategoryReadModel.attributes + ancestors
 ```
 
 Связи логические (без FK constraints в PG). При обновлении OwnerReadModel — данные owner во всех связанных ItemReadModel обновляются через обработку Kafka-события владельца (денормализация).
@@ -111,9 +102,6 @@ Domain events определены в kernel и приходят через Kafk
 - `OrganizationPublishedEvent` — публикация организации. `republished: true` = обновление данных.
 - `OrganizationUnpublishedEvent` — снятие с публикации.
 
-### User events — [user.events.ts](../../../kernel/domain/events/user.events.ts)
-- `UserCreatedEvent`, `UserUpdatedEvent`, `UserDeletedEvent`
-
 ### Review events — [review.events.ts](../../../kernel/domain/events/review.events.ts)
 - `ReviewCreatedEvent`, `ReviewDeletedEvent` — содержат `ReviewTarget` (item или organization) и pre-computed `newRating` + `newReviewCount`.
 
@@ -129,7 +117,11 @@ Domain events определены в kernel и приходят через Kafk
 | `purchase` | 8 | Покупка товара |
 | `booking` | 8 | Запись на услугу |
 
-**Like** дополнительно сохраняется в read model для отображения лайкнутых товаров (GetLikedItems). **Unlike** удаляет лайк из read model и feedback из Gorse.
+### Like events — [like.events.ts](../../../kernel/domain/events/like.events.ts)
+- `ItemLikedEvent` — пользователь лайкнул товар. Приходит через `like.streaming`.
+- `ItemUnlikedEvent` — пользователь убрал лайк. Приходит через `like.streaming`.
+
+Лайки проецируются в PG через отдельный `ProjectLikeHandler` для надёжной проекции (отдельно от interaction feedback в Gorse).
 
 ## Services
 

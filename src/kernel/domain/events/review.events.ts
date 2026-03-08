@@ -5,6 +5,7 @@ export type ReviewTarget =
   | { targetType: 'organization'; organizationId: OrganizationId };
 
 export type ReviewCreatedEvent = {
+  id: string;
   type: 'review.created';
   reviewId: string;
   target: ReviewTarget;
@@ -14,6 +15,7 @@ export type ReviewCreatedEvent = {
 };
 
 export type ReviewDeletedEvent = {
+  id: string;
   type: 'review.deleted';
   reviewId: string;
   target: ReviewTarget;

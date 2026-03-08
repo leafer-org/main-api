@@ -19,6 +19,8 @@ https://github.com/gorse-io/gorse
 
 Рекомендательный движок. Синхронизация items — синхронно при проекции (через `GorseSyncPort`). User feedback (view, click, like, purchase, booking) отправляется при обработке `interaction.recorded` событий. `unlike` удаляет feedback `like`. Item labels в Gorse: `cityId`, `ageGroup`, `categoryIds[]`, `typeId`.
 
+Проекция лайков в PG осуществляется через отдельный топик `like.streaming` (не через `interaction.streaming`), что обеспечивает надёжную доставку событий like/unlike для `user_likes`.
+
 ## Redis
 
 Кэш ранжированных списков для cursor-пагинации по категориям (`RankedListCachePort`). TTL ~5 мин.

@@ -2,6 +2,7 @@ import type { CategoryId, FileId, ItemId, TypeId } from '@/kernel/domain/ids.js'
 
 import type { ItemPayment } from './item.read-model.js';
 
+/** Карточка товара для списков/ленты. Проекция ItemReadModel через {@link toListView}. */
 export type ItemListView = {
   itemId: ItemId;
   typeId: TypeId;

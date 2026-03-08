@@ -2,6 +2,7 @@ import type { TypeId } from '../ids.js';
 import type { WidgetType } from '../vo/widget.js';
 
 export type ItemTypeCreatedEvent = {
+  id: string;
   type: 'item-type.created';
   typeId: TypeId;
   name: string;
@@ -11,6 +12,7 @@ export type ItemTypeCreatedEvent = {
 };
 
 export type ItemTypeUpdatedEvent = {
+  id: string;
   type: 'item-type.updated';
   typeId: TypeId;
   name: string;
