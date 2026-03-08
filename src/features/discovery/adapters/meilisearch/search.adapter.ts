@@ -5,6 +5,7 @@ import type { DynamicSearchFilters } from '../../application/use-cases/search-it
 import type { ItemListView } from '../../domain/read-models/item-list-view.read-model.js';
 import type { SearchFacets } from '../../domain/read-models/search-result.read-model.js';
 import { DISCOVERY_ITEMS_INDEX, DiscoveryItemsSearchClient } from './discovery-items.index.js';
+import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
 import { CategoryId, FileId, ItemId, TypeId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 import type { PaymentStrategy } from '@/kernel/domain/vo/widget.js';
@@ -55,7 +56,7 @@ export class MeiliSearchQuery implements SearchPort {
       this.applyDynamicFilters(filterParts, params.filters);
     }
 
-    const offset = params.cursor ? this.decodeCursor(params.cursor) : 0;
+    const offset = params.cursor ? decodeCursor<{ offset: number }>(params.cursor).offset : 0;
 
     const result = await this.searchClient.search<DiscoveryItemHit>(DISCOVERY_ITEMS_INDEX, {
       q: params.query,
@@ -66,7 +67,7 @@ export class MeiliSearchQuery implements SearchPort {
 
     const items = result.hits.map((hit) => this.toItemListView(hit));
     const nextCursor =
-      result.total > offset + params.limit ? this.encodeCursor(offset + params.limit) : null;
+      result.total > offset + params.limit ? encodeCursor({ offset: offset + params.limit }) : null;
 
     return {
       items,
@@ -85,10 +86,10 @@ export class MeiliSearchQuery implements SearchPort {
       const ids = filters.typeIds.map((id) => `"${String(id)}"`).join(', ');
       parts.push(`typeId IN [${ids}]`);
     }
-    if (filters.priceRange?.min !== null) {
+    if (filters.priceRange?.min) {
       parts.push(`price >= ${filters.priceRange.min}`);
     }
-    if (filters.priceRange?.max !== null) {
+    if (filters.priceRange?.max) {
       parts.push(`price <= ${filters.priceRange.max}`);
     }
     if (filters.attributeValues && filters.attributeValues.length > 0) {
@@ -121,16 +122,5 @@ export class MeiliSearchQuery implements SearchPort {
       location: hit.cityId ? { cityId: hit.cityId, address: hit.address || null } : null,
       categoryIds: hit.categoryIds.map((id) => CategoryId.raw(id)),
     };
-  }
-
-  private encodeCursor(offset: number): string {
-    return Buffer.from(JSON.stringify({ offset })).toString('base64url');
-  }
-
-  private decodeCursor(cursor: string): number {
-    const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8')) as {
-      offset: number;
-    };
-    return parsed.offset;
   }
 }

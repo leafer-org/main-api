@@ -548,5 +548,4 @@ describe('Discovery Projection Handlers (e2e)', () => {
       }, WAIT_OPTIONS);
     });
   });
-
 });

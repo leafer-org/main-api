@@ -16,6 +16,10 @@ export class GorseSyncStub implements GorseSyncPort {
     this.logger.debug('GorseSyncStub.deleteItem called (no-op)');
   }
 
+  public async upsertItems(_items: ItemReadModel[]): Promise<void> {
+    this.logger.debug('GorseSyncStub.upsertItems called (no-op)');
+  }
+
   public async sendFeedback(
     _userId: UserId,
     _itemId: ItemId,

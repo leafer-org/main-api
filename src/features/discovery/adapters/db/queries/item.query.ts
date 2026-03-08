@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { SQL } from 'drizzle-orm';
-import { and, asc, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte, notInArray, sql } from 'drizzle-orm';
 
 import { ItemQueryPort } from '../../../application/ports.js';
 import type {
@@ -9,7 +9,14 @@ import type {
 } from '../../../application/use-cases/get-category-items/types.js';
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
-import { discoveryItems } from '../schema.js';
+import {
+  discoveryItems,
+  discoveryItemAttributes,
+  discoveryItemCategories,
+  discoveryItemEventDates,
+  discoveryItemSchedules,
+} from '../schema.js';
+import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
 import {
   AttributeId,
   CategoryId,
@@ -33,7 +40,7 @@ export class DrizzleItemQuery implements ItemQueryPort {
       .from(discoveryItems)
       .where(inArray(discoveryItems.id, ids as string[]));
 
-    return rows.map((row) => this.toReadModel(row));
+    return this.hydrateReadModels(rows);
   }
 
   public async findCategoryItemsSorted(params: {
@@ -42,14 +49,24 @@ export class DrizzleItemQuery implements ItemQueryPort {
     ageGroup: AgeGroup;
     filters: CategoryItemFilters;
     sort: Exclude<SortOption, 'personal'>;
+    includeIds?: ItemId[];
+    excludeIds?: ItemId[];
     cursor?: string;
     limit: number;
   }): Promise<{ items: ItemReadModel[]; nextCursor: string | null }> {
     const conditions: SQL[] = [
-      sql`${discoveryItems.categoryIds} @> ${JSON.stringify([params.categoryId])}::jsonb`,
+      sql`EXISTS (SELECT 1 FROM ${discoveryItemCategories} WHERE ${discoveryItemCategories.itemId} = ${discoveryItems.id} AND ${discoveryItemCategories.categoryId} = ${params.categoryId as string})`,
       eq(discoveryItems.cityId, params.cityId),
       sql`(${discoveryItems.ageGroup} = ${params.ageGroup} OR ${discoveryItems.ageGroup} = 'all')`,
     ];
+
+    if (params.includeIds && params.includeIds.length > 0) {
+      conditions.push(inArray(discoveryItems.id, params.includeIds as string[]));
+    }
+
+    if (params.excludeIds && params.excludeIds.length > 0) {
+      conditions.push(notInArray(discoveryItems.id, params.excludeIds as string[]));
+    }
 
     this.applyFilters(conditions, params.filters);
 
@@ -68,8 +85,9 @@ export class DrizzleItemQuery implements ItemQueryPort {
     const hasMore = rows.length > params.limit;
     const resultRows = hasMore ? rows.slice(0, params.limit) : rows;
 
-    const items = resultRows.map((row) => this.toReadModel(row));
-    const nextCursor = hasMore ? this.encodeCursor(params.sort, resultRows.at(-1)!) : null;
+    const items = await this.hydrateReadModels(resultRows);
+    const lastRow = resultRows.at(-1);
+    const nextCursor = hasMore && lastRow ? this.buildCursor(params.sort, lastRow) : null;
 
     return { items, nextCursor };
   }
@@ -91,14 +109,14 @@ export class DrizzleItemQuery implements ItemQueryPort {
       .orderBy(desc(discoveryItems.itemReviewCount))
       .limit(params.limit);
 
-    return rows.map((row) => this.toReadModel(row));
+    return this.hydrateReadModels(rows);
   }
 
   private buildSortAndCursor(
     sort: Exclude<SortOption, 'personal'>,
     cursor?: string,
   ): { orderBy: SQL[]; cursorCondition: SQL | null } {
-    const parsed = cursor ? this.decodeCursor(cursor) : null;
+    const parsed = cursor ? decodeCursor<{ value: string; id: string }>(cursor) : null;
 
     switch (sort) {
       case 'price-asc': {
@@ -132,7 +150,7 @@ export class DrizzleItemQuery implements ItemQueryPort {
     }
   }
 
-  private encodeCursor(
+  private buildCursor(
     sort: Exclude<SortOption, 'personal'>,
     row: typeof discoveryItems.$inferSelect,
   ): string {
@@ -149,32 +167,136 @@ export class DrizzleItemQuery implements ItemQueryPort {
         value = row.publishedAt.toISOString();
         break;
     }
-    return Buffer.from(JSON.stringify({ value, id: row.id })).toString('base64url');
-  }
-
-  private decodeCursor(cursor: string): { value: string; id: string } {
-    return JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8')) as {
-      value: string;
-      id: string;
-    };
+    return encodeCursor({ value, id: row.id });
   }
 
   private applyFilters(conditions: SQL[], filters: CategoryItemFilters): void {
     if (filters.typeIds && filters.typeIds.length > 0) {
       conditions.push(inArray(discoveryItems.typeId, filters.typeIds as string[]));
     }
-    if (filters.priceRange?.min !== null) {
+    if (filters.priceRange?.min !== undefined && filters.priceRange?.min !== null) {
       conditions.push(gte(discoveryItems.price, String(filters.priceRange.min)));
     }
-    if (filters.priceRange?.max !== null) {
+    if (filters.priceRange?.max !== undefined && filters.priceRange?.max !== null) {
       conditions.push(lte(discoveryItems.price, String(filters.priceRange.max)));
     }
-    if (filters.minRating !== null) {
+    if (filters.minRating !== undefined && filters.minRating !== null) {
       conditions.push(gte(discoveryItems.itemRating, String(filters.minRating)));
+    }
+    if (filters.attributeFilters && filters.attributeFilters.length > 0) {
+      for (const af of filters.attributeFilters) {
+        switch (af.type) {
+          case 'enum':
+            if (af.values.length > 0) {
+              conditions.push(
+                sql`EXISTS (SELECT 1 FROM ${discoveryItemAttributes} WHERE ${discoveryItemAttributes.itemId} = ${discoveryItems.id} AND ${discoveryItemAttributes.attributeId} = ${String(af.attributeId)} AND ${discoveryItemAttributes.value} IN (${sql.join(af.values.map((v) => sql`${v}`), sql`, `)}))`,
+              );
+            }
+            break;
+          case 'number': {
+            const numConditions: SQL[] = [
+              sql`${discoveryItemAttributes.itemId} = ${discoveryItems.id}`,
+              sql`${discoveryItemAttributes.attributeId} = ${String(af.attributeId)}`,
+            ];
+            if (af.min !== undefined) {
+              numConditions.push(sql`${discoveryItemAttributes.value}::numeric >= ${af.min}`);
+            }
+            if (af.max !== undefined) {
+              numConditions.push(sql`${discoveryItemAttributes.value}::numeric <= ${af.max}`);
+            }
+            conditions.push(
+              sql`EXISTS (SELECT 1 FROM ${discoveryItemAttributes} WHERE ${sql.join(numConditions, sql` AND `)})`,
+            );
+            break;
+          }
+          case 'boolean':
+            conditions.push(
+              sql`EXISTS (SELECT 1 FROM ${discoveryItemAttributes} WHERE ${discoveryItemAttributes.itemId} = ${discoveryItems.id} AND ${discoveryItemAttributes.attributeId} = ${String(af.attributeId)} AND ${discoveryItemAttributes.value} = ${String(af.value)})`,
+            );
+            break;
+          case 'text':
+            conditions.push(
+              sql`EXISTS (SELECT 1 FROM ${discoveryItemAttributes} WHERE ${discoveryItemAttributes.itemId} = ${discoveryItems.id} AND ${discoveryItemAttributes.attributeId} = ${String(af.attributeId)} AND ${discoveryItemAttributes.value} ILIKE ${`%${af.value}%`})`,
+            );
+            break;
+        }
+      }
+    }
+    if (filters.geoRadius) {
+      const { lat, lng, radiusKm } = filters.geoRadius;
+      conditions.push(
+        sql`(6371 * acos(least(1.0, cos(radians(${lat})) * cos(radians(${discoveryItems.lat})) * cos(radians(${discoveryItems.lng}) - radians(${lng})) + sin(radians(${lat})) * sin(radians(${discoveryItems.lat}))))) <= ${radiusKm}`,
+      );
+    }
+    if (filters.dateRange) {
+      const from = filters.dateRange.from.toISOString();
+      const to = filters.dateRange.to.toISOString();
+      conditions.push(
+        sql`EXISTS (SELECT 1 FROM ${discoveryItemEventDates} WHERE ${discoveryItemEventDates.itemId} = ${discoveryItems.id} AND ${discoveryItemEventDates.eventDate} BETWEEN ${from}::timestamptz AND ${to}::timestamptz)`,
+      );
+    }
+    if (filters.scheduleDayOfWeek !== undefined) {
+      conditions.push(
+        sql`EXISTS (SELECT 1 FROM ${discoveryItemSchedules} WHERE ${discoveryItemSchedules.itemId} = ${discoveryItems.id} AND ${discoveryItemSchedules.dayOfWeek} = ${filters.scheduleDayOfWeek})`,
+      );
+    }
+    if (filters.scheduleTimeOfDay) {
+      const { from, to } = filters.scheduleTimeOfDay;
+      conditions.push(
+        sql`EXISTS (SELECT 1 FROM ${discoveryItemSchedules} WHERE ${discoveryItemSchedules.itemId} = ${discoveryItems.id} AND ${discoveryItemSchedules.startTime} < ${to} AND ${discoveryItemSchedules.endTime} > ${from})`,
+      );
     }
   }
 
-  private toReadModel(row: typeof discoveryItems.$inferSelect): ItemReadModel {
+  private async hydrateReadModels(
+    rows: (typeof discoveryItems.$inferSelect)[],
+  ): Promise<ItemReadModel[]> {
+    if (rows.length === 0) return [];
+
+    const itemIds = rows.map((r) => r.id);
+
+    const [categories, attributes, eventDates, schedules] = await Promise.all([
+      this.dbClient.db
+        .select()
+        .from(discoveryItemCategories)
+        .where(inArray(discoveryItemCategories.itemId, itemIds)),
+      this.dbClient.db
+        .select()
+        .from(discoveryItemAttributes)
+        .where(inArray(discoveryItemAttributes.itemId, itemIds)),
+      this.dbClient.db
+        .select()
+        .from(discoveryItemEventDates)
+        .where(inArray(discoveryItemEventDates.itemId, itemIds)),
+      this.dbClient.db
+        .select()
+        .from(discoveryItemSchedules)
+        .where(inArray(discoveryItemSchedules.itemId, itemIds)),
+    ]);
+
+    const catsByItem = this.groupBy(categories, (r) => r.itemId);
+    const attrsByItem = this.groupBy(attributes, (r) => r.itemId);
+    const datesByItem = this.groupBy(eventDates, (r) => r.itemId);
+    const schedsByItem = this.groupBy(schedules, (r) => r.itemId);
+
+    return rows.map((row) =>
+      this.toReadModel(
+        row,
+        catsByItem.get(row.id) ?? [],
+        attrsByItem.get(row.id) ?? [],
+        datesByItem.get(row.id) ?? [],
+        schedsByItem.get(row.id) ?? [],
+      ),
+    );
+  }
+
+  private toReadModel(
+    row: typeof discoveryItems.$inferSelect,
+    categories: (typeof discoveryItemCategories.$inferSelect)[],
+    attributes: (typeof discoveryItemAttributes.$inferSelect)[],
+    eventDates: (typeof discoveryItemEventDates.$inferSelect)[],
+    schedules: (typeof discoveryItemSchedules.$inferSelect)[],
+  ): ItemReadModel {
     const model: ItemReadModel = {
       itemId: ItemId.raw(row.id),
       typeId: TypeId.raw(row.typeId),
@@ -209,12 +331,12 @@ export class DrizzleItemQuery implements ItemQueryPort {
       };
     }
 
-    if (row.categoryIds.length > 0) {
+    if (categories.length > 0) {
       model.category = {
-        categoryIds: row.categoryIds.map((id) => CategoryId.raw(id)),
-        attributeValues: row.attributeValues.map((av) => ({
-          attributeId: AttributeId.raw(av.attributeId),
-          value: av.value,
+        categoryIds: categories.map((c) => CategoryId.raw(c.categoryId)),
+        attributeValues: attributes.map((a) => ({
+          attributeId: AttributeId.raw(a.attributeId),
+          value: a.value,
         })),
       };
     }
@@ -241,14 +363,34 @@ export class DrizzleItemQuery implements ItemQueryPort {
       };
     }
 
-    if (row.eventDates !== null) {
-      model.eventDateTime = { dates: row.eventDates.map((d) => new Date(d)) };
+    if (eventDates.length > 0) {
+      model.eventDateTime = { dates: eventDates.map((d) => d.eventDate) };
     }
 
-    if (row.scheduleEntries !== null) {
-      model.schedule = { entries: row.scheduleEntries as ScheduleEntry[] };
+    if (schedules.length > 0) {
+      model.schedule = {
+        entries: schedules.map((s) => ({
+          dayOfWeek: s.dayOfWeek,
+          startTime: s.startTime,
+          endTime: s.endTime,
+        })) as ScheduleEntry[],
+      };
     }
 
     return model;
+  }
+
+  private groupBy<T>(items: T[], keyFn: (item: T) => string): Map<string, T[]> {
+    const map = new Map<string, T[]>();
+    for (const item of items) {
+      const key = keyFn(item);
+      const arr = map.get(key);
+      if (arr) {
+        arr.push(item);
+      } else {
+        map.set(key, [item]);
+      }
+    }
+    return map;
   }
 }

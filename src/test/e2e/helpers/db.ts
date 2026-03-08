@@ -38,7 +38,7 @@ export async function seedStaticRoles(connectionUri: string) {
 
   await client.query(`
     INSERT INTO roles (name, permissions, is_static) VALUES
-      ('ADMIN', '{"ROLE.MANAGE": true, "USER.MANAGE": true, "SESSION.MANAGE": "all"}', true),
+      ('ADMIN', '{"ROLE.MANAGE": true, "USER.MANAGE": true, "SESSION.MANAGE": "all", "CMS.MANAGE": true}', true),
       ('USER', '{}', true)
     ON CONFLICT (name) DO NOTHING;
   `);

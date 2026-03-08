@@ -1,16 +1,24 @@
+import { resolve } from 'node:path';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { RedpandaContainer, type StartedRedpandaContainer } from '@testcontainers/redpanda';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 
 import { applyTopics } from './kafka.js';
 
+const GORSE_CONFIG_PATH = resolve(import.meta.dirname, 'gorse-config.toml');
+
+export type ContainerOptions = {
+  gorse?: boolean;
+};
+
 let pgContainer: StartedPostgreSqlContainer | null = null;
 let minioContainer: StartedTestContainer | null = null;
 let redpandaContainer: StartedRedpandaContainer | null = null;
 let meiliContainer: StartedTestContainer | null = null;
 let redisContainer: StartedTestContainer | null = null;
+let gorseContainer: StartedTestContainer | null = null;
 
-export async function startContainers() {
+export async function startContainers(options?: ContainerOptions) {
   if (pgContainer && minioContainer && redpandaContainer && meiliContainer && redisContainer)
     return;
 
@@ -70,6 +78,26 @@ export async function startContainers() {
   const redisHost = redisContainer.getHost();
   const redisPort = redisContainer.getMappedPort(6379);
   process.env.REDIS_URL = `redis://${redisHost}:${redisPort}`;
+
+  if (options?.gorse && !gorseContainer) {
+    gorseContainer = await new GenericContainer('zhenghaoz/gorse-in-one:0.4.17')
+      .withExposedPorts(8088)
+      .withCopyFilesToContainer([{ source: GORSE_CONFIG_PATH, target: '/etc/gorse/config.toml' }])
+      .withEnvironment({
+        GORSE_CACHE_STORE: 'sqlite:///var/lib/gorse/cache.db',
+        GORSE_DATA_STORE: 'sqlite:///var/lib/gorse/data.db',
+        GORSE_SERVER_API_KEY: 'e2e-test-gorse-key',
+      })
+      .withCommand(['--config', '/etc/gorse/config.toml'])
+      .withWaitStrategy(Wait.forHttp('/api/health', 8088).forStatusCode(200))
+      .withStartupTimeout(60_000)
+      .start();
+
+    const gorseHost = gorseContainer.getHost();
+    const gorsePort = gorseContainer.getMappedPort(8088);
+    process.env.GORSE_URL = `http://${gorseHost}:${gorsePort}`;
+    process.env.GORSE_API_KEY = 'e2e-test-gorse-key';
+  }
 }
 
 export async function stopContainers() {
@@ -79,10 +107,12 @@ export async function stopContainers() {
     redpandaContainer?.stop(),
     meiliContainer?.stop(),
     redisContainer?.stop(),
+    gorseContainer?.stop(),
   ]);
   pgContainer = null;
   minioContainer = null;
   redpandaContainer = null;
   meiliContainer = null;
   redisContainer = null;
+  gorseContainer = null;
 }

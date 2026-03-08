@@ -298,11 +298,20 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
       await seedItem(id3);
       const { accessToken } = await registerUser(agent, FIXED_OTP);
 
-      await agent.post(`/items/${id1}/like`).set('Authorization', `Bearer ${accessToken}`).expect(204);
+      await agent
+        .post(`/items/${id1}/like`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(204);
       await sleep(50);
-      await agent.post(`/items/${id2}/like`).set('Authorization', `Bearer ${accessToken}`).expect(204);
+      await agent
+        .post(`/items/${id2}/like`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(204);
       await sleep(50);
-      await agent.post(`/items/${id3}/like`).set('Authorization', `Bearer ${accessToken}`).expect(204);
+      await agent
+        .post(`/items/${id3}/like`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(204);
 
       // First page
       const page1 = await agent
@@ -344,13 +353,25 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
       await seedItem(id4, 'Yoga workshop');
       const { accessToken } = await registerUser(agent, FIXED_OTP);
 
-      await agent.post(`/items/${id1}/like`).set('Authorization', `Bearer ${accessToken}`).expect(204);
+      await agent
+        .post(`/items/${id1}/like`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(204);
       await sleep(50);
-      await agent.post(`/items/${id2}/like`).set('Authorization', `Bearer ${accessToken}`).expect(204);
+      await agent
+        .post(`/items/${id2}/like`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(204);
       await sleep(50);
-      await agent.post(`/items/${id3}/like`).set('Authorization', `Bearer ${accessToken}`).expect(204);
+      await agent
+        .post(`/items/${id3}/like`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(204);
       await sleep(50);
-      await agent.post(`/items/${id4}/like`).set('Authorization', `Bearer ${accessToken}`).expect(204);
+      await agent
+        .post(`/items/${id4}/like`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(204);
 
       // First page — search "Yoga", limit 2
       const page1 = await agent

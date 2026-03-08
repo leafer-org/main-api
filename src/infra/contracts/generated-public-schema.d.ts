@@ -497,6 +497,178 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/cms/categories': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Список категорий (CMS)
+     * @description Возвращает все категории для административной панели.
+     */
+    get: operations['getCmsCategories'];
+    put?: never;
+    /**
+     * Создание категории
+     * @description Создаёт новую категорию.
+     */
+    post: operations['createCmsCategory'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/cms/categories/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Детали категории (CMS)
+     * @description Возвращает полную информацию о категории.
+     */
+    get: operations['getCmsCategoryDetail'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Обновление категории
+     * @description Обновляет параметры категории.
+     */
+    patch: operations['updateCmsCategory'];
+    trace?: never;
+  };
+  '/cms/categories/{id}/publish': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Публикация категории
+     * @description Публикует категорию, делая её доступной в Discovery.
+     */
+    post: operations['publishCmsCategory'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/cms/categories/{id}/unpublish': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Снятие категории с публикации
+     * @description Снимает категорию с публикации.
+     */
+    post: operations['unpublishCmsCategory'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/cms/categories/{id}/attributes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Добавление атрибута к категории
+     * @description Добавляет атрибут к категории.
+     */
+    post: operations['addCmsCategoryAttribute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/cms/categories/{id}/attributes/{attributeId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Удаление атрибута из категории
+     * @description Удаляет атрибут из категории.
+     */
+    delete: operations['removeCmsCategoryAttribute'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/cms/item-types': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Список типов товаров (CMS)
+     * @description Возвращает все типы товаров.
+     */
+    get: operations['getCmsItemTypes'];
+    put?: never;
+    /**
+     * Создание типа товара
+     * @description Создаёт новый тип товара с указанными виджетами.
+     */
+    post: operations['createCmsItemType'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/cms/item-types/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Обновление типа товара
+     * @description Обновляет параметры типа товара.
+     */
+    patch: operations['updateCmsItemType'];
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -799,6 +971,64 @@ export interface components {
       statusCode: number;
       message: string;
       error?: string;
+    };
+    CmsCategoryListItem: {
+      id: string;
+      parentCategoryId?: string | null;
+      name: string;
+      /** @enum {string} */
+      status: 'draft' | 'published' | 'unpublished';
+      childCount: number;
+    };
+    CategoryAttribute: {
+      attributeId: string;
+      name: string;
+      required: boolean;
+      schema: components['schemas']['AttributeSchema'];
+    };
+    CmsCategoryDetail: {
+      id: string;
+      parentCategoryId?: string | null;
+      name: string;
+      iconId?: string | null;
+      allowedTypeIds: string[];
+      attributes: components['schemas']['CategoryAttribute'][];
+      /** @enum {string} */
+      status: 'draft' | 'published' | 'unpublished';
+      /** Format: date-time */
+      publishedAt?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    /** @enum {string} */
+    WidgetType:
+      | 'base-info'
+      | 'age-group'
+      | 'location'
+      | 'payment'
+      | 'category'
+      | 'owner'
+      | 'item-review'
+      | 'owner-review'
+      | 'event-date-time'
+      | 'schedule';
+    ItemTypeListItem: {
+      id: string;
+      name: string;
+      availableWidgetTypes: components['schemas']['WidgetType'][];
+      requiredWidgetTypes: components['schemas']['WidgetType'][];
+    };
+    ItemTypeDetail: {
+      id: string;
+      name: string;
+      availableWidgetTypes: components['schemas']['WidgetType'][];
+      requiredWidgetTypes: components['schemas']['WidgetType'][];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
     };
   };
   responses: {
@@ -2155,6 +2385,24 @@ export interface operations {
         priceMax?: number;
         /** @description Минимальный рейтинг */
         minRating?: number;
+        /** @description JSON-массив фильтров по атрибутам [{"attributeId":"...","value":"..."}] */
+        attributeValues?: string;
+        /** @description Широта для гео-фильтрации (требуется вместе с lng и radiusKm) */
+        lat?: number;
+        /** @description Долгота для гео-фильтрации (требуется вместе с lat и radiusKm) */
+        lng?: number;
+        /** @description Радиус в км для гео-фильтрации (требуется вместе с lat и lng) */
+        radiusKm?: number;
+        /** @description Начало диапазона дат для фильтрации событий */
+        dateFrom?: string;
+        /** @description Конец диапазона дат для фильтрации событий */
+        dateTo?: string;
+        /** @description День недели для фильтрации по расписанию (0=вс, 1=пн, ..., 6=сб) */
+        scheduleDayOfWeek?: number;
+        /** @description Начало диапазона времени (HH:mm) для фильтрации по расписанию */
+        scheduleTimeFrom?: string;
+        /** @description Конец диапазона времени (HH:mm) для фильтрации по расписанию */
+        scheduleTimeTo?: string;
       };
       header?: never;
       path: {
@@ -2352,6 +2600,503 @@ export interface operations {
         content?: never;
       };
       401: components['responses']['UnauthorizedError'];
+    };
+  };
+  getCmsCategories: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список категорий */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CmsCategoryListItem'][];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  createCmsCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          id: string;
+          parentCategoryId?: string | null;
+          name: string;
+          iconId?: string | null;
+          allowedTypeIds: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description Категория создана */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CmsCategoryDetail'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getCmsCategoryDetail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Детали категории */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CmsCategoryDetail'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Категория не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  updateCmsCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+          iconId?: string | null;
+          parentCategoryId?: string | null;
+          allowedTypeIds: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description Категория обновлена */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CmsCategoryDetail'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Категория не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  publishCmsCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Категория опубликована */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': Record<string, never>;
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Категория не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  unpublishCmsCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Категория снята с публикации */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': Record<string, never>;
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Категория не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  addCmsCategoryAttribute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          attributeId: string;
+          name: string;
+          required: boolean;
+          schema: components['schemas']['AttributeSchema'];
+        };
+      };
+    };
+    responses: {
+      /** @description Атрибут добавлен */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': Record<string, never>;
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Категория не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  removeCmsCategoryAttribute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        attributeId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Атрибут удалён */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': Record<string, never>;
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Категория или атрибут не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getCmsItemTypes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список типов товаров */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ItemTypeListItem'][];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  createCmsItemType: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          id: string;
+          name: string;
+          availableWidgetTypes: components['schemas']['WidgetType'][];
+          requiredWidgetTypes: components['schemas']['WidgetType'][];
+        };
+      };
+    };
+    responses: {
+      /** @description Тип товара создан */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ItemTypeDetail'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  updateCmsItemType: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+          availableWidgetTypes: components['schemas']['WidgetType'][];
+          requiredWidgetTypes: components['schemas']['WidgetType'][];
+        };
+      };
+    };
+    responses: {
+      /** @description Тип товара обновлён */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ItemTypeDetail'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Тип товара не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
     };
   };
 }

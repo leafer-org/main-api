@@ -18,9 +18,4 @@ export class RecommendationStub implements RecommendationService {
     this.logger.debug('RecommendationStub.recommend called — returning []');
     return [];
   }
-
-  public async rank(params: { userId?: UserId; itemIds: ItemId[] }): Promise<ItemId[]> {
-    this.logger.debug('RecommendationStub.rank called — returning itemIds as-is');
-    return params.itemIds;
-  }
 }

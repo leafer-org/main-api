@@ -2123,6 +2123,91 @@
               "maximum": 5
             },
             "description": "Минимальный рейтинг"
+          },
+          {
+            "name": "attributeValues",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "JSON-массив фильтров по атрибутам [{\"attributeId\":\"...\",\"value\":\"...\"}]"
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            },
+            "description": "Широта для гео-фильтрации (требуется вместе с lng и radiusKm)"
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            },
+            "description": "Долгота для гео-фильтрации (требуется вместе с lat и radiusKm)"
+          },
+          {
+            "name": "radiusKm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            },
+            "description": "Радиус в км для гео-фильтрации (требуется вместе с lat и lng)"
+          },
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Начало диапазона дат для фильтрации событий"
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Конец диапазона дат для фильтрации событий"
+          },
+          {
+            "name": "scheduleDayOfWeek",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            },
+            "description": "День недели для фильтрации по расписанию (0=вс, 1=пн, ..., 6=сб)"
+          },
+          {
+            "name": "scheduleTimeFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Начало диапазона времени (HH:mm) для фильтрации по расписанию"
+          },
+          {
+            "name": "scheduleTimeTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Конец диапазона времени (HH:mm) для фильтрации по расписанию"
           }
         ],
         "responses": {
@@ -2514,6 +2599,827 @@
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/cms/categories": {
+      "get": {
+        "operationId": "getCmsCategories",
+        "tags": [
+          "cms-categories"
+        ],
+        "summary": "Список категорий (CMS)",
+        "description": "Возвращает все категории для административной панели.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список категорий",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CmsCategoryListItem"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCmsCategory",
+        "tags": [
+          "cms-categories"
+        ],
+        "summary": "Создание категории",
+        "description": "Создаёт новую категорию.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "name",
+                  "allowedTypeIds"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "parentCategoryId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "iconId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "allowedTypeIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Категория создана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CmsCategoryDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации или доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cms/categories/{id}": {
+      "get": {
+        "operationId": "getCmsCategoryDetail",
+        "tags": [
+          "cms-categories"
+        ],
+        "summary": "Детали категории (CMS)",
+        "description": "Возвращает полную информацию о категории.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Детали категории",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CmsCategoryDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Категория не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateCmsCategory",
+        "tags": [
+          "cms-categories"
+        ],
+        "summary": "Обновление категории",
+        "description": "Обновляет параметры категории.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "allowedTypeIds"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "iconId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "parentCategoryId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "allowedTypeIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Категория обновлена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CmsCategoryDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации или доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Категория не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cms/categories/{id}/publish": {
+      "post": {
+        "operationId": "publishCmsCategory",
+        "tags": [
+          "cms-categories"
+        ],
+        "summary": "Публикация категории",
+        "description": "Публикует категорию, делая её доступной в Discovery.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Категория опубликована",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Категория не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cms/categories/{id}/unpublish": {
+      "post": {
+        "operationId": "unpublishCmsCategory",
+        "tags": [
+          "cms-categories"
+        ],
+        "summary": "Снятие категории с публикации",
+        "description": "Снимает категорию с публикации.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Категория снята с публикации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Категория не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cms/categories/{id}/attributes": {
+      "post": {
+        "operationId": "addCmsCategoryAttribute",
+        "tags": [
+          "cms-categories"
+        ],
+        "summary": "Добавление атрибута к категории",
+        "description": "Добавляет атрибут к категории.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "attributeId",
+                  "name",
+                  "required",
+                  "schema"
+                ],
+                "properties": {
+                  "attributeId": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "schema": {
+                    "$ref": "#/components/schemas/AttributeSchema"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Атрибут добавлен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации или доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Категория не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cms/categories/{id}/attributes/{attributeId}": {
+      "delete": {
+        "operationId": "removeCmsCategoryAttribute",
+        "tags": [
+          "cms-categories"
+        ],
+        "summary": "Удаление атрибута из категории",
+        "description": "Удаляет атрибут из категории.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attributeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Атрибут удалён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Категория или атрибут не найдены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cms/item-types": {
+      "get": {
+        "operationId": "getCmsItemTypes",
+        "tags": [
+          "cms-item-types"
+        ],
+        "summary": "Список типов товаров (CMS)",
+        "description": "Возвращает все типы товаров.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список типов товаров",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemTypeListItem"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCmsItemType",
+        "tags": [
+          "cms-item-types"
+        ],
+        "summary": "Создание типа товара",
+        "description": "Создаёт новый тип товара с указанными виджетами.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "name",
+                  "availableWidgetTypes",
+                  "requiredWidgetTypes"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "availableWidgetTypes": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/WidgetType"
+                    }
+                  },
+                  "requiredWidgetTypes": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/WidgetType"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Тип товара создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemTypeDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации или доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cms/item-types/{id}": {
+      "patch": {
+        "operationId": "updateCmsItemType",
+        "tags": [
+          "cms-item-types"
+        ],
+        "summary": "Обновление типа товара",
+        "description": "Обновляет параметры типа товара.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "availableWidgetTypes",
+                  "requiredWidgetTypes"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "availableWidgetTypes": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/WidgetType"
+                    }
+                  },
+                  "requiredWidgetTypes": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/WidgetType"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Тип товара обновлён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemTypeDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации или доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Тип товара не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -3593,6 +4499,214 @@
           },
           "error": {
             "type": "string"
+          }
+        }
+      },
+      "CmsCategoryListItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "childCount"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "parentCategoryId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "unpublished"
+            ]
+          },
+          "childCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CategoryAttribute": {
+        "type": "object",
+        "required": [
+          "attributeId",
+          "name",
+          "required",
+          "schema"
+        ],
+        "properties": {
+          "attributeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/AttributeSchema"
+          }
+        }
+      },
+      "CmsCategoryDetail": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "allowedTypeIds",
+          "attributes",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "parentCategoryId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "iconId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "allowedTypeIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryAttribute"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "unpublished"
+            ]
+          },
+          "publishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WidgetType": {
+        "type": "string",
+        "enum": [
+          "base-info",
+          "age-group",
+          "location",
+          "payment",
+          "category",
+          "owner",
+          "item-review",
+          "owner-review",
+          "event-date-time",
+          "schedule"
+        ]
+      },
+      "ItemTypeListItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "availableWidgetTypes",
+          "requiredWidgetTypes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "availableWidgetTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WidgetType"
+            }
+          },
+          "requiredWidgetTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WidgetType"
+            }
+          }
+        }
+      },
+      "ItemTypeDetail": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "availableWidgetTypes",
+          "requiredWidgetTypes",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "availableWidgetTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WidgetType"
+            }
+          },
+          "requiredWidgetTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WidgetType"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

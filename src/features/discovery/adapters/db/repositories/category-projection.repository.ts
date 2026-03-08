@@ -66,7 +66,7 @@ export class DrizzleCategoryProjectionRepository implements CategoryProjectionPo
     await this.dbClient.db.execute(sql`
       UPDATE discovery_categories dc SET
         child_count = (SELECT count(*)::int FROM discovery_categories c2 WHERE c2.parent_category_id = dc.id::text),
-        item_count = (SELECT count(*)::int FROM discovery_items di WHERE di.category_ids @> to_jsonb(ARRAY[dc.id::text]))
+        item_count = (SELECT count(*)::int FROM discovery_item_categories dic WHERE dic.category_id = dc.id::text)
     `);
 
     // Step 2: Accumulate itemCount from children to parents (bottom-up)

@@ -2,7 +2,6 @@ import type { CategoryListReadModel } from '../domain/read-models/category-list.
 import type { ItemReadModel } from '../domain/read-models/item.read-model.js';
 import type { ItemListView } from '../domain/read-models/item-list-view.read-model.js';
 import type { LikedItemView } from '../domain/read-models/liked-item-view.read-model.js';
-import type { PostRankingCandidate } from '../domain/read-models/post-ranking-candidate.read-model.js';
 import type { SearchFacets } from '../domain/read-models/search-result.read-model.js';
 import type { CategoryItemFilters, SortOption } from './use-cases/get-category-items/types.js';
 import type { DynamicSearchFilters } from './use-cases/search-items/types.js';
@@ -12,29 +11,6 @@ import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
 // --- Query Ports ---
-
-/**
- * Top-N кандидатов для категории, отсортированных по базовому скору (свежесть × популярность).
- * Pre-ranking: просроченные events исключены, new seller boost (< 30 дней, затухает линейно).
- */
-export abstract class ItemCandidatesPort {
-  public abstract findCategoryCandidates(params: {
-    categoryId: CategoryId;
-    cityId: string;
-    ageGroup: AgeGroup;
-    filters: CategoryItemFilters;
-    cap: number;
-  }): Promise<PostRankingCandidate[]>;
-}
-
-/** Товары новых продавцов (< 30 дней) для cold start injection в ленту. */
-export abstract class NewSellerItemsPort {
-  public abstract findNewSellerItems(params: {
-    cityId: string;
-    ageGroup: AgeGroup;
-    limit: number;
-  }): Promise<ItemId[]>;
-}
 
 /**
  * Запросы товаров. `findByIds` фильтрует просроченные (next_event_date > now() OR has_schedule).
@@ -49,6 +25,8 @@ export abstract class ItemQueryPort {
     ageGroup: AgeGroup;
     filters: CategoryItemFilters;
     sort: Exclude<SortOption, 'personal'>;
+    includeIds?: ItemId[];
+    excludeIds?: ItemId[];
     cursor?: string;
     limit: number;
   }): Promise<{ items: ItemReadModel[]; nextCursor: string | null }>;
@@ -88,11 +66,19 @@ export type CategoryWithAttributes = {
 };
 
 export abstract class CategoryFiltersQueryPort {
-  public abstract findWithAncestors(
+  public abstract findById(
     categoryId: CategoryId,
-  ): Promise<{ category: CategoryWithAttributes; ancestors: CategoryWithAttributes[] } | null>;
+  ): Promise<CategoryWithAttributes | null>;
 
   public abstract findTypesByIds(typeIds: TypeId[]): Promise<{ typeId: TypeId; name: string }[]>;
+}
+
+// --- Lookup Ports ---
+
+/** Резолв ancestorIds для набора категорий. Используется Gorse-адаптером при синке items. */
+export abstract class CategoryAncestorLookupPort {
+  public abstract findAncestorIds(categoryIds: CategoryId[]): Promise<CategoryId[]>;
+  public abstract clearCache(): Promise<void>;
 }
 
 // --- Write Ports ---
@@ -110,17 +96,16 @@ export abstract class LikeWritePort {
 
 // --- Service Ports ---
 
-/** Gorse рекомендации (recommend) и ранжирование (rank). При недоступности — fallback на базовый скор. */
+/** Gorse рекомендации. При недоступности — fallback на базовый скор. */
 export abstract class RecommendationService {
   public abstract recommend(params: {
     userId?: UserId;
     cityId: string;
     ageGroup: AgeGroup;
+    categoryId?: CategoryId;
     offset: number;
     limit: number;
   }): Promise<ItemId[]>;
-
-  public abstract rank(params: { userId?: UserId; itemIds: ItemId[] }): Promise<ItemId[]>;
 }
 
 /** Redis кэш ранжированных списков для cursor-пагинации по категориям (TTL ~5 мин). */

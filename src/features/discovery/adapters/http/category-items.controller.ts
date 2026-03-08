@@ -1,11 +1,86 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
 import { GetCategoryItemsInteractor } from '../../application/use-cases/get-category-items/get-category-items.interactor.js';
-import type { SortOption } from '../../application/use-cases/get-category-items/types.js';
+import type {
+  AttributeFilter,
+  CategoryItemFilters,
+  SortOption,
+} from '../../application/use-cases/get-category-items/types.js';
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';
-import { CategoryId, TypeId } from '@/kernel/domain/ids.js';
+import { AttributeId, CategoryId, TypeId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+
+type RawFilterParams = {
+  typeIds?: string;
+  priceMin?: number;
+  priceMax?: number;
+  minRating?: number;
+  attributeFilters?: string;
+  lat?: string;
+  lng?: string;
+  radiusKm?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  scheduleDayOfWeek?: string;
+  scheduleTimeFrom?: string;
+  scheduleTimeTo?: string;
+};
+
+type RawAttributeFilter =
+  | { attributeId: string; type: 'enum'; values: string[] }
+  | { attributeId: string; type: 'number'; min?: number; max?: number }
+  | { attributeId: string; type: 'boolean'; value: boolean }
+  | { attributeId: string; type: 'text'; value: string };
+
+function parseFilters(raw: RawFilterParams): CategoryItemFilters {
+  const filters: CategoryItemFilters = {};
+
+  if (raw.typeIds) {
+    filters.typeIds = raw.typeIds.split(',').map((t) => TypeId.raw(t.trim()));
+  }
+
+  if (raw.priceMin !== undefined || raw.priceMax !== undefined) {
+    filters.priceRange = {
+      min: raw.priceMin,
+      max: raw.priceMax,
+    };
+  }
+
+  if (raw.minRating !== undefined) {
+    filters.minRating = raw.minRating;
+  }
+
+  if (raw.attributeFilters) {
+    const parsed = JSON.parse(raw.attributeFilters) as RawAttributeFilter[];
+    filters.attributeFilters = parsed.map((a): AttributeFilter => ({
+      ...a,
+      attributeId: AttributeId.raw(a.attributeId),
+    } as AttributeFilter));
+  }
+
+  if (raw.lat !== undefined && raw.lng !== undefined && raw.radiusKm !== undefined) {
+    filters.geoRadius = {
+      lat: Number(raw.lat),
+      lng: Number(raw.lng),
+      radiusKm: Number(raw.radiusKm),
+    };
+  }
+
+  if (raw.dateFrom !== undefined && raw.dateTo !== undefined) {
+    filters.dateRange = { from: new Date(raw.dateFrom), to: new Date(raw.dateTo) };
+  }
+
+  if (raw.scheduleDayOfWeek !== undefined) {
+    filters.scheduleDayOfWeek = Number(raw.scheduleDayOfWeek);
+  }
+
+  if (raw.scheduleTimeFrom !== undefined && raw.scheduleTimeTo !== undefined) {
+    filters.scheduleTimeOfDay = { from: raw.scheduleTimeFrom, to: raw.scheduleTimeTo };
+  }
+
+  return filters;
+}
 
 @Controller('categories')
 export class CategoryItemsController {
@@ -24,23 +99,38 @@ export class CategoryItemsController {
     @Query('priceMin') priceMin?: PublicQuery['getCategoryItems']['priceMin'],
     @Query('priceMax') priceMax?: PublicQuery['getCategoryItems']['priceMax'],
     @Query('minRating') minRating?: PublicQuery['getCategoryItems']['minRating'],
+    @Query('attributeFilters') attributeFilters?: string,
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+    @Query('radiusKm') radiusKm?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('scheduleDayOfWeek') scheduleDayOfWeek?: string,
+    @Query('scheduleTimeFrom') scheduleTimeFrom?: string,
+    @Query('scheduleTimeTo') scheduleTimeTo?: string,
   ): Promise<PublicResponse['getCategoryItems']> {
+    const filters = parseFilters({
+      typeIds,
+      priceMin,
+      priceMax,
+      minRating,
+      attributeFilters,
+      lat,
+      lng,
+      radiusKm,
+      dateFrom,
+      dateTo,
+      scheduleDayOfWeek,
+      scheduleTimeFrom,
+      scheduleTimeTo,
+    });
+
     const result = await this.getCategoryItems.execute({
       categoryId: CategoryId.raw(id),
       sort: (sort ?? 'personal') as SortOption,
       cityId: cityId ?? '',
       ageGroup: (ageGroup ?? 'adults') as AgeGroup,
-      filters: {
-        typeIds: typeIds ? typeIds.split(',').map((t) => TypeId.raw(t.trim())) : undefined,
-        priceRange:
-          priceMin !== null || priceMax !== null
-            ? {
-                min: priceMin !== null ? Number(priceMin) : undefined,
-                max: priceMax !== null ? Number(priceMax) : undefined,
-              }
-            : undefined,
-        minRating: minRating !== null ? Number(minRating) : undefined,
-      },
+      filters,
       cursor: cursor ?? undefined,
       limit: Number(limit ?? 20),
     });

@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import type { SQL } from 'drizzle-orm';
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import { LikedItemsQueryPort } from '../../../application/ports.js';
 import type { LikedItemView } from '../../../domain/read-models/liked-item-view.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
-import { discoveryItems, discoveryUserLikes } from '../schema.js';
+import { discoveryItemCategories, discoveryItems, discoveryUserLikes } from '../schema.js';
+import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
 import type { UserId } from '@/kernel/domain/ids.js';
 import { CategoryId, FileId, ItemId, TypeId } from '@/kernel/domain/ids.js';
 import type { PaymentStrategy } from '@/kernel/domain/vo/widget.js';
@@ -28,7 +29,7 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
     }
 
     if (params.cursor) {
-      const parsed = this.decodeCursor(params.cursor);
+      const parsed = decodeCursor<{ likedAt: string; itemId: string }>(params.cursor);
       conditions.push(
         sql`(${discoveryUserLikes.likedAt}, ${discoveryItems.id}) < (${parsed.likedAt}, ${parsed.itemId})`,
       );
@@ -49,7 +50,6 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
         ownerAvatarId: discoveryItems.ownerAvatarId,
         cityId: discoveryItems.cityId,
         address: discoveryItems.address,
-        categoryIds: discoveryItems.categoryIds,
         likedAt: discoveryUserLikes.likedAt,
       })
       .from(discoveryUserLikes)
@@ -61,29 +61,57 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
     const hasMore = rows.length > params.limit;
     const resultRows = hasMore ? rows.slice(0, params.limit) : rows;
 
-    const items = resultRows.map((row) => this.toView(row));
-    const nextCursor = hasMore ? this.encodeCursor(resultRows.at(-1)!) : null;
+    // Batch-load categories for all result items
+    const itemIds = resultRows.map((r) => r.itemId);
+    const categoryRows =
+      itemIds.length > 0
+        ? await this.dbClient.db
+            .select()
+            .from(discoveryItemCategories)
+            .where(inArray(discoveryItemCategories.itemId, itemIds))
+        : [];
+
+    const catsByItem = new Map<string, string[]>();
+    for (const cat of categoryRows) {
+      const arr = catsByItem.get(cat.itemId);
+      if (arr) {
+        arr.push(cat.categoryId);
+      } else {
+        catsByItem.set(cat.itemId, [cat.categoryId]);
+      }
+    }
+
+    const items = resultRows.map((row) =>
+      this.toView(row, catsByItem.get(row.itemId) ?? []),
+    );
+    const lastRow = resultRows.at(-1);
+    const nextCursor =
+      hasMore && lastRow
+        ? encodeCursor({ likedAt: lastRow.likedAt.toISOString(), itemId: lastRow.itemId })
+        : null;
 
     return { items, nextCursor };
   }
 
-  private toView(row: {
-    itemId: string;
-    typeId: string;
-    title: string | null;
-    description: string | null;
-    imageId: string | null;
-    paymentStrategy: string | null;
-    price: string | null;
-    itemRating: string | null;
-    itemReviewCount: number;
-    ownerName: string | null;
-    ownerAvatarId: string | null;
-    cityId: string | null;
-    address: string | null;
-    categoryIds: string[];
-    likedAt: Date;
-  }): LikedItemView {
+  private toView(
+    row: {
+      itemId: string;
+      typeId: string;
+      title: string | null;
+      description: string | null;
+      imageId: string | null;
+      paymentStrategy: string | null;
+      price: string | null;
+      itemRating: string | null;
+      itemReviewCount: number;
+      ownerName: string | null;
+      ownerAvatarId: string | null;
+      cityId: string | null;
+      address: string | null;
+      likedAt: Date;
+    },
+    categoryIds: string[],
+  ): LikedItemView {
     return {
       itemId: ItemId.raw(row.itemId),
       typeId: TypeId.raw(row.typeId),
@@ -106,21 +134,8 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
           }
         : null,
       location: row.cityId ? { cityId: row.cityId, address: row.address } : null,
-      categoryIds: row.categoryIds.map((id) => CategoryId.raw(id)),
+      categoryIds: categoryIds.map((id) => CategoryId.raw(id)),
       likedAt: row.likedAt,
-    };
-  }
-
-  private encodeCursor(row: { itemId: string; likedAt: Date }): string {
-    return Buffer.from(
-      JSON.stringify({ likedAt: row.likedAt.toISOString(), itemId: row.itemId }),
-    ).toString('base64url');
-  }
-
-  private decodeCursor(cursor: string): { likedAt: string; itemId: string } {
-    return JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8')) as {
-      likedAt: string;
-      itemId: string;
     };
   }
 }

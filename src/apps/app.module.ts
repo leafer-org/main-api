@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ClsModule } from 'nestjs-cls';
 
+import { CmsModule } from '../features/cms/cms.module.js';
 import { DISCOVERY_CONSUMER_ID } from '../features/discovery/adapters/kafka/consumer-ids.js';
 import { DiscoveryModule } from '../features/discovery/discovery.module.js';
 import { IDP_CONSUMER_ID } from '../features/idp/adapters/kafka/consumer-ids.js';
 import { IdpModule } from '../features/idp/idp.module.js';
 import { MediaModule } from '../features/media/media.module.js';
 import { MainDbModule } from './db.module.js';
+import { MainGorseModule } from './gorse.module.js';
 import { MainRedisModule } from './redis.module.js';
 import { MainSearchModule } from './search.module.js';
 import { AuthModule } from '@/infra/auth/auth.module.js';
@@ -23,6 +25,7 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
     ClsModule.forRoot({ global: true, middleware: { mount: true } }),
     ScheduleModule.forRoot(),
     MainDbModule,
+    MainGorseModule,
     MainRedisModule,
     MainSearchModule,
     MainConfigModule,
@@ -67,6 +70,7 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
     IdpModule,
     MediaModule,
     DiscoveryModule,
+    CmsModule,
   ],
 })
 export class AppModule {}

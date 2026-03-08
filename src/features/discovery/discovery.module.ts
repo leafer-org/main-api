@@ -3,22 +3,21 @@ import { Module } from '@nestjs/common';
 
 // --- Cron ---
 import { CategoryCountsCron } from './adapters/cron/category-counts.cron.js';
+import { DrizzleCategoryAncestorLookupQuery } from './adapters/db/queries/category-ancestor-lookup.query.js';
 import { DrizzleCategoryFiltersQuery } from './adapters/db/queries/category-filters.query.js';
 import { DrizzleCategoryListQuery } from './adapters/db/queries/category-list.query.js';
 import { DrizzleItemQuery } from './adapters/db/queries/item.query.js';
 // --- DB Adapters ---
-import { DrizzleItemCandidatesQuery } from './adapters/db/queries/item-candidates.query.js';
 import { DrizzleLikedItemsQuery } from './adapters/db/queries/liked-items.query.js';
-import { DrizzleNewSellerItemsQuery } from './adapters/db/queries/new-seller-items.query.js';
 import { DrizzleCategoryProjectionRepository } from './adapters/db/repositories/category-projection.repository.js';
 import { DrizzleIdempotencyRepository } from './adapters/db/repositories/idempotency.repository.js';
 import { DrizzleItemProjectionRepository } from './adapters/db/repositories/item-projection.repository.js';
 import { DrizzleItemTypeProjectionRepository } from './adapters/db/repositories/item-type-projection.repository.js';
 import { DrizzleLikeWriteRepository } from './adapters/db/repositories/like-write.repository.js';
 import { DrizzleOwnerProjectionRepository } from './adapters/db/repositories/owner-projection.repository.js';
-// --- Stub Adapters (Gorse) ---
-import { GorseSyncStub } from './adapters/gorse/gorse-sync.stub.js';
-import { RecommendationStub } from './adapters/gorse/recommendation.stub.js';
+// --- Gorse Adapters ---
+import { GorseSyncAdapter } from './adapters/gorse/gorse-sync.adapter.js';
+import { GorseRecommendationAdapter } from './adapters/gorse/recommendation.adapter.js';
 // --- HTTP ---
 import { CategoriesController } from './adapters/http/categories.controller.js';
 import { CategoryItemsController } from './adapters/http/category-items.controller.js';
@@ -39,13 +38,12 @@ import { MeiliSearchQuery } from './adapters/meilisearch/search.adapter.js';
 import { RedisRankedListCache } from './adapters/redis/ranked-list-cache.adapter.js';
 // --- Application ---
 import {
+  CategoryAncestorLookupPort,
   CategoryFiltersQueryPort,
   CategoryListQueryPort,
-  ItemCandidatesPort,
   ItemQueryPort,
   LikedItemsQueryPort,
   LikeWritePort,
-  NewSellerItemsPort,
   RankedListCachePort,
   RecommendationService,
   SearchPort,
@@ -72,7 +70,6 @@ import { ProjectOwnerHandler } from './application/use-cases/project-owner/proje
 import { ProjectReviewHandler } from './application/use-cases/project-review/project-review.handler.js';
 import { SearchItemsInteractor } from './application/use-cases/search-items/search-items.interactor.js';
 import { UnlikeItemInteractor } from './application/use-cases/unlike-item/unlike-item.interactor.js';
-import { PostRankingService } from './domain/services/post-ranking.service.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 
 @Module({
@@ -87,9 +84,6 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
   providers: [
     // Infrastructure
     { provide: Clock, useClass: SystemClock },
-
-    // Domain services
-    PostRankingService,
 
     // Use cases / Interactors
     GetFeedInteractor,
@@ -113,10 +107,10 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     CategoryCountsCron,
 
     // Query port → adapter bindings
-    { provide: ItemCandidatesPort, useClass: DrizzleItemCandidatesQuery },
     { provide: ItemQueryPort, useClass: DrizzleItemQuery },
     { provide: CategoryFiltersQueryPort, useClass: DrizzleCategoryFiltersQuery },
     { provide: CategoryListQueryPort, useClass: DrizzleCategoryListQuery },
+    { provide: CategoryAncestorLookupPort, useClass: DrizzleCategoryAncestorLookupQuery },
 
     // Projection port → adapter bindings
     { provide: ItemProjectionPort, useClass: DrizzleItemProjectionRepository },
@@ -132,12 +126,11 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     { provide: MeilisearchSyncPort, useClass: MeilisearchSyncAdapter },
     { provide: SearchPort, useClass: MeiliSearchQuery },
     { provide: RankedListCachePort, useClass: RedisRankedListCache },
-    { provide: NewSellerItemsPort, useClass: DrizzleNewSellerItemsQuery },
     { provide: LikedItemsQueryPort, useClass: DrizzleLikedItemsQuery },
 
-    // Stub adapters (Gorse)
-    { provide: GorseSyncPort, useClass: GorseSyncStub },
-    { provide: RecommendationService, useClass: RecommendationStub },
+    // Gorse adapters
+    { provide: GorseSyncPort, useClass: GorseSyncAdapter },
+    { provide: RecommendationService, useClass: GorseRecommendationAdapter },
 
     // Kafka handlers
     ItemProjectionKafkaHandler,

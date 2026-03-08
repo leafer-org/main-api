@@ -1,12 +1,7 @@
-import type { AttributeId, CategoryId, FileId, TypeId } from '../ids.js';
-import type { AttributeSchema } from '../vo/attribute.js';
+import type { CategoryId, FileId, TypeId } from '../ids.js';
+import type { CategoryAttribute } from '../vo/category-attribute.js';
 
-export type CategoryAttribute = {
-  attributeId: AttributeId;
-  name: string;
-  required: boolean;
-  schema: AttributeSchema;
-};
+export type { CategoryAttribute } from '../vo/category-attribute.js';
 
 export type CategoryPublishedEvent = {
   id: string;

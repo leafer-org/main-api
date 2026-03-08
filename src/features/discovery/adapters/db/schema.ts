@@ -32,11 +32,6 @@ export const discoveryItems = pgTable(
     address: text('address'),
     paymentStrategy: text('payment_strategy'),
     price: numeric('price'),
-    categoryIds: jsonb('category_ids').$type<string[]>().notNull().default([]),
-    attributeValues: jsonb('attribute_values')
-      .$type<{ attributeId: string; value: string }[]>()
-      .notNull()
-      .default([]),
     organizationId: text('organization_id'),
     ownerName: text('owner_name'),
     ownerAvatarId: text('owner_avatar_id'),
@@ -44,11 +39,6 @@ export const discoveryItems = pgTable(
     itemReviewCount: integer('item_review_count').notNull().default(0),
     ownerRating: numeric('owner_rating'),
     ownerReviewCount: integer('owner_review_count').notNull().default(0),
-    eventDates: jsonb('event_dates').$type<string[]>(),
-    scheduleEntries:
-      jsonb('schedule_entries').$type<
-        { dayOfWeek: number; startTime: string; endTime: string }[]
-      >(),
     publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
   },
@@ -58,6 +48,60 @@ export const discoveryItems = pgTable(
     index('discovery_items_price_idx').on(table.price),
     index('discovery_items_rating_idx').on(table.itemRating),
     index('discovery_items_published_at_idx').on(table.publishedAt),
+  ],
+);
+
+// --- Item Junction Tables ---
+
+export const discoveryItemCategories = pgTable(
+  'discovery_item_categories',
+  {
+    itemId: uuid('item_id').notNull(),
+    categoryId: text('category_id').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.itemId, table.categoryId] }),
+    index('discovery_item_categories_category_idx').on(table.categoryId),
+  ],
+);
+
+export const discoveryItemAttributes = pgTable(
+  'discovery_item_attributes',
+  {
+    itemId: uuid('item_id').notNull(),
+    attributeId: text('attribute_id').notNull(),
+    value: text('value').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.itemId, table.attributeId, table.value] }),
+    index('discovery_item_attributes_attr_value_idx').on(table.attributeId, table.value),
+  ],
+);
+
+export const discoveryItemEventDates = pgTable(
+  'discovery_item_event_dates',
+  {
+    itemId: uuid('item_id').notNull(),
+    eventDate: timestamp('event_date', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.itemId, table.eventDate] }),
+    index('discovery_item_event_dates_date_idx').on(table.eventDate),
+  ],
+);
+
+export const discoveryItemSchedules = pgTable(
+  'discovery_item_schedules',
+  {
+    itemId: uuid('item_id').notNull(),
+    dayOfWeek: integer('day_of_week').notNull(),
+    startTime: text('start_time').notNull(),
+    endTime: text('end_time').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.itemId, table.dayOfWeek, table.startTime, table.endTime] }),
+    index('discovery_item_schedules_day_idx').on(table.dayOfWeek),
+    index('discovery_item_schedules_time_idx').on(table.startTime, table.endTime),
   ],
 );
 

@@ -1,0 +1,158 @@
+import { randomUUID } from 'node:crypto';
+import type { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import request from 'supertest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
+import { loginAsAdmin, registerUser } from '../../actors/auth.js';
+import { startContainers, stopContainers } from '../../helpers/containers.js';
+import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
+import express from 'express';
+import { AppModule } from '@/apps/app.module.js';
+import { OtpGeneratorService } from '@/features/idp/application/ports.js';
+import { OtpCode } from '@/features/idp/domain/vo/otp.js';
+import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+
+const FIXED_OTP = '123456';
+
+describe('CMS Item Types (e2e)', () => {
+  let app: INestApplication;
+  let agent: ReturnType<typeof request>;
+  let adminToken: string;
+
+  beforeAll(async () => {
+    await startContainers();
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await runMigrations(process.env.DB_URL);
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    })
+      .overrideProvider(OtpGeneratorService)
+      .useValue({ generate: () => OtpCode.raw(FIXED_OTP) })
+      .compile();
+
+    app = moduleRef.createNestApplication();
+    app.use(express.json());
+    await app.init();
+
+    agent = request(app.getHttpServer());
+  });
+
+  beforeEach(async () => {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await seedStaticRoles(process.env.DB_URL);
+    await seedAdminUser(process.env.DB_URL);
+
+    const auth = await loginAsAdmin(agent, FIXED_OTP);
+    adminToken = auth.accessToken;
+  });
+
+  afterEach(async () => {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await truncateAll(process.env.DB_URL);
+  });
+
+  afterAll(async () => {
+    await app?.close();
+    await stopContainers();
+  });
+
+  // --- Helpers ---
+
+  const available: WidgetType[] = ['base-info', 'location', 'payment'];
+  const required: WidgetType[] = ['base-info'];
+
+  function createItemType(overrides: Partial<{
+    id: string;
+    name: string;
+    availableWidgetTypes: WidgetType[];
+    requiredWidgetTypes: WidgetType[];
+  }> = {}) {
+    return agent
+      .post('/cms/item-types')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        id: overrides.id ?? randomUUID(),
+        name: overrides.name ?? 'Test Type',
+        availableWidgetTypes: overrides.availableWidgetTypes ?? available,
+        requiredWidgetTypes: overrides.requiredWidgetTypes ?? required,
+      });
+  }
+
+  // --- CRUD ---
+
+  describe('CRUD', () => {
+    it('should create an item type', async () => {
+      const id = randomUUID();
+      const res = await createItemType({ id, name: 'Service' });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({
+        id,
+        name: 'Service',
+        availableWidgetTypes: available,
+        requiredWidgetTypes: required,
+      });
+    });
+
+    it('should list item types', async () => {
+      await createItemType({ name: 'Type A' }).expect(201);
+      await createItemType({ name: 'Type B' }).expect(201);
+
+      const res = await agent
+        .get('/cms/item-types')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveLength(2);
+    });
+
+    it('should update an item type', async () => {
+      const id = randomUUID();
+      await createItemType({ id, name: 'Original' }).expect(201);
+
+      const res = await agent
+        .patch(`/cms/item-types/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Updated',
+          availableWidgetTypes: available,
+          requiredWidgetTypes: required,
+        })
+        .expect(200);
+
+      expect(res.body.name).toBe('Updated');
+    });
+  });
+
+  // --- Validation ---
+
+  describe('Validation', () => {
+    it('should reject requiredWidgetTypes not subset of availableWidgetTypes', async () => {
+      const res = await createItemType({
+        availableWidgetTypes: ['base-info'],
+        requiredWidgetTypes: ['base-info', 'location'],
+      });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  // --- Permissions ---
+
+  describe('Permissions', () => {
+    it('should return 401 without auth', async () => {
+      await agent.get('/cms/item-types').expect(401);
+    });
+
+    it('should return 403 for user without manageCms', async () => {
+      const { accessToken } = await registerUser(agent, FIXED_OTP);
+
+      await agent
+        .get('/cms/item-types')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(403);
+    });
+  });
+});

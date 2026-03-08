@@ -46,6 +46,15 @@ export type OwnerReviewWidget = {
   reviewCount: number;
 };
 export type EventDateTimeWidget = { type: 'event-date-time'; dates: string[] };
+
+export const EventDateTimeWidget = {
+  findNextDate(dates: Date[], now: Date): Date | null {
+    const future = dates.filter((d) => d.getTime() > now.getTime());
+    if (future.length === 0) return null;
+    future.sort((a, b) => a.getTime() - b.getTime());
+    return future[0] ?? null;
+  },
+};
 export type ScheduleWidget = { type: 'schedule'; entries: ScheduleEntry[] };
 
 export type ItemWidget =

@@ -67,6 +67,67 @@ export type ItemReadModel = {
   updatedAt: Date;
 };
 
+const PRICE_LOW_THRESHOLD = 1000;
+const PRICE_MEDIUM_THRESHOLD = 5000;
+
+function priceTierLabel(payment: ItemPayment): string {
+  if (
+    payment.strategy === 'free' ||
+    payment.price === null ||
+    payment.price === undefined ||
+    payment.price === 0
+  ) {
+    return 'price:free';
+  }
+  if (payment.price < PRICE_LOW_THRESHOLD) return 'price:low';
+  if (payment.price < PRICE_MEDIUM_THRESHOLD) return 'price:medium';
+  return 'price:high';
+}
+
+function ratingTierLabel(ratingValue: number): string | null {
+  if (ratingValue >= 4) return 'rating:high';
+  if (ratingValue >= 3) return 'rating:medium';
+  if (ratingValue >= 2) return 'rating:low';
+  return null;
+}
+
+/** Gorse item labels: city, age, type, attributes, payment, price tier, schedule, event, rating. */
+export function toGorseLabels(item: ItemReadModel): string[] {
+  const labels: string[] = [];
+
+  if (item.location?.cityId) labels.push(`city:${item.location.cityId}`);
+  if (item.ageGroup) labels.push(`age:${item.ageGroup}`);
+  if (item.typeId) labels.push(`type:${String(item.typeId)}`);
+
+  if (item.category?.attributeValues) {
+    for (const av of item.category.attributeValues) {
+      labels.push(`attr:${String(av.attributeId)}:${av.value}`);
+    }
+  }
+
+  if (item.payment?.strategy) {
+    labels.push(`payment:${item.payment.strategy}`);
+  }
+  if (item.payment) {
+    labels.push(priceTierLabel(item.payment));
+  }
+
+  if (item.schedule?.entries && item.schedule.entries.length > 0) {
+    labels.push('schedule:true');
+  }
+  if (item.eventDateTime?.dates && item.eventDateTime.dates.length > 0) {
+    labels.push('event:true');
+  }
+
+  const itemRating = item.itemReview?.rating;
+  if (itemRating !== null && itemRating !== undefined) {
+    const tier = ratingTierLabel(itemRating);
+    if (tier) labels.push(tier);
+  }
+
+  return labels;
+}
+
 /** Извлекает данные из массива виджетов {@link ItemPublishedEvent} в плоскую структуру. */
 export function projectItemFromEvent(event: ItemPublishedEvent): ItemReadModel {
   const model: ItemReadModel = {

@@ -14,9 +14,9 @@ import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 export class DrizzleCategoryFiltersQuery implements CategoryFiltersQueryPort {
   public constructor(private readonly dbClient: DiscoveryDatabaseClient) {}
 
-  public async findWithAncestors(
+  public async findById(
     categoryId: CategoryId,
-  ): Promise<{ category: CategoryWithAttributes; ancestors: CategoryWithAttributes[] } | null> {
+  ): Promise<CategoryWithAttributes | null> {
     const categoryRows = await this.dbClient.db
       .select()
       .from(discoveryCategories)
@@ -26,19 +26,7 @@ export class DrizzleCategoryFiltersQuery implements CategoryFiltersQueryPort {
     const row = categoryRows[0];
     if (!row) return null;
 
-    const category = this.toCategoryWithAttributes(row);
-
-    let ancestors: CategoryWithAttributes[] = [];
-    if (row.ancestorIds.length > 0) {
-      const ancestorRows = await this.dbClient.db
-        .select()
-        .from(discoveryCategories)
-        .where(inArray(discoveryCategories.id, row.ancestorIds as string[]));
-
-      ancestors = ancestorRows.map((r) => this.toCategoryWithAttributes(r));
-    }
-
-    return { category, ancestors };
+    return this.toCategoryWithAttributes(row);
   }
 
   public async findTypesByIds(typeIds: TypeId[]): Promise<{ typeId: TypeId; name: string }[]> {

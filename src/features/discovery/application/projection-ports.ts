@@ -26,6 +26,7 @@ export abstract class ItemProjectionPort {
     rating: number | null,
     reviewCount: number,
   ): Promise<void>;
+  public abstract findItemIdsByCategoryId(categoryId: CategoryId): Promise<ItemId[]>;
 }
 
 export abstract class CategoryProjectionPort {

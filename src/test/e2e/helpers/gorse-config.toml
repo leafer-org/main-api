@@ -1,0 +1,16 @@
+[server]
+http_port = 8088
+
+[recommend]
+
+[recommend.collaborative]
+model_fit_period = "1m"
+model_search_period = "1m"
+enable_index = false
+
+[recommend.offline]
+check_recommend_period = "1m"
+refresh_recommend_period = "1s"
+enable_latest_recommend = true
+enable_popular_recommend = true
+enable_click_through_prediction = false
