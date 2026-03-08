@@ -4,6 +4,10 @@ import type { ReviewCreatedEvent, ReviewDeletedEvent } from '@/kernel/domain/eve
 
 import { IdempotencyPort, ItemProjectionPort, OwnerProjectionPort } from '../../projection-ports.js';
 
+/**
+ * review.created / review.deleted → обновляет itemReview или ownerReview
+ * (+ OwnerReadModel) в зависимости от ReviewTarget. Рейтинг pre-computed в событии.
+ */
 @Injectable()
 export class ProjectReviewHandler {
   public constructor(

@@ -12,6 +12,16 @@ import { IdempotencyPort, ItemProjectionPort, OwnerProjectionPort } from '../../
 import { ItemQueryPort } from '../../ports.js';
 import { GorseSyncPort, MeilisearchSyncPort } from '../../sync-ports.js';
 
+/**
+ * Проецирует события организаций в PG + Gorse + Meilisearch.
+ *
+ * - `organization.published` (republished=true): обновить name/avatar в owner + каскад в items +
+ *   Meilisearch (без перезаписи рейтинга).
+ * - `organization.published` (republished=false): создать нового owner.
+ * - `organization.unpublished`: удалить owner + каскадно все items из PG/Gorse/Meilisearch.
+ *
+ * TODO: DLQ при ошибке синхронизации
+ */
 @Injectable()
 export class ProjectOwnerHandler {
   public constructor(

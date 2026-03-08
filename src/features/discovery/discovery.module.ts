@@ -1,3 +1,4 @@
+// TODO: DLQ-процессор (cron 10с, exponential backoff 10с→5мин, макс 10 попыток, таблица dead_letter_events)
 import { Module } from '@nestjs/common';
 
 import { Clock, SystemClock } from '@/infra/lib/clock.js';

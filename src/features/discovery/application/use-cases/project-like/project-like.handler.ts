@@ -4,6 +4,10 @@ import type { ItemLikedEvent, ItemUnlikedEvent } from '@/kernel/domain/events/li
 
 import { IdempotencyPort, UserLikeProjectionPort } from '../../projection-ports.js';
 
+/**
+ * item.liked / item.unliked из топика like.streaming → PG (user_likes).
+ * Отделён от interaction.streaming для надёжной проекции лайков.
+ */
 @Injectable()
 export class ProjectLikeHandler {
   public constructor(

@@ -76,10 +76,3 @@
 Сортировка по умолчанию — персональная (через Gorse). Пользователь может переключить на явную сортировку: по цене, по рейтингу и т.д.
 
 Формат ответа (карточка товара) зависит от типа товара и его виджетов. Discovery отдаёт только списки/ленту, детальная страница товара — другой сервис.
-
-## Спецификации по слоям
-
-- [Domain](specs/domain.md) — read models, mappers, events, services
-- [Kernel](specs/kernel.md) — Kafka, синхронизация, идемпотентность
-- [Application](specs/application.md) — queries, ports, pre/post-ranking
-- [Adapters](specs/adapters.md) — PostgreSQL, Meilisearch, Gorse, Redis, DLQ

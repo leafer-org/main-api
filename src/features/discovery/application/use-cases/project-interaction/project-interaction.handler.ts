@@ -5,6 +5,10 @@ import type { InteractionRecordedEvent } from '@/kernel/domain/events/interactio
 import { IdempotencyPort } from '../../projection-ports.js';
 import { GorseSyncPort } from '../../sync-ports.js';
 
+/**
+ * interaction.recorded → feedback в Gorse. unlike → удаляет feedback 'like'.
+ * Веса: view=1, click=2, like=4, purchase/booking=8.
+ */
 @Injectable()
 export class ProjectInteractionHandler {
   public constructor(

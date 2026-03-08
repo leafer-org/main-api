@@ -11,6 +11,7 @@ import {
   IdempotencyPort,
 } from '../../projection-ports.js';
 
+/** Проецирует category.published / category.unpublished в PG. Атрибуты хранятся как JSONB внутри категории. */
 @Injectable()
 export class ProjectCategoryHandler {
   public constructor(

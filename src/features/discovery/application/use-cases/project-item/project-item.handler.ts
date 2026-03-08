@@ -6,6 +6,11 @@ import { projectItemFromEvent } from '../../../domain/read-models/item.read-mode
 import { IdempotencyPort, ItemProjectionPort } from '../../projection-ports.js';
 import { GorseSyncPort, MeilisearchSyncPort } from '../../sync-ports.js';
 
+/**
+ * Проецирует item.published / item.unpublished в PG + Gorse + Meilisearch.
+ *
+ * TODO: DLQ при ошибке синхронизации Gorse/Meilisearch (exponential backoff, макс 10 попыток)
+ */
 @Injectable()
 export class ProjectItemHandler {
   public constructor(

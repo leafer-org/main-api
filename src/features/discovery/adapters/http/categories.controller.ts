@@ -11,6 +11,9 @@ import { isLeft } from '@/infra/lib/box.js';
 import { CategoryId, TypeId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
+// TODO: эндпоинты для Feed, Search, Liked Items (интеракторы готовы)
+// TODO: извлекать userId из авторизации для персонализации (Gorse)
+// TODO: пробросить attribute filters из query params
 @Controller('categories')
 export class CategoriesController {
   public constructor(
