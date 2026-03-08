@@ -22,13 +22,26 @@ export type UpdateCategoryCommand = {
   now: Date;
 };
 
+export type CategoryAncestorData = {
+  attributes: {
+    attributeId: AttributeId;
+    name: string;
+    required: boolean;
+    schema: AttributeSchema;
+  }[];
+};
+
 export type PublishCategoryCommand = {
   type: 'PublishCategory';
+  eventId: string;
+  ancestorIds: CategoryId[];
+  ancestors: CategoryAncestorData[];
   now: Date;
 };
 
 export type UnpublishCategoryCommand = {
   type: 'UnpublishCategory';
+  eventId: string;
   now: Date;
 };
 

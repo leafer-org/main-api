@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { type CategoryListItem, CategoryQueryPort } from '../../../application/ports.js';
 import type { CategoryEntity, CategoryStatus } from '../../../domain/aggregates/category/entity.js';
@@ -19,10 +19,6 @@ export class DrizzleCategoryQuery implements CategoryQueryPort {
         parentCategoryId: cmsCategories.parentCategoryId,
         name: cmsCategories.name,
         status: cmsCategories.status,
-        childCount: sql<number>`(
-          SELECT count(*)::int FROM cms_categories c2
-          WHERE c2.parent_category_id = ${cmsCategories.id}
-        )`,
       })
       .from(cmsCategories)
       .orderBy(cmsCategories.name);
@@ -32,7 +28,6 @@ export class DrizzleCategoryQuery implements CategoryQueryPort {
       parentCategoryId: row.parentCategoryId ? CategoryId.raw(row.parentCategoryId) : null,
       name: row.name,
       status: row.status as CategoryEntity['status'],
-      childCount: row.childCount,
     }));
   }
 

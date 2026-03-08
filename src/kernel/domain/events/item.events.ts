@@ -21,4 +21,17 @@ export type ItemUnpublishedEvent = {
   unpublishedAt: Date;
 };
 
-export type ItemIntegrationEvent = ItemPublishedEvent | ItemUnpublishedEvent;
+export type ItemModerationRequestedEvent = {
+  id: string;
+  type: 'item.moderation-requested';
+  itemId: ItemId;
+  organizationId: OrganizationId;
+  typeId: TypeId;
+  widgets: ItemWidget[];
+  submittedAt: Date;
+};
+
+export type ItemIntegrationEvent =
+  | ItemPublishedEvent
+  | ItemUnpublishedEvent
+  | ItemModerationRequestedEvent;

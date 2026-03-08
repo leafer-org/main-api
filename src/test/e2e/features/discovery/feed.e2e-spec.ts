@@ -6,8 +6,10 @@ import request from 'supertest';
 import { uuidv7 } from 'uuidv7';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { registerUser } from '../../actors/auth.js';
 import { startContainers, stopContainers } from '../../helpers/containers.js';
 import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
+import { waitForGorsePopular, waitForGorseRecommendations } from '../../helpers/gorse.js';
 import { waitForAllConsumers } from '../../helpers/kafka.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
@@ -16,6 +18,7 @@ import { DiscoveryDatabaseClient } from '@/features/discovery/adapters/db/client
 import { discoveryItems } from '@/features/discovery/adapters/db/schema.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
+import { interactionStreamingContract } from '@/infra/kafka-contracts/interaction.contract.js';
 import { itemStreamingContract } from '@/infra/kafka-contracts/item.contract.js';
 import type { Contract, ContractMessage } from '@/infra/lib/nest-kafka/contract/contract.js';
 import { KafkaProducerService } from '@/infra/lib/nest-kafka/producer/kafka-producer.service.js';
@@ -31,93 +34,152 @@ function sleep(t = 100) {
   return new Promise((res) => setTimeout(() => res(undefined), t));
 }
 
-describe('Discovery Feed HTTP (e2e)', () => {
-  let app: INestApplication;
-  let agent: ReturnType<typeof request>;
-  let producer: KafkaProducerService;
-  let db: DiscoveryDatabaseClient;
+// ─── Shared app state ─────────────────────────────────────────────
 
-  async function produce<C extends Contract>(contract: C, message: ContractMessage<C>) {
-    producer.send(contract, message);
-    await producer.flush();
-  }
+let app: INestApplication;
+let agent: ReturnType<typeof request>;
+let producer: KafkaProducerService;
+let db: DiscoveryDatabaseClient;
 
-  async function seedItem(
-    itemId: string,
-    options?: {
-      title?: string;
-      cityId?: string;
-      ageGroup?: string;
-      orgId?: string;
-      reviewCount?: number;
+async function produce<C extends Contract>(contract: C, message: ContractMessage<C>) {
+  producer.send(contract, message);
+  await producer.flush();
+}
+
+async function seedItem(
+  itemId: string,
+  options?: {
+    title?: string;
+    cityId?: string;
+    ageGroup?: string;
+    orgId?: string;
+    reviewCount?: number;
+  },
+) {
+  const typeId = randomUUID();
+  const orgId = options?.orgId ?? randomUUID();
+  const cityId = options?.cityId ?? 'city-1';
+
+  const widgets: unknown[] = [
+    {
+      type: 'base-info',
+      title: options?.title ?? 'Test Item',
+      description: 'Desc',
+      imageId: null,
     },
-  ) {
-    const typeId = randomUUID();
-    const orgId = options?.orgId ?? randomUUID();
-    const cityId = options?.cityId ?? 'city-1';
+    { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
+    { type: 'category', categoryIds: [], attributes: [] },
+    { type: 'location', cityId, lat: 55.75, lng: 37.62, address: null },
+    { type: 'age-group', value: options?.ageGroup ?? 'adults' },
+  ];
 
-    const widgets: unknown[] = [
-      {
-        type: 'base-info',
-        title: options?.title ?? 'Test Item',
-        description: 'Desc',
-        imageId: null,
-      },
-      { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
-      { type: 'category', categoryIds: [], attributes: [] },
-      { type: 'location', cityId, lat: 55.75, lng: 37.62, address: null },
-      { type: 'age-group', value: options?.ageGroup ?? 'adults' },
-    ];
-
-    if (options?.reviewCount !== undefined) {
-      widgets.push({ type: 'item-review', rating: 4.5, reviewCount: options.reviewCount });
-    }
-
-    await produce(itemStreamingContract, {
-      id: uuidv7(),
-      type: 'item.published',
-      itemId,
-      typeId,
-      organizationId: orgId,
-      widgets,
-      republished: false,
-      publishedAt: new Date().toISOString(),
-    } as ContractMessage<typeof itemStreamingContract>);
-
-    await vi.waitFor(async () => {
-      const [row] = await db.select().from(discoveryItems).where(eq(discoveryItems.id, itemId));
-      expectDefined(row);
-    }, WAIT_OPTIONS);
+  if (options?.reviewCount !== undefined) {
+    widgets.push({ type: 'item-review', rating: 4.5, reviewCount: options.reviewCount });
   }
 
-  beforeAll(async () => {
-    await startContainers();
-    if (!process.env.DB_URL) throw new Error('DB_URL not set');
-    await runMigrations(process.env.DB_URL);
-    await createBuckets();
+  await produce(itemStreamingContract, {
+    id: uuidv7(),
+    type: 'item.published',
+    itemId,
+    typeId,
+    organizationId: orgId,
+    widgets,
+    republished: false,
+    publishedAt: new Date().toISOString(),
+  } as ContractMessage<typeof itemStreamingContract>);
 
-    const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(OtpGeneratorService)
-      .useValue({ generate: () => OtpCode.raw(FIXED_OTP) })
-      .compile();
+  await vi.waitFor(async () => {
+    const [row] = await db.select().from(discoveryItems).where(eq(discoveryItems.id, itemId));
+    expectDefined(row);
+  }, WAIT_OPTIONS);
+}
 
-    app = moduleRef.createNestApplication();
-    configureApp(app);
-    await app.init();
-    await waitForAllConsumers(app);
-    await sleep(100);
+async function sendInteraction(
+  userId: string,
+  itemId: string,
+  interactionType: 'view' | 'like' | 'click',
+) {
+  await produce(interactionStreamingContract, {
+    id: uuidv7(),
+    type: 'interaction.recorded',
+    userId,
+    itemId,
+    interactionType,
+    timestamp: new Date().toISOString(),
+  } as ContractMessage<typeof interactionStreamingContract>);
+}
 
-    producer = app.get(KafkaProducerService);
-    db = app.get(DiscoveryDatabaseClient);
-    agent = request(app.getHttpServer());
+async function seedItems(count: number, options?: { cityId?: string; titlePrefix?: string }) {
+  const ids = Array.from({ length: count }, () => randomUUID());
+
+  // Items must be seeded sequentially — each waits for DB projection before the next
+  let chain = Promise.resolve();
+  ids.forEach((id, i) => {
+    chain = chain.then(() =>
+      seedItem(id, {
+        cityId: options?.cityId ?? 'city-1',
+        title: `${options?.titlePrefix ?? 'Item'} ${i}`,
+      }),
+    );
   });
+  await chain;
 
+  return ids;
+}
+
+async function sendBulkInteractions(
+  userIds: string[],
+  itemIds: string[],
+  interactionType: 'view' | 'like' | 'click',
+) {
+  const tasks = userIds.flatMap((userId) =>
+    itemIds.map((itemId) => sendInteraction(userId, itemId, interactionType)),
+  );
+  await Promise.all(tasks);
+}
+
+async function ensureSeeded() {
+  if (!process.env.DB_URL) throw new Error('DB_URL not set');
+  await seedStaticRoles(process.env.DB_URL);
+  await seedAdminUser(process.env.DB_URL);
+}
+
+// ─── Bootstrap ────────────────────────────────────────────────────
+
+beforeAll(async () => {
+  await startContainers({ gorse: true });
+  if (!process.env.DB_URL) throw new Error('DB_URL not set');
+  await runMigrations(process.env.DB_URL);
+  await createBuckets();
+
+  const moduleRef = await Test.createTestingModule({
+    imports: [AppModule],
+  })
+    .overrideProvider(OtpGeneratorService)
+    .useValue({ generate: () => OtpCode.raw(FIXED_OTP) })
+    .compile();
+
+  app = moduleRef.createNestApplication();
+  configureApp(app);
+  await app.init();
+  await waitForAllConsumers(app);
+  await sleep(100);
+
+  producer = app.get(KafkaProducerService);
+  db = app.get(DiscoveryDatabaseClient);
+  agent = request(app.getHttpServer());
+});
+
+afterAll(async () => {
+  await app?.close();
+  await stopContainers();
+});
+
+// ─── Фоллбэк: пустой ответ без данных в Gorse ──────────────────
+
+describe('GET /feed (fallback)', () => {
   beforeEach(async () => {
-    if (!process.env.DB_URL) throw new Error('DB_URL not set');
-    await seedStaticRoles(process.env.DB_URL);
-    await seedAdminUser(process.env.DB_URL);
+    await ensureSeeded();
   });
 
   afterEach(async () => {
@@ -125,137 +187,136 @@ describe('Discovery Feed HTTP (e2e)', () => {
     await truncateAll(process.env.DB_URL);
   });
 
-  afterAll(async () => {
-    await app?.close();
-    await stopContainers();
+  it('should return empty list when no items in Gorse', async () => {
+    const res = await agent.get('/feed').query({ cityId: 'city-unknown' }).expect(200);
+
+    expect(res.body.items).toEqual([]);
+    expect(res.body.nextCursor).toBeNull();
+  });
+});
+
+// ─── Популярные товары (анонимный пользователь) ─────────────────
+
+describe('GET /feed (popular)', { timeout: 300_000 }, () => {
+  const seededItemIds: string[] = [];
+
+  beforeAll(async () => {
+    await ensureSeeded();
+
+    // Засидить 5 товаров через Kafka → ProjectItemHandler → DB + Gorse
+    const ids = await seedItems(5, { titlePrefix: 'Popular Item' });
+    seededItemIds.push(...ids);
+
+    // Отправить interactions от 10 фейковых пользователей → ProjectInteractionHandler → Gorse feedback
+    const fakeUserIds = Array.from({ length: 10 }, () => randomUUID());
+    await sendBulkInteractions(fakeUserIds, seededItemIds, 'like');
+
+    // Дать время handler-ам обработать все interactions
+    await sleep(3000);
+
+    // Поллить /api/popular пока Gorse не сгенерирует популярные товары
+    await waitForGorsePopular(180_000);
+  }, 240_000);
+
+  it('should return popular items for anonymous user', async () => {
+    const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
+
+    expect(res.body.items.length).toBeGreaterThan(0);
+    const returnedIds = res.body.items.map((i: { itemId: string }) => i.itemId);
+    const overlap = seededItemIds.filter((id) => returnedIds.includes(id));
+    expect(overlap.length).toBeGreaterThan(0);
   });
 
-  // ─── GET /feed ──────────────────────────────────────────────────
+  it('should return items with correct shape', async () => {
+    const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
 
-  describe('GET /feed', () => {
-    it('should return empty list when no items match city', async () => {
-      const itemId = randomUUID();
-      await seedItem(itemId, { cityId: 'city-2' });
+    expect(res.body.items.length).toBeGreaterThan(0);
+    const item = res.body.items[0];
+    expect(item).toHaveProperty('itemId');
+    expect(item).toHaveProperty('title');
+    expect(item).toHaveProperty('description');
+    expect(item).toHaveProperty('owner');
+    expect(item).toHaveProperty('typeId');
+  });
 
-      const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
+  it('should respect limit parameter', async () => {
+    const res = await agent.get('/feed').query({ cityId: 'city-1', limit: 2 }).expect(200);
 
-      expect(res.body.items).toEqual([]);
-      expect(res.body.nextCursor).toBeNull();
-    });
+    expect(res.body.items).toHaveLength(2);
+    expect(res.body.nextCursor).not.toBeNull();
+  });
 
-    it('should return items matching cityId', async () => {
-      const itemId = randomUUID();
-      await seedItem(itemId, { cityId: 'city-1' });
+  it('should paginate with cursor', async () => {
+    const page1 = await agent.get('/feed').query({ cityId: 'city-1', limit: 2 }).expect(200);
 
-      const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
+    expect(page1.body.items).toHaveLength(2);
+    expect(page1.body.nextCursor).not.toBeNull();
 
-      expect(res.body.items).toHaveLength(1);
-      expect(res.body.items[0].itemId).toBe(itemId);
-    });
+    const page2 = await agent
+      .get('/feed')
+      .query({ cityId: 'city-1', limit: 2, cursor: page1.body.nextCursor })
+      .expect(200);
 
-    it('should filter by ageGroup', async () => {
-      const adultsId = randomUUID();
-      const childrenId = randomUUID();
-      await seedItem(adultsId, { ageGroup: 'adults' });
-      await seedItem(childrenId, { ageGroup: 'children' });
+    expect(page2.body).toHaveProperty('items');
+  });
 
-      const res = await agent
-        .get('/feed')
-        .query({ cityId: 'city-1', ageGroup: 'adults' })
-        .expect(200);
+  it('should return 200 with default limit when not specified', async () => {
+    const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
 
-      const ids = res.body.items.map((i: { itemId: string }) => i.itemId);
-      expect(ids).toContain(adultsId);
-      expect(ids).not.toContain(childrenId);
-    });
+    expect(res.body.items.length).toBeGreaterThanOrEqual(1);
+  });
+});
 
-    it('should default ageGroup to adults', async () => {
-      const adultsId = randomUUID();
-      const childrenId = randomUUID();
-      await seedItem(adultsId, { ageGroup: 'adults' });
-      await seedItem(childrenId, { ageGroup: 'children' });
+// ─── Персонализированные рекомендации (авторизованный пользователь) ──
 
-      const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
+describe('GET /feed (personalized)', { timeout: 300_000 }, () => {
+  let accessToken: string;
+  let userId: string;
+  const seededItemIds: string[] = [];
 
-      const ids = res.body.items.map((i: { itemId: string }) => i.itemId);
-      expect(ids).toContain(adultsId);
-      expect(ids).not.toContain(childrenId);
-    });
+  beforeAll(async () => {
+    await ensureSeeded();
 
-    it('should return items with correct shape', async () => {
-      const itemId = randomUUID();
-      await seedItem(itemId, { title: 'Yoga Class' });
+    // Зарегистрировать пользователя
+    const user = await registerUser(agent, FIXED_OTP, { phone: '+79990000099' });
+    accessToken = user.accessToken;
+    userId = user.userId;
 
-      const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
+    // Засидить 5 товаров через Kafka
+    const ids = await seedItems(5, { titlePrefix: 'Personal Item' });
+    seededItemIds.push(...ids);
 
-      expect(res.body.items).toHaveLength(1);
-      const item = res.body.items[0];
-      expect(item).toMatchObject({
-        itemId,
-        title: 'Yoga Class',
-        description: 'Desc',
-        owner: { name: 'Org' },
-        location: { cityId: 'city-1' },
-      });
-      expect(item).toHaveProperty('typeId');
-      expect(item).toHaveProperty('categoryIds');
-    });
+    // Отправить interactions (лайки) от этого пользователя через Kafka
+    await sendBulkInteractions([userId], seededItemIds, 'like');
 
-    it('should respect limit parameter', async () => {
-      const id1 = randomUUID();
-      const id2 = randomUUID();
-      const id3 = randomUUID();
-      await seedItem(id1);
-      await seedItem(id2);
-      await seedItem(id3);
+    // Дать время handler-ам обработать interactions
+    await sleep(3000);
 
-      const res = await agent.get('/feed').query({ cityId: 'city-1', limit: 2 }).expect(200);
+    // Поллить /api/recommend/{userId} пока Gorse не сгенерирует рекомендации
+    await waitForGorseRecommendations(userId, 180_000);
+  }, 240_000);
 
-      expect(res.body.items).toHaveLength(2);
-      expect(res.body.nextCursor).not.toBeNull();
-    });
+  it('should return personalized recommendations for authenticated user', async () => {
+    const res = await agent
+      .get('/feed')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .query({ cityId: 'city-1' })
+      .expect(200);
 
-    it('should return nextCursor when more items than limit', async () => {
-      const id1 = randomUUID();
-      const id2 = randomUUID();
-      const id3 = randomUUID();
-      await seedItem(id1);
-      await seedItem(id2);
-      await seedItem(id3);
+    expect(res.body.items.length).toBeGreaterThan(0);
+  });
 
-      const page1 = await agent.get('/feed').query({ cityId: 'city-1', limit: 2 }).expect(200);
+  it('should return items with correct shape for authenticated user', async () => {
+    const res = await agent
+      .get('/feed')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .query({ cityId: 'city-1' })
+      .expect(200);
 
-      expect(page1.body.items).toHaveLength(2);
-      expect(page1.body.nextCursor).not.toBeNull();
-
-      // Cursor is accepted and returns 200
-      await agent
-        .get('/feed')
-        .query({ cityId: 'city-1', limit: 2, cursor: page1.body.nextCursor })
-        .expect(200);
-    });
-
-    it('should return 200 with default limit when not specified', async () => {
-      const itemId = randomUUID();
-      await seedItem(itemId);
-
-      const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
-
-      expect(res.body.items.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it('should return items from new sellers', async () => {
-      // All test orgs are "new sellers" (created within 30 days)
-      const id1 = randomUUID();
-      const id2 = randomUUID();
-      await seedItem(id1, { title: 'Item A' });
-      await seedItem(id2, { title: 'Item B' });
-
-      const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
-
-      expect(res.body.items).toHaveLength(2);
-      const ids = res.body.items.map((i: { itemId: string }) => i.itemId);
-      expect(new Set(ids)).toEqual(new Set([id1, id2]));
-    });
+    expect(res.body.items.length).toBeGreaterThan(0);
+    const item = res.body.items[0];
+    expect(item).toHaveProperty('itemId');
+    expect(item).toHaveProperty('title');
+    expect(item).toHaveProperty('owner');
   });
 });

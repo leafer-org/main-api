@@ -5,13 +5,13 @@ import { ItemProjectionPort } from '../../../application/projection-ports.js';
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
 import {
-  discoveryItems,
-  discoveryItemCategories,
   discoveryItemAttributes,
+  discoveryItemCategories,
   discoveryItemEventDates,
   discoveryItemSchedules,
+  discoveryItems,
 } from '../schema.js';
-import type { CategoryId, FileId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { FileId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleItemProjectionRepository implements ItemProjectionPort {
@@ -155,15 +155,6 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
       .where(eq(discoveryItems.organizationId, organizationId as string));
   }
 
-  public async findItemIdsByCategoryId(categoryId: CategoryId): Promise<ItemId[]> {
-    const rows = await this.dbClient.db
-      .select({ itemId: discoveryItemCategories.itemId })
-      .from(discoveryItemCategories)
-      .where(eq(discoveryItemCategories.categoryId, categoryId as string));
-
-    return rows.map((r) => r.itemId as ItemId);
-  }
-
   private async syncJunctionTables(itemId: string, item: ItemReadModel): Promise<void> {
     // Delete old junction rows
     await this.deleteJunctionRows([itemId]);
@@ -171,9 +162,9 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
     // Insert categories
     const categoryIds = (item.category?.categoryIds as string[]) ?? [];
     if (categoryIds.length > 0) {
-      await this.dbClient.db.insert(discoveryItemCategories).values(
-        categoryIds.map((categoryId) => ({ itemId, categoryId })),
-      );
+      await this.dbClient.db
+        .insert(discoveryItemCategories)
+        .values(categoryIds.map((categoryId) => ({ itemId, categoryId })));
     }
 
     // Insert attribute values
@@ -191,9 +182,9 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
     // Insert event dates
     const eventDates = item.eventDateTime?.dates ?? [];
     if (eventDates.length > 0) {
-      await this.dbClient.db.insert(discoveryItemEventDates).values(
-        eventDates.map((d) => ({ itemId, eventDate: d })),
-      );
+      await this.dbClient.db
+        .insert(discoveryItemEventDates)
+        .values(eventDates.map((d) => ({ itemId, eventDate: d })));
     }
 
     // Insert schedule entries

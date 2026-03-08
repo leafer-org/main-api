@@ -36,19 +36,16 @@ export class DrizzleCategoryRepository implements CategoryRepository {
     return (result.rows as any[]).map((row) => this.toDomainFromRaw(row));
   }
 
-  public async findDescendants(tx: Transaction, id: CategoryId): Promise<CategoryEntity[]> {
+  public async findDirectChildren(
+    tx: Transaction,
+    parentId: CategoryId,
+  ): Promise<CategoryEntity[]> {
     const db = this.txHost.get(tx);
-    const result = await db.execute(sql`
-      WITH RECURSIVE descendants AS (
-        SELECT c.* FROM cms_categories c
-        WHERE c.parent_category_id = ${id}
-        UNION ALL
-        SELECT c.* FROM cms_categories c
-        INNER JOIN descendants d ON c.parent_category_id = d.id
-      )
-      SELECT * FROM descendants
-    `);
-    return (result.rows as any[]).map((row) => this.toDomainFromRaw(row));
+    const rows = await db
+      .select()
+      .from(cmsCategories)
+      .where(eq(cmsCategories.parentCategoryId, parentId));
+    return rows.map((row) => this.toDomain(row));
   }
 
   public async save(tx: Transaction, state: CategoryEntity): Promise<void> {

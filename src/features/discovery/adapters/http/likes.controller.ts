@@ -1,7 +1,7 @@
 import { Controller, Delete, HttpCode, Param, Post } from '@nestjs/common';
 
-import { LikeItemInteractor } from '../../application/use-cases/like-item/like-item.interactor.js';
-import { UnlikeItemInteractor } from '../../application/use-cases/unlike-item/unlike-item.interactor.js';
+import { LikeItemInteractor } from '../../application/use-cases/likes/like-item.interactor.js';
+import { UnlikeItemInteractor } from '../../application/use-cases/likes/unlike-item.interactor.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';

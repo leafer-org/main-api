@@ -11,6 +11,7 @@ export type ServiceComponentId = EntityId<'ServiceComponent'>;
 export type AttributeId = EntityId<'Attribute'>;
 export type OrganizationId = EntityId<'Organization'>;
 export type TypeId = EntityId<'Type'>;
+export type EmployeeRoleId = EntityId<'EmployeeRole'>;
 
 export const FileId = {
   raw(id: string): FileId {
@@ -75,5 +76,11 @@ export const OrganizationId = {
 export const TypeId = {
   raw(id: string): TypeId {
     return id as TypeId;
+  },
+};
+
+export const EmployeeRoleId = {
+  raw(id: string): EmployeeRoleId {
+    return id as EmployeeRoleId;
   },
 };

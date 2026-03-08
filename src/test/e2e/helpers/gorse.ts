@@ -27,47 +27,39 @@ async function gorseRequest<T>(method: string, path: string, body?: unknown): Pr
 }
 
 /**
- * Запускает полный цикл обучения модели и ожидает его завершения.
- *
- * Gorse-in-one не имеет явного эндпоинта "trigger fit",
- * но мы можем отслеживать прогресс через dashboard/tasks.
- * Для тестов используется короткий `model_fit_period` (1m) в config,
- * поэтому просто ждём, пока все задачи закончатся.
- *
- * @param timeoutMs — максимальное время ожидания (по умолчанию 120с)
- * @param intervalMs — интервал опроса (по умолчанию 2с)
+ * Поллит `/api/popular` пока не появятся результаты.
+ * Надёжнее чем отслеживать задачи — проверяем конечный результат.
  */
-export async function waitForGorseTraining(timeoutMs = 120_000, intervalMs = 2_000): Promise<void> {
+export async function waitForGorsePopular(
+  timeoutMs = 120_000,
+  intervalMs = 2_000,
+): Promise<{ Id: string; Score: number }[]> {
   const deadline = Date.now() + timeoutMs;
 
-  // Ждём, пока появится хотя бы одна завершённая задача обучения
-  while (Date.now() < deadline) {
-    const tasks = await gorseRequest<
-      { Name: string; Status: string; Done: boolean; StartTime: string; FinishTime: string }[]
-    >('GET', '/api/dashboard/tasks');
+  const poll = async (): Promise<{ Id: string; Score: number }[]> => {
+    if (Date.now() >= deadline) {
+      throw new Error(`Gorse popular items not ready within ${timeoutMs}ms`);
+    }
 
-    const fitTasks = tasks.filter(
-      (t) => t.Name === 'Fit collaborative filtering model' || t.Name.startsWith('Fit'),
+    const results = await gorseRequest<{ Id: string; Score: number }[]>(
+      'GET',
+      '/api/non-personalized/popular?n=10',
     );
 
-    if (fitTasks.length > 0 && fitTasks.every((t) => t.Done)) {
-      console.log(`[waitForGorseTraining] training done (${fitTasks.length} tasks)`);
-      return;
+    if (results.length > 0) {
+      console.log(`[waitForGorsePopular] got ${results.length} popular items`);
+      return results;
     }
 
     await new Promise((r) => setTimeout(r, intervalMs));
-  }
+    return poll();
+  };
 
-  throw new Error(`Gorse training did not complete within ${timeoutMs}ms`);
+  return poll();
 }
 
 /**
- * Ожидает, пока offline рекомендации будут сгенерированы для указанного пользователя.
- * Полезно после вставки items+feedback и запуска обучения.
- *
- * @param userId — ID пользователя
- * @param timeoutMs — максимальное время ожидания (по умолчанию 120с)
- * @param intervalMs — интервал опроса (по умолчанию 2с)
+ * Поллит `/api/recommend/{userId}` пока не появятся персонализированные рекомендации.
  */
 export async function waitForGorseRecommendations(
   userId: string,
@@ -76,11 +68,14 @@ export async function waitForGorseRecommendations(
 ): Promise<string[]> {
   const deadline = Date.now() + timeoutMs;
 
-  while (Date.now() < deadline) {
-    const qs = new URLSearchParams({ n: '10' });
+  const poll = async (): Promise<string[]> => {
+    if (Date.now() >= deadline) {
+      throw new Error(`Gorse recommendations for user ${userId} not ready within ${timeoutMs}ms`);
+    }
+
     const ids = await gorseRequest<string[]>(
       'GET',
-      `/api/recommend/${encodeURIComponent(userId)}?${qs}`,
+      `/api/recommend/${encodeURIComponent(userId)}?n=10`,
     );
 
     if (ids.length > 0) {
@@ -89,7 +84,8 @@ export async function waitForGorseRecommendations(
     }
 
     await new Promise((r) => setTimeout(r, intervalMs));
-  }
+    return poll();
+  };
 
-  throw new Error(`Gorse recommendations for user ${userId} not ready within ${timeoutMs}ms`);
+  return poll();
 }

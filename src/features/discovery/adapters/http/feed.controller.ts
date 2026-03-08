@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 
-import { GetFeedInteractor } from '../../application/use-cases/get-feed/get-feed.interactor.js';
+import { GetFeedInteractor } from '../../application/use-cases/browse-feed/get-feed.interactor.js';
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';

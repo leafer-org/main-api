@@ -6,15 +6,15 @@ import { ItemQueryPort } from '../../../application/ports.js';
 import type {
   CategoryItemFilters,
   SortOption,
-} from '../../../application/use-cases/get-category-items/types.js';
+} from '../../../application/use-cases/browse-category/types.js';
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
 import {
-  discoveryItems,
   discoveryItemAttributes,
   discoveryItemCategories,
   discoveryItemEventDates,
   discoveryItemSchedules,
+  discoveryItems,
 } from '../schema.js';
 import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
 import {
@@ -90,26 +90,6 @@ export class DrizzleItemQuery implements ItemQueryPort {
     const nextCursor = hasMore && lastRow ? this.buildCursor(params.sort, lastRow) : null;
 
     return { items, nextCursor };
-  }
-
-  public async findPopular(params: {
-    cityId: string;
-    ageGroup: AgeGroup;
-    limit: number;
-  }): Promise<ItemReadModel[]> {
-    const rows = await this.dbClient.db
-      .select()
-      .from(discoveryItems)
-      .where(
-        and(
-          eq(discoveryItems.cityId, params.cityId),
-          sql`(${discoveryItems.ageGroup} = ${params.ageGroup} OR ${discoveryItems.ageGroup} = 'all')`,
-        ),
-      )
-      .orderBy(desc(discoveryItems.itemReviewCount))
-      .limit(params.limit);
-
-    return this.hydrateReadModels(rows);
   }
 
   private buildSortAndCursor(
@@ -189,7 +169,10 @@ export class DrizzleItemQuery implements ItemQueryPort {
           case 'enum':
             if (af.values.length > 0) {
               conditions.push(
-                sql`EXISTS (SELECT 1 FROM ${discoveryItemAttributes} WHERE ${discoveryItemAttributes.itemId} = ${discoveryItems.id} AND ${discoveryItemAttributes.attributeId} = ${String(af.attributeId)} AND ${discoveryItemAttributes.value} IN (${sql.join(af.values.map((v) => sql`${v}`), sql`, `)}))`,
+                sql`EXISTS (SELECT 1 FROM ${discoveryItemAttributes} WHERE ${discoveryItemAttributes.itemId} = ${discoveryItems.id} AND ${discoveryItemAttributes.attributeId} = ${String(af.attributeId)} AND ${discoveryItemAttributes.value} IN (${sql.join(
+                  af.values.map((v) => sql`${v}`),
+                  sql`, `,
+                )}))`,
               );
             }
             break;

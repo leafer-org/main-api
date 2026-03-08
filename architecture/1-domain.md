@@ -1,9 +1,19 @@
-# Domain — Functional Decider
+# Domain — Агрегаты и Сущности
 
-Все агрегаты создаются в функциональном стиле: **Decide + Apply**.
+## Агрегат vs Сущность
 
-- **decide** — чистая функция, `(State | null, Command) => Either<DomainError, Event>`. Нет побочных эффектов.
-- **apply** — чистый редюсер, `(State | null, Event) => State`. Применяет событие к состоянию.
+| | Агрегат (`entity.ts`) | Сущность (`entities/*.entity.ts`) |
+|---|---|---|
+| **Возвращает** | `Either<Error, { state; event }>` | Произвольный результат (новый state, getter, `Either`) |
+| **События** | Создаёт доменные события | **Не создаёт** событий |
+| **Роль** | Оркестратор: делегирует сущностям, собирает state + event | Чистая логика подобъекта |
+
+**Агрегат** — тип состояния + одноимённый объект с чистыми методами. Каждый метод совмещает decide и apply: принимает состояние и команду, возвращает `Either<Error, { state; event }>`.
+
+**Сущность** — подобъект агрегата. Тип + одноимённый const-объект с чистыми методами произвольной сигнатуры:
+- **Мутации**: `(state, ...) => NewState` или `(state, ...) => Either<Error, NewState>`
+- **Геттеры/запросы**: `(state, ...) => T | undefined`, `(state, ...) => boolean`
+- **Фабрики**: `(...) => State`
 
 I/O остаётся в application-слое (interactor).
 
@@ -11,64 +21,109 @@ I/O остаётся в application-слое (interactor).
 
 ## Структура файлов агрегата
 
-### Сложный агрегат (много команд):
 ```
 domain/aggregates/<aggregate>/
-├── state.ts, events.ts, commands.ts, errors.ts, config.ts
-├── apply.ts + apply.test.ts
-└── decide/           ← по файлу на команду
-    ├── send-otp.ts + send-otp.test.ts
-    └── verify-otp.ts + verify-otp.test.ts
+├── entity.ts          ← агрегат: тип состояния + объект с методами
+├── entities/          ← сущности (подобъекты агрегата, опционально)
+│   └── <sub>.entity.ts
+├── events.ts
+├── commands.ts
+├── errors.ts
+└── config.ts          ← константы (если нужны)
 ```
-
-### Простой агрегат:
-```
-domain/aggregates/<aggregate>/
-├── state.ts, events.ts, commands.ts, errors.ts
-├── apply.ts + apply.test.ts
-└── decide.ts + decide.test.ts   ← все команды в switch
-```
-
-Выбор — по объёму логики. Если каждый case — 3-5 строк, хватит одного файла.
 
 ---
 
 ## Компоненты агрегата
 
-### State (state.ts)
+### Entity (entity.ts)
 
-Иммутабельные данные без методов. Несколько фаз — discriminated union по `type`. Простой — plain type. Предикаты — отдельные функции.
+Тип состояния — `EntityState<T>` (синоним `Readonly<T>`). Одноимённый const-объект содержит методы агрегата.
+
+Каждый метод — чистая функция:
+- **create**: `(Command) => Either<Error, { state; event }>` — начальное создание, без state
+- **остальные**: `(State, Command) => Either<Error, { state; event }>` — мутации
 
 ```ts
-// Discriminated union — LoginProcess
-type LoginProcessStateBase = {
-  id: LoginProcessId;
-  phoneNumber: PhoneNumber;
-  fingerPrint: FingerPrint;
+import type { EntityState } from '@/infra/ddd/entity-state.js';
+import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
+
+export type CategoryEntity = EntityState<{
+  id: CategoryId;
+  name: string;
+  status: 'draft' | 'published' | 'unpublished';
+  createdAt: Date;
+  updatedAt: Date;
+}>;
+
+export const CategoryEntity = {
+  create(
+    cmd: CreateCategoryCommand,
+  ): Either<InvalidAllowedTypeIdsError, { state: CategoryEntity; event: CategoryCreatedEvent }> {
+    const typeValidation = validateAllowedTypeIds(/* ... */);
+    if (isLeft(typeValidation)) return typeValidation;
+
+    const event: CategoryCreatedEvent = {
+      type: 'category.created',
+      id: cmd.id,
+      name: cmd.name,
+      createdAt: cmd.now,
+    };
+
+    const state: CategoryEntity = {
+      id: event.id,
+      name: event.name,
+      status: 'draft',
+      createdAt: event.createdAt,
+      updatedAt: event.createdAt,
+    };
+
+    return Right({ state, event });
+  },
+
+  update(
+    state: CategoryEntity,
+    cmd: UpdateCategoryCommand,
+  ): Either<InvalidAllowedTypeIdsError, { state: CategoryEntity; event: CategoryUpdatedEvent }> {
+    const event: CategoryUpdatedEvent = { type: 'category.updated', name: cmd.name, updatedAt: cmd.now };
+    const newState: CategoryEntity = { ...state, name: event.name, updatedAt: event.updatedAt };
+    return Right({ state: newState, event });
+  },
+
+  unpublish(
+    state: CategoryEntity,
+    cmd: UnpublishCategoryCommand,
+  ): Either<CategoryNotPublishedError, { state: CategoryEntity; event: CategoryUnpublishedEvent }> {
+    if (state.status !== 'published') return Left(new CategoryNotPublishedError());
+    const event: CategoryUnpublishedEvent = { type: 'category.unpublished', categoryId: state.id, unpublishedAt: cmd.now };
+    return Right({ state: { ...state, status: 'unpublished', updatedAt: cmd.now }, event });
+  },
 };
-
-export type RequestedLoginProcessState = LoginProcessStateBase & {
-  type: 'OtpRequested';
-  codeHash: OtpCodeHash;
-  expiresAt: Date;
-  verifyAttempts: number;
-  requestedAt: Date;
-};
-
-export type LoginProcessState =
-  | RequestedLoginProcessState
-  | NewRegistrationLoginProcessState
-  | SuccessLoginProcessState
-  | BlockedLoginProcessState
-  | LoginProcessErroredState;
-
-// Предикаты — функции, не методы
-export function isTerminalState(state: LoginProcessState, now: Date): boolean { /* ... */ }
-export function isOtpExpired(state: LoginProcessState, now: Date): boolean { /* ... */ }
 ```
 
-- Эталон union: `src/features/idp/domain/aggregates/login-process/state.ts`
-- Эталон plain: `src/features/idp/domain/aggregates/user/state.ts`
+Для больших агрегатов вспомогательную логику можно выносить в методы Value Object или в чистые функции рядом с объектом агрегата (выше или ниже):
+
+```ts
+// Чистая функция-хелпер рядом с агрегатом
+function validateAllowedTypeIds(
+  allowedTypeIds: string[],
+  parentAllowedTypeIds: string[] | null,
+): Either<InvalidAllowedTypeIdsError, void> {
+  if (!parentAllowedTypeIds) return Right(undefined);
+  const invalid = allowedTypeIds.filter((id) => !new Set(parentAllowedTypeIds).has(id));
+  if (invalid.length > 0) return Left(new InvalidAllowedTypeIdsError({ invalidTypeIds: invalid }));
+  return Right(undefined);
+}
+
+// Или метод Value Object
+export const CategoryAttribute = {
+  mergeWithAncestors(own: { attributes: CategoryAttribute[] }, ancestors: /* ... */): CategoryAttribute[] {
+    /* ... */
+  },
+};
+```
+
+- Эталон: `src/features/cms/domain/aggregates/category/entity.ts`
 
 ### Events (events.ts)
 
@@ -91,77 +146,21 @@ export type UserEvent = UserCreatedEvent | UserProfileUpdatedEvent | UserRoleUpd
 
 ### Commands (commands.ts)
 
-Discriminated union по `type`. Зависимости инъектируются через поля (`now: Date`, `generateId`). Никаких `Date.now()` внутри.
+Типы команд без discriminated union (нет `type`). Зависимости инъектируются через поля (`now: Date`, `generateId`). Никаких `Date.now()` внутри.
 
 ```ts
-export type CreateUserCommand = {
-  type: 'CreateUser';
-  id: UserId;
-  phoneNumber: PhoneNumber;
-  fullName: FullName;
-  role: Role;
-  now: Date;          // ← инъектируется из interactor'а
+export type CreateCategoryCommand = {
+  id: CategoryId;
+  name: string;
+  iconId: FileId | null;
+  allowedTypeIds: TypeId[];
+  parentCategoryId: CategoryId | null;
+  parentAllowedTypeIds: TypeId[] | null;
+  now: Date;
 };
 ```
 
-- Эталон: `src/features/idp/domain/aggregates/user/commands.ts`
-
-### Decide (decide.ts | decide/*.ts)
-
-`(State | null, Command) => Either<Error, Event>`. Чистая функция. `Left` — отклонено, `Right` — принято. `assertNever` в default.
-
-```ts
-export function sendOtpCommandDecide(
-  state: LoginProcessState | null,
-  command: CreateOtpCommand,
-): Either<LoginBlockedError | OtpThrottleError, LoginProcessStartedEvent> {
-  if (state?.type === 'Blocked' && state.blockedUntil.getTime() > command.now.getTime()) {
-    return Left(new LoginBlockedError({ blockedUntil: state.blockedUntil }));
-  }
-
-  if (!state || state.type === 'Errored' || state.type === 'Success') {
-    return Right({
-      type: 'login_process.started',
-      id: command.newLoginProcessId,
-      phoneNumber: command.phoneNumber,
-      /* ... */
-    });
-  }
-
-  assertNever(state);
-}
-```
-
-- Эталон (один файл): `src/features/idp/domain/aggregates/user/decide.ts`
-- Эталон (папка): `src/features/idp/domain/aggregates/login-process/decide/send-otp.ts`
-
-### Apply (apply.ts)
-
-`(State | null, Event) => State`. Чистый редюсер. `null` допустим только для начального события. `switch` + `assertNever`.
-
-```ts
-export function userApply(state: UserState | null, event: UserEvent): UserState {
-  switch (event.type) {
-    case 'user.created':
-      return {
-        id: event.id,
-        phoneNumber: event.phoneNumber,
-        fullName: event.fullName,
-        role: event.role,
-        createdAt: event.createdAt,
-        updatedAt: event.createdAt,
-      };
-    case 'user.profile_updated': {
-      if (!state) throw new Error('State is required');
-      return { ...state, fullName: event.fullName, updatedAt: event.updatedAt };
-    }
-    default:
-      assertNever(event);
-  }
-}
-```
-
-С удалением (`=> State | null`): `src/features/idp/domain/aggregates/session/apply.ts`
+- Эталон: `src/features/cms/domain/aggregates/category/commands.ts`
 
 ### Errors (errors.ts)
 
@@ -181,6 +180,60 @@ export class InvalidOtpError extends CreateDomainError('invalid_otp') {}
 
 Константы. Необязательный файл.
 - Эталон: `src/features/idp/domain/aggregates/login-process/config.ts`
+
+### Сущности (entities/)
+
+Для больших агрегатов подобъекты выделяются в **сущности** — отдельные файлы в `entities/` внутри агрегата.
+
+**Отличие от агрегата**: сущность **не создаёт доменных событий**. Методы возвращают новый state, результат запроса или `Either<Error, T>` для валидации. Событие создаёт только агрегат-оркестратор.
+
+Кросс-импорты между сущностями разрешены.
+
+```ts
+// entities/info-draft.entity.ts
+export type InfoDraftEntity = EntityState<{
+  name: string;
+  description: string;
+  avatarId: FileId | null;
+  status: 'draft' | 'moderation-request' | 'rejected';
+}>;
+
+export const InfoDraftEntity = {
+  // Фабрика
+  create(name: string, description: string, avatarId: FileId | null): InfoDraftEntity {
+    return { name, description, avatarId, status: 'draft' };
+  },
+  // Мутация → новый state
+  update(state: InfoDraftEntity, name: string, desc: string, avatarId: FileId | null): InfoDraftEntity {
+    return { name, description: desc, avatarId, status: 'draft' };
+  },
+  // Мутация с валидацией → Either
+  submitForModeration(state: InfoDraftEntity): Either<InfoNotInDraftError, InfoDraftEntity> {
+    if (state.status !== 'draft' && state.status !== 'rejected') return Left(new InfoNotInDraftError());
+    return Right({ ...state, status: 'moderation-request' });
+  },
+  // Геттер
+  canSubmit(state: InfoDraftEntity): boolean {
+    return state.status === 'draft' || state.status === 'rejected';
+  },
+};
+```
+
+Агрегат делегирует сущности и создаёт событие:
+
+```ts
+// entity.ts
+export const OrganizationEntity = {
+  submitInfoForModeration(state, cmd) {
+    const result = InfoDraftEntity.submitForModeration(state.infoDraft);
+    if (isLeft(result)) return result;
+    const event: InfoSubmittedForModerationEvent = { type: '...', ... };
+    return Right({ state: { ...state, infoDraft: result.value, updatedAt: cmd.now }, event });
+  },
+};
+```
+
+- Эталон: `src/features/organization/domain/aggregates/organization/entities/`
 
 ---
 
@@ -310,33 +363,30 @@ domain/
 
 ## Тестирование домена
 
-- **Decide** — чистые функции → без моков. Тестируй `(state, command) => Either`. Группируй по команде.
-- **Apply** — тестируй каждый event, начальное создание (null), throw при невалидном state.
-- Примеры: `src/features/idp/domain/aggregates/user/decide.test.ts`, `src/features/idp/domain/aggregates/login-process/apply.test.ts`
+- Entity-методы — чистые функции → без моков. Тестируй `(state, command) => Either<Error, { state, event }>`. Группируй по методу.
+- Примеры: `src/features/cms/domain/aggregates/category/entity.ts`
 
 ---
 
 ## Чек-лист нового агрегата
 
 1. [ ] `AggregateId` в `@/kernel/domain/ids.ts`
-2. [ ] `state.ts` — состояние
-3. [ ] `events.ts` — события
-4. [ ] `commands.ts` — команды
-5. [ ] `errors.ts` — ошибки
-6. [ ] `config.ts` — константы (если нужны)
-7. [ ] `apply.ts` + тесты
-8. [ ] `decide.ts` (или `decide/`) + тесты
+2. [ ] `entity.ts` — тип состояния + объект с методами
+3. [ ] `entities/` — сущности-подобъекты (если агрегат большой)
+4. [ ] `events.ts` — события
+5. [ ] `commands.ts` — команды
+6. [ ] `errors.ts` — ошибки
+7. [ ] `config.ts` — константы (если нужны)
 
 ---
 
 ## Антипаттерны
 
-- **НЕ** делай decide нечистой (без I/O, рандома, Date.now())
+- **НЕ** делай методы entity нечистыми (без I/O, рандома, Date.now())
 - **НЕ** бросай исключения для бизнес-ошибок — `Left(error)`
-- **НЕ** добавляй методы к state — это чистые данные
-- **НЕ** смешивай decide и apply
-- **НЕ** используй ООП Entity-класс для агрегатов
-- **НЕ** хардкодь `new Date()` / `crypto.randomUUID()` в decide
+- **НЕ** разделяй decide и apply в разные файлы — используй единый entity
+- **НЕ** используй ООП Entity-класс (наследование) для агрегатов
+- **НЕ** хардкодь `new Date()` / `crypto.randomUUID()` в entity-методах
 - **НЕ** определяй ID агрегатов в feature-файлах — только `@/kernel/domain/ids.ts`
 
 ---

@@ -34,7 +34,7 @@ export class GorseClient implements OnModuleInit {
 
   public async onModuleInit() {
     try {
-      const resp = await this.request<{ Ready: boolean }>('GET', '/api/health');
+      const resp = await this.request<{ Ready: boolean }>('GET', '/api/health/live');
       this.logger.log(`Gorse health: ${JSON.stringify(resp)}`);
     } catch (e) {
       this.logger.warn(`Gorse health check failed: ${String(e)}`);
@@ -66,8 +66,8 @@ export class GorseClient implements OnModuleInit {
     return undefined as T;
   }
 
-  public async upsertItem(itemId: string, payload: GorseItemPayload): Promise<void> {
-    await this.request('PUT', `/api/item/${encodeURIComponent(itemId)}`, payload);
+  public async upsertItem(_itemId: string, payload: GorseItemPayload): Promise<void> {
+    await this.insertItems([payload]);
   }
 
   public async deleteItem(itemId: string): Promise<void> {
@@ -96,6 +96,6 @@ export class GorseClient implements OnModuleInit {
 
   public async getPopular(params: URLSearchParams): Promise<{ Id: string; Score: number }[]> {
     const qs = params.toString();
-    return this.request('GET', `/api/popular?${qs}`);
+    return this.request('GET', `/api/non-personalized/popular?${qs}`);
   }
 }

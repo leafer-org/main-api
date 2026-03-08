@@ -1,12 +1,24 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 
 import { CreateItemTypeInteractor } from '../../application/use-cases/item-type/create-item-type.interactor.js';
 import { GetItemTypeListInteractor } from '../../application/use-cases/item-type/get-item-type-list.interactor.js';
 import { UpdateItemTypeInteractor } from '../../application/use-cases/item-type/update-item-type.interactor.js';
+import type { ItemTypeEntity } from '../../domain/aggregates/item-type/entity.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
+import type { PublicBody, PublicResponse, PublicSchemas } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { TypeId } from '@/kernel/domain/ids.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+
+function toItemTypeDetailDto(state: Readonly<ItemTypeEntity>): PublicSchemas['ItemTypeDetail'] {
+  return {
+    id: state.id,
+    name: state.name,
+    availableWidgetTypes: state.availableWidgetTypes,
+    requiredWidgetTypes: state.requiredWidgetTypes,
+    createdAt: state.createdAt.toISOString(),
+    updatedAt: state.updatedAt.toISOString(),
+  };
+}
 
 @Controller('cms/item-types')
 export class ItemTypesController {
@@ -17,22 +29,16 @@ export class ItemTypesController {
   ) {}
 
   @Get()
-  public async list() {
+  public async list(): Promise<PublicResponse['getCmsItemTypes']> {
     const result = await this.getItemTypeList.execute();
-    if (isLeft(result)) throw domainToHttpError(result.error.toResponse());
+    if (isLeft(result)) throw domainToHttpError<'getCmsItemTypes'>(result.error.toResponse());
     return result.value;
   }
 
   @Post()
   public async create(
-    @Body()
-    body: {
-      id: string;
-      name: string;
-      availableWidgetTypes: WidgetType[];
-      requiredWidgetTypes: WidgetType[];
-    },
-  ) {
+    @Body() body: PublicBody['createCmsItemType'],
+  ): Promise<PublicResponse['createCmsItemType']> {
     const result = await this.createItemType.execute({
       id: TypeId.raw(body.id),
       name: body.name,
@@ -40,20 +46,15 @@ export class ItemTypesController {
       requiredWidgetTypes: body.requiredWidgetTypes,
     });
 
-    if (isLeft(result)) throw domainToHttpError(result.error.toResponse());
-    return result.value;
+    if (isLeft(result)) throw domainToHttpError<'createCmsItemType'>(result.error.toResponse());
+    return toItemTypeDetailDto(result.value);
   }
 
   @Patch(':id')
   public async update(
     @Param('id') id: string,
-    @Body()
-    body: {
-      name: string;
-      availableWidgetTypes: WidgetType[];
-      requiredWidgetTypes: WidgetType[];
-    },
-  ) {
+    @Body() body: PublicBody['updateCmsItemType'],
+  ): Promise<PublicResponse['updateCmsItemType']> {
     const result = await this.updateItemType.execute({
       id: TypeId.raw(id),
       name: body.name,
@@ -61,7 +62,7 @@ export class ItemTypesController {
       requiredWidgetTypes: body.requiredWidgetTypes,
     });
 
-    if (isLeft(result)) throw domainToHttpError(result.error.toResponse());
-    return result.value;
+    if (isLeft(result)) throw domainToHttpError<'updateCmsItemType'>(result.error.toResponse());
+    return toItemTypeDetailDto(result.value);
   }
 }

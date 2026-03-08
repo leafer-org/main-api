@@ -18,6 +18,10 @@ import {
   discoveryItemTypes,
   discoveryOwners,
 } from '@/features/discovery/adapters/db/schema.js';
+import { GorseSyncStub } from '@/features/discovery/adapters/gorse/gorse-sync.stub.js';
+import { RecommendationStub } from '@/features/discovery/adapters/gorse/recommendation.stub.js';
+import { RecommendationService } from '@/features/discovery/application/ports.js';
+import { GorseSyncPort, MeilisearchSyncPort } from '@/features/discovery/application/sync-ports.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 import { categoryStreamingContract } from '@/infra/kafka-contracts/category.contract.js';
@@ -71,6 +75,16 @@ describe('Discovery Projection Handlers (e2e)', () => {
     })
       .overrideProvider(OtpGeneratorService)
       .useValue({ generate: () => OtpCode.raw(FIXED_OTP) })
+      .overrideProvider(GorseSyncPort)
+      .useClass(GorseSyncStub)
+      .overrideProvider(RecommendationService)
+      .useClass(RecommendationStub)
+      .overrideProvider(MeilisearchSyncPort)
+      .useValue({
+        upsertItem: async () => {},
+        deleteItem: async () => {},
+        upsertItems: async () => {},
+      })
       .compile();
 
     app = moduleRef.createNestApplication();

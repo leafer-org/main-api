@@ -18,8 +18,8 @@ export class DrizzleItemTypeQuery implements ItemTypeQueryPort {
     return rows.map((row) => ({
       id: TypeId.raw(row.id),
       name: row.name,
-      availableWidgetTypes: row.availableWidgetTypes as string[],
-      requiredWidgetTypes: row.requiredWidgetTypes as string[],
+      availableWidgetTypes: row.availableWidgetTypes as ItemTypeListItem['availableWidgetTypes'],
+      requiredWidgetTypes: row.requiredWidgetTypes as ItemTypeListItem['requiredWidgetTypes'],
     }));
   }
 }

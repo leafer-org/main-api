@@ -80,17 +80,17 @@ export async function startContainers(options?: ContainerOptions) {
   process.env.REDIS_URL = `redis://${redisHost}:${redisPort}`;
 
   if (options?.gorse && !gorseContainer) {
-    gorseContainer = await new GenericContainer('zhenghaoz/gorse-in-one:0.4.17')
+    gorseContainer = await new GenericContainer('zhenghaoz/gorse-in-one:0.5.5')
       .withExposedPorts(8088)
       .withCopyFilesToContainer([{ source: GORSE_CONFIG_PATH, target: '/etc/gorse/config.toml' }])
       .withEnvironment({
-        GORSE_CACHE_STORE: 'sqlite:///var/lib/gorse/cache.db',
-        GORSE_DATA_STORE: 'sqlite:///var/lib/gorse/data.db',
+        GORSE_CACHE_STORE: 'sqlite:///tmp/gorse-cache.db',
+        GORSE_DATA_STORE: 'sqlite:///tmp/gorse-data.db',
         GORSE_SERVER_API_KEY: 'e2e-test-gorse-key',
       })
       .withCommand(['--config', '/etc/gorse/config.toml'])
-      .withWaitStrategy(Wait.forHttp('/api/health', 8088).forStatusCode(200))
-      .withStartupTimeout(60_000)
+      .withWaitStrategy(Wait.forHttp('/api/health/live', 8088).forStatusCode(200))
+      .withStartupTimeout(120_000)
       .start();
 
     const gorseHost = gorseContainer.getHost();

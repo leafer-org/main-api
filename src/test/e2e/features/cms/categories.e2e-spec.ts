@@ -1,23 +1,22 @@
 import { randomUUID } from 'node:crypto';
-import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { loginAsAdmin, registerUser } from '../../actors/auth.js';
 import { startContainers, stopContainers } from '../../helpers/containers.js';
+import { type E2eApp } from '../../helpers/create-app.js';
 import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
 import { flushOutbox } from '../../helpers/outbox.js';
-import express from 'express';
 import { AppModule } from '@/apps/app.module.js';
+import { configureApp } from '@/apps/configure-app.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
 describe('CMS Categories (e2e)', () => {
-  let app: INestApplication;
-  let agent: ReturnType<typeof request>;
+  let e2e: E2eApp;
   let adminToken: string;
 
   beforeAll(async () => {
@@ -32,11 +31,14 @@ describe('CMS Categories (e2e)', () => {
       .useValue({ generate: () => OtpCode.raw(FIXED_OTP) })
       .compile();
 
-    app = moduleRef.createNestApplication();
-    app.use(express.json());
+    const app = moduleRef.createNestApplication();
+    configureApp(app);
     await app.init();
 
-    agent = request(app.getHttpServer());
+    e2e = {
+      app,
+      agent: request(app.getHttpServer()),
+    };
   });
 
   beforeEach(async () => {
@@ -44,7 +46,7 @@ describe('CMS Categories (e2e)', () => {
     await seedStaticRoles(process.env.DB_URL);
     await seedAdminUser(process.env.DB_URL);
 
-    const auth = await loginAsAdmin(agent, FIXED_OTP);
+    const auth = await loginAsAdmin(e2e.agent, FIXED_OTP);
     adminToken = auth.accessToken;
   });
 
@@ -54,20 +56,22 @@ describe('CMS Categories (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app?.close();
+    await e2e?.app.close();
     await stopContainers();
   });
 
   // --- Helpers ---
 
-  function createCategory(overrides: Partial<{
-    id: string;
-    parentCategoryId: string | null;
-    name: string;
-    iconId: string | null;
-    allowedTypeIds: string[];
-  }> = {}) {
-    return agent
+  function createCategory(
+    overrides: Partial<{
+      id: string;
+      parentCategoryId: string | null;
+      name: string;
+      iconId: string | null;
+      allowedTypeIds: string[];
+    }> = {},
+  ) {
+    return e2e.agent
       .post('/cms/categories')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
@@ -101,20 +105,19 @@ describe('CMS Categories (e2e)', () => {
       await createCategory({ name: 'Cat A' }).expect(201);
       await createCategory({ name: 'Cat B' }).expect(201);
 
-      const res = await agent
+      const res = await e2e.agent
         .get('/cms/categories')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(res.body).toHaveLength(2);
-      expect(res.body[0]).toHaveProperty('childCount', 0);
     });
 
     it('should get category detail', async () => {
       const id = randomUUID();
       await createCategory({ id, name: 'Detail Cat' }).expect(201);
 
-      const res = await agent
+      const res = await e2e.agent
         .get(`/cms/categories/${id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
@@ -127,7 +130,7 @@ describe('CMS Categories (e2e)', () => {
     });
 
     it('should return 404 for non-existent category', async () => {
-      await agent
+      await e2e.agent
         .get(`/cms/categories/${randomUUID()}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
@@ -137,7 +140,7 @@ describe('CMS Categories (e2e)', () => {
       const id = randomUUID();
       await createCategory({ id, name: 'Original' }).expect(201);
 
-      const res = await agent
+      const res = await e2e.agent
         .patch(`/cms/categories/${id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
@@ -168,13 +171,15 @@ describe('CMS Categories (e2e)', () => {
         allowedTypeIds: typeIds,
       }).expect(201);
 
-      const listRes = await agent
+      await flushOutbox(e2e.app);
+
+      const listRes = await e2e.agent
         .get('/cms/categories')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       const parent = listRes.body.find((c: any) => c.id === parentId);
-      expect(parent.childCount).toBe(1);
+      expect(parent).toBeDefined();
     });
 
     it('should reject child with allowedTypeIds not subset of parent', async () => {
@@ -200,12 +205,12 @@ describe('CMS Categories (e2e)', () => {
       const id = randomUUID();
       await createCategory({ id }).expect(201);
 
-      await agent
+      await e2e.agent
         .post(`/cms/categories/${id}/publish`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const detail = await agent
+      const detail = await e2e.agent
         .get(`/cms/categories/${id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
@@ -217,17 +222,17 @@ describe('CMS Categories (e2e)', () => {
       const id = randomUUID();
       await createCategory({ id }).expect(201);
 
-      await agent
+      await e2e.agent
         .post(`/cms/categories/${id}/publish`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      await agent
+      await e2e.agent
         .post(`/cms/categories/${id}/unpublish`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const detail = await agent
+      const detail = await e2e.agent
         .get(`/cms/categories/${id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
@@ -239,7 +244,7 @@ describe('CMS Categories (e2e)', () => {
       const id = randomUUID();
       await createCategory({ id }).expect(201);
 
-      await agent
+      await e2e.agent
         .post(`/cms/categories/${id}/unpublish`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(400);
@@ -249,12 +254,12 @@ describe('CMS Categories (e2e)', () => {
       const id = randomUUID();
       await createCategory({ id }).expect(201);
 
-      await agent
+      await e2e.agent
         .post(`/cms/categories/${id}/publish`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      await flushOutbox(app);
+      await flushOutbox(e2e.app);
     });
   });
 
@@ -266,18 +271,18 @@ describe('CMS Categories (e2e)', () => {
       const attributeId = randomUUID();
       await createCategory({ id: categoryId }).expect(201);
 
-      await agent
+      await e2e.agent
         .post(`/cms/categories/${categoryId}/attributes`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           attributeId,
           name: 'Color',
           required: true,
-          schema: { type: 'string' },
+          schema: { type: 'text' },
         })
         .expect(200);
 
-      const detail = await agent
+      const detail = await e2e.agent
         .get(`/cms/categories/${categoryId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
@@ -295,18 +300,18 @@ describe('CMS Categories (e2e)', () => {
       const attributeId = randomUUID();
       await createCategory({ id: categoryId }).expect(201);
 
-      await agent
+      await e2e.agent
         .post(`/cms/categories/${categoryId}/attributes`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ attributeId, name: 'Color', required: true, schema: { type: 'string' } })
+        .send({ attributeId, name: 'Color', required: true, schema: { type: 'text' } })
         .expect(200);
 
-      await agent
+      await e2e.agent
         .delete(`/cms/categories/${categoryId}/attributes/${attributeId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const detail = await agent
+      const detail = await e2e.agent
         .get(`/cms/categories/${categoryId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
@@ -319,16 +324,16 @@ describe('CMS Categories (e2e)', () => {
       const attributeId = randomUUID();
       await createCategory({ id: categoryId }).expect(201);
 
-      await agent
+      await e2e.agent
         .post(`/cms/categories/${categoryId}/attributes`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ attributeId, name: 'Color', required: true, schema: { type: 'string' } })
+        .send({ attributeId, name: 'Color', required: true, schema: { type: 'text' } })
         .expect(200);
 
-      await agent
+      await e2e.agent
         .post(`/cms/categories/${categoryId}/attributes`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ attributeId, name: 'Color', required: true, schema: { type: 'string' } })
+        .send({ attributeId, name: 'Color', required: true, schema: { type: 'text' } })
         .expect(400);
     });
 
@@ -336,7 +341,7 @@ describe('CMS Categories (e2e)', () => {
       const categoryId = randomUUID();
       await createCategory({ id: categoryId }).expect(201);
 
-      await agent
+      await e2e.agent
         .delete(`/cms/categories/${categoryId}/attributes/${randomUUID()}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(400);
@@ -347,13 +352,13 @@ describe('CMS Categories (e2e)', () => {
 
   describe('Permissions', () => {
     it('should return 401 without auth', async () => {
-      await agent.get('/cms/categories').expect(401);
+      await e2e.agent.get('/cms/categories').expect(401);
     });
 
     it('should return 403 for user without manageCms', async () => {
-      const { accessToken } = await registerUser(agent, FIXED_OTP);
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
-      await agent
+      await e2e.agent
         .get('/cms/categories')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(403);

@@ -978,7 +978,6 @@ export interface components {
       name: string;
       /** @enum {string} */
       status: 'draft' | 'published' | 'unpublished';
-      childCount: number;
     };
     CategoryAttribute: {
       attributeId: string;
@@ -2679,6 +2678,15 @@ export interface operations {
           'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
+      /** @description Родительская категория не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
     };
   };
   getCmsCategoryDetail: {
@@ -2841,6 +2849,15 @@ export interface operations {
           'application/json': Record<string, never>;
         };
       };
+      /** @description Категория не опубликована */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
       /** @description Нет доступа */
       403: {
         headers: {
@@ -2940,6 +2957,15 @@ export interface operations {
         };
         content: {
           'application/json': Record<string, never>;
+        };
+      };
+      /** @description Атрибут не назначен категории */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Нет доступа */

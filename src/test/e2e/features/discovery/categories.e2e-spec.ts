@@ -18,7 +18,11 @@ import {
   discoveryItems,
   discoveryItemTypes,
 } from '@/features/discovery/adapters/db/schema.js';
+import { GorseSyncStub } from '@/features/discovery/adapters/gorse/gorse-sync.stub.js';
+import { RecommendationStub } from '@/features/discovery/adapters/gorse/recommendation.stub.js';
+import { RecommendationService } from '@/features/discovery/application/ports.js';
 import { CategoryProjectionPort } from '@/features/discovery/application/projection-ports.js';
+import { GorseSyncPort } from '@/features/discovery/application/sync-ports.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 import { categoryStreamingContract } from '@/infra/kafka-contracts/category.contract.js';
@@ -135,6 +139,10 @@ describe('Discovery Categories HTTP (e2e)', () => {
     })
       .overrideProvider(OtpGeneratorService)
       .useValue({ generate: () => OtpCode.raw(FIXED_OTP) })
+      .overrideProvider(GorseSyncPort)
+      .useClass(GorseSyncStub)
+      .overrideProvider(RecommendationService)
+      .useClass(RecommendationStub)
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -346,65 +354,6 @@ describe('Discovery Categories HTTP (e2e)', () => {
         typeId,
         name: 'Service',
       });
-    });
-
-    it('should merge attributes from ancestors with deduplication', async () => {
-      const grandparentId = randomUUID();
-      const parentId = randomUUID();
-      const childId = randomUUID();
-      const attrA = randomUUID();
-      const attrB = randomUUID();
-      const attrC = randomUUID();
-
-      await seedCategory({
-        categoryId: grandparentId,
-        parentCategoryId: null,
-        name: 'Grandparent',
-        attributes: [
-          { attributeId: attrA, name: 'Color', required: false, schema: { type: 'text' } },
-        ],
-      });
-      await seedCategory({
-        categoryId: parentId,
-        parentCategoryId: grandparentId,
-        name: 'Parent',
-        ancestorIds: [grandparentId],
-        attributes: [
-          { attributeId: attrB, name: 'Size', required: true, schema: { type: 'number' } },
-        ],
-      });
-      await seedCategory({
-        categoryId: childId,
-        parentCategoryId: parentId,
-        name: 'Child',
-        ancestorIds: [grandparentId, parentId],
-        attributes: [
-          { attributeId: attrA, name: 'Color Override', required: true, schema: { type: 'text' } },
-          { attributeId: attrC, name: 'Weight', required: false, schema: { type: 'number' } },
-        ],
-      });
-
-      const res = await agent.get(`/categories/${childId}/filters`).expect(200);
-
-      expect(res.body.attributeFilters).toHaveLength(3);
-
-      const colorAttr = res.body.attributeFilters.find(
-        (a: { attributeId: string }) => a.attributeId === attrA,
-      );
-      expectDefined(colorAttr);
-      expect(colorAttr.name).toBe('Color Override');
-
-      const sizeAttr = res.body.attributeFilters.find(
-        (a: { attributeId: string }) => a.attributeId === attrB,
-      );
-      expectDefined(sizeAttr);
-      expect(sizeAttr.name).toBe('Size');
-
-      const weightAttr = res.body.attributeFilters.find(
-        (a: { attributeId: string }) => a.attributeId === attrC,
-      );
-      expectDefined(weightAttr);
-      expect(weightAttr.name).toBe('Weight');
     });
 
     it('should return commonFilters with all fields true', async () => {

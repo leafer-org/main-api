@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { SearchPort } from '../../application/ports.js';
-import type { DynamicSearchFilters } from '../../application/use-cases/search-items/types.js';
+import type { DynamicSearchFilters } from '../../application/use-cases/search/types.js';
 import type { ItemListView } from '../../domain/read-models/item-list-view.read-model.js';
 import type { SearchFacets } from '../../domain/read-models/search-result.read-model.js';
 import { DISCOVERY_ITEMS_INDEX, DiscoveryItemsSearchClient } from './discovery-items.index.js';

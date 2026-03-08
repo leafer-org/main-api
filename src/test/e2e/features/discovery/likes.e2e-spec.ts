@@ -15,6 +15,10 @@ import { AppModule } from '@/apps/app.module.js';
 import { configureApp } from '@/apps/configure-app.js';
 import { DiscoveryDatabaseClient } from '@/features/discovery/adapters/db/client.js';
 import { discoveryItems, discoveryUserLikes } from '@/features/discovery/adapters/db/schema.js';
+import { GorseSyncStub } from '@/features/discovery/adapters/gorse/gorse-sync.stub.js';
+import { RecommendationStub } from '@/features/discovery/adapters/gorse/recommendation.stub.js';
+import { RecommendationService } from '@/features/discovery/application/ports.js';
+import { GorseSyncPort } from '@/features/discovery/application/sync-ports.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 import { itemStreamingContract } from '@/infra/kafka-contracts/item.contract.js';
@@ -79,6 +83,10 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
     })
       .overrideProvider(OtpGeneratorService)
       .useValue({ generate: () => OtpCode.raw(FIXED_OTP) })
+      .overrideProvider(GorseSyncPort)
+      .useClass(GorseSyncStub)
+      .overrideProvider(RecommendationService)
+      .useClass(RecommendationStub)
       .compile();
 
     app = moduleRef.createNestApplication();

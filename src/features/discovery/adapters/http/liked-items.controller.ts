@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 
-import { GetLikedItemsInteractor } from '../../application/use-cases/get-liked-items/get-liked-items.interactor.js';
+import { GetLikedItemsInteractor } from '../../application/use-cases/likes/get-liked-items.interactor.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';

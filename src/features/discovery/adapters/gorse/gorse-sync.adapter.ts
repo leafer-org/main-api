@@ -27,13 +27,6 @@ export class GorseSyncAdapter implements GorseSyncPort {
     this.logger.debug(`Deleted item ${String(itemId)}`);
   }
 
-  public async upsertItems(items: ItemReadModel[]): Promise<void> {
-    if (items.length === 0) return;
-    const payloads = await Promise.all(items.map((i) => this.toGorseItem(i)));
-    await this.client.insertItems(payloads);
-    this.logger.debug(`Upserted ${items.length} items`);
-  }
-
   public async sendFeedback(
     userId: UserId,
     itemId: ItemId,

@@ -3,8 +3,8 @@ import type { ItemReadModel } from '../domain/read-models/item.read-model.js';
 import type { ItemListView } from '../domain/read-models/item-list-view.read-model.js';
 import type { LikedItemView } from '../domain/read-models/liked-item-view.read-model.js';
 import type { SearchFacets } from '../domain/read-models/search-result.read-model.js';
-import type { CategoryItemFilters, SortOption } from './use-cases/get-category-items/types.js';
-import type { DynamicSearchFilters } from './use-cases/search-items/types.js';
+import type { CategoryItemFilters, SortOption } from './use-cases/browse-category/types.js';
+import type { DynamicSearchFilters } from './use-cases/search/types.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type { AttributeId, CategoryId, ItemId, TypeId, UserId } from '@/kernel/domain/ids.js';
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
@@ -14,7 +14,6 @@ import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
 /**
  * Запросы товаров. `findByIds` фильтрует просроченные (next_event_date > now() OR has_schedule).
- * `findPopular` — fallback при недоступности Gorse.
  */
 export abstract class ItemQueryPort {
   public abstract findByIds(ids: ItemId[]): Promise<ItemReadModel[]>;
@@ -30,12 +29,6 @@ export abstract class ItemQueryPort {
     cursor?: string;
     limit: number;
   }): Promise<{ items: ItemReadModel[]; nextCursor: string | null }>;
-
-  public abstract findPopular(params: {
-    cityId: string;
-    ageGroup: AgeGroup;
-    limit: number;
-  }): Promise<ItemReadModel[]>;
 }
 
 /** Лайкнутые товары пользователя. Сортировка по likedAt DESC, cursor по likedAt, ILIKE по title. */
@@ -66,9 +59,7 @@ export type CategoryWithAttributes = {
 };
 
 export abstract class CategoryFiltersQueryPort {
-  public abstract findById(
-    categoryId: CategoryId,
-  ): Promise<CategoryWithAttributes | null>;
+  public abstract findById(categoryId: CategoryId): Promise<CategoryWithAttributes | null>;
 
   public abstract findTypesByIds(typeIds: TypeId[]): Promise<{ typeId: TypeId; name: string }[]>;
 }

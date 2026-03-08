@@ -1,7 +1,3 @@
-import type { EntityState } from '@/infra/ddd/entity-state.js';
-import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
-import type { CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
-import type { CategoryAttribute } from '@/kernel/domain/vo/category-attribute.js';
 import type {
   AddAttributeCommand,
   CreateCategoryCommand,
@@ -24,6 +20,10 @@ import type {
   CategoryUnpublishedEvent,
   CategoryUpdatedEvent,
 } from './events.js';
+import type { EntityState } from '@/infra/ddd/entity-state.js';
+import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
+import type { CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import { CategoryAttribute } from '@/kernel/domain/vo/category-attribute.js';
 
 export type CategoryStatus = 'draft' | 'published' | 'unpublished';
 
@@ -127,17 +127,35 @@ export const CategoryEntity = {
     state: CategoryEntity,
     cmd: PublishCategoryCommand,
   ): Either<never, { state: CategoryEntity; event: CategoryPublishedEvent }> {
+    const mergedAttributes = CategoryAttribute.mergeWithAncestors(
+      { attributes: state.attributes },
+      cmd.ancestors,
+    );
+
     const event: CategoryPublishedEvent = {
+      id: cmd.eventId,
       type: 'category.published',
-      previousStatus: state.status,
+      categoryId: state.id,
+      parentCategoryId: state.parentCategoryId,
+      name: state.name,
+      iconId: state.iconId,
+      allowedTypeIds: state.allowedTypeIds,
+      ancestorIds: cmd.ancestorIds,
+      attributes: mergedAttributes.map((a) => ({
+        attributeId: a.attributeId,
+        name: a.name,
+        required: true,
+        schema: a.schema,
+      })),
+      republished: state.status !== 'draft',
       publishedAt: cmd.now,
     };
 
     const newState: CategoryEntity = {
       ...state,
       status: 'published',
-      publishedAt: event.publishedAt,
-      updatedAt: event.publishedAt,
+      publishedAt: cmd.now,
+      updatedAt: cmd.now,
     };
 
     return Right({ state: newState, event });
@@ -150,14 +168,16 @@ export const CategoryEntity = {
     if (state.status !== 'published') return Left(new CategoryNotPublishedError());
 
     const event: CategoryUnpublishedEvent = {
+      id: cmd.eventId,
       type: 'category.unpublished',
+      categoryId: state.id,
       unpublishedAt: cmd.now,
     };
 
     const newState: CategoryEntity = {
       ...state,
       status: 'unpublished',
-      updatedAt: event.unpublishedAt,
+      updatedAt: cmd.now,
     };
 
     return Right({ state: newState, event });
@@ -166,7 +186,10 @@ export const CategoryEntity = {
   addAttribute(
     state: CategoryEntity,
     cmd: AddAttributeCommand,
-  ): Either<AttributeAlreadyAssignedError, { state: CategoryEntity; event: CategoryAttributeAddedEvent }> {
+  ): Either<
+    AttributeAlreadyAssignedError,
+    { state: CategoryEntity; event: CategoryAttributeAddedEvent }
+  > {
     const exists = state.attributes.some(
       (a) => (a.attributeId as string) === (cmd.attributeId as string),
     );
@@ -201,7 +224,10 @@ export const CategoryEntity = {
   removeAttribute(
     state: CategoryEntity,
     cmd: RemoveAttributeCommand,
-  ): Either<AttributeNotAssignedError, { state: CategoryEntity; event: CategoryAttributeRemovedEvent }> {
+  ): Either<
+    AttributeNotAssignedError,
+    { state: CategoryEntity; event: CategoryAttributeRemovedEvent }
+  > {
     const exists = state.attributes.some(
       (a) => (a.attributeId as string) === (cmd.attributeId as string),
     );

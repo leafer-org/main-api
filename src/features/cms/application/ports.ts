@@ -16,7 +16,7 @@ import type { CategoryId, TypeId } from '@/kernel/domain/ids.js';
 export abstract class CategoryRepository {
   public abstract findById(tx: Transaction, id: CategoryId): Promise<CategoryEntity | null>;
   public abstract findAncestors(tx: Transaction, id: CategoryId): Promise<CategoryEntity[]>;
-  public abstract findDescendants(tx: Transaction, id: CategoryId): Promise<CategoryEntity[]>;
+  public abstract findDirectChildren(tx: Transaction, id: CategoryId): Promise<CategoryEntity[]>;
   public abstract save(tx: Transaction, state: CategoryEntity): Promise<void>;
 }
 
@@ -58,7 +58,6 @@ export type CategoryListItem = {
   parentCategoryId: CategoryId | null;
   name: string;
   status: CategoryEntity['status'];
-  childCount: number;
 };
 
 export abstract class CategoryQueryPort {
@@ -69,8 +68,8 @@ export abstract class CategoryQueryPort {
 export type ItemTypeListItem = {
   id: TypeId;
   name: string;
-  availableWidgetTypes: string[];
-  requiredWidgetTypes: string[];
+  availableWidgetTypes: ItemTypeEntity['availableWidgetTypes'];
+  requiredWidgetTypes: ItemTypeEntity['requiredWidgetTypes'];
 };
 
 export abstract class ItemTypeQueryPort {

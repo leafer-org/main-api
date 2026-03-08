@@ -1,6 +1,14 @@
-import type { CategoryStatus } from './entity.js';
+import type {
+  CategoryPublishedEvent,
+  CategoryUnpublishedEvent,
+} from '@/kernel/domain/events/category.events.js';
 import type { AttributeId, CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
+
+export type {
+  CategoryPublishedEvent,
+  CategoryUnpublishedEvent,
+} from '@/kernel/domain/events/category.events.js';
 
 export type CategoryCreatedEvent = {
   type: 'category.created';
@@ -19,17 +27,6 @@ export type CategoryUpdatedEvent = {
   parentCategoryId: CategoryId | null;
   allowedTypeIds: TypeId[];
   updatedAt: Date;
-};
-
-export type CategoryPublishedEvent = {
-  type: 'category.published';
-  previousStatus: CategoryStatus;
-  publishedAt: Date;
-};
-
-export type CategoryUnpublishedEvent = {
-  type: 'category.unpublished';
-  unpublishedAt: Date;
 };
 
 export type CategoryAttributeAddedEvent = {

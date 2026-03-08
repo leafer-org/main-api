@@ -1,11 +1,11 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
-import { GetCategoryItemsInteractor } from '../../application/use-cases/get-category-items/get-category-items.interactor.js';
+import { GetCategoryItemsInteractor } from '../../application/use-cases/browse-category/get-category-items.interactor.js';
 import type {
   AttributeFilter,
   CategoryItemFilters,
   SortOption,
-} from '../../application/use-cases/get-category-items/types.js';
+} from '../../application/use-cases/browse-category/types.js';
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';
 import { AttributeId, CategoryId, TypeId } from '@/kernel/domain/ids.js';
@@ -53,10 +53,13 @@ function parseFilters(raw: RawFilterParams): CategoryItemFilters {
 
   if (raw.attributeFilters) {
     const parsed = JSON.parse(raw.attributeFilters) as RawAttributeFilter[];
-    filters.attributeFilters = parsed.map((a): AttributeFilter => ({
-      ...a,
-      attributeId: AttributeId.raw(a.attributeId),
-    } as AttributeFilter));
+    filters.attributeFilters = parsed.map(
+      (a): AttributeFilter =>
+        ({
+          ...a,
+          attributeId: AttributeId.raw(a.attributeId),
+        }) as AttributeFilter,
+    );
   }
 
   if (raw.lat !== undefined && raw.lng !== undefined && raw.radiusKm !== undefined) {

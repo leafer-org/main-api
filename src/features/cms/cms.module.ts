@@ -8,6 +8,7 @@ import { DrizzleItemTypeRepository } from './adapters/db/repositories/item-type.
 import { OutboxItemTypeEventPublisher } from './adapters/db/repositories/item-type-event-publisher.js';
 import { CategoriesController } from './adapters/http/categories.controller.js';
 import { ItemTypesController } from './adapters/http/item-types.controller.js';
+import { CategoryCascadeKafkaHandler } from './adapters/kafka/category-cascade.handler.js';
 import {
   CategoryEventPublisher,
   CategoryQueryPort,
@@ -22,7 +23,9 @@ import { GetCategoryDetailInteractor } from './application/use-cases/category/ge
 import { GetCategoryListInteractor } from './application/use-cases/category/get-category-list.interactor.js';
 import { PublishCategoryInteractor } from './application/use-cases/category/publish-category.interactor.js';
 import { RemoveAttributeInteractor } from './application/use-cases/category/remove-attribute.interactor.js';
+import { RepublishChildrenHandler } from './application/use-cases/category/republish-children.handler.js';
 import { UnpublishCategoryInteractor } from './application/use-cases/category/unpublish-category.interactor.js';
+import { UnpublishChildrenHandler } from './application/use-cases/category/unpublish-children.handler.js';
 import { UpdateCategoryInteractor } from './application/use-cases/category/update-category.interactor.js';
 import { CreateItemTypeInteractor } from './application/use-cases/item-type/create-item-type.interactor.js';
 import { GetItemTypeListInteractor } from './application/use-cases/item-type/get-item-type-list.interactor.js';
@@ -57,6 +60,13 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     CreateItemTypeInteractor,
     UpdateItemTypeInteractor,
     GetItemTypeListInteractor,
+
+    // Cascade handlers
+    RepublishChildrenHandler,
+    UnpublishChildrenHandler,
+
+    // Kafka handlers
+    CategoryCascadeKafkaHandler,
   ],
 })
 export class CmsModule {}

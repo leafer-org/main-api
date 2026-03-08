@@ -1,10 +1,10 @@
+import type { CreateItemTypeCommand, UpdateItemTypeCommand } from './commands.js';
+import { InvalidRequiredWidgetTypesError, ItemTypeAlreadyExistsError } from './errors.js';
+import type { ItemTypeCreatedEvent, ItemTypeUpdatedEvent } from './events.js';
 import type { EntityState } from '@/infra/ddd/entity-state.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 import type { TypeId } from '@/kernel/domain/ids.js';
 import type { WidgetType } from '@/kernel/domain/vo/widget.js';
-import type { CreateItemTypeCommand, UpdateItemTypeCommand } from './commands.js';
-import { InvalidRequiredWidgetTypesError, ItemTypeAlreadyExistsError } from './errors.js';
-import type { ItemTypeCreatedEvent, ItemTypeUpdatedEvent } from './events.js';
 
 export type ItemTypeEntity = EntityState<{
   id: TypeId;
@@ -35,7 +35,10 @@ export const ItemTypeEntity = {
   create(
     cmd: CreateItemTypeCommand,
   ): Either<ItemTypeDecideError, { state: ItemTypeEntity; event: ItemTypeCreatedEvent }> {
-    const validation = validateRequiredWidgetTypes(cmd.availableWidgetTypes, cmd.requiredWidgetTypes);
+    const validation = validateRequiredWidgetTypes(
+      cmd.availableWidgetTypes,
+      cmd.requiredWidgetTypes,
+    );
     if (validation.type === 'left') return validation;
 
     const event: ItemTypeCreatedEvent = {
@@ -63,7 +66,10 @@ export const ItemTypeEntity = {
     state: ItemTypeEntity,
     cmd: UpdateItemTypeCommand,
   ): Either<ItemTypeDecideError, { state: ItemTypeEntity; event: ItemTypeUpdatedEvent }> {
-    const validation = validateRequiredWidgetTypes(cmd.availableWidgetTypes, cmd.requiredWidgetTypes);
+    const validation = validateRequiredWidgetTypes(
+      cmd.availableWidgetTypes,
+      cmd.requiredWidgetTypes,
+    );
     if (validation.type === 'left') return validation;
 
     const event: ItemTypeUpdatedEvent = {

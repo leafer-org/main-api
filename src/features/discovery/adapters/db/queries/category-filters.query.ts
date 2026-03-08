@@ -14,9 +14,7 @@ import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 export class DrizzleCategoryFiltersQuery implements CategoryFiltersQueryPort {
   public constructor(private readonly dbClient: DiscoveryDatabaseClient) {}
 
-  public async findById(
-    categoryId: CategoryId,
-  ): Promise<CategoryWithAttributes | null> {
+  public async findById(categoryId: CategoryId): Promise<CategoryWithAttributes | null> {
     const categoryRows = await this.dbClient.db
       .select()
       .from(discoveryCategories)

@@ -1,6 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 
-import { SearchItemsInteractor } from '../../application/use-cases/search-items/search-items.interactor.js';
+import { SearchItemsInteractor } from '../../application/use-cases/search/search-items.interactor.js';
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';
 import { CategoryId, TypeId } from '@/kernel/domain/ids.js';

@@ -81,9 +81,7 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
       }
     }
 
-    const items = resultRows.map((row) =>
-      this.toView(row, catsByItem.get(row.itemId) ?? []),
-    );
+    const items = resultRows.map((row) => this.toView(row, catsByItem.get(row.itemId) ?? []));
     const lastRow = resultRows.at(-1);
     const nextCursor =
       hasMore && lastRow

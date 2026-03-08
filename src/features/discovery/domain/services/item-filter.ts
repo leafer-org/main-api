@@ -1,4 +1,4 @@
-import type { CategoryItemFilters } from '../../application/use-cases/get-category-items/types.js';
+import type { CategoryItemFilters } from '../../application/use-cases/browse-category/types.js';
 import type { ItemReadModel } from '../read-models/item.read-model.js';
 
 const EARTH_RADIUS_KM = 6371;
@@ -71,9 +71,7 @@ export function filterItems(items: ItemReadModel[], filters: CategoryItemFilters
           case 'boolean':
             return itemValues.some((a) => a.value === String(af.value));
           case 'text':
-            return itemValues.some((a) =>
-              a.value.toLowerCase().includes(af.value.toLowerCase()),
-            );
+            return itemValues.some((a) => a.value.toLowerCase().includes(af.value.toLowerCase()));
           default:
             return true;
         }

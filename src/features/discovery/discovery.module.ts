@@ -56,20 +56,20 @@ import {
   OwnerProjectionPort,
 } from './application/projection-ports.js';
 import { GorseSyncPort, MeilisearchSyncPort } from './application/sync-ports.js';
-import { GetCategoryFiltersInteractor } from './application/use-cases/get-category-filters/get-category-filters.interactor.js';
-import { GetCategoryItemsInteractor } from './application/use-cases/get-category-items/get-category-items.interactor.js';
-import { GetCategoryListInteractor } from './application/use-cases/get-category-list/get-category-list.interactor.js';
-import { GetFeedInteractor } from './application/use-cases/get-feed/get-feed.interactor.js';
-import { GetLikedItemsInteractor } from './application/use-cases/get-liked-items/get-liked-items.interactor.js';
-import { LikeItemInteractor } from './application/use-cases/like-item/like-item.interactor.js';
+import { GetCategoryFiltersInteractor } from './application/use-cases/browse-category/get-category-filters.interactor.js';
+import { GetCategoryItemsInteractor } from './application/use-cases/browse-category/get-category-items.interactor.js';
+import { GetCategoryListInteractor } from './application/use-cases/browse-category/get-category-list.interactor.js';
+import { GetFeedInteractor } from './application/use-cases/browse-feed/get-feed.interactor.js';
+import { GetLikedItemsInteractor } from './application/use-cases/likes/get-liked-items.interactor.js';
+import { LikeItemInteractor } from './application/use-cases/likes/like-item.interactor.js';
+import { UnlikeItemInteractor } from './application/use-cases/likes/unlike-item.interactor.js';
 import { ProjectCategoryHandler } from './application/use-cases/project-category/project-category.handler.js';
 import { ProjectInteractionHandler } from './application/use-cases/project-interaction/project-interaction.handler.js';
 import { ProjectItemHandler } from './application/use-cases/project-item/project-item.handler.js';
 import { ProjectItemTypeHandler } from './application/use-cases/project-item-type/project-item-type.handler.js';
 import { ProjectOwnerHandler } from './application/use-cases/project-owner/project-owner.handler.js';
 import { ProjectReviewHandler } from './application/use-cases/project-review/project-review.handler.js';
-import { SearchItemsInteractor } from './application/use-cases/search-items/search-items.interactor.js';
-import { UnlikeItemInteractor } from './application/use-cases/unlike-item/unlike-item.interactor.js';
+import { SearchItemsInteractor } from './application/use-cases/search/search-items.interactor.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 
 @Module({

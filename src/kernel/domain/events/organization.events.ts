@@ -17,6 +17,17 @@ export type OrganizationUnpublishedEvent = {
   unpublishedAt: Date;
 };
 
+export type OrganizationModerationRequestedEvent = {
+  id: string;
+  type: 'organization.moderation-requested';
+  organizationId: OrganizationId;
+  name: string;
+  description: string;
+  avatarId: FileId | null;
+  submittedAt: Date;
+};
+
 export type OrganizationIntegrationEvent =
   | OrganizationPublishedEvent
-  | OrganizationUnpublishedEvent;
+  | OrganizationUnpublishedEvent
+  | OrganizationModerationRequestedEvent;

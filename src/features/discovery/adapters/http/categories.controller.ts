@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
-import { GetCategoryFiltersInteractor } from '../../application/use-cases/get-category-filters/get-category-filters.interactor.js';
-import { GetCategoryListInteractor } from '../../application/use-cases/get-category-list/get-category-list.interactor.js';
+import { GetCategoryFiltersInteractor } from '../../application/use-cases/browse-category/get-category-filters.interactor.js';
+import { GetCategoryListInteractor } from '../../application/use-cases/browse-category/get-category-list.interactor.js';
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';

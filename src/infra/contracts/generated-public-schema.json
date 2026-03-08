@@ -14,9 +14,7 @@
     "/auth/request-otp": {
       "post": {
         "operationId": "requestOtp",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Запрос одноразового кода подтверждения",
         "description": "Создаёт и отправляет OTP пользователю.",
         "requestBody": {
@@ -25,9 +23,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phoneNumber"
-                ],
+                "required": ["phoneNumber"],
                 "additionalProperties": false,
                 "properties": {
                   "phoneNumber": {
@@ -37,10 +33,7 @@
                   },
                   "channel": {
                     "type": "string",
-                    "enum": [
-                      "sms",
-                      "whatsapp"
-                    ],
+                    "enum": ["sms", "whatsapp"],
                     "description": "Канал доставки OTP"
                   },
                   "locale": {
@@ -96,25 +89,18 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "type",
-                    "isDomain"
-                  ],
+                  "required": ["type", "isDomain"],
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": [
-                        "login_blocked"
-                      ]
+                      "enum": ["login_blocked"]
                     },
                     "message": {
                       "type": "string"
                     },
                     "isDomain": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     },
                     "retryAfterSec": {
                       "type": "number",
@@ -152,9 +138,7 @@
     "/auth/verify-otp": {
       "post": {
         "operationId": "verifyOtp",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Подтверждение одноразового кода",
         "description": "Проверяет OTP и возвращает пару токенов.",
         "requestBody": {
@@ -163,10 +147,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phoneNumber",
-                  "code"
-                ],
+                "required": ["phoneNumber", "code"],
                 "additionalProperties": false,
                 "properties": {
                   "phoneNumber": {
@@ -196,18 +177,12 @@
                   "oneOf": [
                     {
                       "type": "object",
-                      "required": [
-                        "type",
-                        "accessToken",
-                        "refreshToken"
-                      ],
+                      "required": ["type", "accessToken", "refreshToken"],
                       "additionalProperties": false,
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "authenticated"
-                          ]
+                          "enum": ["authenticated"]
                         },
                         "accessToken": {
                           "type": "string",
@@ -223,17 +198,12 @@
                     },
                     {
                       "type": "object",
-                      "required": [
-                        "type",
-                        "registrationSessionId"
-                      ],
+                      "required": ["type", "registrationSessionId"],
                       "additionalProperties": false,
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "new_registration"
-                          ]
+                          "enum": ["new_registration"]
                         },
                         "registrationSessionId": {
                           "type": "string",
@@ -269,25 +239,18 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "type",
-                    "isDomain"
-                  ],
+                  "required": ["type", "isDomain"],
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": [
-                        "login_blocked"
-                      ]
+                      "enum": ["login_blocked"]
                     },
                     "message": {
                       "type": "string"
                     },
                     "isDomain": {
                       "type": "boolean",
-                      "enum": [
-                        true
-                      ]
+                      "enum": [true]
                     },
                     "retryAfterSec": {
                       "type": "number",
@@ -324,9 +287,7 @@
     "/auth/refresh": {
       "get": {
         "operationId": "refresh",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Обновление токенов авторизации",
         "description": "Обновляет токены по refresh-cookie или заголовку.",
         "parameters": [
@@ -393,10 +354,7 @@
     "/auth/complete-profile": {
       "post": {
         "operationId": "completeProfile",
-        "tags": [
-          "auth",
-          "profile"
-        ],
+        "tags": ["auth", "profile"],
         "summary": "Дополнение профиля пользователя",
         "description": "Обновляет профиль после первичного входа.",
         "requestBody": {
@@ -405,9 +363,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "registrationSessionId"
-                ],
+                "required": ["registrationSessionId"],
                 "additionalProperties": false,
                 "properties": {
                   "registrationSessionId": {
@@ -435,11 +391,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "user",
-                    "accessToken",
-                    "refreshToken"
-                  ],
+                  "required": ["user", "accessToken", "refreshToken"],
                   "additionalProperties": false,
                   "properties": {
                     "user": {
@@ -503,9 +455,7 @@
     "/auth/logout": {
       "post": {
         "operationId": "logout",
-        "tags": [
-          "auth"
-        ],
+        "tags": ["auth"],
         "summary": "Выход из аккаунта",
         "description": "Удаляет текущую сессию пользователя.",
         "security": [
@@ -543,10 +493,7 @@
     "/me": {
       "get": {
         "operationId": "getMe",
-        "tags": [
-          "auth",
-          "profile"
-        ],
+        "tags": ["auth", "profile"],
         "summary": "Получение текущего пользователя",
         "description": "Возвращает профиль текущего пользователя.",
         "security": [
@@ -591,10 +538,7 @@
     "/me/profile": {
       "patch": {
         "operationId": "updateProfile",
-        "tags": [
-          "auth",
-          "profile"
-        ],
+        "tags": ["auth", "profile"],
         "summary": "Обновление профиля пользователя",
         "description": "Обновляет профиль текущего пользователя.",
         "security": [
@@ -608,9 +552,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "fullName"
-                ],
+                "required": ["fullName"],
                 "additionalProperties": false,
                 "properties": {
                   "fullName": {
@@ -678,10 +620,7 @@
     "/me/sessions": {
       "get": {
         "operationId": "getMeSessions",
-        "tags": [
-          "auth",
-          "sessions"
-        ],
+        "tags": ["auth", "sessions"],
         "summary": "Получение списка активных сессий",
         "description": "Возвращает список активных сессий текущего пользователя.",
         "security": [
@@ -696,9 +635,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "sessions"
-                  ],
+                  "required": ["sessions"],
                   "additionalProperties": false,
                   "properties": {
                     "sessions": {
@@ -736,10 +673,7 @@
       },
       "delete": {
         "operationId": "deleteAllSessions",
-        "tags": [
-          "auth",
-          "sessions"
-        ],
+        "tags": ["auth", "sessions"],
         "summary": "Выход со всех устройств",
         "description": "Удаляет все сессии текущего пользователя, кроме текущей.",
         "security": [
@@ -777,10 +711,7 @@
     "/me/sessions/{sessionId}": {
       "delete": {
         "operationId": "deleteSession",
-        "tags": [
-          "auth",
-          "sessions"
-        ],
+        "tags": ["auth", "sessions"],
         "summary": "Удаление сессии",
         "description": "Удаляет указанную сессию текущего пользователя.",
         "security": [
@@ -849,9 +780,7 @@
     "/roles": {
       "get": {
         "operationId": "getRoles",
-        "tags": [
-          "roles"
-        ],
+        "tags": ["roles"],
         "summary": "Получение списка всех ролей",
         "description": "Возвращает список всех ролей в системе.",
         "security": [
@@ -866,9 +795,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "roles"
-                  ],
+                  "required": ["roles"],
                   "properties": {
                     "roles": {
                       "type": "array",
@@ -905,9 +832,7 @@
       },
       "post": {
         "operationId": "createRole",
-        "tags": [
-          "roles"
-        ],
+        "tags": ["roles"],
         "summary": "Создание роли",
         "description": "Создаёт новую роль с указанными разрешениями.",
         "security": [
@@ -921,9 +846,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name"
-                ],
+                "required": ["name"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -960,25 +883,18 @@
                     },
                     {
                       "type": "object",
-                      "required": [
-                        "type",
-                        "isDomain"
-                      ],
+                      "required": ["type", "isDomain"],
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": [
-                            "role_already_exists"
-                          ]
+                          "enum": ["role_already_exists"]
                         },
                         "message": {
                           "type": "string"
                         },
                         "isDomain": {
                           "type": "boolean",
-                          "enum": [
-                            true
-                          ]
+                          "enum": [true]
                         }
                       }
                     }
@@ -1023,9 +939,7 @@
     "/roles/permissions-schema": {
       "get": {
         "operationId": "getPermissionsSchema",
-        "tags": [
-          "roles"
-        ],
+        "tags": ["roles"],
         "summary": "Получение схемы разрешений",
         "description": "Возвращает схему всех доступных разрешений для построения UI.",
         "security": [
@@ -1042,12 +956,7 @@
                   "type": "array",
                   "items": {
                     "type": "object",
-                    "required": [
-                      "action",
-                      "key",
-                      "type",
-                      "default"
-                    ],
+                    "required": ["action", "key", "type", "default"],
                     "properties": {
                       "action": {
                         "type": "string"
@@ -1057,10 +966,7 @@
                       },
                       "type": {
                         "type": "string",
-                        "enum": [
-                          "boolean",
-                          "enum"
-                        ]
+                        "enum": ["boolean", "enum"]
                       },
                       "values": {
                         "type": "array",
@@ -1101,9 +1007,7 @@
     "/roles/{roleId}": {
       "get": {
         "operationId": "getRole",
-        "tags": [
-          "roles"
-        ],
+        "tags": ["roles"],
         "summary": "Получение роли по ID",
         "description": "Возвращает детальную информацию о роли.",
         "security": [
@@ -1177,9 +1081,7 @@
       },
       "patch": {
         "operationId": "updateRole",
-        "tags": [
-          "roles"
-        ],
+        "tags": ["roles"],
         "summary": "Обновление разрешений роли",
         "description": "Обновляет разрешения указанной роли. Статические роли не могут быть изменены.",
         "security": [
@@ -1204,9 +1106,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "permissions"
-                ],
+                "required": ["permissions"],
                 "properties": {
                   "permissions": {
                     "type": "object",
@@ -1279,9 +1179,7 @@
       },
       "delete": {
         "operationId": "deleteRole",
-        "tags": [
-          "roles"
-        ],
+        "tags": ["roles"],
         "summary": "Удаление роли",
         "description": "Удаляет роль и переназначает всех пользователей на замещающую роль. Статические роли не могут быть удалены.",
         "security": [
@@ -1306,9 +1204,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "replacementRoleId"
-                ],
+                "required": ["replacementRoleId"],
                 "properties": {
                   "replacementRoleId": {
                     "type": "string",
@@ -1383,10 +1279,7 @@
     "/users/{userId}/role": {
       "patch": {
         "operationId": "updateUserRole",
-        "tags": [
-          "roles",
-          "users"
-        ],
+        "tags": ["roles", "users"],
         "summary": "Назначение роли пользователю",
         "description": "Обновляет роль пользователя. Все сессии пользователя будут удалены.",
         "security": [
@@ -1411,9 +1304,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "roleId"
-                ],
+                "required": ["roleId"],
                 "properties": {
                   "roleId": {
                     "type": "string",
@@ -1498,10 +1389,7 @@
     "/admin/users": {
       "get": {
         "operationId": "searchAdminUsers",
-        "tags": [
-          "admin",
-          "users"
-        ],
+        "tags": ["admin", "users"],
         "summary": "Поиск пользователей (admin)",
         "description": "Поиск пользователей с фильтрацией по роли и текстовому запросу.",
         "security": [
@@ -1553,10 +1441,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "users",
-                    "total"
-                  ],
+                  "required": ["users", "total"],
                   "properties": {
                     "users": {
                       "type": "array",
@@ -1639,9 +1524,7 @@
     "/media/upload-request": {
       "post": {
         "operationId": "mediaUploadRequest",
-        "tags": [
-          "media"
-        ],
+        "tags": ["media"],
         "summary": "Получение presigned URL для загрузки файла",
         "description": "Возвращает presigned URL и идентификатор файла для загрузки.",
         "security": [],
@@ -1719,9 +1602,7 @@
     "/media/confirm-upload": {
       "post": {
         "operationId": "mediaConfirmUpload",
-        "tags": [
-          "media"
-        ],
+        "tags": ["media"],
         "summary": "Подтверждение загрузки файлов",
         "description": "Переводит загруженные файлы из временного хранилища в постоянное.",
         "security": [],
@@ -1799,9 +1680,7 @@
     "/media/preview/{mediaId}": {
       "get": {
         "operationId": "mediaPreview",
-        "tags": [
-          "media"
-        ],
+        "tags": ["media"],
         "summary": "Получение preview URL для временного файла",
         "description": "Возвращает presigned URL для предпросмотра файла до подтверждения загрузки.",
         "security": [],
@@ -1873,9 +1752,7 @@
     "/banners": {
       "get": {
         "operationId": "getBanners",
-        "tags": [
-          "Banners"
-        ],
+        "tags": ["Banners"],
         "description": "Get all banners",
         "parameters": [
           {
@@ -1915,11 +1792,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "edges",
-                    "pageInfo",
-                    "totalCount"
-                  ],
+                  "required": ["edges", "pageInfo", "totalCount"],
                   "properties": {
                     "edges": {
                       "type": "array",
@@ -1975,9 +1848,7 @@
     "/categories": {
       "get": {
         "operationId": "getCategories",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "description": "Список дочерних категорий с количеством товаров",
         "parameters": [
           {
@@ -2010,9 +1881,7 @@
     "/categories/{id}/items": {
       "get": {
         "operationId": "getCategoryItems",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "description": "Товары в категории с фильтрами и сортировкой",
         "parameters": [
           {
@@ -2030,13 +1899,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "personal",
-                "price-asc",
-                "price-desc",
-                "rating-desc",
-                "newest"
-              ],
+              "enum": ["personal", "price-asc", "price-desc", "rating-desc", "newest"],
               "default": "personal"
             },
             "description": "Режим сортировки"
@@ -2077,11 +1940,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "adults",
-                "children",
-                "all"
-              ],
+              "enum": ["adults", "children", "all"],
               "default": "adults"
             },
             "description": "Возрастная группа"
@@ -2227,9 +2086,7 @@
     "/categories/{id}/filters": {
       "get": {
         "operationId": "getCategoryFilters",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "description": "Доступные фильтры для страницы категории",
         "parameters": [
           {
@@ -2269,9 +2126,7 @@
     "/feed": {
       "get": {
         "operationId": "getFeed",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "description": "Персонализированная лента рекомендаций по всему каталогу",
         "parameters": [
           {
@@ -2289,11 +2144,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "adults",
-                "children",
-                "all"
-              ],
+              "enum": ["adults", "children", "all"],
               "default": "adults"
             },
             "description": "Возрастная группа"
@@ -2337,9 +2188,7 @@
     "/search": {
       "get": {
         "operationId": "searchItems",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "description": "Полнотекстовый поиск товаров через Meilisearch с динамическими фасетными фильтрами",
         "parameters": [
           {
@@ -2366,11 +2215,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": [
-                "adults",
-                "children",
-                "all"
-              ],
+              "enum": ["adults", "children", "all"],
               "default": "adults"
             },
             "description": "Возрастная группа"
@@ -2440,11 +2285,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "items",
-                    "facets",
-                    "total"
-                  ],
+                  "required": ["items", "facets", "total"],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -2456,10 +2297,7 @@
                       "$ref": "#/components/schemas/SearchFacets"
                     },
                     "nextCursor": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
+                      "type": ["string", "null"]
                     },
                     "total": {
                       "type": "integer",
@@ -2476,9 +2314,7 @@
     "/liked-items": {
       "get": {
         "operationId": "getLikedItems",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "description": "Список лайкнутых товаров пользователя с поиском по названию",
         "security": [
           {
@@ -2537,9 +2373,7 @@
     "/items/{itemId}/like": {
       "post": {
         "operationId": "likeItem",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "description": "Поставить лайк на товар",
         "security": [
           {
@@ -2572,9 +2406,7 @@
       },
       "delete": {
         "operationId": "unlikeItem",
-        "tags": [
-          "Discovery"
-        ],
+        "tags": ["Discovery"],
         "description": "Убрать лайк с товара",
         "security": [
           {
@@ -2606,9 +2438,7 @@
     "/cms/categories": {
       "get": {
         "operationId": "getCmsCategories",
-        "tags": [
-          "cms-categories"
-        ],
+        "tags": ["cms-categories"],
         "summary": "Список категорий (CMS)",
         "description": "Возвращает все категории для административной панели.",
         "security": [
@@ -2644,9 +2474,7 @@
       },
       "post": {
         "operationId": "createCmsCategory",
-        "tags": [
-          "cms-categories"
-        ],
+        "tags": ["cms-categories"],
         "summary": "Создание категории",
         "description": "Создаёт новую категорию.",
         "security": [
@@ -2660,30 +2488,20 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "id",
-                  "name",
-                  "allowedTypeIds"
-                ],
+                "required": ["id", "name", "allowedTypeIds"],
                 "properties": {
                   "id": {
                     "type": "string"
                   },
                   "parentCategoryId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "name": {
                     "type": "string",
                     "minLength": 1
                   },
                   "iconId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "allowedTypeIds": {
                     "type": "array",
@@ -2733,6 +2551,16 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Родительская категория не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -2740,9 +2568,7 @@
     "/cms/categories/{id}": {
       "get": {
         "operationId": "getCmsCategoryDetail",
-        "tags": [
-          "cms-categories"
-        ],
+        "tags": ["cms-categories"],
         "summary": "Детали категории (CMS)",
         "description": "Возвращает полную информацию о категории.",
         "security": [
@@ -2795,9 +2621,7 @@
       },
       "patch": {
         "operationId": "updateCmsCategory",
-        "tags": [
-          "cms-categories"
-        ],
+        "tags": ["cms-categories"],
         "summary": "Обновление категории",
         "description": "Обновляет параметры категории.",
         "security": [
@@ -2821,26 +2645,17 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "allowedTypeIds"
-                ],
+                "required": ["name", "allowedTypeIds"],
                 "properties": {
                   "name": {
                     "type": "string",
                     "minLength": 1
                   },
                   "iconId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "parentCategoryId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "allowedTypeIds": {
                     "type": "array",
@@ -2907,9 +2722,7 @@
     "/cms/categories/{id}/publish": {
       "post": {
         "operationId": "publishCmsCategory",
-        "tags": [
-          "cms-categories"
-        ],
+        "tags": ["cms-categories"],
         "summary": "Публикация категории",
         "description": "Публикует категорию, делая её доступной в Discovery.",
         "security": [
@@ -2964,9 +2777,7 @@
     "/cms/categories/{id}/unpublish": {
       "post": {
         "operationId": "unpublishCmsCategory",
-        "tags": [
-          "cms-categories"
-        ],
+        "tags": ["cms-categories"],
         "summary": "Снятие категории с публикации",
         "description": "Снимает категорию с публикации.",
         "security": [
@@ -2991,6 +2802,16 @@
               "application/json": {
                 "schema": {
                   "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Категория не опубликована",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -3021,9 +2842,7 @@
     "/cms/categories/{id}/attributes": {
       "post": {
         "operationId": "addCmsCategoryAttribute",
-        "tags": [
-          "cms-categories"
-        ],
+        "tags": ["cms-categories"],
         "summary": "Добавление атрибута к категории",
         "description": "Добавляет атрибут к категории.",
         "security": [
@@ -3047,12 +2866,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "attributeId",
-                  "name",
-                  "required",
-                  "schema"
-                ],
+                "required": ["attributeId", "name", "required", "schema"],
                 "properties": {
                   "attributeId": {
                     "type": "string"
@@ -3126,9 +2940,7 @@
     "/cms/categories/{id}/attributes/{attributeId}": {
       "delete": {
         "operationId": "removeCmsCategoryAttribute",
-        "tags": [
-          "cms-categories"
-        ],
+        "tags": ["cms-categories"],
         "summary": "Удаление атрибута из категории",
         "description": "Удаляет атрибут из категории.",
         "security": [
@@ -3165,6 +2977,16 @@
               }
             }
           },
+          "400": {
+            "description": "Атрибут не назначен категории",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
           "403": {
             "description": "Нет доступа",
             "content": {
@@ -3191,9 +3013,7 @@
     "/cms/item-types": {
       "get": {
         "operationId": "getCmsItemTypes",
-        "tags": [
-          "cms-item-types"
-        ],
+        "tags": ["cms-item-types"],
         "summary": "Список типов товаров (CMS)",
         "description": "Возвращает все типы товаров.",
         "security": [
@@ -3229,9 +3049,7 @@
       },
       "post": {
         "operationId": "createCmsItemType",
-        "tags": [
-          "cms-item-types"
-        ],
+        "tags": ["cms-item-types"],
         "summary": "Создание типа товара",
         "description": "Создаёт новый тип товара с указанными виджетами.",
         "security": [
@@ -3245,12 +3063,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "id",
-                  "name",
-                  "availableWidgetTypes",
-                  "requiredWidgetTypes"
-                ],
+                "required": ["id", "name", "availableWidgetTypes", "requiredWidgetTypes"],
                 "properties": {
                   "id": {
                     "type": "string"
@@ -3320,9 +3133,7 @@
     "/cms/item-types/{id}": {
       "patch": {
         "operationId": "updateCmsItemType",
-        "tags": [
-          "cms-item-types"
-        ],
+        "tags": ["cms-item-types"],
         "summary": "Обновление типа товара",
         "description": "Обновляет параметры типа товара.",
         "security": [
@@ -3346,11 +3157,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "availableWidgetTypes",
-                  "requiredWidgetTypes"
-                ],
+                "required": ["name", "availableWidgetTypes", "requiredWidgetTypes"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -3436,11 +3243,7 @@
     "schemas": {
       "ErrorDetail": {
         "type": "object",
-        "required": [
-          "errorCode",
-          "message",
-          "path"
-        ],
+        "required": ["errorCode", "message", "path"],
         "properties": {
           "errorCode": {
             "type": "string",
@@ -3463,12 +3266,7 @@
       },
       "OpenApiValidationError": {
         "type": "object",
-        "required": [
-          "statusCode",
-          "message",
-          "errors",
-          "isDomain"
-        ],
+        "required": ["statusCode", "message", "errors", "isDomain"],
         "properties": {
           "statusCode": {
             "type": "integer",
@@ -3476,9 +3274,7 @@
           },
           "isDomain": {
             "type": "boolean",
-            "enum": [
-              false
-            ]
+            "enum": [false]
           },
           "message": {
             "type": "string",
@@ -3494,10 +3290,7 @@
       },
       "DomainErrorResponse": {
         "type": "object",
-        "required": [
-          "type",
-          "isDomain"
-        ],
+        "required": ["type", "isDomain"],
         "properties": {
           "type": {
             "type": "string",
@@ -3509,9 +3302,7 @@
           },
           "isDomain": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "data": {
             "type": "object",
@@ -3522,32 +3313,22 @@
       },
       "ThrottledErrorResponse": {
         "type": "object",
-        "required": [
-          "type",
-          "isDomain",
-          "data"
-        ],
+        "required": ["type", "isDomain", "data"],
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "throttled"
-            ]
+            "enum": ["throttled"]
           },
           "isDomain": {
             "type": "boolean",
-            "enum": [
-              true
-            ]
+            "enum": [true]
           },
           "message": {
             "type": "string"
           },
           "data": {
             "type": "object",
-            "required": [
-              "retryAfterSec"
-            ],
+            "required": ["retryAfterSec"],
             "properties": {
               "retryAfterSec": {
                 "type": "number",
@@ -3560,10 +3341,7 @@
       },
       "TokenPair": {
         "type": "object",
-        "required": [
-          "accessToken",
-          "refreshToken"
-        ],
+        "required": ["accessToken", "refreshToken"],
         "properties": {
           "accessToken": {
             "type": "string",
@@ -3579,19 +3357,11 @@
       },
       "MediaVisibility": {
         "type": "string",
-        "enum": [
-          "PUBLIC",
-          "PRIVATE"
-        ]
+        "enum": ["PUBLIC", "PRIVATE"]
       },
       "LinkMediaData": {
         "type": "object",
-        "required": [
-          "bucket",
-          "objectKey",
-          "mediaId",
-          "visibility"
-        ],
+        "required": ["bucket", "objectKey", "mediaId", "visibility"],
         "properties": {
           "bucket": {
             "type": "string"
@@ -3615,12 +3385,7 @@
       },
       "Avatar": {
         "type": "object",
-        "required": [
-          "largeUrl",
-          "mediumUrl",
-          "smallUrl",
-          "thumbUrl"
-        ],
+        "required": ["largeUrl", "mediumUrl", "smallUrl", "thumbUrl"],
         "properties": {
           "largeUrl": {
             "type": "string",
@@ -3642,12 +3407,7 @@
       },
       "User": {
         "type": "object",
-        "required": [
-          "id",
-          "phoneNumber",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "phoneNumber", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "type": "string",
@@ -3679,11 +3439,7 @@
       },
       "UserSession": {
         "type": "object",
-        "required": [
-          "id",
-          "createdAt",
-          "expiresAt"
-        ],
+        "required": ["id", "createdAt", "expiresAt"],
         "additionalProperties": false,
         "properties": {
           "id": {
@@ -3705,14 +3461,7 @@
       },
       "Role": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "permissions",
-          "isStatic",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "name", "permissions", "isStatic", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "type": "string",
@@ -3740,11 +3489,7 @@
       },
       "UploadRequest": {
         "type": "object",
-        "required": [
-          "name",
-          "mimeType",
-          "bucket"
-        ],
+        "required": ["name", "mimeType", "bucket"],
         "additionalProperties": false,
         "properties": {
           "name": {
@@ -3764,10 +3509,7 @@
       },
       "UploadRequestResult": {
         "type": "object",
-        "required": [
-          "fileId",
-          "uploadUrl"
-        ],
+        "required": ["fileId", "uploadUrl"],
         "properties": {
           "fileId": {
             "type": "string",
@@ -3781,9 +3523,7 @@
       },
       "ConfirmUploadInput": {
         "type": "object",
-        "required": [
-          "fileIds"
-        ],
+        "required": ["fileIds"],
         "additionalProperties": false,
         "properties": {
           "fileIds": {
@@ -3798,9 +3538,7 @@
       },
       "PreviewDownloadUrlResult": {
         "type": "object",
-        "required": [
-          "url"
-        ],
+        "required": ["url"],
         "properties": {
           "url": {
             "type": "string",
@@ -3842,10 +3580,7 @@
       },
       "SortDirection": {
         "type": "string",
-        "enum": [
-          "ASC",
-          "DESC"
-        ]
+        "enum": ["ASC", "DESC"]
       },
       "Sort": {
         "type": "object",
@@ -3860,10 +3595,7 @@
       },
       "BannerFile": {
         "type": "object",
-        "required": [
-          "id",
-          "url"
-        ],
+        "required": ["id", "url"],
         "properties": {
           "id": {
             "type": "string",
@@ -3877,14 +3609,7 @@
       },
       "Banner": {
         "type": "object",
-        "required": [
-          "createdAt",
-          "id",
-          "isNew",
-          "logo",
-          "opacity",
-          "sequence"
-        ],
+        "required": ["createdAt", "id", "isNew", "logo", "opacity", "sequence"],
         "properties": {
           "createdAt": {
             "type": "string",
@@ -3909,36 +3634,22 @@
             "minimum": 0
           },
           "subtitle": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "title": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "url": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         }
       },
       "BannerEdge": {
         "type": "object",
-        "required": [
-          "node"
-        ],
+        "required": ["node"],
         "properties": {
           "cursor": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "node": {
             "$ref": "#/components/schemas/Banner"
@@ -3947,16 +3658,10 @@
       },
       "PageInfo": {
         "type": "object",
-        "required": [
-          "hasNextPage",
-          "hasPreviousPage"
-        ],
+        "required": ["hasNextPage", "hasPreviousPage"],
         "properties": {
           "endCursor": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "hasNextPage": {
             "type": "boolean"
@@ -3965,21 +3670,13 @@
             "type": "boolean"
           },
           "startCursor": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         }
       },
       "CategoryListItem": {
         "type": "object",
-        "required": [
-          "categoryId",
-          "name",
-          "childCount",
-          "itemCount"
-        ],
+        "required": ["categoryId", "name", "childCount", "itemCount"],
         "properties": {
           "categoryId": {
             "type": "string"
@@ -3988,10 +3685,7 @@
             "type": "string"
           },
           "iconId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "childCount": {
             "type": "integer",
@@ -4005,69 +3699,44 @@
       },
       "ItemPayment": {
         "type": "object",
-        "required": [
-          "strategy"
-        ],
+        "required": ["strategy"],
         "properties": {
           "strategy": {
             "type": "string",
-            "enum": [
-              "free",
-              "one-time",
-              "subscription"
-            ]
+            "enum": ["free", "one-time", "subscription"]
           },
           "price": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           }
         }
       },
       "ItemOwnerSummary": {
         "type": "object",
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string"
           },
           "avatarId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         }
       },
       "ItemLocationSummary": {
         "type": "object",
-        "required": [
-          "cityId"
-        ],
+        "required": ["cityId"],
         "properties": {
           "cityId": {
             "type": "string"
           },
           "address": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         }
       },
       "ItemListView": {
         "type": "object",
-        "required": [
-          "itemId",
-          "typeId",
-          "title",
-          "reviewCount",
-          "categoryIds"
-        ],
+        "required": ["itemId", "typeId", "title", "reviewCount", "categoryIds"],
         "properties": {
           "itemId": {
             "type": "string"
@@ -4079,16 +3748,10 @@
             "type": "string"
           },
           "description": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "imageId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "price": {
             "oneOf": [
@@ -4101,10 +3764,7 @@
             ]
           },
           "rating": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "reviewCount": {
             "type": "integer"
@@ -4139,9 +3799,7 @@
       },
       "CursorPaginatedItems": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -4150,10 +3808,7 @@
             }
           },
           "nextCursor": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         }
       },
@@ -4161,44 +3816,31 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": [
-                  "text"
-                ]
+                "enum": ["text"]
               }
             }
           },
           {
             "type": "object",
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": [
-                  "boolean"
-                ]
+                "enum": ["boolean"]
               }
             }
           },
           {
             "type": "object",
-            "required": [
-              "type",
-              "options"
-            ],
+            "required": ["type", "options"],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": [
-                  "enum"
-                ]
+                "enum": ["enum"]
               },
               "options": {
                 "type": "array",
@@ -4210,15 +3852,11 @@
           },
           {
             "type": "object",
-            "required": [
-              "type"
-            ],
+            "required": ["type"],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": [
-                  "number"
-                ]
+                "enum": ["number"]
               },
               "min": {
                 "type": "number"
@@ -4232,11 +3870,7 @@
       },
       "AttributeFilter": {
         "type": "object",
-        "required": [
-          "attributeId",
-          "name",
-          "schema"
-        ],
+        "required": ["attributeId", "name", "schema"],
         "properties": {
           "attributeId": {
             "type": "string"
@@ -4251,10 +3885,7 @@
       },
       "TypeFilter": {
         "type": "object",
-        "required": [
-          "typeId",
-          "name"
-        ],
+        "required": ["typeId", "name"],
         "properties": {
           "typeId": {
             "type": "string"
@@ -4293,12 +3924,7 @@
       },
       "CategoryFilters": {
         "type": "object",
-        "required": [
-          "categoryId",
-          "attributeFilters",
-          "typeFilters",
-          "commonFilters"
-        ],
+        "required": ["categoryId", "attributeFilters", "typeFilters", "commonFilters"],
         "properties": {
           "categoryId": {
             "type": "string"
@@ -4322,11 +3948,7 @@
       },
       "SearchFacetCategory": {
         "type": "object",
-        "required": [
-          "categoryId",
-          "name",
-          "count"
-        ],
+        "required": ["categoryId", "name", "count"],
         "properties": {
           "categoryId": {
             "type": "string"
@@ -4341,11 +3963,7 @@
       },
       "SearchFacetType": {
         "type": "object",
-        "required": [
-          "typeId",
-          "name",
-          "count"
-        ],
+        "required": ["typeId", "name", "count"],
         "properties": {
           "typeId": {
             "type": "string"
@@ -4360,10 +3978,7 @@
       },
       "SearchFacetAttributeValue": {
         "type": "object",
-        "required": [
-          "value",
-          "count"
-        ],
+        "required": ["value", "count"],
         "properties": {
           "value": {
             "type": "string"
@@ -4375,11 +3990,7 @@
       },
       "SearchFacetAttribute": {
         "type": "object",
-        "required": [
-          "attributeId",
-          "name",
-          "values"
-        ],
+        "required": ["attributeId", "name", "values"],
         "properties": {
           "attributeId": {
             "type": "string"
@@ -4397,11 +4008,7 @@
       },
       "SearchFacets": {
         "type": "object",
-        "required": [
-          "categories",
-          "types",
-          "attributes"
-        ],
+        "required": ["categories", "types", "attributes"],
         "properties": {
           "categories": {
             "type": "array",
@@ -4419,10 +4026,7 @@
             "oneOf": [
               {
                 "type": "object",
-                "required": [
-                  "min",
-                  "max"
-                ],
+                "required": ["min", "max"],
                 "properties": {
                   "min": {
                     "type": "number"
@@ -4452,9 +4056,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "likedAt"
-            ],
+            "required": ["likedAt"],
             "properties": {
               "likedAt": {
                 "type": "string",
@@ -4466,9 +4068,7 @@
       },
       "CursorPaginatedLikedItems": {
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "properties": {
           "items": {
             "type": "array",
@@ -4477,19 +4077,13 @@
             }
           },
           "nextCursor": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         }
       },
       "Error": {
         "type": "object",
-        "required": [
-          "statusCode",
-          "message"
-        ],
+        "required": ["statusCode", "message"],
         "properties": {
           "statusCode": {
             "type": "integer"
@@ -4504,47 +4098,26 @@
       },
       "CmsCategoryListItem": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "status",
-          "childCount"
-        ],
+        "required": ["id", "name", "status"],
         "properties": {
           "id": {
             "type": "string"
           },
           "parentCategoryId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "name": {
             "type": "string"
           },
           "status": {
             "type": "string",
-            "enum": [
-              "draft",
-              "published",
-              "unpublished"
-            ]
-          },
-          "childCount": {
-            "type": "integer",
-            "minimum": 0
+            "enum": ["draft", "published", "unpublished"]
           }
         }
       },
       "CategoryAttribute": {
         "type": "object",
-        "required": [
-          "attributeId",
-          "name",
-          "required",
-          "schema"
-        ],
+        "required": ["attributeId", "name", "required", "schema"],
         "properties": {
           "attributeId": {
             "type": "string"
@@ -4576,19 +4149,13 @@
             "type": "string"
           },
           "parentCategoryId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "name": {
             "type": "string"
           },
           "iconId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "allowedTypeIds": {
             "type": "array",
@@ -4604,17 +4171,10 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "draft",
-              "published",
-              "unpublished"
-            ]
+            "enum": ["draft", "published", "unpublished"]
           },
           "publishedAt": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date-time"
           },
           "createdAt": {
@@ -4644,12 +4204,7 @@
       },
       "ItemTypeListItem": {
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "availableWidgetTypes",
-          "requiredWidgetTypes"
-        ],
+        "required": ["id", "name", "availableWidgetTypes", "requiredWidgetTypes"],
         "properties": {
           "id": {
             "type": "string"
