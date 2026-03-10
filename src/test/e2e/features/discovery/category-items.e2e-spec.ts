@@ -500,6 +500,200 @@ describe('Discovery Category Items HTTP (e2e)', () => {
       });
     });
 
+    // ─── AgeGroup isolation ──────────────────────────────────────
+
+    describe('ageGroup isolation', () => {
+      it('should not return adults items when querying ageGroup=children', async () => {
+        const categoryId = randomUUID();
+        const typeId = randomUUID();
+        const orgId = randomUUID();
+
+        await seedCategory({ categoryId });
+        await seedItem({
+          itemId: randomUUID(),
+          typeId,
+          orgId,
+          categoryIds: [categoryId],
+          ageGroup: 'adults',
+        });
+
+        const res = await agent
+          .get(`/categories/${categoryId}/items`)
+          .query({ sort: 'newest', cityId: CITY_ID, ageGroup: 'children' })
+          .expect(200);
+
+        expect(res.body.items).toEqual([]);
+      });
+
+      it('should not return children items when querying ageGroup=adults', async () => {
+        const categoryId = randomUUID();
+        const typeId = randomUUID();
+        const orgId = randomUUID();
+
+        await seedCategory({ categoryId });
+        await seedItem({
+          itemId: randomUUID(),
+          typeId,
+          orgId,
+          categoryIds: [categoryId],
+          ageGroup: 'children',
+        });
+
+        const res = await agent
+          .get(`/categories/${categoryId}/items`)
+          .query({ sort: 'newest', cityId: CITY_ID, ageGroup: 'adults' })
+          .expect(200);
+
+        expect(res.body.items).toEqual([]);
+      });
+
+      it('should return ageGroup=all items for both children and adults queries', async () => {
+        const categoryId = randomUUID();
+        const typeId = randomUUID();
+        const orgId = randomUUID();
+        const itemId = randomUUID();
+
+        await seedCategory({ categoryId });
+        await seedItem({
+          itemId,
+          typeId,
+          orgId,
+          categoryIds: [categoryId],
+          ageGroup: 'all',
+        });
+
+        const adultsRes = await agent
+          .get(`/categories/${categoryId}/items`)
+          .query({ sort: 'newest', cityId: CITY_ID, ageGroup: 'adults' })
+          .expect(200);
+        expect(adultsRes.body.items).toHaveLength(1);
+
+        const childrenRes = await agent
+          .get(`/categories/${categoryId}/items`)
+          .query({ sort: 'newest', cityId: CITY_ID, ageGroup: 'children' })
+          .expect(200);
+        expect(childrenRes.body.items).toHaveLength(1);
+      });
+    });
+
+    // ─── City isolation ───────────────────────────────────────────
+
+    describe('city isolation', () => {
+      it('should not return items from a different city', async () => {
+        const categoryId = randomUUID();
+        const typeId = randomUUID();
+        const orgId = randomUUID();
+
+        await seedCategory({ categoryId });
+        await seedItem({
+          itemId: randomUUID(),
+          typeId,
+          orgId,
+          categoryIds: [categoryId],
+          cityId: 'other-city',
+        });
+
+        const res = await agent
+          .get(`/categories/${categoryId}/items`)
+          .query({ sort: 'newest', cityId: CITY_ID, ageGroup: AGE_GROUP })
+          .expect(200);
+
+        expect(res.body.items).toEqual([]);
+      });
+    });
+
+    // ─── Combined filters ─────────────────────────────────────────
+
+    describe('combined filters', () => {
+      it('should filter by typeIds AND priceRange simultaneously', async () => {
+        const categoryId = randomUUID();
+        const typeA = randomUUID();
+        const typeB = randomUUID();
+        const orgId = randomUUID();
+        const matchId = randomUUID();
+        const wrongTypeId = randomUUID();
+        const wrongPriceId = randomUUID();
+
+        await seedCategory({ categoryId });
+        // Match: correct type + correct price
+        await seedItem({
+          itemId: matchId,
+          typeId: typeA,
+          orgId,
+          categoryIds: [categoryId],
+          price: 500,
+        });
+        // Wrong type
+        await seedItem({
+          itemId: wrongTypeId,
+          typeId: typeB,
+          orgId,
+          categoryIds: [categoryId],
+          price: 500,
+        });
+        // Wrong price
+        await seedItem({
+          itemId: wrongPriceId,
+          typeId: typeA,
+          orgId,
+          categoryIds: [categoryId],
+          price: 5000,
+        });
+
+        const res = await agent
+          .get(`/categories/${categoryId}/items`)
+          .query({
+            sort: 'newest',
+            cityId: CITY_ID,
+            ageGroup: AGE_GROUP,
+            typeIds: typeA,
+            priceMax: '1000',
+          })
+          .expect(200);
+
+        expect(res.body.items).toHaveLength(1);
+        expect(res.body.items[0].itemId).toBe(matchId);
+      });
+
+      it('should filter by minRating AND typeIds simultaneously', async () => {
+        const categoryId = randomUUID();
+        const typeA = randomUUID();
+        const orgId = randomUUID();
+        const matchId = randomUUID();
+        const lowRatingId = randomUUID();
+
+        await seedCategory({ categoryId });
+        await seedItem({
+          itemId: matchId,
+          typeId: typeA,
+          orgId,
+          categoryIds: [categoryId],
+          rating: 4.5,
+        });
+        await seedItem({
+          itemId: lowRatingId,
+          typeId: typeA,
+          orgId,
+          categoryIds: [categoryId],
+          rating: 2.0,
+        });
+
+        const res = await agent
+          .get(`/categories/${categoryId}/items`)
+          .query({
+            sort: 'newest',
+            cityId: CITY_ID,
+            ageGroup: AGE_GROUP,
+            typeIds: typeA,
+            minRating: '4.0',
+          })
+          .expect(200);
+
+        expect(res.body.items).toHaveLength(1);
+        expect(res.body.items[0].itemId).toBe(matchId);
+      });
+    });
+
     // ─── Defaults ─────────────────────────────────────────────────
 
     describe('defaults', () => {

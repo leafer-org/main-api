@@ -68,10 +68,9 @@ export async function waitForGorsePopular(
       throw new Error(`Gorse popular items not ready within ${timeoutMs}ms`);
     }
 
-    const path = category
-      ? `/api/non-personalized/popular/${encodeURIComponent(category)}?n=10`
-      : '/api/non-personalized/popular?n=10';
-    const results = await gorseRequest<{ Id: string; Score: number }[]>('GET', path);
+    const qs = new URLSearchParams({ n: '10' });
+    if (category) qs.set('category', category);
+    const results = await gorseRequest<{ Id: string; Score: number }[]>('GET', `/api/non-personalized/popular?${qs.toString()}`);
 
     if (results.length > 0) {
       console.log(`[waitForGorsePopular] got ${results.length} popular items`);
@@ -92,6 +91,7 @@ export async function waitForGorseRecommendations(
   userId: string,
   timeoutMs = 120_000,
   intervalMs = 2_000,
+  category?: string,
 ): Promise<string[]> {
   const deadline = Date.now() + timeoutMs;
 
@@ -100,9 +100,12 @@ export async function waitForGorseRecommendations(
       throw new Error(`Gorse recommendations for user ${userId} not ready within ${timeoutMs}ms`);
     }
 
+    const qs = new URLSearchParams({ n: '10' });
+    if (category) qs.set('category', category);
+
     const ids = await gorseRequest<string[]>(
       'GET',
-      `/api/recommend/${encodeURIComponent(userId)}?n=10`,
+      `/api/recommend/${encodeURIComponent(userId)}?${qs.toString()}`,
     );
 
     if (ids.length > 0) {

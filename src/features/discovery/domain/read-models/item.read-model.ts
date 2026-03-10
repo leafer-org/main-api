@@ -86,9 +86,10 @@ function priceTierLabel(payment: ItemPayment): string {
 }
 
 function ratingTierLabel(ratingValue: number): string | null {
-  if (ratingValue >= 4) return 'rating:high';
-  if (ratingValue >= 3) return 'rating:medium';
-  if (ratingValue >= 2) return 'rating:low';
+  if (ratingValue >= 4.9) return 'rating:high';
+  if (ratingValue >= 4.5) return 'rating:medium';
+  if (ratingValue >= 4) return 'rating:low';
+  if (ratingValue >= 3) return 'rating:super-low';
   return null;
 }
 

@@ -101,11 +101,9 @@ export class GorseClient implements OnModuleInit {
   }
 
   public async getPopular(params: URLSearchParams, category?: string): Promise<{ Id: string; Score: number }[]> {
+    if (category) params.set('category', category);
     const qs = params.toString();
-    const path = category
-      ? `/api/non-personalized/popular/${encodeURIComponent(category)}?${qs}`
-      : `/api/non-personalized/popular?${qs}`;
-    return this.request('GET', path);
+    return this.request('GET', `/api/non-personalized/popular?${qs}`);
   }
 
   public async upsertUser(_userId: string, payload: GorseUserPayload): Promise<void> {

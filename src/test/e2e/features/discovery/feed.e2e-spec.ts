@@ -18,6 +18,7 @@ import { DiscoveryDatabaseClient } from '@/features/discovery/adapters/db/client
 import { discoveryItems } from '@/features/discovery/adapters/db/schema.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
+import { userGeoCategory } from '@/infra/lib/geo/h3-geo.js';
 import { interactionStreamingContract } from '@/infra/kafka-contracts/interaction.contract.js';
 import { itemStreamingContract } from '@/infra/kafka-contracts/item.contract.js';
 import type { Contract, ContractMessage } from '@/infra/lib/nest-kafka/contract/contract.js';
@@ -218,8 +219,9 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     await sleep(5000);
     console.log('sleeped')
 
-    // Поллить /api/popular пока Gorse не сгенерирует популярные товары
-    await waitForGorsePopular(120_000);
+    // Поллить /api/popular пока Gorse не сгенерирует популярные товары для нужной гео-категории
+    const feedCategory = userGeoCategory(55.75, 37.62, 'adults');
+    await waitForGorsePopular(120_000, 2_000, feedCategory);
   }, 240_000);
 
   it('should return popular items for anonymous user', async () => {
@@ -269,6 +271,34 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
 
     expect(res.body.items.length).toBeGreaterThanOrEqual(1);
   });
+
+  it('should return empty for ageGroup=children when all items are adults-only', async () => {
+    const res = await agent
+      .get('/feed')
+      .query({ cityId: 'city-1', ageGroup: 'children', lat: '55.75', lng: '37.62' })
+      .expect(200);
+
+    expect(res.body.items).toEqual([]);
+  });
+
+  it('should default to ageGroup=adults when ageGroup not specified', async () => {
+    const res = await agent
+      .get('/feed')
+      .query({ cityId: 'city-1', lat: '55.75', lng: '37.62' })
+      .expect(200);
+
+    expect(res.body.items.length).toBeGreaterThan(0);
+  });
+
+  it('should return empty for coordinates far from seeded items', async () => {
+    // Tokyo coordinates — far from Moscow (55.75, 37.62), different H3 cell at res 3
+    const res = await agent
+      .get('/feed')
+      .query({ cityId: 'city-1', ageGroup: 'adults', lat: '35.68', lng: '139.69' })
+      .expect(200);
+
+    expect(res.body.items).toEqual([]);
+  });
 });
 
 // ─── Персонализированные рекомендации (авторизованный пользователь) ──
@@ -296,8 +326,9 @@ describe('GET /feed (personalized)', { timeout: 300_000 }, () => {
     // Дать время handler-ам обработать interactions
     await sleep(3000);
 
-    // Поллить /api/recommend/{userId} пока Gorse не сгенерирует рекомендации
-    await waitForGorseRecommendations(userId, 180_000);
+    // Поллить /api/recommend/{userId} пока Gorse не сгенерирует рекомендации для нужной гео-категории
+    const feedCategory = userGeoCategory(55.75, 37.62, 'adults');
+    await waitForGorseRecommendations(userId, 180_000, 2_000, feedCategory);
   }, 240_000);
 
   it('should return personalized recommendations for authenticated user', async () => {

@@ -15,6 +15,46 @@
 
 ---
 
+## Ключевые решения
+
+### Дублирование тикетов при множественных подписках
+
+Один триггер может создать **отдельные тикеты** на каждой подписанной доске — это разные агрегаты с разными `ticketId`. Дедупликации нет. Если действие над сущностью уже выполнено (например, item уже approved), ActionExecutor получит ошибку от целевого сервиса — тикет останется, оператор увидит актуальное состояние сущности по ссылке.
+
+### Действия и workflow — независимые процессы
+
+**ExecuteAction** (approve/reject) и **workflow-команды** (assign, done, move) — это **отдельные действия пользователя**, не связанные транзакцией. Оператор нажимает 2 кнопки: сначала выполняет действие (approve), потом закрывает тикет (done). LLM-автоматизация делает то же самое последовательно.
+
+### LLM работает только с `open` тикетами
+
+Automation обрабатывает только тикеты в статусе `open`. Если оператор успел взять тикет (`in-progress`) раньше LLM — автоматизация его пропускает. Есть специальный пермишен, позволяющий забрать уже взятый тикет у другого оператора или переназначить на другого member.
+
+### Программный фильтр `every-nth` — счётчик в Redis
+
+Счётчик глобальный на триггер (не на подписку и не на доску). Хранится в Redis. Инкрементируется при каждом срабатывании триггера, независимо от результата json-logic фильтров.
+
+### Программные фильтры с внешними зависимостями
+
+Фильтры типа `first-time-org` и `repeat-offender` требуют запроса в БД. Для этого существует **отдельный порт** (`ProgrammaticFilterContext` или аналог), который предоставляет данные фильтрам.
+
+### LLM: reason сохраняется в history + комментарий
+
+LLM может выполнить действие (approve/reject) и оставить комментарий с причиной. При перенаправлении на другую доску (uncertain) комментарий обязателен. Всё отражается в `history`.
+
+### LLM: без retry
+
+Если Claude API вернул ошибку или timeout — тикет остаётся `open` (или перенаправляется на доску из `onUncertain.moveToBoardId`). Retry-политики нет.
+
+### Изоляция org и platform
+
+Эскалации между org-досками и platform-досками **не существует**. Организация может написать обращение к поддержке — это отдельный триггер для platform-контекста. Platform-админ может видеть тикеты org-доски только со специальным пермишеном (для безопасности в редких случаях).
+
+### ActionExecutor — стратегия registry
+
+В будущем один `ModerationActionExecutor` со `switch` будет заменён на `Map<ActionId, ActionHandler>` (registry/strategy pattern) для масштабирования на 10+ типов действий.
+
+---
+
 ## Типы тикетов (discriminated union, в коде)
 
 Тип тикета определяет структуру данных. Новый тип = новый member union'а + адаптеры.
@@ -199,8 +239,9 @@ type CreateTicketCommand = {
 };
 
 type AssignTicketCommand = { type: 'AssignTicket'; assigneeId: UserId; now: Date };
+type ReassignTicketCommand = { type: 'ReassignTicket'; assigneeId: UserId; now: Date };  // требует спец. пермишен
 type UnassignTicketCommand = { type: 'UnassignTicket'; now: Date };
-type MoveTicketCommand = { type: 'MoveTicket'; toBoardId: BoardId; movedBy: UserId; now: Date };
+type MoveTicketCommand = { type: 'MoveTicket'; toBoardId: BoardId; movedBy: UserId; comment: string; now: Date };
 type MarkDoneCommand = { type: 'MarkDone'; now: Date };
 type ReopenTicketCommand = { type: 'ReopenTicket'; now: Date };
 type CommentTicketCommand = { type: 'CommentTicket'; authorId: UserId | 'automation'; text: string; now: Date };
@@ -210,19 +251,20 @@ type CommentTicketCommand = { type: 'CommentTicket'; authorId: UserId | 'automat
 
 1. **CreateTicket (вручную)** — доска должна иметь `manualCreation: true`. Создатель должен быть member доски.
 2. **Assign** — только `open` тикеты. Assignee должен быть member доски. Статус → `in-progress`.
-3. **Unassign** — только `in-progress`. Статус → `open`.
-4. **Move** — можно из любого статуса кроме `done`. Целевая доска должна быть в `allowedTransferBoardIds` текущей доски. Если список пуст — перенаправление запрещено.
-5. **MarkDone** — только `in-progress` (тикет должен быть назначен).
-6. **Reopen** — только `done`. Статус → `open`, assignee сбрасывается.
+3. **Reassign** — `in-progress` тикет. Требует специальный пермишен. Позволяет забрать чужой тикет или передать другому member.
+4. **Unassign** — только `in-progress`. Статус → `open`.
+5. **Move** — можно из любого статуса кроме `done`. Целевая доска должна быть в `allowedTransferBoardIds` текущей доски. Если список пуст — перенаправление запрещено. **Комментарий обязателен**.
+6. **MarkDone** — только `in-progress` (тикет должен быть назначен).
+7. **Reopen** — только `done`. Статус → `open`, assignee сбрасывается.
 
 ### История
 
 ```ts
 type TicketHistoryEntry = {
-  action: 'created' | 'assigned' | 'unassigned' | 'moved'
+  action: 'created' | 'assigned' | 'reassigned' | 'unassigned' | 'moved'
         | 'done' | 'reopened' | 'action-executed' | 'commented';
   actorId: UserId | 'automation';
-  data: Record<string, unknown>;           // { fromBoardId, toBoardId } | { actionId } | { comment }
+  data: Record<string, unknown>;           // { fromBoardId, toBoardId, comment } | { actionId } | { comment }
   timestamp: Date;
 };
 ```
@@ -247,6 +289,8 @@ type TicketHistoryEntry = {
 ### Программные — хардкод со сложной логикой
 
 Статический union в коде. Набор доступных фильтров **зависит от триггера** — у каждого триггера свой список применимых программных фильтров.
+
+Фильтры с внешними зависимостями (например `first-time-org` — есть ли у организации уже опубликованные товары) получают данные через **отдельный порт** (`ProgrammaticFilterContext`).
 
 ```ts
 // domain/filters.ts
@@ -292,6 +336,10 @@ const FILTER_META = {
 ```
 
 Когда админ настраивает подписку доски на триггер — UI показывает только фильтры, применимые к этому триггеру.
+
+### `every-nth` — глобальный счётчик
+
+Счётчик хранится в **Redis**, ключ — `trigger-counter:{triggerId}`. Инкрементируется при каждом срабатывании триггера (до проверки json-logic фильтров). Фильтр пропускает события где `counter % n === 0`.
 
 ### Комбинация в подписке
 
@@ -354,7 +402,6 @@ type BoardState = EntityState<{
   createdAt: Date;
   updatedAt: Date;
 }>;
-```
 ```
 
 ### Пример конфигурации
@@ -453,8 +500,9 @@ type BoardState = EntityState<{
 | Кнопка | Действие | Кто может |
 |--------|----------|-----------|
 | **Взять** | Назначить на себя → `in-progress` | Любой member доски |
+| **Забрать/Передать** | Переназначить `in-progress` тикет | Member со спец. пермишеном |
 | **Отказаться** | Убрать с себя → `open` | Текущий assignee |
-| **Перенаправить** | Переместить на доску из `allowedTransferBoardIds` | Любой member доски |
+| **Перенаправить** | Переместить на доску из `allowedTransferBoardIds` (комментарий обязателен) | Любой member доски |
 | **Обработано** | → `done` | Текущий assignee |
 | **Переоткрыть** | → `open` (из `done`) | Любой member доски |
 
@@ -524,11 +572,13 @@ class ModerationActionExecutor implements ActionExecutor {
 
 Organization feature уже слушает `moderation.results` — ничего менять не надо.
 
+> **Планируется** переход на registry-паттерн: `Map<ActionId, ActionHandler>` вместо switch, когда количество действий вырастет.
+
 ---
 
 ## LLM-автоматизация
 
-Привязывается к доске. Работает как пользователь с пермишенами.
+Привязывается к доске. Работает как пользователь с пермишенами. Обрабатывает **только тикеты в статусе `open`** — если тикет уже взят оператором (`in-progress`), LLM его не трогает.
 
 ```ts
 type BoardAutomation = {
@@ -539,28 +589,27 @@ type BoardAutomation = {
   userId: UserId;                          // "пользователь-бот" с пермишенами
   onApprove: {
     actionId: ActionId;                    // 'moderation.approve-item'
-    thenStatus: 'done';
   };
   onReject: {
     actionId: ActionId;
-    thenStatus: 'done';
   };
   onUncertain: {
-    thenStatus: 'open';                    // оставить для ручной обработки
-    moveToBoardId: BoardId | null;         // или перенаправить на другую доску
+    moveToBoardId: BoardId | null;         // перенаправить на другую доску (или оставить open)
   };
 };
 ```
 
 ### Flow автоматизации
 
-1. Тикет создаётся на доске с автоматизацией
-2. `ProcessAutomationHandler` извлекает контент из `ticket.data` (текст + картинки по типу)
-3. Отправляет в Claude с `automation.systemPrompt`
-4. `approved` → проверяет пермишен бота → выполняет action → `done`
-5. `rejected` → проверяет пермишен бота → выполняет action → `done`
-6. `uncertain` / ошибка → оставляет `open` или перенаправляет на другую доску
-7. Всё в `history` с actorId бота
+1. Тикет создаётся на доске с автоматизацией (статус `open`)
+2. `ProcessAutomationHandler` проверяет что тикет всё ещё `open`
+3. Извлекает контент из `ticket.data` (текст + картинки по типу)
+4. Отправляет в Claude с `automation.systemPrompt`
+5. `approved` → Assign на бота → ExecuteAction(onApprove.actionId) → комментарий с reason → MarkDone
+6. `rejected` → Assign на бота → ExecuteAction(onReject.actionId) → комментарий с reason → MarkDone
+7. `uncertain` / ошибка → комментарий с reason → оставляет `open` или перенаправляет на другую доску (с комментарием)
+8. **Без retry** — ошибка API = uncertain
+9. Всё в `history` с actorId бота
 
 ### Извлечение контента для LLM (по типу тикета)
 
@@ -612,6 +661,8 @@ function extractContent(data: TicketData): ModerationContent {
 
 Для org-контекста `BoardState.organizationId` задаёт изоляцию.
 
+**Эскалации между org и platform нет.** Организация может написать обращение к поддержке — это отдельный триггер для platform-контекста. Platform-админ может видеть тикеты org-доски только со специальным пермишеном (`tickets.view_org_boards`).
+
 ---
 
 ## HTTP API
@@ -651,8 +702,9 @@ GET    /admin/tickets/my                                → GetMyTickets
 GET    /admin/tickets/:ticketId                         → GetTicketDetail
 POST   /admin/tickets                                   → CreateTicket (ручное) { boardId, data }
 POST   /admin/tickets/:ticketId/assign                  → AssignTicket
+POST   /admin/tickets/:ticketId/reassign                → ReassignTicket { assigneeId }
 POST   /admin/tickets/:ticketId/unassign                → UnassignTicket
-POST   /admin/tickets/:ticketId/move                    → MoveTicket { toBoardId }
+POST   /admin/tickets/:ticketId/move                    → MoveTicket { toBoardId, comment }
 POST   /admin/tickets/:ticketId/done                    → MarkDone
 POST   /admin/tickets/:ticketId/reopen                  → ReopenTicket
 POST   /admin/tickets/:ticketId/actions/:actionId       → ExecuteAction
@@ -692,9 +744,11 @@ src/features/tickets/
     ticket-data.ts             # TicketData discriminated union
     triggers.ts                # TriggerId union, TRIGGER_META, TriggerToData
     actions.ts                 # ActionId union, ACTION_META
+    filters.ts                 # FilterId unions, FILTER_META, TriggerFilters
 
   application/
     ports.ts                   # TicketRepository, BoardRepository, TicketQueryPort
+    filter-context-port.ts     # ProgrammaticFilterContext (для first-time-org и т.д.)
     llm-port.ts                # LlmModerationPort
     action-executor-port.ts    # ActionExecutor
     content-extractor.ts       # TicketData → ModerationContent (по типу)
@@ -702,6 +756,7 @@ src/features/tickets/
       tickets/
         create-ticket.interactor.ts
         assign-ticket.interactor.ts
+        reassign-ticket.interactor.ts
         unassign-ticket.interactor.ts
         move-ticket.interactor.ts
         mark-done.interactor.ts
@@ -745,6 +800,9 @@ src/features/tickets/
     kafka/
       ticket-creation.handler.ts          # триггер-события → тикеты
       consumer-ids.ts
+    redis/
+      trigger-counter.adapter.ts          # every-nth счётчик в Redis
+      filter-context.adapter.ts           # ProgrammaticFilterContext impl
     claude/
       claude-moderation.adapter.ts
       stub-moderation.adapter.ts
@@ -763,6 +821,7 @@ Kafka event (item.moderation-requested)
 TicketCreationKafkaHandler
   │ Парсит событие
   │ Конвертирует в ItemModerationData (обогащает: imageId → URL)
+  │ Инкрементирует счётчик триггера в Redis
   │
   ▼
 BoardRepository.findByTrigger('item.moderation-requested')
@@ -770,17 +829,18 @@ BoardRepository.findByTrigger('item.moderation-requested')
   │
   ▼
 Для каждой доски:
-  │ Проверяет filter (json-logic) против TicketData
-  │ Если совпадает → CreateTicket { boardId, data, triggerId }
+  │ Проверяет filters (json-logic + programmatic) против TicketData
+  │ Если все фильтры прошли → CreateTicket { boardId, data, triggerId }
+  │ (тикеты на разных досках — отдельные агрегаты)
   │
   ▼
-Если у доски есть automation:
+Если у доски есть automation и тикет в статусе open:
   │ ProcessAutomationHandler
   │ extractContent(data) → текст + картинки
   │ Claude API с промптом из automation.systemPrompt
-  │ approved → ExecuteAction(automation.onApprove.actionId) + MarkDone
-  │ rejected → ExecuteAction(automation.onReject.actionId) + MarkDone
-  │ uncertain → оставляет open / перенаправляет
+  │ approved → Assign(bot) → ExecuteAction → Comment(reason) → MarkDone
+  │ rejected → Assign(bot) → ExecuteAction → Comment(reason) → MarkDone
+  │ uncertain/error → Comment(reason) → оставляет open / Move с комментарием
   │
   ▼
 Если нет automation или uncertain:
@@ -793,7 +853,7 @@ BoardRepository.findByTrigger('item.moderation-requested')
 
 ### Фаза 1 — Работающая модерация
 1. Domain: `TicketData` union + `TriggerId` union + `ActionId` union
-2. Domain: Ticket aggregate (create, assign, unassign, move, done, reopen)
+2. Domain: Ticket aggregate (create, assign, reassign, unassign, move, done, reopen)
 3. Domain: Board aggregate (create, subscribe, set actions, set members)
 4. Kafka consumer: `item.moderation` / `org.moderation` → тикеты
 5. ActionExecutor: moderation.approve/reject → Kafka `moderation.results`
@@ -804,7 +864,7 @@ BoardRepository.findByTrigger('item.moderation-requested')
 
 ### Фаза 2 — Админка
 10. HTTP: CRUD досок, подписки, members, actions, автоматизация
-11. HTTP: работа с тикетами (assign, move, execute action, comments)
+11. HTTP: работа с тикетами (assign, reassign, move, execute action, comments)
 12. HTTP: ручное создание тикетов
 13. DB queries с фильтрацией
 
