@@ -1,3 +1,4 @@
+import { h3Labels } from '@/infra/lib/geo/h3-geo.js';
 import type { ItemPublishedEvent } from '@/kernel/domain/events/item.events.js';
 import type {
   AttributeId,
@@ -96,6 +97,9 @@ export function toGorseLabels(item: ItemReadModel): string[] {
   const labels: string[] = [];
 
   if (item.location?.cityId) labels.push(`city:${item.location.cityId}`);
+  if (item.location?.coordinates) {
+    labels.push(...h3Labels(item.location.coordinates.lat, item.location.coordinates.lng));
+  }
   if (item.ageGroup) labels.push(`age:${item.ageGroup}`);
   if (item.typeId) labels.push(`type:${String(item.typeId)}`);
 

@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { ItemEntity } from '../../../domain/aggregates/item/entity.js';
-import type { OrganizationEntity } from '../../../domain/aggregates/organization/entity.js';
 import { ItemEventPublisher, ItemRepository, OrganizationRepository } from '../../ports.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';

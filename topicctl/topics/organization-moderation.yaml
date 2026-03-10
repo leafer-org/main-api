@@ -1,0 +1,9 @@
+meta:
+  name: organization.moderation
+  cluster: local-cluster
+  environment: local
+  description: organization moderation requests
+
+spec:
+  partitions: 1
+  replicationFactor: 1

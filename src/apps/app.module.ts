@@ -8,6 +8,8 @@ import { DiscoveryModule } from '../features/discovery/discovery.module.js';
 import { IDP_CONSUMER_ID } from '../features/idp/adapters/kafka/consumer-ids.js';
 import { IdpModule } from '../features/idp/idp.module.js';
 import { MediaModule } from '../features/media/media.module.js';
+import { ORGANIZATION_CONSUMER_ID } from '../features/organization/adapters/kafka/consumer-ids.js';
+import { OrganizationModule } from '../features/organization/organization.module.js';
 import { MainDbModule } from './db.module.js';
 import { MainGorseModule } from './gorse.module.js';
 import { MainRedisModule } from './redis.module.js';
@@ -66,11 +68,24 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
       }),
       inject: [MainConfigService],
     }),
+    KafkaConsumerModule.registerAsync({
+      consumerId: ORGANIZATION_CONSUMER_ID,
+      mode: { type: 'single' },
+      imports: [MainConfigModule],
+      useFactory: (config: MainConfigService) => ({
+        consumerConfig: {
+          'metadata.broker.list': config.get('KAFKA_BROKER'),
+          'group.id': 'organization-consumer',
+        },
+      }),
+      inject: [MainConfigService],
+    }),
     OutboxRelayModule,
     IdpModule,
     MediaModule,
     DiscoveryModule,
     CmsModule,
+    OrganizationModule,
   ],
 })
 export class AppModule {}

@@ -32,4 +32,12 @@ export class GorseSyncStub implements GorseSyncPort {
   ): Promise<void> {
     this.logger.debug('GorseSyncStub.deleteFeedback called (no-op)');
   }
+
+  public async upsertUser(_userId: UserId, _labels: string[], _comment: string): Promise<void> {
+    this.logger.debug('GorseSyncStub.upsertUser called (no-op)');
+  }
+
+  public async deleteUser(_userId: UserId): Promise<void> {
+    this.logger.debug('GorseSyncStub.deleteUser called (no-op)');
+  }
 }

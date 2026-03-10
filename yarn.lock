@@ -6041,6 +6041,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"h3-js@npm:^4.4.0":
+  version: 4.4.0
+  resolution: "h3-js@npm:4.4.0"
+  checksum: 10c0/3a324b3a879601e1d012c2f67b2f78e9a480b0fa8e51c54b77ee281b421343ae735c3d892ab80c2cc8c47522ad0822ccb457b97b3792a040e41991016801f3ed
+  languageName: node
+  linkType: hard
+
 "handlebars@npm:^4.7.6, handlebars@npm:^4.7.8":
   version: 4.7.8
   resolution: "handlebars@npm:4.7.8"
@@ -6670,6 +6677,7 @@ __metadata:
     drizzle-orm: "npm:^0.45.1"
     express-openapi-validator: "npm:^5.6.2"
     globals: "npm:^16.0.0"
+    h3-js: "npm:^4.4.0"
     ioredis: "npm:^5.10.0"
     meilisearch: "npm:^0.55.0"
     nestjs-cls: "npm:^6.2.0"

@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
-import type { ItemQueryPort, RankedListCachePort, RecommendationService } from '../../ports.js';
+import type {
+  CategoryAncestorLookupPort,
+  ItemQueryPort,
+  RankedListCachePort,
+  RecommendationService,
+} from '../../ports.js';
 import { GetCategoryItemsInteractor } from './get-category-items.interactor.js';
 import { isRight } from '@/infra/lib/box.js';
 import { ServiceMock } from '@/infra/test/mock.js';
+import type { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 import { CategoryId, ItemId, TypeId, UserId } from '@/kernel/domain/ids.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
@@ -25,15 +31,27 @@ function makeItem(id: string, overrides?: Partial<ItemReadModel>): ItemReadModel
   };
 }
 
+const ROOT_CATEGORY_ID = CategoryId.raw('root-1');
+
 function makeDeps() {
   const recommendation = ServiceMock<RecommendationService>();
   const rankedListCache = ServiceMock<RankedListCachePort>();
   const itemQuery = ServiceMock<ItemQueryPort>();
-  return { recommendation, rankedListCache, itemQuery };
+  const cityCoordinates = ServiceMock<CityCoordinatesPort>();
+  const ancestorLookup = ServiceMock<CategoryAncestorLookupPort>();
+  cityCoordinates.findCoordinates.mockResolvedValue(null);
+  ancestorLookup.findRootCategoryIds.mockResolvedValue([ROOT_CATEGORY_ID]);
+  return { recommendation, rankedListCache, itemQuery, cityCoordinates, ancestorLookup };
 }
 
 function makeInteractor(deps: ReturnType<typeof makeDeps>) {
-  return new GetCategoryItemsInteractor(deps.recommendation, deps.rankedListCache, deps.itemQuery);
+  return new GetCategoryItemsInteractor(
+    deps.recommendation,
+    deps.rankedListCache,
+    deps.itemQuery,
+    deps.cityCoordinates,
+    deps.ancestorLookup,
+  );
 }
 
 const baseQuery = {
@@ -90,7 +108,6 @@ describe('GetCategoryItemsInteractor', () => {
       expect(deps.recommendation.recommend).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: USER_ID,
-          categoryId: CATEGORY_ID,
           limit: 500,
         }),
       );
@@ -271,6 +288,37 @@ describe('GetCategoryItemsInteractor', () => {
           excludeIds: cachedIds,
         }),
       );
+    });
+
+    it('разный ageGroup → разный cache key', async () => {
+      const deps = makeDeps();
+      deps.rankedListCache.get.mockResolvedValue(null);
+      deps.recommendation.recommend.mockResolvedValue([]);
+      deps.itemQuery.findCategoryItemsSorted.mockResolvedValue({ items: [], nextCursor: null });
+
+      const interactor = makeInteractor(deps);
+
+      await interactor.execute({ ...baseQuery, ageGroup: 'adults' });
+      await interactor.execute({ ...baseQuery, ageGroup: 'children' });
+
+      const calls = deps.rankedListCache.get.mock.calls;
+      expect(calls[0]![0]).not.toBe(calls[1]![0]);
+    });
+
+    it('резолвит root-категорию через ancestorLookup', async () => {
+      const deps = makeDeps();
+      deps.rankedListCache.get.mockResolvedValue(null);
+      deps.recommendation.recommend.mockResolvedValue([ItemId.raw('a')]);
+      deps.itemQuery.findCategoryItemsSorted.mockResolvedValue({
+        items: [makeItem('a')],
+        nextCursor: null,
+      });
+      deps.itemQuery.findByIds.mockResolvedValue([makeItem('a')]);
+
+      const interactor = makeInteractor(deps);
+      await interactor.execute(baseQuery);
+
+      expect(deps.ancestorLookup.findRootCategoryIds).toHaveBeenCalledWith([CATEGORY_ID]);
     });
 
     it('сохраняет порядок Gorse после фильтрации', async () => {

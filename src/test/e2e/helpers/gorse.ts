@@ -27,12 +27,39 @@ async function gorseRequest<T>(method: string, path: string, body?: unknown): Pr
 }
 
 /**
+ * Вставляет items напрямую в Gorse (минуя Kafka).
+ */
+export async function gorseInsertItems(items: { ItemId: string; Labels: string[]; Categories?: string[]; Timestamp?: string }[]): Promise<void> {
+  await gorseRequest('POST', '/api/items', items.map(i => ({
+    ItemId: i.ItemId,
+    IsHidden: false,
+    Labels: i.Labels,
+    Categories: i.Categories ?? [],
+    Timestamp: i.Timestamp ?? new Date().toISOString(),
+    Comment: '',
+  })));
+}
+
+/**
+ * Вставляет feedback напрямую в Gorse (минуя Kafka).
+ */
+export async function gorseInsertFeedback(feedback: { UserId: string; ItemId: string; FeedbackType: string }[]): Promise<void> {
+  await gorseRequest('PUT', '/api/feedback', feedback.map(f => ({
+    FeedbackType: f.FeedbackType,
+    UserId: f.UserId,
+    ItemId: f.ItemId,
+    Timestamp: new Date().toISOString(),
+  })));
+}
+
+/**
  * Поллит `/api/popular` пока не появятся результаты.
  * Надёжнее чем отслеживать задачи — проверяем конечный результат.
  */
 export async function waitForGorsePopular(
   timeoutMs = 120_000,
   intervalMs = 2_000,
+  category?: string,
 ): Promise<{ Id: string; Score: number }[]> {
   const deadline = Date.now() + timeoutMs;
 
@@ -41,10 +68,10 @@ export async function waitForGorsePopular(
       throw new Error(`Gorse popular items not ready within ${timeoutMs}ms`);
     }
 
-    const results = await gorseRequest<{ Id: string; Score: number }[]>(
-      'GET',
-      '/api/non-personalized/popular?n=10',
-    );
+    const path = category
+      ? `/api/non-personalized/popular/${encodeURIComponent(category)}?n=10`
+      : '/api/non-personalized/popular?n=10';
+    const results = await gorseRequest<{ Id: string; Score: number }[]>('GET', path);
 
     if (results.length > 0) {
       console.log(`[waitForGorsePopular] got ${results.length} popular items`);

@@ -128,10 +128,14 @@ export class CategoryItemsController {
       scheduleTimeTo,
     });
 
+    const coordinates =
+      lat !== undefined && lng !== undefined ? { lat: Number(lat), lng: Number(lng) } : undefined;
+
     const result = await this.getCategoryItems.execute({
       categoryId: CategoryId.raw(id),
       sort: (sort ?? 'personal') as SortOption,
       cityId: cityId ?? '',
+      coordinates,
       ageGroup: (ageGroup ?? 'adults') as AgeGroup,
       filters,
       cursor: cursor ?? undefined,

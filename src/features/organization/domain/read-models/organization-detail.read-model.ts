@@ -1,5 +1,6 @@
-import type { FileId, OrganizationId } from '@/kernel/domain/ids.js';
 import type { SubscriptionPlanId } from '../aggregates/organization/config.js';
+import type { FileId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { WidgetType } from '@/kernel/domain/vo/widget.js';
 
 export type OrganizationDetailReadModel = {
   id: OrganizationId;
@@ -19,6 +20,7 @@ export type OrganizationDetailReadModel = {
     planId: SubscriptionPlanId;
     maxEmployees: number;
     maxPublishedItems: number;
+    availableWidgetTypes: WidgetType[];
   };
   createdAt: Date;
   updatedAt: Date;

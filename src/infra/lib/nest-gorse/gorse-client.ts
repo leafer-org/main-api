@@ -18,6 +18,12 @@ export type GorseFeedbackPayload = {
   Timestamp: string;
 };
 
+export type GorseUserPayload = {
+  UserId: string;
+  Labels: string[];
+  Comment: string;
+};
+
 @Injectable()
 export class GorseClient implements OnModuleInit {
   private readonly baseUrl: string;
@@ -94,8 +100,19 @@ export class GorseClient implements OnModuleInit {
     return this.request<string[]>('GET', `/api/recommend/${encodeURIComponent(userId)}?${qs}`);
   }
 
-  public async getPopular(params: URLSearchParams): Promise<{ Id: string; Score: number }[]> {
+  public async getPopular(params: URLSearchParams, category?: string): Promise<{ Id: string; Score: number }[]> {
     const qs = params.toString();
-    return this.request('GET', `/api/non-personalized/popular?${qs}`);
+    const path = category
+      ? `/api/non-personalized/popular/${encodeURIComponent(category)}?${qs}`
+      : `/api/non-personalized/popular?${qs}`;
+    return this.request('GET', path);
+  }
+
+  public async upsertUser(_userId: string, payload: GorseUserPayload): Promise<void> {
+    await this.request('POST', '/api/user', payload);
+  }
+
+  public async deleteUser(userId: string): Promise<void> {
+    await this.request('DELETE', `/api/user/${encodeURIComponent(userId)}`);
   }
 }

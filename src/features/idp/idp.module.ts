@@ -9,6 +9,7 @@ import { DrizzleRoleRepository } from './adapters/db/repositories/role.repositor
 import { DrizzleSessionRepository } from './adapters/db/repositories/session.repository.js';
 import { DrizzleSessionValidation } from './adapters/db/repositories/session-validation.adapter.js';
 import { DrizzleUserRepository } from './adapters/db/repositories/user.repository.js';
+import { DrizzleUserLookupAdapter } from './adapters/db/user-lookup.adapter.js';
 import { AdminUsersController } from './adapters/http/admin-users.controller.js';
 import { AuthController } from './adapters/http/auth.controller.js';
 import { MeController } from './adapters/http/me.controller.js';
@@ -59,6 +60,7 @@ import { GetUserSessionsInteractor } from './application/use-cases/user-sessions
 import { MainConfigModule } from '@/infra/config/module.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 import { SessionValidationPort } from '@/kernel/application/ports/session-validation.js';
+import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
 
 @Global()
 @Module({
@@ -77,6 +79,7 @@ import { SessionValidationPort } from '@/kernel/application/ports/session-valida
     { provide: SessionRepository, useClass: DrizzleSessionRepository },
     { provide: RoleRepository, useClass: DrizzleRoleRepository },
     { provide: SessionValidationPort, useClass: DrizzleSessionValidation },
+    { provide: UserLookupPort, useClass: DrizzleUserLookupAdapter },
     { provide: MeQueryPort, useClass: DrizzleMeQuery },
     { provide: UserSessionsQueryPort, useClass: DrizzleUserSessionsQuery },
     { provide: RoleQueryPort, useClass: DrizzleRoleQuery },
@@ -111,6 +114,6 @@ import { SessionValidationPort } from '@/kernel/application/ports/session-valida
     GetPermissionsSchemaInteractor,
     SearchAdminUsersInteractor,
   ],
-  exports: [SessionValidationPort],
+  exports: [SessionValidationPort, UserLookupPort],
 })
 export class IdpModule {}

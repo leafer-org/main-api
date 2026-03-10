@@ -1,4 +1,4 @@
-import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { doublePrecision, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const cmsCategories = pgTable('cms_categories', {
   id: uuid('id').primaryKey(),
@@ -25,3 +25,10 @@ export const cmsItemTypes = pgTable('cms_item_types', {
 });
 
 export type CmsItemTypeRow = typeof cmsItemTypes.$inferSelect;
+
+export const cmsCities = pgTable('cms_cities', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  lat: doublePrecision('lat').notNull(),
+  lng: doublePrecision('lng').notNull(),
+});

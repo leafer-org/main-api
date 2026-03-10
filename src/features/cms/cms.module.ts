@@ -1,5 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 
+import { DrizzleCatalogValidationAdapter } from './adapters/db/catalog-validation.adapter.js';
+import { DrizzleCityCoordinatesAdapter } from './adapters/db/city-coordinates.adapter.js';
 import { DrizzleCategoryQuery } from './adapters/db/queries/category.query.js';
 import { DrizzleItemTypeQuery } from './adapters/db/queries/item-type.query.js';
 import { DrizzleCategoryRepository } from './adapters/db/repositories/category.repository.js';
@@ -31,7 +33,10 @@ import { CreateItemTypeInteractor } from './application/use-cases/item-type/crea
 import { GetItemTypeListInteractor } from './application/use-cases/item-type/get-item-type-list.interactor.js';
 import { UpdateItemTypeInteractor } from './application/use-cases/item-type/update-item-type.interactor.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
+import { CatalogValidationPort } from '@/kernel/application/ports/catalog-validation.js';
+import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 
+@Global()
 @Module({
   controllers: [CategoriesController, ItemTypesController],
   providers: [
@@ -45,6 +50,8 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     { provide: ItemTypeEventPublisher, useClass: OutboxItemTypeEventPublisher },
     { provide: CategoryQueryPort, useClass: DrizzleCategoryQuery },
     { provide: ItemTypeQueryPort, useClass: DrizzleItemTypeQuery },
+    { provide: CatalogValidationPort, useClass: DrizzleCatalogValidationAdapter },
+    { provide: CityCoordinatesPort, useClass: DrizzleCityCoordinatesAdapter },
 
     // Category use cases
     CreateCategoryInteractor,
@@ -68,5 +75,6 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     // Kafka handlers
     CategoryCascadeKafkaHandler,
   ],
+  exports: [CatalogValidationPort, CityCoordinatesPort],
 })
 export class CmsModule {}

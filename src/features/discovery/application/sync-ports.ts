@@ -20,6 +20,8 @@ export abstract class GorseSyncPort {
     itemId: ItemId,
     feedbackType: string,
   ): Promise<void>;
+  public abstract upsertUser(userId: UserId, labels: string[], comment: string): Promise<void>;
+  public abstract deleteUser(userId: UserId): Promise<void>;
 }
 
 /** Синхронизация денормализованных данных для полнотекстового поиска. `upsertItems` — batch при обновлении owner. */

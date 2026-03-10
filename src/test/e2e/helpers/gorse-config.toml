@@ -1,18 +1,24 @@
 [server]
 http_port = 8088
+api_key = "e2e-test-gorse-key"
 
 [recommend]
+cache_expire = "1s"
+
+[recommend.data_source]
 positive_feedback_types = ["like", "purchase", "booking"]
 read_feedback_types = ["view", "click"]
 
 [recommend.collaborative]
-model_fit_period = "10s"
-model_search_period = "60s"
+fit_period = "5s"
+optimize_period = "0s"
 enable_index = false
 
-[recommend.offline]
-check_recommend_period = "10s"
-refresh_recommend_period = "1s"
+[recommend.ranker]
+fit_period = "5s"
+
+[master]
+meta_timeout = "5s"
 
 [[recommend.non-personalized]]
 name = "popular"

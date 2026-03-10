@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { RecommendationService } from '../../application/ports.js';
 import type { ItemId, UserId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
 @Injectable()
 export class RecommendationStub implements RecommendationService {
@@ -10,8 +9,7 @@ export class RecommendationStub implements RecommendationService {
 
   public async recommend(_params: {
     userId?: UserId;
-    cityId: string;
-    ageGroup: AgeGroup;
+    category: string;
     offset: number;
     limit: number;
   }): Promise<ItemId[]> {

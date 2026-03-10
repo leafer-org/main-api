@@ -29,6 +29,7 @@ import { CategoryProjectionKafkaHandler } from './adapters/kafka/category-projec
 import { InteractionProjectionKafkaHandler } from './adapters/kafka/interaction-projection.handler.js';
 // --- Kafka Handlers ---
 import { ItemProjectionKafkaHandler } from './adapters/kafka/item-projection.handler.js';
+import { UserProjectionKafkaHandler } from './adapters/kafka/user-projection.handler.js';
 import { ItemTypeProjectionKafkaHandler } from './adapters/kafka/item-type-projection.handler.js';
 import { OwnerProjectionKafkaHandler } from './adapters/kafka/owner-projection.handler.js';
 import { ReviewProjectionKafkaHandler } from './adapters/kafka/review-projection.handler.js';
@@ -66,6 +67,7 @@ import { UnlikeItemInteractor } from './application/use-cases/likes/unlike-item.
 import { ProjectCategoryHandler } from './application/use-cases/project-category/project-category.handler.js';
 import { ProjectInteractionHandler } from './application/use-cases/project-interaction/project-interaction.handler.js';
 import { ProjectItemHandler } from './application/use-cases/project-item/project-item.handler.js';
+import { ProjectUserHandler } from './application/use-cases/project-user/project-user.handler.js';
 import { ProjectItemTypeHandler } from './application/use-cases/project-item-type/project-item-type.handler.js';
 import { ProjectOwnerHandler } from './application/use-cases/project-owner/project-owner.handler.js';
 import { ProjectReviewHandler } from './application/use-cases/project-review/project-review.handler.js';
@@ -102,6 +104,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     ProjectOwnerHandler,
     ProjectReviewHandler,
     ProjectInteractionHandler,
+    ProjectUserHandler,
 
     // Cron
     CategoryCountsCron,
@@ -139,6 +142,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     OwnerProjectionKafkaHandler,
     ReviewProjectionKafkaHandler,
     InteractionProjectionKafkaHandler,
+    UserProjectionKafkaHandler,
   ],
   exports: [],
 })

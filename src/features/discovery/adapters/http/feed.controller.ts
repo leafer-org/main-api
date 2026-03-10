@@ -16,9 +16,15 @@ export class FeedController {
     @Query('ageGroup') ageGroup?: PublicQuery['getFeed']['ageGroup'],
     @Query('cursor') cursor?: PublicQuery['getFeed']['cursor'],
     @Query('limit') limit?: PublicQuery['getFeed']['limit'],
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
   ): Promise<PublicResponse['getFeed']> {
+    const coordinates =
+      lat !== undefined && lng !== undefined ? { lat: Number(lat), lng: Number(lng) } : undefined;
+
     const result = await this.getFeed.execute({
       cityId,
+      coordinates,
       ageGroup: (ageGroup ?? 'adults') as AgeGroup,
       cursor: cursor ?? undefined,
       limit: Number(limit ?? 20),

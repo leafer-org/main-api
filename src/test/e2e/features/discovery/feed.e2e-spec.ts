@@ -188,7 +188,7 @@ describe('GET /feed (fallback)', () => {
   });
 
   it('should return empty list when no items in Gorse', async () => {
-    const res = await agent.get('/feed').query({ cityId: 'city-unknown' }).expect(200);
+    const res = await agent.get('/feed').query({ cityId: 'city-unknown', ageGroup: 'adults' }).expect(200);
 
     expect(res.body.items).toEqual([]);
     expect(res.body.nextCursor).toBeNull();
@@ -206,20 +206,24 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     // Засидить 5 товаров через Kafka → ProjectItemHandler → DB + Gorse
     const ids = await seedItems(5, { titlePrefix: 'Popular Item' });
     seededItemIds.push(...ids);
+    console.log('seeded')
 
     // Отправить interactions от 10 фейковых пользователей → ProjectInteractionHandler → Gorse feedback
     const fakeUserIds = Array.from({ length: 10 }, () => randomUUID());
+    await sendBulkInteractions(fakeUserIds, seededItemIds, 'view');
     await sendBulkInteractions(fakeUserIds, seededItemIds, 'like');
+    console.log('interactions')
 
     // Дать время handler-ам обработать все interactions
-    await sleep(3000);
+    await sleep(5000);
+    console.log('sleeped')
 
     // Поллить /api/popular пока Gorse не сгенерирует популярные товары
-    await waitForGorsePopular(180_000);
+    await waitForGorsePopular(120_000);
   }, 240_000);
 
   it('should return popular items for anonymous user', async () => {
-    const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
+    const res = await agent.get('/feed').query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62' }).expect(200);
 
     expect(res.body.items.length).toBeGreaterThan(0);
     const returnedIds = res.body.items.map((i: { itemId: string }) => i.itemId);
@@ -228,7 +232,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
   });
 
   it('should return items with correct shape', async () => {
-    const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
+    const res = await agent.get('/feed').query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62' }).expect(200);
 
     expect(res.body.items.length).toBeGreaterThan(0);
     const item = res.body.items[0];
@@ -240,28 +244,28 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
   });
 
   it('should respect limit parameter', async () => {
-    const res = await agent.get('/feed').query({ cityId: 'city-1', limit: 2 }).expect(200);
+    const res = await agent.get('/feed').query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62', limit: 2 }).expect(200);
 
     expect(res.body.items).toHaveLength(2);
     expect(res.body.nextCursor).not.toBeNull();
   });
 
   it('should paginate with cursor', async () => {
-    const page1 = await agent.get('/feed').query({ cityId: 'city-1', limit: 2 }).expect(200);
+    const page1 = await agent.get('/feed').query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62', limit: 2 }).expect(200);
 
     expect(page1.body.items).toHaveLength(2);
     expect(page1.body.nextCursor).not.toBeNull();
 
     const page2 = await agent
       .get('/feed')
-      .query({ cityId: 'city-1', limit: 2, cursor: page1.body.nextCursor })
+      .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62', limit: 2, cursor: page1.body.nextCursor })
       .expect(200);
 
     expect(page2.body).toHaveProperty('items');
   });
 
   it('should return 200 with default limit when not specified', async () => {
-    const res = await agent.get('/feed').query({ cityId: 'city-1' }).expect(200);
+    const res = await agent.get('/feed').query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62' }).expect(200);
 
     expect(res.body.items.length).toBeGreaterThanOrEqual(1);
   });
@@ -297,11 +301,24 @@ describe('GET /feed (personalized)', { timeout: 300_000 }, () => {
   }, 240_000);
 
   it('should return personalized recommendations for authenticated user', async () => {
+    // Debug: verify items exist in DB and check Gorse response format
+    const dbRows = await db.select().from(discoveryItems);
+    console.log(`[personalized] DB has ${dbRows.length} items`);
+
+    const gorseUrl = process.env.GORSE_URL;
+    const gorseResp = await fetch(`${gorseUrl}/api/recommend/${userId}?n=10`, {
+      headers: { 'X-API-Key': process.env.GORSE_API_KEY! },
+    });
+    const gorseData = await gorseResp.json();
+    console.log(`[personalized] Gorse raw response: ${JSON.stringify(gorseData)}`);
+
     const res = await agent
       .get('/feed')
       .set('Authorization', `Bearer ${accessToken}`)
-      .query({ cityId: 'city-1' })
+      .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62' })
       .expect(200);
+
+    console.log(`[personalized] feed returned ${res.body.items.length} items`);
 
     expect(res.body.items.length).toBeGreaterThan(0);
   });
@@ -310,7 +327,7 @@ describe('GET /feed (personalized)', { timeout: 300_000 }, () => {
     const res = await agent
       .get('/feed')
       .set('Authorization', `Bearer ${accessToken}`)
-      .query({ cityId: 'city-1' })
+      .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62' })
       .expect(200);
 
     expect(res.body.items.length).toBeGreaterThan(0);

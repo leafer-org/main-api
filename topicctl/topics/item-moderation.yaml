@@ -1,0 +1,9 @@
+meta:
+  name: item.moderation
+  cluster: local-cluster
+  environment: local
+  description: item moderation requests
+
+spec:
+  partitions: 1
+  replicationFactor: 1

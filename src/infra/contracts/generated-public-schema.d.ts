@@ -669,6 +669,278 @@ export interface paths {
     patch: operations['updateCmsItemType'];
     trace?: never;
   };
+  '/organizations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Создание организации
+     * @description Создаёт новую организацию. Текущий пользователь становится владельцем с ролью ADMIN.
+     */
+    post: operations['createOrganization'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Детали организации
+     * @description Возвращает полную информацию об организации (для сотрудника/владельца).
+     */
+    get: operations['getOrganization'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Обновление черновика профиля
+     * @description Обновляет черновик профиля организации (name, description, avatarId).
+     */
+    patch: operations['updateInfoDraft'];
+    trace?: never;
+  };
+  '/organizations/{id}/submit-for-moderation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Отправить профиль на модерацию
+     * @description Отправляет черновик профиля организации на модерацию. Возможно только из статуса draft или rejected.
+     */
+    post: operations['submitInfoForModeration'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/employees': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Список сотрудников
+     * @description Возвращает список сотрудников организации с их ролями.
+     */
+    get: operations['getOrganizationEmployees'];
+    put?: never;
+    /**
+     * Приглашение сотрудника
+     * @description Приглашает пользователя в организацию по номеру телефона.
+     */
+    post: operations['inviteEmployee'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/employees/{userId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Удаление сотрудника
+     * @description Удаляет сотрудника из организации. Владельца удалить нельзя.
+     */
+    delete: operations['removeEmployee'];
+    options?: never;
+    head?: never;
+    /**
+     * Изменение роли сотрудника
+     * @description Назначает сотруднику другую роль.
+     */
+    patch: operations['changeEmployeeRole'];
+    trace?: never;
+  };
+  '/organizations/{id}/transfer-ownership': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Передача владения
+     * @description Передаёт владение организацией другому сотруднику. Новый владелец получает роль ADMIN.
+     */
+    post: operations['transferOwnership'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/roles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Список ролей
+     * @description Возвращает список ролей организации с пермишенами.
+     */
+    get: operations['getOrganizationRoles'];
+    put?: never;
+    /**
+     * Создание роли
+     * @description Создаёт новую роль в организации с указанными пермишенами.
+     */
+    post: operations['createEmployeeRole'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/roles/{roleId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Удаление роли
+     * @description Удаляет роль. Все сотрудники с этой ролью переназначаются на replacementRoleId. Роль ADMIN удалить нельзя.
+     */
+    delete: operations['deleteEmployeeRole'];
+    options?: never;
+    head?: never;
+    /**
+     * Обновление роли
+     * @description Обновляет имя и пермишены роли.
+     */
+    patch: operations['updateEmployeeRole'];
+    trace?: never;
+  };
+  '/organizations/{orgId}/items': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Список товаров организации
+     * @description Возвращает список товаров организации с информацией о статусе черновика и публикации.
+     */
+    get: operations['getOrganizationItems'];
+    put?: never;
+    /**
+     * Создание товара
+     * @description Создаёт новый товар (черновик) в организации. Виджеты валидируются по типу товара и плану подписки.
+     */
+    post: operations['createItem'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{orgId}/items/{itemId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Детали товара
+     * @description Возвращает полную информацию о товаре, включая черновик и публикацию.
+     */
+    get: operations['getItemDetail'];
+    put?: never;
+    post?: never;
+    /**
+     * Удаление черновика товара
+     * @description Удаляет черновик товара. Если нет публикации — удаляет товар целиком.
+     */
+    delete: operations['deleteItemDraft'];
+    options?: never;
+    head?: never;
+    /**
+     * Обновление черновика товара
+     * @description Обновляет виджеты черновика товара. Невозможно, если черновик на модерации.
+     */
+    patch: operations['updateItemDraft'];
+    trace?: never;
+  };
+  '/organizations/{orgId}/items/{itemId}/submit-for-moderation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Отправить товар на модерацию
+     * @description Отправляет черновик товара на модерацию. Возможно только из статуса draft или rejected.
+     */
+    post: operations['submitItemForModeration'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{orgId}/items/{itemId}/unpublish': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Снять товар с публикации
+     * @description Снимает товар с публикации. Данные публикации копируются в новый черновик.
+     */
+    post: operations['unpublishItem'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1024,6 +1296,102 @@ export interface components {
       name: string;
       availableWidgetTypes: components['schemas']['WidgetType'][];
       requiredWidgetTypes: components['schemas']['WidgetType'][];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    /** @enum {string} */
+    InfoDraftStatus: 'draft' | 'moderation-request' | 'rejected';
+    InfoDraft: {
+      name: string;
+      description: string;
+      avatarId?: string | null;
+      status: components['schemas']['InfoDraftStatus'];
+    };
+    Employee: {
+      userId: string;
+      roleId: string;
+      isOwner: boolean;
+      /** Format: date-time */
+      joinedAt: string;
+    };
+    /** @enum {string} */
+    OrganizationPermission:
+      | 'manage_employees'
+      | 'manage_roles'
+      | 'edit_organization'
+      | 'publish_organization'
+      | 'edit_items'
+      | 'publish_items'
+      | 'unpublish_items'
+      | 'manage_subscription';
+    EmployeeRole: {
+      id: string;
+      name: string;
+      permissions: components['schemas']['OrganizationPermission'][];
+    };
+    /** @enum {string} */
+    SubscriptionPlanId: 'free' | 'individual' | 'team';
+    Subscription: {
+      planId: components['schemas']['SubscriptionPlanId'];
+      maxEmployees: number;
+      maxPublishedItems: number;
+      availableWidgetTypes: components['schemas']['WidgetType'][];
+    };
+    OrganizationDetail: {
+      id: string;
+      infoDraft: components['schemas']['InfoDraft'];
+      infoPublication?: {
+        name: string;
+        description: string;
+        avatarId?: string | null;
+        /** Format: date-time */
+        publishedAt: string;
+      } | null;
+      employees: components['schemas']['Employee'][];
+      roles: components['schemas']['EmployeeRole'][];
+      subscription: components['schemas']['Subscription'];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    ItemListItem: {
+      itemId: string;
+      organizationId: string;
+      typeId: string;
+      hasDraft?: boolean;
+      draftStatus?: string | null;
+      hasPublication?: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    ItemWidget: {
+      type: components['schemas']['WidgetType'];
+      data: {
+        [key: string]: unknown;
+      };
+    };
+    /** @enum {string} */
+    ItemDraftStatus: 'draft' | 'moderation-request' | 'rejected';
+    ItemDetail: {
+      itemId: string;
+      organizationId: string;
+      typeId: string;
+      draft?: {
+        widgets: components['schemas']['ItemWidget'][];
+        status: components['schemas']['ItemDraftStatus'];
+        /** Format: date-time */
+        updatedAt: string;
+      } | null;
+      publication?: {
+        widgets: components['schemas']['ItemWidget'][];
+        /** Format: date-time */
+        publishedAt: string;
+      } | null;
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -2464,6 +2832,10 @@ export interface operations {
         ageGroup?: 'adults' | 'children' | 'all';
         /** @description Курсор для пагинации */
         cursor?: string;
+        /** @description Широта пользователя (optional, для geo-рекомендаций) */
+        lat?: number;
+        /** @description Долгота пользователя (optional, для geo-рекомендаций) */
+        lng?: number;
         /** @description Количество элементов на странице */
         limit?: number;
       };
@@ -3115,6 +3487,1018 @@ export interface operations {
         };
       };
       /** @description Тип товара не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  createOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+          description: string;
+          avatarId?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description Организация создана */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrganizationDetail'];
+        };
+      };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+    };
+  };
+  getOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Информация об организации */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrganizationDetail'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  updateInfoDraft: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+          description: string;
+          avatarId?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description Черновик обновлён */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrganizationDetail'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется edit_organization) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  submitInfoForModeration: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Отправлено на модерацию */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (профиль не в статусе draft/rejected) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется publish_organization) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getOrganizationEmployees: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список сотрудников */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Employee'][];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  inviteEmployee: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description Номер телефона приглашаемого пользователя */
+          phone: string;
+          /** @description ID роли для нового сотрудника */
+          roleId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Сотрудник приглашён */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Employee'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется manage_employees) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация или пользователь не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  removeEmployee: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Сотрудник удалён */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (нельзя удалить владельца) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется manage_employees) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация или сотрудник не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  changeEmployeeRole: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          roleId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Роль изменена */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Employee'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется manage_employees) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация, сотрудник или роль не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  transferOwnership: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description ID сотрудника, которому передаётся владение */
+          userId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Владение передано */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (пользователь не является сотрудником) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (только владелец) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getOrganizationRoles: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список ролей */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeRole'][];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  createEmployeeRole: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+          permissions: components['schemas']['OrganizationPermission'][];
+        };
+      };
+    };
+    responses: {
+      /** @description Роль создана */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeRole'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется manage_roles) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  deleteEmployeeRole: {
+    parameters: {
+      query: {
+        /** @description ID роли, на которую переназначить сотрудников */
+        replacementRoleId: string;
+      };
+      header?: never;
+      path: {
+        id: string;
+        roleId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Роль удалена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (нельзя удалить ADMIN роль) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется manage_roles) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация или роль не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  updateEmployeeRole: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        roleId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+          permissions: components['schemas']['OrganizationPermission'][];
+        };
+      };
+    };
+    responses: {
+      /** @description Роль обновлена */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeRole'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется manage_roles) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация или роль не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getOrganizationItems: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список товаров */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ItemListItem'][];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  createItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          typeId: string;
+          widgets: components['schemas']['ItemWidget'][];
+        };
+      };
+    };
+    responses: {
+      /** @description Товар создан */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ItemDetail'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется edit_items) или виджет недоступен на плане */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getItemDetail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Информация о товаре */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ItemDetail'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация или товар не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  deleteItemDraft: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Черновик удалён */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (нет черновика) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется edit_items) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация или товар не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  updateItemDraft: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          widgets: components['schemas']['ItemWidget'][];
+        };
+      };
+    };
+    responses: {
+      /** @description Черновик обновлён */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ItemDetail'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется edit_items) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация или товар не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  submitItemForModeration: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Отправлено на модерацию */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (лимит публикаций или неверный статус черновика) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется publish_items) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация или товар не найдены */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  unpublishItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Товар снят с публикации */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (товар не опубликован) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется unpublish_items) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация или товар не найдены */
       404: {
         headers: {
           [name: string]: unknown;

@@ -10,6 +10,7 @@ import type { AttributeId, CategoryId, ItemId, TypeId, UserId } from '@/kernel/d
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
+
 // --- Query Ports ---
 
 /**
@@ -69,7 +70,8 @@ export abstract class CategoryFiltersQueryPort {
 /** Резолв ancestorIds для набора категорий. Используется Gorse-адаптером при синке items. */
 export abstract class CategoryAncestorLookupPort {
   public abstract findAncestorIds(categoryIds: CategoryId[]): Promise<CategoryId[]>;
-  public abstract clearCache(): Promise<void>;
+  public abstract findRootCategoryIds(categoryIds: CategoryId[]): Promise<CategoryId[]>;
+  public abstract clearCache(): void;
 }
 
 // --- Write Ports ---
@@ -91,9 +93,7 @@ export abstract class LikeWritePort {
 export abstract class RecommendationService {
   public abstract recommend(params: {
     userId?: UserId;
-    cityId: string;
-    ageGroup: AgeGroup;
-    categoryId?: CategoryId;
+    category: string;
     offset: number;
     limit: number;
   }): Promise<ItemId[]>;

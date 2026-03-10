@@ -11,6 +11,13 @@ CREATE TABLE "cms_categories" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "cms_cities" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"lat" double precision NOT NULL,
+	"lng" double precision NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "cms_item_types" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
@@ -168,6 +175,22 @@ CREATE TABLE "files" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "items" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"type_id" text NOT NULL,
+	"state" jsonb NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "organizations" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"state" jsonb NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "outbox" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"topic" text NOT NULL,
@@ -190,4 +213,5 @@ CREATE INDEX "discovery_items_rating_idx" ON "discovery_items" USING btree ("ite
 CREATE INDEX "discovery_items_published_at_idx" ON "discovery_items" USING btree ("published_at");--> statement-breakpoint
 CREATE INDEX "login_processes_phone_ip_requested_idx" ON "login_processes" USING btree ("phone_number","ip","requested_at");--> statement-breakpoint
 CREATE INDEX "login_processes_reg_session_idx" ON "login_processes" USING btree ("registration_session_id");--> statement-breakpoint
-CREATE INDEX "sessions_user_created_idx" ON "sessions" USING btree ("user_id","created_at");
+CREATE INDEX "sessions_user_created_idx" ON "sessions" USING btree ("user_id","created_at");--> statement-breakpoint
+CREATE INDEX "items_organization_id_idx" ON "items" USING btree ("organization_id");

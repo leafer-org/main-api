@@ -2,10 +2,20 @@ import * as crypto from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { toListView } from '../../../domain/mappers/item-list-view.mapper.js';
-import { ItemQueryPort, RankedListCachePort, RecommendationService } from '../../ports.js';
+import {
+  CategoryAncestorLookupPort,
+  ItemQueryPort,
+  RankedListCachePort,
+  RecommendationService,
+} from '../../ports.js';
 import type { CategoryItemFilters, SortOption } from './types.js';
+import {
+  userGeoCategoryWithCatalog,
+  userGlobalCategoryWithCatalog,
+} from '@/infra/lib/geo/h3-geo.js';
 import { Right } from '@/infra/lib/box.js';
 import { nextOffsetCursor, parseOffsetCursor } from '@/infra/lib/pagination/index.js';
+import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 import type { CategoryId, ItemId, UserId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
@@ -26,12 +36,15 @@ export class GetCategoryItemsInteractor {
     @Inject(RecommendationService) private readonly recommendation: RecommendationService,
     @Inject(RankedListCachePort) private readonly rankedListCache: RankedListCachePort,
     @Inject(ItemQueryPort) private readonly itemQuery: ItemQueryPort,
+    @Inject(CityCoordinatesPort) private readonly cityCoordinates: CityCoordinatesPort,
+    @Inject(CategoryAncestorLookupPort) private readonly ancestorLookup: CategoryAncestorLookupPort,
   ) {}
 
   public async execute(query: {
     userId?: UserId;
     categoryId: CategoryId;
     cityId: string;
+    coordinates?: { lat: number; lng: number };
     ageGroup: AgeGroup;
     filters: CategoryItemFilters;
     sort: SortOption;
@@ -61,6 +74,7 @@ export class GetCategoryItemsInteractor {
     userId?: UserId;
     categoryId: CategoryId;
     cityId: string;
+    coordinates?: { lat: number; lng: number };
     ageGroup: AgeGroup;
     filters: CategoryItemFilters;
     cursor?: string;
@@ -125,15 +139,21 @@ export class GetCategoryItemsInteractor {
     userId?: UserId;
     categoryId: CategoryId;
     cityId: string;
+    coordinates?: { lat: number; lng: number };
     ageGroup: AgeGroup;
     filters: CategoryItemFilters;
   }): Promise<ItemId[]> {
+    const category = await this.resolveGeoCategoryWithCatalog(
+      query.cityId,
+      query.categoryId,
+      query.ageGroup,
+      query.coordinates,
+    );
+
     const recommendedIds = await this.recommendation
       .recommend({
         userId: query.userId,
-        categoryId: query.categoryId,
-        cityId: query.cityId,
-        ageGroup: query.ageGroup,
+        category,
         offset: 0,
         limit: RECOMMEND_CAP,
       })
@@ -189,13 +209,34 @@ export class GetCategoryItemsInteractor {
   private buildCacheKey(query: {
     userId?: UserId;
     categoryId: CategoryId;
+    ageGroup: AgeGroup;
     filters: CategoryItemFilters;
   }): string {
     const raw = JSON.stringify({
       userId: query.userId ?? 'anon',
       categoryId: query.categoryId,
+      ageGroup: query.ageGroup,
       filters: query.filters,
     });
     return `ranked:${crypto.createHash('sha256').update(raw).digest('hex').slice(0, 16)}`;
+  }
+
+  private async resolveGeoCategoryWithCatalog(
+    cityId: string,
+    categoryId: CategoryId,
+    ageGroup: AgeGroup,
+    coordinates?: { lat: number; lng: number },
+  ): Promise<string> {
+    const rootCatIds = await this.ancestorLookup.findRootCategoryIds([categoryId]);
+    const rootCatId = String(rootCatIds[0] ?? categoryId);
+
+    if (coordinates) {
+      return userGeoCategoryWithCatalog(coordinates.lat, coordinates.lng, ageGroup, rootCatId);
+    }
+    const resolved = await this.cityCoordinates.findCoordinates(cityId);
+    if (resolved) {
+      return userGeoCategoryWithCatalog(resolved.lat, resolved.lng, ageGroup, rootCatId);
+    }
+    return userGlobalCategoryWithCatalog(ageGroup, rootCatId);
   }
 }

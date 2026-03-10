@@ -17,7 +17,8 @@ export class RepublishItemsOnOrgUpdateHandler {
   public async handle(event: InfoModerationApprovedEvent & { organizationId: OrganizationId }): Promise<void> {
     await this.txHost.startTransaction(async (tx) => {
       const org = await this.organizationRepository.findById(tx, event.organizationId);
-      if (!org || !org.infoPublication) return;
+      const infoPublication = org?.infoPublication
+      if (!infoPublication) return;
 
       const publishedItems = await this.itemRepository.findPublishedByOrganizationId(
         tx,
@@ -32,8 +33,8 @@ export class RepublishItemsOnOrgUpdateHandler {
           if (w.type === 'owner') {
             return {
               ...w,
-              name: org.infoPublication!.name,
-              avatarId: org.infoPublication!.avatarId,
+              name: infoPublication.name,
+              avatarId: infoPublication.avatarId,
             };
           }
           return w;
