@@ -33,6 +33,9 @@ export type RegisterCommand = {
   role: Role;
   fullName: FullName;
   avatarId: FileId | undefined;
+  cityId: string;
+  lat?: number;
+  lng?: number;
 
   registrationSessionId: string;
   fingerPrint: FingerPrint;

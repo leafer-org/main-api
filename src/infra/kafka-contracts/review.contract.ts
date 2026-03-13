@@ -6,6 +6,7 @@ const ReviewStreamingMessage = Type.Object({
   id: Type.String(),
   type: Type.Union([Type.Literal('review.created'), Type.Literal('review.deleted')]),
   reviewId: Type.String(),
+  userId: Type.Optional(Type.String()),
   target: Type.Object({
     targetType: Type.Union([Type.Literal('item'), Type.Literal('organization')]),
     itemId: Type.Optional(Type.String()),

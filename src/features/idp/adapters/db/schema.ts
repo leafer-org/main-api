@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import {
   boolean,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -28,6 +29,9 @@ export const users = pgTable('users', {
   fullName: text('full_name'),
   role: text('role').notNull().default('USER'),
   avatarFileId: text('avatar_file_id'),
+  cityId: text('city_id').notNull().default(''),
+  lat: doublePrecision('lat'),
+  lng: doublePrecision('lng'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()

@@ -57,6 +57,7 @@ const makeUser = (): UserState => ({
   fullName: FullName.raw('Иван Иванов'),
   avatarId: undefined,
   role: Role.raw('OldRole'),
+  cityId: 'city-1',
   createdAt: NOW,
   updatedAt: NOW,
 });

@@ -96,7 +96,7 @@ describe('Organization Items (e2e)', () => {
         .set('Authorization', `Bearer ${other.accessToken}`)
         .send({
           typeId: itemType.id,
-          widgets: [{ type: 'base-info', title: 'T', description: 'D', imageId: null }],
+          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', imageId: null } }],
         })
         .expect(403);
     });
@@ -154,7 +154,7 @@ describe('Organization Items (e2e)', () => {
 
       expect(res.body.itemId).toBe(item.itemId);
       expect(res.body.draft).toBeDefined();
-      expect(res.body.draft.widgets[0].title).toBe('Test Item');
+      expect(res.body.draft.widgets[0].data.title).toBe('Test Item');
     });
 
     it('should return 404 for non-existent item', async () => {
@@ -182,12 +182,12 @@ describe('Organization Items (e2e)', () => {
         .set('Authorization', `Bearer ${user.accessToken}`)
         .send({
           widgets: [
-            { type: 'base-info', title: 'Updated Title', description: 'Updated desc', imageId: null },
+            { type: 'base-info', data: { title: 'Updated Title', description: 'Updated desc', imageId: null } },
           ],
         })
         .expect(200);
 
-      expect(res.body.draft.widgets[0].title).toBe('Updated Title');
+      expect(res.body.draft.widgets[0].data.title).toBe('Updated Title');
     });
   });
 

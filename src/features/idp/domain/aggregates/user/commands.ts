@@ -10,6 +10,9 @@ export type CreateUserCommand = {
   fullName: FullName;
   avatarId: FileId | undefined;
   role: Role;
+  cityId: string;
+  lat?: number;
+  lng?: number;
   now: Date;
 };
 
@@ -17,6 +20,9 @@ export type UpdateProfileCommand = {
   type: 'UpdateProfile';
   fullName: FullName;
   avatarId: FileId | undefined;
+  cityId?: string;
+  lat?: number;
+  lng?: number;
   now: Date;
 };
 

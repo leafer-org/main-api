@@ -1,0 +1,39 @@
+[server]
+http_port = 8088
+api_key = ""
+
+[recommend]
+cache_expire = "10m"
+explore_recommend = { popular = 0.8, latest = 0.2 }
+
+[recommend.data_source]
+positive_feedback_types = ["like", "purchase", "booking"]
+read_feedback_types = ["view", "click"]
+
+[recommend.item_neighbors]
+neighbor_type = "auto"
+
+[recommend.online]
+fallback_recommend = "latest"
+num_feedback_fallback_item_based = 10
+
+[recommend.collaborative]
+fit_period = "60m"
+optimize_period = "0s"
+enable_index = false
+
+[recommend.ranker]
+fit_period = "60m"
+
+[master]
+meta_timeout = "10s"
+
+[[recommend.non-personalized]]
+name = "popular"
+score = "count(feedback, .FeedbackType == 'like')"
+filter = ""
+
+[[recommend.non-personalized]]
+name = "latest"
+score = "item.Timestamp.Unix()"
+filter = ""

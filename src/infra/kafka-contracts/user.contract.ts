@@ -7,6 +7,9 @@ const UserSnapshotMessage = Type.Object({
   phoneNumber: Type.String(),
   fullName: Type.String(),
   role: Type.String(),
+  cityId: Type.String(),
+  lat: Type.Optional(Type.Number()),
+  lng: Type.Optional(Type.Number()),
   createdAt: Type.String(),
   updatedAt: Type.String(),
 });

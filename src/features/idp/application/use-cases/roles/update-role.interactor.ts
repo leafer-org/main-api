@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { roleApply } from '../../../domain/aggregates/role/apply.js';
-import { roleDecide } from '../../../domain/aggregates/role/decide.js';
+import { RoleEntity } from '../../../domain/aggregates/role/entity.js';
 import { RoleNotFoundError } from '../../../domain/aggregates/role/errors.js';
 import { RoleRepository } from '../../ports.js';
 import { isLeft, Left } from '@/infra/lib/box.js';
@@ -30,18 +29,17 @@ export class UpdateRoleInteractor {
       if (!state) return Left(new RoleNotFoundError());
 
       const now = this.clock.now();
-      const eventEither = roleDecide(state, {
+      const result = RoleEntity.update(state, {
         type: 'UpdateRole',
         permissions: command.permissions,
         now,
       });
 
-      if (isLeft(eventEither)) return eventEither;
+      if (isLeft(result)) return result;
 
-      const newState = roleApply(state, eventEither.value);
-      await this.roleRepository.save(tx, newState);
+      await this.roleRepository.save(tx, result.value.state);
 
-      return { type: 'success' as const, value: newState };
+      return { type: 'success' as const, value: result.value.state };
     });
   }
 }

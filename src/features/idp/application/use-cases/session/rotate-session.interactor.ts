@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { sessionApply } from '../../../domain/aggregates/session/apply.js';
-import { sessionDecide } from '../../../domain/aggregates/session/decide.js';
+import { SessionEntity } from '../../../domain/aggregates/session/entity.js';
 import {
   SessionExpiredError,
   SessionNotFoundError,
@@ -52,7 +51,7 @@ export class RotateSessionInteractor {
       const user = await this.userRepository.findById(tx, state.userId);
       if (!user) return Left(new UserNotFoundError());
 
-      const eventEither = sessionDecide(state, {
+      const result = SessionEntity.rotate(state, {
         type: 'RotateSession',
         newId: this.idGenerator.generateSessionId(),
         userId: state.userId,
@@ -60,22 +59,19 @@ export class RotateSessionInteractor {
         ttlMs: SESSION_TTL_MS,
       });
 
-      if (isLeft(eventEither)) return eventEither;
-
-      const newState = sessionApply(state, eventEither.value);
-      if (!newState) throw new Error('Unexpected null session state after rotation');
+      if (isLeft(result)) return result;
 
       await this.sessionRepository.deleteById(tx, state.id);
-      await this.sessionRepository.save(tx, newState);
+      await this.sessionRepository.save(tx, result.value.state);
 
       const accessToken = this.jwtAccess.sign({
         userId: user.id,
         role: user.role,
-        sessionId: newState.id,
+        sessionId: result.value.state.id,
       });
 
       const refreshToken = this.refreshTokens.sign({
-        sessionId: newState.id,
+        sessionId: result.value.state.id,
         userId: user.id,
         type: 'refresh',
       });

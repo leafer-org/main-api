@@ -1,10 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { roleDecide } from '../../../domain/aggregates/role/decide.js';
+import { RoleEntity } from '../../../domain/aggregates/role/entity.js';
 import { RoleNotFoundError } from '../../../domain/aggregates/role/errors.js';
-import { sessionDecide } from '../../../domain/aggregates/session/decide.js';
-import { userApply } from '../../../domain/aggregates/user/apply.js';
-import { userDecide } from '../../../domain/aggregates/user/decide.js';
+import { SessionEntity } from '../../../domain/aggregates/session/entity.js';
+import { UserEntity } from '../../../domain/aggregates/user/entity.js';
 import { whenRoleDeletedUpdateUserRoles } from '../../../domain/policies/when-role-deleted-update-user-roles.policy.js';
 import { whenUserRoleUpdatedDeleteSessions } from '../../../domain/policies/when-user-role-updated-delete-sessions.policy.js';
 import { RoleRepository, SessionRepository, UserRepository } from '../../ports.js';
@@ -40,37 +39,34 @@ export class DeleteRoleInteractor {
       const now = this.clock.now();
 
       // 1. Delete role aggregate
-      const eventEither = roleDecide(state, {
+      const roleResult = RoleEntity.delete(state, {
         type: 'DeleteRole',
         replacementRoleName: replacementRole.name,
       });
-      if (isLeft(eventEither)) return eventEither;
+      if (isLeft(roleResult)) return roleResult;
 
       await this.roleRepository.deleteById(tx, command.roleId);
 
       // 2. Policy chain: RoleDeleted → update users → delete sessions
-      const roleDeletedEvent = eventEither.value;
-      if (roleDeletedEvent.type !== 'role.deleted') return Right(undefined);
+      const roleDeletedEvent = roleResult.value.event;
 
       const users = await this.userRepository.findByRoleName(tx, roleDeletedEvent.roleName);
 
       for (const userState of users) {
         const cmd = whenRoleDeletedUpdateUserRoles(roleDeletedEvent, { now });
-        const userEventEither = userDecide(userState, cmd);
-        if (isLeft(userEventEither)) continue;
+        const userResult = UserEntity.updateRole(userState, cmd);
+        if (isLeft(userResult)) continue;
 
-        const userEvent = userEventEither.value;
-        const newUserState = userApply(userState, userEvent);
         // biome-ignore lint/performance/noAwaitInLoops: normal
-        await this.userRepository.save(tx, newUserState);
+        await this.userRepository.save(tx, userResult.value.state);
 
         // Policy 2: UserRoleUpdated → DeleteSession (per session)
-        if (userEvent.type === 'user.role_updated') {
+        if (userResult.value.event.type === 'user.role_updated') {
           const sessions = await this.sessionRepository.findByUserId(tx, userState.id);
           for (const session of sessions) {
-            const delCmd = whenUserRoleUpdatedDeleteSessions(userEvent);
-            const sessionEventEither = sessionDecide(session, delCmd);
-            if (isLeft(sessionEventEither)) continue;
+            const delCmd = whenUserRoleUpdatedDeleteSessions(userResult.value.event);
+            const sessionResult = SessionEntity.delete(session, delCmd);
+            if (isLeft(sessionResult)) continue;
             // biome-ignore lint/performance/noAwaitInLoops: normal
             await this.sessionRepository.deleteById(tx, session.id);
           }

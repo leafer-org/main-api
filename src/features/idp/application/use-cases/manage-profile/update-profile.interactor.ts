@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { userApply } from '../../../domain/aggregates/user/apply.js';
-import { userDecide } from '../../../domain/aggregates/user/decide.js';
+import { UserEntity } from '../../../domain/aggregates/user/entity.js';
 import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.js';
 import { FullName } from '../../../domain/vo/full-name.js';
 import { UserRepository } from '../../ports.js';
@@ -20,7 +19,7 @@ export class UpdateProfileInteractor {
     private readonly txHost: TransactionHost,
   ) {}
 
-  public async execute(command: { userId: UserId; fullName: string; avatarId?: string }) {
+  public async execute(command: { userId: UserId; fullName: string; avatarId?: string; cityId?: string; lat?: number; lng?: number }) {
     const fullNameEither = FullName.create(command.fullName);
     if (isLeft(fullNameEither)) return fullNameEither;
 
@@ -31,17 +30,19 @@ export class UpdateProfileInteractor {
       const state = await this.userRepository.findById(tx, command.userId);
       if (!state) return Left(new UserNotFoundError());
 
-      const eventEither = userDecide(state, {
+      const result = UserEntity.updateProfile(state, {
         type: 'UpdateProfile',
         fullName,
         avatarId: command.avatarId ? FileId.raw(command.avatarId) : state.avatarId,
+        cityId: command.cityId,
+        lat: command.lat,
+        lng: command.lng,
         now,
       });
 
-      if (isLeft(eventEither)) return eventEither;
+      if (isLeft(result)) return result;
 
-      const newState = userApply(state, eventEither.value);
-      await this.userRepository.save(tx, newState);
+      await this.userRepository.save(tx, result.value.state);
 
       return Right(undefined);
     });

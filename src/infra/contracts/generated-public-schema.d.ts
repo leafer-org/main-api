@@ -479,6 +479,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/items/{itemId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Детальная страница товара — полные данные всех виджетов */
+    get: operations['getDiscoveryItemDetail'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/items/{itemId}/like': {
     parameters: {
       query?: never;
@@ -492,6 +509,269 @@ export interface paths {
     post: operations['likeItem'];
     /** @description Убрать лайк с товара */
     delete: operations['unlikeItem'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/interactions/views': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Записать показы карточек (batch). Дедупликация — 1 view на item в час. */
+    post: operations['recordViews'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/interactions/click': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Записать клик (переход на detail page) */
+    post: operations['recordClick'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/interactions/show-contacts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Записать раскрытие контактов организации */
+    post: operations['recordShowContacts'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reviews': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Список отзывов по сущности
+     * @description Возвращает опубликованные отзывы по item или организации. Если пользователь авторизован, его pending-отзыв включается с флагами isMine и isPending.
+     */
+    get: operations['getReviewsByTarget'];
+    put?: never;
+    /**
+     * Создать отзыв
+     * @description Создаёт отзыв на item или организацию. Если рейтинг >= 4, публикуется сразу; иначе отправляется на модерацию.
+     */
+    post: operations['createReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reviews/my': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Мои отзывы
+     * @description Возвращает отзывы текущего пользователя с пагинацией.
+     */
+    get: operations['getMyReviews'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reviews/by-ids': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Пакетная загрузка отзывов
+     * @description Возвращает отзывы по массиву ID (для тикет-системы).
+     */
+    post: operations['getReviewsByIds'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reviews/organization/{orgId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Отзывы организации
+     * @description Возвращает отзывы на все items и саму организацию.
+     */
+    get: operations['getOrganizationReviews'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reviews/{reviewId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Получить отзыв по ID
+     * @description Возвращает полную информацию об отзыве по ID.
+     */
+    get: operations['getReviewById'];
+    put?: never;
+    post?: never;
+    /**
+     * Удалить отзыв
+     * @description Удаляет опубликованный отзыв. Рейтинг пересчитывается.
+     */
+    delete: operations['deleteReview'];
+    options?: never;
+    head?: never;
+    /**
+     * Редактировать отзыв
+     * @description Редактирует отзыв в статусе pending. Если новый рейтинг >= 4, отзыв автоматически публикуется.
+     */
+    patch: operations['editReview'];
+    trace?: never;
+  };
+  '/reviews/{reviewId}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Одобрить отзыв
+     * @description Модератор одобряет отзыв в статусе pending. Отзыв публикуется, рейтинг пересчитывается.
+     */
+    post: operations['approveReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reviews/{reviewId}/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Отклонить отзыв
+     * @description Модератор отклоняет отзыв в статусе pending.
+     */
+    post: operations['rejectReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reviews/{reviewId}/reply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Ответить на отзыв
+     * @description Владелец организации отвечает на опубликованный отзыв. Один ответ на отзыв.
+     */
+    post: operations['replyToReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reviews/{reviewId}/dispute': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Оспорить отзыв
+     * @description Продавец оспаривает опубликованный отзыв. Отзыв скрывается из витрины, рейтинг пересчитывается. Оспорить можно только один раз.
+     */
+    post: operations['disputeReview'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reviews/{reviewId}/resolve-dispute': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Разрешить спор по отзыву
+     * @description Модератор разрешает спор: uphold — восстановить отзыв, remove — удалить окончательно.
+     */
+    post: operations['resolveDispute'];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -733,6 +1013,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/organizations/{id}/approve-moderation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Одобрить модерацию профиля
+     * @description Одобряет модерацию профиля организации. Требуется глобальный permission ORGANIZATION.MODERATE.
+     */
+    post: operations['approveInfoModeration'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/reject-moderation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Отклонить модерацию профиля
+     * @description Отклоняет модерацию профиля организации. Требуется глобальный permission ORGANIZATION.MODERATE.
+     */
+    post: operations['rejectInfoModeration'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/organizations/{id}/employees': {
     parameters: {
       query?: never;
@@ -921,6 +1241,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/organizations/{orgId}/items/{itemId}/approve-moderation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Одобрить модерацию товара
+     * @description Одобряет модерацию товара. Требуется глобальный permission ORGANIZATION.MODERATE.
+     */
+    post: operations['approveItemModeration'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{orgId}/items/{itemId}/reject-moderation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Отклонить модерацию товара
+     * @description Отклоняет модерацию товара. Требуется глобальный permission ORGANIZATION.MODERATE.
+     */
+    post: operations['rejectItemModeration'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/organizations/{orgId}/items/{itemId}/unpublish': {
     parameters: {
       query?: never;
@@ -935,6 +1295,332 @@ export interface paths {
      * @description Снимает товар с публикации. Данные публикации копируются в новый черновик.
      */
     post: operations['unpublishItem'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/boards': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Список досок */
+    get: operations['getAdminBoards'];
+    put?: never;
+    /** Создание доски */
+    post: operations['createAdminBoard'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/boards/{boardId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Удаление доски */
+    delete: operations['deleteAdminBoard'];
+    options?: never;
+    head?: never;
+    /** Обновление доски */
+    patch: operations['updateAdminBoard'];
+    trace?: never;
+  };
+  '/admin/boards/{boardId}/subscriptions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Добавление подписки на триггер */
+    post: operations['addAdminBoardSubscription'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/boards/{boardId}/subscriptions/{subId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Удаление подписки на триггер */
+    delete: operations['removeAdminBoardSubscription'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/boards/{boardId}/members': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Добавление участника доски */
+    post: operations['addAdminBoardMember'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/boards/{boardId}/members/{userId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Удаление участника доски */
+    delete: operations['removeAdminBoardMember'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/boards/{boardId}/automation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Добавление автоматизации */
+    put: operations['addAdminBoardAutomation'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/boards/{boardId}/automation/{automationId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Удаление автоматизации */
+    delete: operations['removeAdminBoardAutomation'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/tickets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Список тикетов */
+    get: operations['getAdminTickets'];
+    put?: never;
+    /** Ручное создание тикета */
+    post: operations['createAdminTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/tickets/my': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Мои тикеты */
+    get: operations['getAdminMyTickets'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/tickets/{ticketId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Детали тикета */
+    get: operations['getAdminTicketDetail'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/tickets/{ticketId}/assign': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Назначить тикет */
+    post: operations['assignAdminTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/tickets/{ticketId}/reassign': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Переназначить тикет */
+    post: operations['reassignAdminTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/tickets/{ticketId}/unassign': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Отказаться от тикета */
+    post: operations['unassignAdminTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/tickets/{ticketId}/move': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Перенаправить тикет на другую доску */
+    post: operations['moveAdminTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/tickets/{ticketId}/done': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Отметить тикет как обработанный */
+    post: operations['markAdminTicketDone'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/tickets/{ticketId}/reopen': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Переоткрыть тикет */
+    post: operations['reopenAdminTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/tickets/{ticketId}/comments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Добавить комментарий к тикету */
+    post: operations['addAdminTicketComment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/boards/triggers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Справочник триггеров */
+    get: operations['getAdminTicketTriggers'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1244,6 +1930,128 @@ export interface components {
       message: string;
       error?: string;
     };
+    ScheduleEntry: {
+      dayOfWeek: number;
+      startTime: string;
+      endTime: string;
+    };
+    ItemWidgetView:
+      | {
+          /** @enum {string} */
+          type: 'base-info';
+          title: string;
+          description: string;
+          imageId?: string | null;
+        }
+      | {
+          /** @enum {string} */
+          type: 'age-group';
+          /** @enum {string} */
+          value: 'children' | 'adults' | 'all';
+        }
+      | {
+          /** @enum {string} */
+          type: 'location';
+          cityId: string;
+          lat: number;
+          lng: number;
+          address?: string | null;
+        }
+      | {
+          /** @enum {string} */
+          type: 'payment';
+          /** @enum {string} */
+          strategy: 'free' | 'one-time' | 'subscription';
+          price?: number | null;
+        }
+      | {
+          /** @enum {string} */
+          type: 'category';
+          categoryIds: string[];
+        }
+      | {
+          /** @enum {string} */
+          type: 'owner';
+          organizationId: string;
+          name: string;
+          avatarId?: string | null;
+        }
+      | {
+          /** @enum {string} */
+          type: 'item-review';
+          rating?: number | null;
+          reviewCount: number;
+        }
+      | {
+          /** @enum {string} */
+          type: 'owner-review';
+          rating?: number | null;
+          reviewCount: number;
+        }
+      | {
+          /** @enum {string} */
+          type: 'event-date-time';
+          dates: string[];
+        }
+      | {
+          /** @enum {string} */
+          type: 'schedule';
+          entries: components['schemas']['ScheduleEntry'][];
+        };
+    ItemDetailView: {
+      itemId: string;
+      typeId: string;
+      widgets: components['schemas']['ItemWidgetView'][];
+      /** Format: date-time */
+      publishedAt: string;
+    };
+    ReviewListItem: {
+      reviewId: string;
+      authorId: string;
+      /** @enum {string} */
+      targetType: 'item' | 'organization';
+      targetId: string;
+      rating: number;
+      text: string | null;
+      /** @enum {string} */
+      status: 'pending' | 'published';
+      replyText: string | null;
+      /** Format: date-time */
+      repliedAt: string | null;
+      isMine: boolean;
+      isPending: boolean;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    CursorPaginatedReviews: {
+      items: components['schemas']['ReviewListItem'][];
+      nextCursor?: string | null;
+    };
+    Review: {
+      reviewId: string;
+      authorId: string;
+      /** @enum {string} */
+      targetType: 'item' | 'organization';
+      targetId: string;
+      organizationId: string;
+      rating: number;
+      text: string | null;
+      /** @enum {string} */
+      status: 'pending' | 'published' | 'disputed' | 'deleted';
+      replyText: string | null;
+      repliedBy: string | null;
+      /** Format: date-time */
+      repliedAt: string | null;
+      disputeReason: string | null;
+      disputedBy: string | null;
+      /** Format: date-time */
+      disputedAt: string | null;
+      wasDisputed: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
     CmsCategoryListItem: {
       id: string;
       parentCategoryId?: string | null;
@@ -1396,6 +2204,135 @@ export interface components {
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
+    };
+    BoardListItem: {
+      boardId: string;
+      name: string;
+      description?: string | null;
+      /** @enum {string} */
+      scope: 'platform' | 'organization';
+      manualCreation: boolean;
+      subscriptionCount: number;
+      memberCount: number;
+      automationCount: number;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    SubscriptionFilter:
+      | {
+          /** @enum {string} */
+          type: 'json-logic';
+          rule: {
+            [key: string]: unknown;
+          };
+        }
+      | {
+          /** @enum {string} */
+          type: 'programmatic';
+          filterId: string;
+          params: {
+            [key: string]: unknown;
+          };
+        };
+    BoardSubscription: {
+      id: string;
+      triggerId: string;
+      filters: components['schemas']['SubscriptionFilter'][];
+    };
+    BoardAutomation: {
+      id: string;
+      enabled: boolean;
+      agentId: string;
+      systemPrompt: string;
+      onUncertain: {
+        moveToBoardId: string | null;
+      };
+    };
+    BoardDetail: {
+      boardId: string;
+      name: string;
+      description?: string | null;
+      /** @enum {string} */
+      scope: 'platform' | 'organization';
+      organizationId?: string | null;
+      manualCreation: boolean;
+      subscriptions: components['schemas']['BoardSubscription'][];
+      allowedTransferBoardIds: string[];
+      memberIds: string[];
+      automations: components['schemas']['BoardAutomation'][];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    TicketListItem: {
+      ticketId: string;
+      boardId: string;
+      message: string;
+      triggerId?: string | null;
+      /** @enum {string} */
+      status: 'open' | 'in-progress' | 'done';
+      assigneeId?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    TicketData: {
+      item?: {
+        id?: string;
+        organizationId?: string;
+        typeId?: string;
+        title?: string;
+        description?: string;
+        imageUrl?: string | null;
+        categoryIds?: string[];
+      } | null;
+      organization?: {
+        id?: string;
+        name?: string;
+        description?: string;
+        avatarUrl?: string | null;
+      } | null;
+    };
+    TicketHistoryEntry: {
+      /** @enum {string} */
+      action:
+        | 'created'
+        | 'assigned'
+        | 'reassigned'
+        | 'unassigned'
+        | 'moved'
+        | 'done'
+        | 'reopened'
+        | 'commented';
+      actorId: string;
+      data: {
+        [key: string]: unknown;
+      };
+      /** Format: date-time */
+      timestamp: string;
+    };
+    TicketDetail: {
+      ticketId: string;
+      boardId: string;
+      message: string;
+      triggerId?: string | null;
+      data: components['schemas']['TicketData'];
+      /** @enum {string} */
+      status: 'open' | 'in-progress' | 'done';
+      assigneeId?: string | null;
+      history: components['schemas']['TicketHistoryEntry'][];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    TriggerInfo: {
+      triggerId: string;
+      name: string;
+      /** @enum {string} */
+      scope: 'platform' | 'organization';
     };
   };
   responses: {
@@ -1661,6 +2598,12 @@ export interface operations {
           registrationSessionId: string;
           fullName?: string;
           avatarMedia?: components['schemas']['LinkMediaData'];
+          /** @description Идентификатор города */
+          cityId: string;
+          /** @description Широта */
+          lat?: number;
+          /** @description Долгота */
+          lng?: number;
         };
       };
     };
@@ -1797,6 +2740,12 @@ export interface operations {
         'application/json': {
           /** @description Полное имя пользователя */
           fullName: string;
+          /** @description Идентификатор города */
+          cityId?: string;
+          /** @description Широта */
+          lat?: number;
+          /** @description Долгота */
+          lng?: number;
         };
       };
     };
@@ -2928,6 +3877,38 @@ export interface operations {
       401: components['responses']['UnauthorizedError'];
     };
   };
+  getDiscoveryItemDetail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description ID товара */
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Детали товара */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ItemDetailView'];
+        };
+      };
+      /** @description Товар не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
   likeItem: {
     parameters: {
       query?: never;
@@ -2971,6 +3952,674 @@ export interface operations {
         content?: never;
       };
       401: components['responses']['UnauthorizedError'];
+    };
+  };
+  recordViews: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description ID товаров, показанных в ленте */
+          itemIds: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description Просмотры записаны */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components['responses']['UnauthorizedError'];
+    };
+  };
+  recordClick: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /**
+           * Format: uuid
+           * @description ID товара
+           */
+          itemId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Клик записан */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components['responses']['UnauthorizedError'];
+    };
+  };
+  recordShowContacts: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /**
+           * Format: uuid
+           * @description ID товара
+           */
+          itemId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Событие записано */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components['responses']['UnauthorizedError'];
+    };
+  };
+  getReviewsByTarget: {
+    parameters: {
+      query: {
+        targetType: 'item' | 'organization';
+        targetId: string;
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список отзывов */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CursorPaginatedReviews'];
+        };
+      };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  createReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          targetType: 'item' | 'organization';
+          targetId: string;
+          /** @description ID организации-владельца target */
+          organizationId: string;
+          /** @description Рейтинг с шагом 0.5 (0.5, 1, 1.5, ..., 5) */
+          rating: number;
+          /** @description Текст отзыва (необязателен) */
+          text?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Отзыв создан */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Review'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка (дубль, невалидный рейтинг, отзыв на свой item) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Отзыв уже существует для данного (user, target) */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getMyReviews: {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список отзывов */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CursorPaginatedReviews'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+    };
+  };
+  getReviewsByIds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          ids: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description Список отзывов */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            items: components['schemas']['Review'][];
+          };
+        };
+      };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+    };
+  };
+  getOrganizationReviews: {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        orgId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список отзывов */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CursorPaginatedReviews'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getReviewById: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        reviewId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Отзыв */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Review'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Отзыв не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  deleteReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        reviewId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Отзыв удалён */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (отзыв не в статусе published) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Отзыв не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  editReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        reviewId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          rating?: number;
+          text?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description Отзыв обновлён */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Review'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка (отзыв не в статусе pending) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Отзыв не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  approveReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        reviewId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Отзыв одобрен */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (отзыв не в статусе pending) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется REVIEW.MODERATE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Отзыв не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  rejectReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        reviewId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          reason: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Отзыв отклонён */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (отзыв не в статусе pending) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется REVIEW.MODERATE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Отзыв не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  replyToReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        reviewId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          text: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Ответ добавлен */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Review'];
+        };
+      };
+      /** @description Доменная ошибка (отзыв не published или уже есть ответ) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (не владелец организации) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Отзыв не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  disputeReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        reviewId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          reason: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Отзыв оспорен */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Review'];
+        };
+      };
+      /** @description Доменная ошибка (не published, уже оспаривался) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (не владелец организации) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Отзыв не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  resolveDispute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        reviewId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @enum {string} */
+          resolution: 'uphold' | 'remove';
+        };
+      };
+    };
+    responses: {
+      /** @description Спор разрешён */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (отзыв не в статусе disputed) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется REVIEW.MODERATE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Отзыв не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
     };
   };
   getCmsCategories: {
@@ -3665,6 +5314,102 @@ export interface operations {
       };
       401: components['responses']['UnauthorizedError'];
       /** @description Нет доступа (требуется publish_organization) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  approveInfoModeration: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Модерация одобрена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (профиль не на модерации) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется ORGANIZATION.MODERATE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  rejectInfoModeration: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Модерация отклонена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (профиль не на модерации) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется ORGANIZATION.MODERATE) */
       403: {
         headers: {
           [name: string]: unknown;
@@ -4460,6 +6205,104 @@ export interface operations {
       };
     };
   };
+  approveItemModeration: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Модерация одобрена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (товар не на модерации) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется ORGANIZATION.MODERATE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Товар не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  rejectItemModeration: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Модерация отклонена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (товар не на модерации) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется ORGANIZATION.MODERATE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Товар не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
   unpublishItem: {
     parameters: {
       query?: never;
@@ -4505,6 +6348,1288 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getAdminBoards: {
+    parameters: {
+      query?: {
+        /** @description Фильтр по scope */
+        scope?: 'platform' | 'organization';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список досок */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BoardListItem'][];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  createAdminBoard: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+          description?: string | null;
+          /** @enum {string} */
+          scope: 'platform' | 'organization';
+          organizationId?: string | null;
+          manualCreation: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Доска создана */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BoardDetail'];
+        };
+      };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  deleteAdminBoard: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        boardId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Доска удалена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Доска не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  updateAdminBoard: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        boardId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+          description?: string | null;
+          manualCreation: boolean;
+          allowedTransferBoardIds: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description Доска обновлена */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BoardDetail'];
+        };
+      };
+      /** @description Ошибка валидации / Доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Доска не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  addAdminBoardSubscription: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        boardId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          triggerId: string;
+          filters: components['schemas']['SubscriptionFilter'][];
+        };
+      };
+    };
+    responses: {
+      /** @description Подписка добавлена */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            boardId: string;
+            subscriptions: components['schemas']['BoardSubscription'][];
+          };
+        };
+      };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Доска не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  removeAdminBoardSubscription: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        boardId: string;
+        subId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Подписка удалена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Доска или подписка не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  addAdminBoardMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        boardId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          userId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Участник добавлен */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            boardId: string;
+            memberIds: string[];
+          };
+        };
+      };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Доска не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Участник уже добавлен */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  removeAdminBoardMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        boardId: string;
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Участник удалён */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Доска или участник не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  addAdminBoardAutomation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        boardId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          agentId: string;
+          systemPrompt: string;
+          onUncertainMoveToBoardId?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description Автоматизация добавлена */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            boardId: string;
+            automations: components['schemas']['BoardAutomation'][];
+          };
+        };
+      };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Доска не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  removeAdminBoardAutomation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        boardId: string;
+        automationId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Автоматизация удалена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Доска или автоматизация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  getAdminTickets: {
+    parameters: {
+      query?: {
+        /** @description Фильтр по доске */
+        boardId?: string;
+        /** @description Фильтр по статусу */
+        status?: 'open' | 'in-progress' | 'done';
+        /** @description Фильтр по исполнителю */
+        assigneeId?: string;
+        /** @description Смещение для пагинации */
+        from?: number;
+        /** @description Размер страницы */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список тикетов */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            tickets: components['schemas']['TicketListItem'][];
+            total: number;
+          };
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  createAdminTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          boardId: string;
+          message: string;
+          data?: components['schemas']['TicketData'];
+        };
+      };
+    };
+    responses: {
+      /** @description Тикет создан */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            ticketId: string;
+            boardId: string;
+            message: string;
+            /** @enum {string} */
+            status: 'open' | 'in-progress' | 'done';
+            /** Format: date-time */
+            createdAt: string;
+          };
+        };
+      };
+      /** @description Ошибка валидации / Ручное создание запрещено */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа / Не участник доски */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Доска не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  getAdminMyTickets: {
+    parameters: {
+      query?: {
+        /** @description Смещение для пагинации */
+        from?: number;
+        /** @description Размер страницы */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Мои тикеты */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            tickets: components['schemas']['TicketListItem'][];
+            total: number;
+          };
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  getAdminTicketDetail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Детали тикета */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TicketDetail'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Тикет не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  assignAdminTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          assigneeId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Тикет назначен */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            ticketId: string;
+            /** @enum {string} */
+            status: 'open' | 'in-progress' | 'done';
+            assigneeId: string;
+          };
+        };
+      };
+      /** @description Тикет не в статусе open */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа / Не участник доски */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Тикет не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  reassignAdminTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          assigneeId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Тикет переназначен */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            ticketId: string;
+            /** @enum {string} */
+            status: 'open' | 'in-progress' | 'done';
+            assigneeId: string;
+          };
+        };
+      };
+      /** @description Тикет не в статусе in-progress */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа / Не участник доски */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Тикет не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  unassignAdminTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Тикет снят с исполнителя */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Тикет не в статусе in-progress */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Тикет не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  moveAdminTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          toBoardId: string;
+          comment: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Тикет перенаправлен */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            ticketId: string;
+            boardId: string;
+            /** @enum {string} */
+            status: 'open' | 'in-progress' | 'done';
+          };
+        };
+      };
+      /** @description Перенаправление запрещено / Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Тикет не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  markAdminTicketDone: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Тикет обработан */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Тикет не в статусе in-progress */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Тикет не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  reopenAdminTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Тикет переоткрыт */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Тикет не в статусе done */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Тикет не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  addAdminTicketComment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          text: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Комментарий добавлен */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            ticketId: string;
+            /** @enum {string} */
+            status: 'open' | 'in-progress' | 'done';
+          };
+        };
+      };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Тикет не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  getAdminTicketTriggers: {
+    parameters: {
+      query?: {
+        /** @description Фильтр по scope */
+        scope?: 'platform' | 'organization';
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список триггеров */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TriggerInfo'][];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
     };

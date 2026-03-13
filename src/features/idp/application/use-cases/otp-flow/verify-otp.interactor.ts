@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { loginProcessApply } from '../../../domain/aggregates/login-process/apply.js';
-import { verifyOtpDecide } from '../../../domain/aggregates/login-process/decide/verify-otp.js';
+import { LoginProcessEntity } from '../../../domain/aggregates/login-process/entity.js';
 import {
   InvalidOtpError,
   LoginBlockedError,
@@ -11,8 +10,7 @@ import type {
   LoginCompletedEvent,
   NewRegistrationStartedEvent,
 } from '../../../domain/aggregates/login-process/events.js';
-import { sessionApply } from '../../../domain/aggregates/session/apply.js';
-import { sessionDecide } from '../../../domain/aggregates/session/decide.js';
+import { SessionEntity } from '../../../domain/aggregates/session/entity.js';
 import type { TokenPair } from '../../../domain/aggregates/session/token.types.js';
 import { whenLoginCompletedCreateSession } from '../../../domain/policies/when-login-completed-create-session.policy.js';
 import { FingerPrint } from '../../../domain/vo/finger-print.js';
@@ -68,7 +66,7 @@ export class VerifyOtpInteractor {
       const user = await this.userRepository.findByPhoneNumber(tx, phoneNumber);
       const registrationSessionId = String(state.id);
 
-      const eventEither = verifyOtpDecide(state, {
+      const lpResult = LoginProcessEntity.verifyOtp(state, {
         type: 'VerifyOtp',
         otpCode,
         now,
@@ -77,13 +75,11 @@ export class VerifyOtpInteractor {
         generateEventId: createEventId,
       });
 
-      if (isLeft(eventEither)) return eventEither;
+      if (isLeft(lpResult)) return lpResult;
 
-      const event = eventEither.value;
-      const newState = loginProcessApply(state, event);
-      await this.loginProcessRepository.save(tx, newState);
+      await this.loginProcessRepository.save(tx, lpResult.value.state);
 
-      return this.mapResult(tx, event, now, registrationSessionId);
+      return this.mapResult(tx, lpResult.value.event, now, registrationSessionId);
     });
   }
 
@@ -143,22 +139,19 @@ export class VerifyOtpInteractor {
       ttlMs: SESSION_TTL_MS,
     });
 
-    const sessionEventEither = sessionDecide(null, createSessionCmd);
-    if (isLeft(sessionEventEither)) throw new Error('Unexpected session creation failure');
+    const sessionResult = SessionEntity.create(null, createSessionCmd);
+    if (isLeft(sessionResult)) throw new Error('Unexpected session creation failure');
 
-    const sessionState = sessionApply(null, sessionEventEither.value);
-    if (!sessionState) throw new Error('Unexpected null session state after creation');
-
-    await this.sessionRepository.save(tx, sessionState);
+    await this.sessionRepository.save(tx, sessionResult.value.state);
 
     const accessToken = this.jwtAccess.sign({
       userId: event.userId,
       role: event.role,
-      sessionId: sessionState.id,
+      sessionId: sessionResult.value.state.id,
     });
 
     const refreshToken = this.refreshTokens.sign({
-      sessionId: sessionState.id,
+      sessionId: sessionResult.value.state.id,
       userId: event.userId,
       type: 'refresh',
     });

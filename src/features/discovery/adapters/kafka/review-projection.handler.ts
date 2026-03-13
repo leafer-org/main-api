@@ -13,7 +13,7 @@ import type {
   ReviewDeletedEvent,
   ReviewTarget,
 } from '@/kernel/domain/events/review.events.js';
-import { ItemId, OrganizationId } from '@/kernel/domain/ids.js';
+import { ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 
 @KafkaConsumerHandlers(DISCOVERY_CONSUMER_ID)
 @Injectable()
@@ -32,6 +32,7 @@ export class ReviewProjectionKafkaHandler {
         id: payload.id,
         type: 'review.created',
         reviewId: payload.reviewId,
+        userId: UserId.raw(payload.userId!),
         target,
         newRating: payload.newRating,
         newReviewCount: payload.newReviewCount,

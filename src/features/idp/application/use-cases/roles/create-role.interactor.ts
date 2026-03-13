@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { roleApply } from '../../../domain/aggregates/role/apply.js';
-import { roleDecide } from '../../../domain/aggregates/role/decide.js';
+import { RoleEntity } from '../../../domain/aggregates/role/entity.js';
 import { IdGenerator, RoleRepository } from '../../ports.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
@@ -28,7 +27,7 @@ export class CreateRoleInteractor {
       const id = this.idGenerator.generateRoleId();
       const now = this.clock.now();
 
-      const eventEither = roleDecide(existing, {
+      const result = RoleEntity.create(existing, {
         type: 'CreateRole',
         id,
         name: command.name,
@@ -36,12 +35,11 @@ export class CreateRoleInteractor {
         now,
       });
 
-      if (isLeft(eventEither)) return eventEither;
+      if (isLeft(result)) return result;
 
-      const state = roleApply(null, eventEither.value);
-      await this.roleRepository.save(tx, state);
+      await this.roleRepository.save(tx, result.value.state);
 
-      return { type: 'success' as const, value: state };
+      return { type: 'success' as const, value: result.value.state };
     });
   }
 }

@@ -66,7 +66,7 @@ export class GetFeedInteractor {
     ageGroup: AgeGroup,
     coordinates?: { lat: number; lng: number },
   ): Promise<string> {
-    if (coordinates) {
+    if (coordinates !== undefined) {
       return userGeoCategory(coordinates.lat, coordinates.lng, ageGroup);
     }
     const resolved = await this.cityCoordinates.findCoordinates(cityId);

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { sessionDecide } from '../../../domain/aggregates/session/decide.js';
+import { SessionEntity } from '../../../domain/aggregates/session/entity.js';
 import { SessionRepository } from '../../ports.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
@@ -18,8 +18,8 @@ export class DeleteSessionInteractor {
     return this.txHost.startTransaction(async (tx) => {
       const state = await this.sessionRepository.findById(tx, command.sessionId);
 
-      const eventEither = sessionDecide(state, { type: 'DeleteSession' });
-      if (isLeft(eventEither)) return eventEither;
+      const result = SessionEntity.delete(state, { type: 'DeleteSession' });
+      if (isLeft(result)) return result;
 
       await this.sessionRepository.deleteById(tx, command.sessionId);
 

@@ -1,5 +1,13 @@
 import type { EntityId } from '@/infra/ddd/entity.js';
 
+function createEntityId<T extends EntityId<string>>(){
+  return {
+    raw(id: string): T {
+      return id as T
+    }
+  }
+}
+
 export type FileId = EntityId<'File'>;
 export type UserId = EntityId<'User'>;
 export type SessionId = EntityId<'Session'>;
@@ -12,75 +20,26 @@ export type AttributeId = EntityId<'Attribute'>;
 export type OrganizationId = EntityId<'Organization'>;
 export type TypeId = EntityId<'Type'>;
 export type EmployeeRoleId = EntityId<'EmployeeRole'>;
+export type TicketId = EntityId<'Ticket'>;
+export type BoardId = EntityId<'Board'>;
+export type BoardSubscriptionId = EntityId<'BoardSubscription'>;
+export type BoardAutomationId = EntityId<'BoardAutomation'>;
+export type ReviewId = EntityId<'Review'>;
 
-export const FileId = {
-  raw(id: string): FileId {
-    return id as FileId;
-  },
-};
-
-export const UserId = {
-  raw(id: string): UserId {
-    return id as UserId;
-  },
-};
-
-export const SessionId = {
-  raw(id: string): SessionId {
-    return id as SessionId;
-  },
-};
-
-export const RoleId = {
-  raw(id: string): RoleId {
-    return id as RoleId;
-  },
-};
-
-export const ServiceId = {
-  raw(id: string): ServiceId {
-    return id as ServiceId;
-  },
-};
-
-export const ItemId = {
-  raw(id: string): ItemId {
-    return id as ItemId;
-  },
-};
-
-export const CategoryId = {
-  raw(id: string): CategoryId {
-    return id as CategoryId;
-  },
-};
-
-export const ServiceComponentId = {
-  raw(id: string): ServiceComponentId {
-    return id as ServiceComponentId;
-  },
-};
-
-export const AttributeId = {
-  raw(id: string): AttributeId {
-    return id as AttributeId;
-  },
-};
-
-export const OrganizationId = {
-  raw(id: string): OrganizationId {
-    return id as OrganizationId;
-  },
-};
-
-export const TypeId = {
-  raw(id: string): TypeId {
-    return id as TypeId;
-  },
-};
-
-export const EmployeeRoleId = {
-  raw(id: string): EmployeeRoleId {
-    return id as EmployeeRoleId;
-  },
-};
+export const FileId = createEntityId<FileId>();
+export const UserId = createEntityId<UserId>();
+export const SessionId = createEntityId<SessionId>();
+export const RoleId = createEntityId<RoleId>();
+export const ServiceId = createEntityId<ServiceId>();
+export const ItemId = createEntityId<ItemId>();
+export const CategoryId = createEntityId<CategoryId>();
+export const ServiceComponentId = createEntityId<ServiceComponentId>();
+export const AttributeId = createEntityId<AttributeId>();
+export const OrganizationId = createEntityId<OrganizationId>();
+export const TypeId = createEntityId<TypeId>();
+export const EmployeeRoleId = createEntityId<EmployeeRoleId>();
+export const TicketId = createEntityId<TicketId>();
+export const BoardId = createEntityId<BoardId>();
+export const BoardSubscriptionId = createEntityId<BoardSubscriptionId>();
+export const BoardAutomationId = createEntityId<BoardAutomationId>();
+export const ReviewId = createEntityId<ReviewId>();

@@ -16,6 +16,9 @@ export function whenRegistrationCompletedCreateUser(
     fullName: event.fullName,
     avatarId: event.avatarId,
     role: event.role,
+    cityId: event.cityId,
+    lat: event.lat,
+    lng: event.lng,
     now: deps.now,
   };
 }

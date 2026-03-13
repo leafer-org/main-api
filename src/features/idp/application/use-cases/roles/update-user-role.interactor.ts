@@ -1,9 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { RoleNotFoundError } from '../../../domain/aggregates/role/errors.js';
-import { sessionDecide } from '../../../domain/aggregates/session/decide.js';
-import { userApply } from '../../../domain/aggregates/user/apply.js';
-import { userDecide } from '../../../domain/aggregates/user/decide.js';
+import { SessionEntity } from '../../../domain/aggregates/session/entity.js';
+import { UserEntity } from '../../../domain/aggregates/user/entity.js';
 import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.js';
 import { whenUserRoleUpdatedDeleteSessions } from '../../../domain/policies/when-user-role-updated-delete-sessions.policy.js';
 import { RoleRepository, SessionRepository, UserRepository } from '../../ports.js';
@@ -42,24 +41,23 @@ export class UpdateUserRoleInteractor {
       const now = this.clock.now();
 
       // Update user role
-      const eventEither = userDecide(userState, {
+      const userResult = UserEntity.updateRole(userState, {
         type: 'UpdateUserRole',
         role: Role.raw(role.name),
         now,
       });
-      if (isLeft(eventEither)) return eventEither;
+      if (isLeft(userResult)) return userResult;
 
-      const newUserState = userApply(userState, eventEither.value);
-      await this.userRepository.save(tx, newUserState);
+      await this.userRepository.save(tx, userResult.value.state);
 
       // Policy: UserRoleUpdated → delete sessions
-      const userRoleUpdatedEvent = eventEither.value;
+      const userRoleUpdatedEvent = userResult.value.event;
       if (userRoleUpdatedEvent.type === 'user.role_updated') {
         const sessions = await this.sessionRepository.findByUserId(tx, command.userId);
         for (const session of sessions) {
           const delCmd = whenUserRoleUpdatedDeleteSessions(userRoleUpdatedEvent);
-          const sessionEventEither = sessionDecide(session, delCmd);
-          if (isLeft(sessionEventEither)) continue;
+          const sessionResult = SessionEntity.delete(session, delCmd);
+          if (isLeft(sessionResult)) continue;
           // biome-ignore lint/performance/noAwaitInLoops: sequence handling update role
           await this.sessionRepository.deleteById(tx, session.id);
         }

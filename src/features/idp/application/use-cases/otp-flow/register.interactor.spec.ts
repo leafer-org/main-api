@@ -104,6 +104,7 @@ describe('RegisterInteractor', () => {
     const result = await interactor.execute({
       registrationSessionId: REGISTRATION_SESSION_ID,
       fullName: 'Иван Иванов',
+      cityId: 'city-1',
     });
 
     expect(isRight(result)).toBe(true);
@@ -142,6 +143,7 @@ describe('RegisterInteractor', () => {
     await interactor.execute({
       registrationSessionId: REGISTRATION_SESSION_ID,
       fullName: 'Иван Иванов',
+      cityId: 'city-1',
     });
 
     expect(deps.jwtAccess.sign).toHaveBeenCalledWith({
@@ -173,6 +175,7 @@ describe('RegisterInteractor', () => {
     const result = await interactor.execute({
       registrationSessionId: REGISTRATION_SESSION_ID,
       fullName: 'Иван Иванов',
+      cityId: 'city-1',
     });
 
     expect(isLeft(result)).toBe(true);
@@ -189,6 +192,7 @@ describe('RegisterInteractor', () => {
     const result = await interactor.execute({
       registrationSessionId: REGISTRATION_SESSION_ID,
       fullName: 'Иван Иванов',
+      cityId: 'city-1',
     });
 
     expect(isLeft(result)).toBe(true);

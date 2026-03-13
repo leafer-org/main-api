@@ -52,6 +52,14 @@ export async function gorseInsertFeedback(feedback: { UserId: string; ItemId: st
   })));
 }
 
+export async function gorseGetUser(userId: string): Promise<{ Labels: string[] } | null> {
+  try {
+    return await gorseRequest<{ Labels: string[] }>('GET', `/api/user/${encodeURIComponent(userId)}`);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Поллит `/api/popular` пока не появятся результаты.
  * Надёжнее чем отслеживать задачи — проверяем конечный результат.

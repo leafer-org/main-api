@@ -24,6 +24,7 @@ import { CategoryItemsController } from './adapters/http/category-items.controll
 import { FeedController } from './adapters/http/feed.controller.js';
 import { LikedItemsController } from './adapters/http/liked-items.controller.js';
 import { LikesController } from './adapters/http/likes.controller.js';
+import { ItemDetailController } from './adapters/http/item-detail.controller.js';
 import { SearchController } from './adapters/http/search.controller.js';
 import { CategoryProjectionKafkaHandler } from './adapters/kafka/category-projection.handler.js';
 import { InteractionProjectionKafkaHandler } from './adapters/kafka/interaction-projection.handler.js';
@@ -72,6 +73,7 @@ import { ProjectItemTypeHandler } from './application/use-cases/project-item-typ
 import { ProjectOwnerHandler } from './application/use-cases/project-owner/project-owner.handler.js';
 import { ProjectReviewHandler } from './application/use-cases/project-review/project-review.handler.js';
 import { SearchItemsInteractor } from './application/use-cases/search/search-items.interactor.js';
+import { GetItemDetailInteractor } from './application/use-cases/view-item/get-item-detail.interactor.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 
 @Module({
@@ -79,6 +81,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     CategoriesController,
     CategoryItemsController,
     FeedController,
+    ItemDetailController,
     LikedItemsController,
     LikesController,
     SearchController,
@@ -93,6 +96,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     GetCategoryFiltersInteractor,
     GetCategoryListInteractor,
     SearchItemsInteractor,
+    GetItemDetailInteractor,
     GetLikedItemsInteractor,
     LikeItemInteractor,
     UnlikeItemInteractor,

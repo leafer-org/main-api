@@ -17,6 +17,7 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 120_000,
     pool: 'forks',
+    maxConcurrency: 4
   },
   plugins: [
     swc.vite({

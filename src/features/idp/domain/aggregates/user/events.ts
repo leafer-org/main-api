@@ -10,6 +10,9 @@ export type UserCreatedEvent = {
   fullName: FullName;
   avatarId: FileId | undefined;
   role: Role;
+  cityId: string;
+  lat?: number;
+  lng?: number;
   createdAt: Date;
 };
 
@@ -17,6 +20,9 @@ export type UserProfileUpdatedEvent = {
   type: 'user.profile_updated';
   fullName: FullName;
   avatarId: FileId | undefined;
+  cityId?: string;
+  lat?: number;
+  lng?: number;
   updatedAt: Date;
 };
 

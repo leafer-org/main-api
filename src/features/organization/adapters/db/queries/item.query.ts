@@ -7,6 +7,8 @@ import { ItemQueryPort } from '../../../application/ports.js';
 import { OrganizationDatabaseClient } from '../client.js';
 import { items } from '../schema.js';
 import type { ItemId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
+import type { ItemJsonState } from '../json-state.js';
 
 @Injectable()
 export class DrizzleItemQuery implements ItemQueryPort {
@@ -22,16 +24,15 @@ export class DrizzleItemQuery implements ItemQueryPort {
 
     return {
       items: rows.map((row) => {
-        const state = row.state as Record<string, unknown>;
-        const draft = state['draft'] as Record<string, unknown> | null;
+        const s = row.state as ItemJsonState;
 
         return {
-          itemId: state['itemId'] as ItemListReadModel['items'][0]['itemId'],
-          typeId: state['typeId'] as ItemListReadModel['items'][0]['typeId'],
-          draftStatus: draft ? (draft['status'] as ItemListReadModel['items'][0]['draftStatus']) : null,
-          hasPublication: state['publication'] !== null,
-          createdAt: new Date(state['createdAt'] as string),
-          updatedAt: new Date(state['updatedAt'] as string),
+          itemId: s.itemId as ItemListReadModel['items'][0]['itemId'],
+          typeId: s.typeId as ItemListReadModel['items'][0]['typeId'],
+          draftStatus: s.draft ? (s.draft.status as ItemListReadModel['items'][0]['draftStatus']) : null,
+          hasPublication: s.publication !== null,
+          createdAt: new Date(s.createdAt),
+          updatedAt: new Date(s.updatedAt),
         };
       }),
     };
@@ -42,31 +43,28 @@ export class DrizzleItemQuery implements ItemQueryPort {
     const row = rows[0];
     if (!row) return null;
 
-    const state = row.state as Record<string, unknown>;
-    const draft = state['draft'] as Record<string, unknown> | null;
-    const publication = state['publication'] as Record<string, unknown> | null;
+    const s = row.state as ItemJsonState;
 
     return {
-      itemId: state['itemId'] as ItemDetailReadModel['itemId'],
-      organizationId: state['organizationId'] as ItemDetailReadModel['organizationId'],
-      typeId: state['typeId'] as ItemDetailReadModel['typeId'],
-      draft: draft
+      itemId: s.itemId as ItemDetailReadModel['itemId'],
+      organizationId: s.organizationId as ItemDetailReadModel['organizationId'],
+      typeId: s.typeId as ItemDetailReadModel['typeId'],
+      draft: s.draft
         ? {
-            widgets: draft['widgets'] as ItemDetailReadModel['draft'] extends infer T
-              ? T extends { widgets: infer W } ? W : never : never,
-            status: draft['status'] as 'draft' | 'moderation-request' | 'rejected',
-            updatedAt: new Date(draft['updatedAt'] as string),
+            widgets: s.draft.widgets as ItemWidget[],
+            status: s.draft.status as ItemDetailReadModel['draft'] extends infer T
+              ? T extends { status: infer S } ? S : never : never,
+            updatedAt: new Date(s.draft.updatedAt),
           }
         : null,
-      publication: publication
+      publication: s.publication
         ? {
-            widgets: publication['widgets'] as ItemDetailReadModel['publication'] extends infer T
-              ? T extends { widgets: infer W } ? W : never : never,
-            publishedAt: new Date(publication['publishedAt'] as string),
+            widgets: s.publication.widgets as ItemWidget[],
+            publishedAt: new Date(s.publication.publishedAt),
           }
         : null,
-      createdAt: new Date(state['createdAt'] as string),
-      updatedAt: new Date(state['updatedAt'] as string),
-    } as ItemDetailReadModel;
+      createdAt: new Date(s.createdAt),
+      updatedAt: new Date(s.updatedAt),
+    };
   }
 }

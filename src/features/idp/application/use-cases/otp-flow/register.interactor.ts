@@ -1,12 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { loginProcessApply } from '../../../domain/aggregates/login-process/apply.js';
-import { registerDecide } from '../../../domain/aggregates/login-process/decide/register.js';
+import { LoginProcessEntity } from '../../../domain/aggregates/login-process/entity.js';
 import { RegistractionError } from '../../../domain/aggregates/login-process/errors.js';
-import { sessionApply } from '../../../domain/aggregates/session/apply.js';
-import { sessionDecide } from '../../../domain/aggregates/session/decide.js';
-import { userApply } from '../../../domain/aggregates/user/apply.js';
-import { userDecide } from '../../../domain/aggregates/user/decide.js';
+import { SessionEntity } from '../../../domain/aggregates/session/entity.js';
+import { UserEntity } from '../../../domain/aggregates/user/entity.js';
 import { whenRegistrationCompletedCreateSession } from '../../../domain/policies/when-registration-completed-create-session.policy.js';
 import { whenRegistrationCompletedCreateUser } from '../../../domain/policies/when-registration-completed-create-user.policy.js';
 import { FullName } from '../../../domain/vo/full-name.js';
@@ -46,6 +43,9 @@ export class RegisterInteractor {
     registrationSessionId: string;
     fullName: string;
     avatarId?: string;
+    cityId: string;
+    lat?: number;
+    lng?: number;
   }) {
     const fullNameEither = FullName.create(command.fullName);
     if (isLeft(fullNameEither)) return fullNameEither;
@@ -63,30 +63,31 @@ export class RegisterInteractor {
         return Left(new RegistractionError());
       }
 
-      const eventEither = registerDecide(state, {
+      const lpResult = LoginProcessEntity.register(state, {
         type: 'Register',
         newUserId: this.idGenerator.generateUserId(),
         role: Role.default(),
         fullName,
         avatarId: command.avatarId ? FileId.raw(command.avatarId) : undefined,
+        cityId: command.cityId,
+        lat: command.lat,
+        lng: command.lng,
         registrationSessionId: command.registrationSessionId,
         fingerPrint: state.fingerPrint,
         now,
         createEventId,
       });
 
-      if (isLeft(eventEither)) return eventEither;
+      if (isLeft(lpResult)) return lpResult;
 
-      const event = eventEither.value;
-      const newState = loginProcessApply(state, event);
-      await this.loginProcessRepository.save(tx, newState);
+      const event = lpResult.value.event;
+      await this.loginProcessRepository.save(tx, lpResult.value.state);
 
       // Policy: create user
       const createUserCmd = whenRegistrationCompletedCreateUser(event, { now });
-      const userEventEither = userDecide(null, createUserCmd);
-      if (isLeft(userEventEither)) throw new Error('Unexpected user creation failure');
-      const userState = userApply(null, userEventEither.value);
-      await this.userRepository.save(tx, userState);
+      const userResult = UserEntity.create(null, createUserCmd);
+      if (isLeft(userResult)) throw new Error('Unexpected user creation failure');
+      await this.userRepository.save(tx, userResult.value.state);
 
       // Policy: create session
       const sessionId = this.idGenerator.generateSessionId();
@@ -95,20 +96,18 @@ export class RegisterInteractor {
         now,
         ttlMs: SESSION_TTL_MS,
       });
-      const sessionEventEither = sessionDecide(null, createSessionCmd);
-      if (isLeft(sessionEventEither)) throw new Error('Unexpected session creation failure');
-      const sessionState = sessionApply(null, sessionEventEither.value);
-      if (!sessionState) throw new Error('Unexpected null session state after creation');
-      await this.sessionRepository.save(tx, sessionState);
+      const sessionResult = SessionEntity.create(null, createSessionCmd);
+      if (isLeft(sessionResult)) throw new Error('Unexpected session creation failure');
+      await this.sessionRepository.save(tx, sessionResult.value.state);
 
       // Sign tokens
       const accessToken = this.jwtAccess.sign({
         userId: event.userId,
         role: event.role,
-        sessionId: sessionState.id,
+        sessionId: sessionResult.value.state.id,
       });
       const refreshToken = this.refreshTokens.sign({
-        sessionId: sessionState.id,
+        sessionId: sessionResult.value.state.id,
         userId: event.userId,
         type: 'refresh',
       });
@@ -117,7 +116,7 @@ export class RegisterInteractor {
         accessToken,
         refreshToken,
         userId: event.userId,
-        sessionId: sessionState.id,
+        sessionId: sessionResult.value.state.id,
       });
     });
   }

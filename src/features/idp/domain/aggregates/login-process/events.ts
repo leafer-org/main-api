@@ -50,6 +50,9 @@ export type RegistrationCompletedEvent = {
   phoneNumber: PhoneNumber;
   fullName: FullName;
   avatarId: FileId | undefined;
+  cityId: string;
+  lat?: number;
+  lng?: number;
 };
 
 export type LoginProcessEvent =

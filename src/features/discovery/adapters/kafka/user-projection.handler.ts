@@ -20,11 +20,13 @@ export class UserProjectionKafkaHandler {
     message: ContractKafkaMessage<typeof userStreamingContract>,
   ): Promise<void> {
     const payload = message.value;
+    const eventId = `${message.topic}-${message.partition}-${message.offset}`;
 
-    await this.handler.handleUserEvent(payload.userId, {
+    await this.handler.handleUserEvent(eventId, {
       userId: UserId.raw(payload.userId),
-      role: payload.role,
       fullName: payload.fullName,
+      lat: payload.lat,
+      lng: payload.lng,
     });
   }
 }

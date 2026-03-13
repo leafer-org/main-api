@@ -32,6 +32,18 @@ import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.j
 export class DrizzleItemQuery implements ItemQueryPort {
   public constructor(private readonly dbClient: DiscoveryDatabaseClient) {}
 
+  public async findById(itemId: ItemId): Promise<ItemReadModel | null> {
+    const rows = await this.dbClient.db
+      .select()
+      .from(discoveryItems)
+      .where(eq(discoveryItems.id, itemId as string));
+
+    if (rows.length === 0) return null;
+
+    const models = await this.hydrateReadModels(rows);
+    return models[0] ?? null;
+  }
+
   public async findByIds(ids: ItemId[]): Promise<ItemReadModel[]> {
     if (ids.length === 0) return [];
 

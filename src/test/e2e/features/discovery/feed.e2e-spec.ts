@@ -9,7 +9,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { registerUser } from '../../actors/auth.js';
 import { startContainers, stopContainers } from '../../helpers/containers.js';
 import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
-import { waitForGorsePopular, waitForGorseRecommendations } from '../../helpers/gorse.js';
+import { gorseGetUser, waitForGorsePopular, waitForGorseRecommendations } from '../../helpers/gorse.js';
 import { waitForAllConsumers } from '../../helpers/kafka.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
@@ -110,7 +110,7 @@ async function sendInteraction(
   } as ContractMessage<typeof interactionStreamingContract>);
 }
 
-async function seedItems(count: number, options?: { cityId?: string; titlePrefix?: string }) {
+async function seedItems(count: number, options?: { cityId?: string; titlePrefix?: string; ageGroup?: string }) {
   const ids = Array.from({ length: count }, () => randomUUID());
 
   // Items must be seeded sequentially — each waits for DB projection before the next
@@ -120,6 +120,7 @@ async function seedItems(count: number, options?: { cityId?: string; titlePrefix
       seedItem(id, {
         cityId: options?.cityId ?? 'city-1',
         title: `${options?.titlePrefix ?? 'Item'} ${i}`,
+        ...(options?.ageGroup ? { ageGroup: options.ageGroup } : {}),
       }),
     );
   });
@@ -299,6 +300,114 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
 
     expect(res.body.items).toEqual([]);
   });
+
+  it('should return empty items when cursor points beyond available data', async () => {
+    const res = await agent
+      .get('/feed')
+      .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62', cursor: '999' })
+      .expect(200);
+
+    expect(res.body.items).toEqual([]);
+    expect(res.body.nextCursor).toBeNull();
+  });
+
+  it('should not return duplicate items across pages', async () => {
+    const page1 = await agent
+      .get('/feed')
+      .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62', limit: 2 })
+      .expect(200);
+
+    expect(page1.body.items).toHaveLength(2);
+    expect(page1.body.nextCursor).not.toBeNull();
+
+    const page2 = await agent
+      .get('/feed')
+      .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62', limit: 2, cursor: page1.body.nextCursor })
+      .expect(200);
+
+    const page1Ids = page1.body.items.map((i: { itemId: string }) => i.itemId);
+    const page2Ids = page2.body.items.map((i: { itemId: string }) => i.itemId);
+    const overlap = page1Ids.filter((id: string) => page2Ids.includes(id));
+    expect(overlap).toEqual([]);
+  });
+
+  it('should handle items deleted from DB but present in Gorse', async () => {
+    // Delete one seeded item directly from DB
+    const deletedId = seededItemIds[0];
+    expectDefined(deletedId);
+    await db.delete(discoveryItems).where(eq(discoveryItems.id, deletedId));
+
+    const res = await agent
+      .get('/feed')
+      .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62' })
+      .expect(200);
+
+    const returnedIds = res.body.items.map((i: { itemId: string }) => i.itemId);
+    expect(returnedIds).not.toContain(deletedId);
+
+    // Re-seed the deleted item to not break other tests
+    await seedItem(deletedId, { cityId: 'city-1', title: 'Re-seeded Item' });
+  });
+});
+
+// ─── Возрастные группы ───────────────────────────────────────────
+
+describe('GET /feed (age groups)', { timeout: 300_000 }, () => {
+  const childrenItemIds: string[] = [];
+
+  beforeAll(async () => {
+    await ensureSeeded();
+
+    // Засидить 3 товара с ageGroup=children
+    const ids = await seedItems(3, { titlePrefix: 'Children Item', ageGroup: 'children' });
+    childrenItemIds.push(...ids);
+
+    // Отправить interactions от фейковых пользователей для children items
+    const fakeUserIds = Array.from({ length: 10 }, () => randomUUID());
+    await sendBulkInteractions(fakeUserIds, childrenItemIds, 'view');
+    await sendBulkInteractions(fakeUserIds, childrenItemIds, 'like');
+
+    await sleep(5000);
+
+    const feedCategory = userGeoCategory(55.75, 37.62, 'children');
+    await waitForGorsePopular(120_000, 2_000, feedCategory);
+  }, 240_000);
+
+  it('should return children items when ageGroup=children', async () => {
+    const res = await agent
+      .get('/feed')
+      .query({ cityId: 'city-1', ageGroup: 'children', lat: '55.75', lng: '37.62' })
+      .expect(200);
+
+    expect(res.body.items.length).toBeGreaterThan(0);
+    const returnedIds = res.body.items.map((i: { itemId: string }) => i.itemId);
+    const overlap = childrenItemIds.filter((id) => returnedIds.includes(id));
+    expect(overlap.length).toBeGreaterThan(0);
+  });
+});
+
+// ─── Geo fallback (без координат) ───────────────────────────────
+
+describe('GET /feed (geo fallback)', () => {
+  it('should return empty when no coordinates provided and cityId has no known coords', async () => {
+    // city-1 не засижен в cmsCities → CityCoordinatesPort вернёт null → global категория
+    // В global категории нет popular items → пустой ответ
+    const res = await agent
+      .get('/feed')
+      .query({ cityId: 'city-1', ageGroup: 'adults' })
+      .expect(200);
+
+    expect(res.body.items).toEqual([]);
+  });
+
+  it('should return empty for completely unknown cityId without coordinates', async () => {
+    const res = await agent
+      .get('/feed')
+      .query({ cityId: 'unknown-city-999', ageGroup: 'adults' })
+      .expect(200);
+
+    expect(res.body.items).toEqual([]);
+  });
 });
 
 // ─── Персонализированные рекомендации (авторизованный пользователь) ──
@@ -366,5 +475,80 @@ describe('GET /feed (personalized)', { timeout: 300_000 }, () => {
     expect(item).toHaveProperty('itemId');
     expect(item).toHaveProperty('title');
     expect(item).toHaveProperty('owner');
+  });
+});
+
+// ─── Geo labels при регистрации / смене города ────────────────────
+
+describe('User geo labels in Gorse', { timeout: 120_000 }, () => {
+  beforeAll(async () => {
+    await ensureSeeded();
+  });
+
+  it('should write h3 labels to Gorse on registration with coordinates', async () => {
+    const user = await registerUser(agent, FIXED_OTP, {
+      phone: '+79990000050',
+      cityId: 'city-msk',
+      lat: 55.75,
+      lng: 37.62,
+    });
+
+    await vi.waitFor(async () => {
+      const gorseUser = await gorseGetUser(user.userId);
+      expect(gorseUser).not.toBeNull();
+      const labels = gorseUser!.Labels;
+      expect(labels.some((l: string) => l.startsWith('h3:4:'))).toBe(true);
+      expect(labels.some((l: string) => l.startsWith('h3:5:'))).toBe(true);
+    }, WAIT_OPTIONS);
+  });
+
+  it('should update h3 labels after PATCH /me/profile with new coordinates', async () => {
+    const user = await registerUser(agent, FIXED_OTP, {
+      phone: '+79990000051',
+      cityId: 'city-msk',
+      lat: 55.75,
+      lng: 37.62,
+    });
+
+    // Wait for initial labels
+    await vi.waitFor(async () => {
+      const gorseUser = await gorseGetUser(user.userId);
+      expect(gorseUser).not.toBeNull();
+      expect(gorseUser!.Labels.some((l: string) => l.startsWith('h3:4:'))).toBe(true);
+    }, WAIT_OPTIONS);
+
+    const initialUser = await gorseGetUser(user.userId);
+    const initialLabels = initialUser!.Labels;
+
+    // Update to Saint Petersburg coordinates
+    await agent
+      .patch('/me/profile')
+      .set('Authorization', `Bearer ${user.accessToken}`)
+      .send({ fullName: 'Test User', cityId: 'city-spb', lat: 59.93, lng: 30.32 })
+      .expect(200);
+
+    // Wait for labels to change
+    await vi.waitFor(async () => {
+      const gorseUser = await gorseGetUser(user.userId);
+      expect(gorseUser).not.toBeNull();
+      const newLabels = gorseUser!.Labels;
+      expect(newLabels.some((l: string) => l.startsWith('h3:4:'))).toBe(true);
+      // Labels should differ from initial (different city)
+      expect(newLabels).not.toEqual(initialLabels);
+    }, { timeout: 30_000, interval: 500 });
+  });
+
+  it('should register without coordinates and have no h3 labels', async () => {
+    const user = await registerUser(agent, FIXED_OTP, {
+      phone: '+79990000052',
+      cityId: 'city-unknown',
+    });
+
+    await vi.waitFor(async () => {
+      const gorseUser = await gorseGetUser(user.userId);
+      expect(gorseUser).not.toBeNull();
+      const labels = gorseUser!.Labels ?? [];
+      expect(labels.every((l: string) => !l.startsWith('h3:'))).toBe(true);
+    }, WAIT_OPTIONS);
   });
 });

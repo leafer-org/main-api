@@ -1,4 +1,4 @@
-import type { ItemId, OrganizationId } from '../ids.js';
+import type { ItemId, OrganizationId, UserId } from '../ids.js';
 
 export type ReviewTarget =
   | { targetType: 'item'; itemId: ItemId }
@@ -8,6 +8,7 @@ export type ReviewCreatedEvent = {
   id: string;
   type: 'review.created';
   reviewId: string;
+  userId: UserId;
   target: ReviewTarget;
   newRating: number | null;
   newReviewCount: number;

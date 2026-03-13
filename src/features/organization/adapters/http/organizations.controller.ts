@@ -4,6 +4,8 @@ import { CreateOrganizationInteractor } from '../../application/use-cases/manage
 import { GetOrganizationDetailInteractor } from '../../application/use-cases/manage-org/get-organization-detail.interactor.js';
 import { UpdateInfoDraftInteractor } from '../../application/use-cases/manage-org/update-info-draft.interactor.js';
 import { SubmitInfoForModerationInteractor } from '../../application/use-cases/manage-org/submit-info-for-moderation.interactor.js';
+import { ApproveInfoModerationInteractor } from '../../application/use-cases/manage-org/approve-info-moderation.interactor.js';
+import { RejectInfoModerationInteractor } from '../../application/use-cases/manage-org/reject-info-moderation.interactor.js';
 import { OrganizationQueryPort } from '../../application/ports.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
@@ -19,6 +21,8 @@ export class OrganizationsController {
     private readonly getOrganizationDetail: GetOrganizationDetailInteractor,
     private readonly updateInfoDraft: UpdateInfoDraftInteractor,
     private readonly submitInfoForModeration: SubmitInfoForModerationInteractor,
+    private readonly approveInfoModeration: ApproveInfoModerationInteractor,
+    private readonly rejectInfoModeration: RejectInfoModerationInteractor,
     @Inject(OrganizationQueryPort) private readonly organizationQuery: OrganizationQueryPort,
   ) {}
 
@@ -113,6 +117,34 @@ export class OrganizationsController {
 
     if (isLeft(result)) {
       throw domainToHttpError<'submitInfoForModeration'>(result.error.toResponse());
+    }
+  }
+
+  @Post(':id/approve-moderation')
+  @HttpCode(204)
+  public async approveModeration(
+    @Param('id') id: string,
+  ): Promise<void> {
+    const result = await this.approveInfoModeration.execute({
+      organizationId: OrganizationId.raw(id),
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'approveInfoModeration'>(result.error.toResponse());
+    }
+  }
+
+  @Post(':id/reject-moderation')
+  @HttpCode(204)
+  public async rejectModeration(
+    @Param('id') id: string,
+  ): Promise<void> {
+    const result = await this.rejectInfoModeration.execute({
+      organizationId: OrganizationId.raw(id),
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'rejectInfoModeration'>(result.error.toResponse());
     }
   }
 

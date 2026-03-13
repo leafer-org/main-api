@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { loginProcessApply } from '../../../domain/aggregates/login-process/apply.js';
-import { sendOtpCommandDecide } from '../../../domain/aggregates/login-process/decide/send-otp.js';
+import { LoginProcessEntity } from '../../../domain/aggregates/login-process/entity.js';
 import type { LoginProcessStartedEvent } from '../../../domain/aggregates/login-process/events.js';
 import type { LoginProcessState } from '../../../domain/aggregates/login-process/state.js';
 import { FingerPrint } from '../../../domain/vo/finger-print.js';
@@ -46,7 +45,7 @@ export class CreateOtpInteractor {
 
       const otpCode = this.otpGenerator.generate();
 
-      const eventEither = sendOtpCommandDecide(latestState, {
+      const result = LoginProcessEntity.sendOtp(latestState, {
         type: 'CreateOtp',
         newLoginProcessId: this.idGenerator.generateLoginProcessId(),
         fingerPrint,
@@ -55,11 +54,9 @@ export class CreateOtpInteractor {
         phoneNumber,
       });
 
-      if (isLeft(eventEither)) return eventEither;
+      if (isLeft(result)) return result;
 
-      const newLoginProcess = loginProcessApply(latestState, eventEither.value);
-
-      await this.persist(tx, newLoginProcess, eventEither.value);
+      await this.persist(tx, result.value.state, result.value.event);
       await this.sender.send({ phoneNumber, code: otpCode });
 
       return Right('ok');

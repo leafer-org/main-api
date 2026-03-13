@@ -4,10 +4,18 @@ api_key = "e2e-test-gorse-key"
 
 [recommend]
 cache_expire = "1s"
+explore_recommend = { popular = 0.8, latest = 0.2 }
 
 [recommend.data_source]
 positive_feedback_types = ["like", "purchase", "booking"]
 read_feedback_types = ["view", "click"]
+
+[recommend.item_neighbors]
+neighbor_type = "auto"
+
+[recommend.online]
+fallback_recommend = "latest"
+num_feedback_fallback_item_based = 10
 
 [recommend.collaborative]
 fit_period = "5s"

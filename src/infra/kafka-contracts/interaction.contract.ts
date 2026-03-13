@@ -12,6 +12,8 @@ const InteractionStreamingMessage = Type.Object({
     Type.Literal('click'),
     Type.Literal('like'),
     Type.Literal('unlike'),
+    Type.Literal('review'),
+    Type.Literal('show-contacts'),
     Type.Literal('purchase'),
     Type.Literal('booking'),
   ]),

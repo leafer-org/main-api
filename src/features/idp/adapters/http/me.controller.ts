@@ -59,6 +59,9 @@ export class MeController {
       userId: user.userId,
       fullName: body.fullName,
       avatarId: (body as Record<string, unknown>).avatarId as string | undefined,
+      cityId: body.cityId,
+      lat: body.lat,
+      lng: body.lng,
     });
 
     if (isLeft(result)) {

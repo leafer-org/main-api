@@ -9,12 +9,15 @@ import { MainConfigService } from '@/infra/config/service.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import { DatabaseModule } from '@/infra/lib/nest-drizzle/index.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
+import { ReviewDatabaseClient } from '@/features/reviews/adapters/db/client.js';
+import { InteractionDatabaseClient } from '@/features/interactions/adapters/db/client.js';
+import { TicketDatabaseClient } from '@/features/tickets/adapters/db/client.js';
 
 @Global()
 @Module({
   imports: [
     DatabaseModule.registerAsync({
-      clients: [DiscoveryDatabaseClient, IdpDatabaseClient, MediaDatabaseClient, OrganizationDatabaseClient],
+      clients: [DiscoveryDatabaseClient, IdpDatabaseClient, MediaDatabaseClient, OrganizationDatabaseClient, ReviewDatabaseClient, InteractionDatabaseClient, TicketDatabaseClient],
       imports: [MainConfigModule],
       useFactory: (config: MainConfigService) => ({
         connection: config.get('DB_URL'),

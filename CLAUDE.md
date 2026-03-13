@@ -1,5 +1,12 @@
 # CLAUDE.md — Project Guidelines
 
+## HTTP-контракты (OpenAPI)
+
+При изменении request/response body эндпоинтов:
+1. Обнови YAML в `http-contracts/endpoints/` (и `http-contracts/shared/` для общих схем)
+2. Запусти `yarn openapi` — это бандлит YAML → JSON и генерирует `generated-public-schema.d.ts`
+3. Контроллеры используют `PublicBody` / `PublicResponse` из `@/infra/contracts/types.js` — после перегенерации типы подхватятся автоматически
+
 ## Работа с миграциями
 
 Сервис ещё не в production. Что бы изменить схему, просто удали папку drizzle и сгенерируй миграцию заново

@@ -4,6 +4,8 @@ import { CreateItemInteractor } from '../../application/use-cases/manage-items/c
 import { UpdateItemDraftInteractor } from '../../application/use-cases/manage-items/update-item-draft.interactor.js';
 import { DeleteItemDraftInteractor } from '../../application/use-cases/manage-items/delete-item-draft.interactor.js';
 import { SubmitItemForModerationInteractor } from '../../application/use-cases/manage-items/submit-item-for-moderation.interactor.js';
+import { ApproveItemModerationInteractor } from '../../application/use-cases/manage-items/approve-item-moderation.interactor.js';
+import { RejectItemModerationInteractor } from '../../application/use-cases/manage-items/reject-item-moderation.interactor.js';
 import { UnpublishItemInteractor } from '../../application/use-cases/manage-items/unpublish-item.interactor.js';
 import { GetOrganizationItemsInteractor } from '../../application/use-cases/manage-items/get-organization-items.interactor.js';
 import { GetItemDetailInteractor } from '../../application/use-cases/manage-items/get-item-detail.interactor.js';
@@ -23,6 +25,8 @@ export class ItemsController {
     private readonly updateItemDraft: UpdateItemDraftInteractor,
     private readonly deleteItemDraft: DeleteItemDraftInteractor,
     private readonly submitItemForModeration: SubmitItemForModerationInteractor,
+    private readonly approveItemModeration: ApproveItemModerationInteractor,
+    private readonly rejectItemModeration: RejectItemModerationInteractor,
     private readonly unpublishItem: UnpublishItemInteractor,
     private readonly getOrganizationItems: GetOrganizationItemsInteractor,
     private readonly getItemDetail: GetItemDetailInteractor,
@@ -42,7 +46,7 @@ export class ItemsController {
       userId: user.userId,
       itemId,
       typeId: TypeId.raw(body.typeId),
-      widgets: body.widgets as unknown as ItemWidget[],
+      widgets: body.widgets.map(({ type, data }) => ({ type, ...data })) as unknown as ItemWidget[],
     });
 
     if (isLeft(result)) {
@@ -114,7 +118,7 @@ export class ItemsController {
       organizationId: OrganizationId.raw(orgId),
       userId: user.userId,
       itemId: ItemId.raw(itemId),
-      widgets: body.widgets as unknown as ItemWidget[],
+      widgets: body.widgets.map(({ type, data }) => ({ type, ...data })) as unknown as ItemWidget[],
     });
 
     if (isLeft(result)) {
@@ -159,6 +163,34 @@ export class ItemsController {
 
     if (isLeft(result)) {
       throw domainToHttpError<'submitItemForModeration'>(result.error.toResponse());
+    }
+  }
+
+  @Post(':itemId/approve-moderation')
+  @HttpCode(204)
+  public async approveModeration(
+    @Param('itemId') itemId: string,
+  ): Promise<void> {
+    const result = await this.approveItemModeration.execute({
+      itemId: ItemId.raw(itemId),
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'approveItemModeration'>(result.error.toResponse());
+    }
+  }
+
+  @Post(':itemId/reject-moderation')
+  @HttpCode(204)
+  public async rejectModeration(
+    @Param('itemId') itemId: string,
+  ): Promise<void> {
+    const result = await this.rejectItemModeration.execute({
+      itemId: ItemId.raw(itemId),
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'rejectItemModeration'>(result.error.toResponse());
     }
   }
 

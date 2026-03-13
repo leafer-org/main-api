@@ -24,10 +24,11 @@ export async function loginAsAdmin(agent: E2eApp['agent'], otp: string) {
 export async function registerUser(
   agent: E2eApp['agent'],
   otp: string,
-  options?: { phone?: string; fullName?: string },
+  options?: { phone?: string; fullName?: string; cityId?: string; lat?: number; lng?: number },
 ) {
   const phone = options?.phone ?? '+79990000002';
   const fullName = options?.fullName ?? 'Test User';
+  const cityId = options?.cityId ?? 'city-1';
 
   await agent.post('/auth/request-otp').send({ phoneNumber: phone }).expect(200);
 
@@ -40,7 +41,13 @@ export async function registerUser(
 
   const regRes = await agent
     .post('/auth/complete-profile')
-    .send({ registrationSessionId: verifyRes.body.registrationSessionId, fullName })
+    .send({
+      registrationSessionId: verifyRes.body.registrationSessionId,
+      fullName,
+      cityId,
+      lat: options?.lat,
+      lng: options?.lng,
+    })
     .expect(200);
 
   return {

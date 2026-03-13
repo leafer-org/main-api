@@ -129,6 +129,9 @@ export class AuthController {
       registrationSessionId: body.registrationSessionId,
       fullName: body.fullName ?? '',
       avatarId: body.avatarMedia?.mediaId,
+      cityId: body.cityId,
+      lat: body.lat,
+      lng: body.lng,
     });
 
     if (isLeft(result)) {

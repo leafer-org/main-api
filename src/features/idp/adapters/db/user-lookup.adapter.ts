@@ -11,10 +11,11 @@ export class DrizzleUserLookupAdapter implements UserLookupPort {
   public constructor(private readonly connectionPool: ConnectionPool) {}
 
   public async findByPhone(phone: string): Promise<{ userId: UserId } | null> {
+    const normalized = phone.replace(/\D/g, '');
     const rows = await this.connectionPool.db
       .select({ id: users.id })
       .from(users)
-      .where(eq(users.phoneNumber, phone))
+      .where(eq(users.phoneNumber, normalized))
       .limit(1);
 
     const row = rows[0];

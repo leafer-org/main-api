@@ -9,6 +9,9 @@ export type UserState = {
   fullName: FullName;
   avatarId: FileId | undefined;
   role: Role;
+  cityId: string;
+  lat?: number;
+  lng?: number;
   createdAt: Date;
   updatedAt: Date;
 };

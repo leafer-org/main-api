@@ -17,6 +17,8 @@ import type { AgeGroup } from '@/kernel/domain/vo/role.js';
  * Запросы товаров. `findByIds` фильтрует просроченные (next_event_date > now() OR has_schedule).
  */
 export abstract class ItemQueryPort {
+  public abstract findById(itemId: ItemId): Promise<ItemReadModel | null>;
+
   public abstract findByIds(ids: ItemId[]): Promise<ItemReadModel[]>;
 
   public abstract findCategoryItemsSorted(params: {

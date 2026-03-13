@@ -273,26 +273,40 @@ Must-кейсы (блокеры релиза):
 
 **Проблема:** Новый пользователь без interactions получает пустую ленту или только popular items. Gorse не может построить персональный профиль.
 
-**Решение:**
-- При регистрации собирать интересы (onboarding: выбор категорий/тегов)
-- Передавать в Gorse как user labels: `interest:{categoryId}`
-- Content-based рекомендации начнут работать сразу, до накопления collaborative сигналов
+**Решение — гео-labels из первого запроса:**
 
-#### 2. Холодный старт для новых items
+При первом запросе с координатами (feed, category) обновить user labels в Gorse гео-ячейками. Items уже размечены `h3:4:{cell}`, `h3:5:{cell}` — Gorse сматчит user labels с item labels через content-based filtering и начнёт рекомендовать nearby items сразу, без накопления interactions.
+
+**Механика:**
+1. Пользователь делает запрос с `lat/lng` → вычисляем `h3:4:{cell}`, `h3:5:{cell}`
+2. Если у пользователя в Gorse ещё нет гео-labels → `upsertUser(userId, [...existingLabels, "h3:4:{cell}", "h3:5:{cell}"], comment)`
+3. Gorse content-based matching: user `h3:5:abc` → items с label `h3:5:abc` → рекомендовать
+4. Параллельно пользователь получает popular items по гео-категории (уже работает)
+5. После накопления interactions collaborative filtering вытесняет content-based — гео-labels становятся вторичными
+
+**User labels после обновления:**
+```
+["role:user", "h3:4:{cell}", "h3:5:{cell}"]
+```
+
+**Стратегия обновления:** только при первом запросе (cold start bootstrap). После накопления interactions Gorse строит collaborative профиль, и гео-labels становятся вторичными. Нет нужды обновлять при каждом запросе.
+
+**Затрагиваемые файлы:**
+- `application/use-cases/browse-feed/get-feed.interactor.ts` — при наличии координат и отсутствии гео-labels вызвать обновление user labels
+- `application/sync-ports.ts` — `GorseSyncPort.upsertUser` уже поддерживает labels
+- `adapters/gorse/gorse-sync.adapter.ts` — без изменений (upsertUser уже реализован)
+- Нужен механизм проверки "первый запрос" — флаг в Redis или проверка текущих labels через Gorse API
+
+#### 3. Холодный старт для новых items ✅
 
 **Проблема:** Новый item без interactions не попадает в collaborative рекомендации. Зависит только от content-based matching по labels.
 
-**Решение:**
-- Boost для новых items: добавить label `fresh:true` + настроить Gorse `item_neighbor_type = "auto"` для активного content-based matching свежих items
-- Explore/exploit баланс: настроить `explore_recommend` в Gorse конфиге (например, 0.2 = 20% exploration)
+**Решение (реализовано через конфиг Gorse, без дополнительных labels):**
 
-#### 3. Обогащение user labels
-
-**Проблема:** Сейчас user хранится в Gorse только с `role:{role}`. Нет демографических/географических сигналов.
-
-**Решение:**
-- Добавить labels: `city:{cityId}`, `age:{ageGroup}`, `h3:4:{cell}` (home location)
-- Улучшит content-based matching: похожие пользователи по локации и возрасту получат релевантные рекомендации до накопления поведенческих данных
+- `item_neighbor_type = "auto"` — Gorse автоматически выбирает content-based matching для items без достаточных interactions, collaborative для остальных
+- `explore_recommend = { popular = 0.8, latest = 0.2 }` — 20% рекомендаций отдаётся свежим items (exploration), 80% — проверенным популярным (exploitation)
+- `fallback_recommend = "latest"` — при отсутствии персонализированных рекомендаций fallback на свежие items
+- Label `fresh:true` не нужен — Gorse использует `item.Timestamp` (publishedAt) для определения свежести через встроенный `latest` non-personalized score
 
 ### P1 — Важные (улучшение UX)
 

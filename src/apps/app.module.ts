@@ -10,6 +10,10 @@ import { IdpModule } from '../features/idp/idp.module.js';
 import { MediaModule } from '../features/media/media.module.js';
 import { ORGANIZATION_CONSUMER_ID } from '../features/organization/adapters/kafka/consumer-ids.js';
 import { OrganizationModule } from '../features/organization/organization.module.js';
+import { INTERACTIONS_CONSUMER_ID } from '../features/interactions/adapters/kafka/consumer-ids.js';
+import { InteractionsModule } from '../features/interactions/interactions.module.js';
+import { ReviewsModule } from '../features/reviews/reviews.module.js';
+import { TicketsModule } from '../features/tickets/tickets.module.js';
 import { MainDbModule } from './db.module.js';
 import { MainGorseModule } from './gorse.module.js';
 import { MainRedisModule } from './redis.module.js';
@@ -80,12 +84,27 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
       }),
       inject: [MainConfigService],
     }),
+    KafkaConsumerModule.registerAsync({
+      consumerId: INTERACTIONS_CONSUMER_ID,
+      mode: { type: 'single' },
+      imports: [MainConfigModule],
+      useFactory: (config: MainConfigService) => ({
+        consumerConfig: {
+          'metadata.broker.list': config.get('KAFKA_BROKER'),
+          'group.id': 'interactions-consumer',
+        },
+      }),
+      inject: [MainConfigService],
+    }),
     OutboxRelayModule,
     IdpModule,
     MediaModule,
     DiscoveryModule,
     CmsModule,
     OrganizationModule,
+    ReviewsModule,
+    InteractionsModule,
+    TicketsModule,
   ],
 })
 export class AppModule {}

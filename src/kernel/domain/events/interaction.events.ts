@@ -1,6 +1,6 @@
 import type { ItemId, UserId } from '../ids.js';
 
-export type InteractionType = 'view' | 'click' | 'like' | 'unlike' | 'purchase' | 'booking';
+export type InteractionType = 'view' | 'click' | 'like' | 'unlike' | 'review' | 'show-contacts' | 'purchase' | 'booking';
 
 export type InteractionRecordedEvent = {
   id: string;
