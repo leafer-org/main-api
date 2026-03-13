@@ -2,12 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BoardEntity } from './entity.js';
 import { isLeft } from '@/infra/lib/box.js';
-import {
-  BoardAutomationId,
-  BoardId,
-  BoardSubscriptionId,
-  UserId,
-} from '@/kernel/domain/ids.js';
+import { BoardAutomationId, BoardId, BoardSubscriptionId, UserId } from '@/kernel/domain/ids.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

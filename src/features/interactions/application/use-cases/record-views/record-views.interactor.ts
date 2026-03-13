@@ -1,7 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { uuidv7 } from 'uuidv7';
 
-import { InteractionDedupPort, InteractionPublisherPort, InteractionWritePort } from '../../ports.js';
+import {
+  InteractionDedupPort,
+  InteractionPublisherPort,
+  InteractionWritePort,
+} from '../../ports.js';
 import { Clock } from '@/infra/lib/clock.js';
 import type { ItemId, UserId } from '@/kernel/domain/ids.js';
 

@@ -56,9 +56,7 @@ describe('RecordInteractionInteractor', () => {
 
     await interactor.execute({ userId: USER_ID, itemId: ITEM_ID, type: 'show-contacts' });
 
-    expect(write.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'show-contacts' }),
-    );
+    expect(write.insert).toHaveBeenCalledWith(expect.objectContaining({ type: 'show-contacts' }));
     expect(publisher.publish).toHaveBeenCalledWith(
       expect.objectContaining({ interactionType: 'show-contacts' }),
     );

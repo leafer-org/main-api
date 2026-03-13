@@ -19,7 +19,14 @@ export class UpdateProfileInteractor {
     private readonly txHost: TransactionHost,
   ) {}
 
-  public async execute(command: { userId: UserId; fullName: string; avatarId?: string; cityId?: string; lat?: number; lng?: number }) {
+  public async execute(command: {
+    userId: UserId;
+    fullName: string;
+    avatarId?: string;
+    cityId?: string;
+    lat?: number;
+    lng?: number;
+  }) {
     const fullNameEither = FullName.create(command.fullName);
     if (isLeft(fullNameEither)) return fullNameEither;
 

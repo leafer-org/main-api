@@ -16,9 +16,7 @@ export class UserProjectionKafkaHandler {
   public constructor(private readonly handler: ProjectUserHandler) {}
 
   @ContractHandler(userStreamingContract)
-  public async handle(
-    message: ContractKafkaMessage<typeof userStreamingContract>,
-  ): Promise<void> {
+  public async handle(message: ContractKafkaMessage<typeof userStreamingContract>): Promise<void> {
     const payload = message.value;
     const eventId = `${message.topic}-${message.partition}-${message.offset}`;
 

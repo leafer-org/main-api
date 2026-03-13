@@ -1,12 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { TicketIdGenerator } from '../application/ports.js';
-import {
-  BoardAutomationId,
-  BoardId,
-  BoardSubscriptionId,
-  TicketId,
-} from '@/kernel/domain/ids.js';
+import { BoardAutomationId, BoardId, BoardSubscriptionId, TicketId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class UuidTicketIdGenerator extends TicketIdGenerator {

@@ -4,11 +4,7 @@ import type {
   RotateSessionCommand,
 } from './commands.js';
 import { SessionAlreadyExistsError, SessionNotFoundError } from './errors.js';
-import type {
-  SessionCreatedEvent,
-  SessionDeletedEvent,
-  SessionRotatedEvent,
-} from './events.js';
+import type { SessionCreatedEvent, SessionDeletedEvent, SessionRotatedEvent } from './events.js';
 import type { SessionState } from './state.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 

@@ -1,30 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
 
-import type { TicketState } from '../../../domain/aggregates/ticket/state.js';
-import type { TicketStatus } from '../../../domain/aggregates/ticket/state.js';
-import type { TicketHistoryAction } from '../../../domain/vo/history.js';
-import type { TicketHistoryEntry } from '../../../domain/vo/history.js';
+import type { TicketListItem } from '../../../application/ports.js';
+import {
+  MyTicketsQueryPort,
+  TicketDetailQueryPort,
+  TicketListQueryPort,
+} from '../../../application/ports.js';
+import type { TicketState, TicketStatus } from '../../../domain/aggregates/ticket/state.js';
+import type { TicketHistoryAction, TicketHistoryEntry } from '../../../domain/vo/history.js';
 import type { TicketData } from '../../../domain/vo/ticket-data.js';
 import type { TriggerId } from '../../../domain/vo/triggers.js';
-import {
-  TicketListQueryPort,
-  TicketDetailQueryPort,
-  MyTicketsQueryPort,
-} from '../../../application/ports.js';
-import type { TicketListItem } from '../../../application/ports.js';
 import { TicketDatabaseClient } from '../client.js';
-import { tickets } from '../schema.js';
 import type { TicketJsonState } from '../json-state.js';
+import { tickets } from '../schema.js';
 import type { BoardId, TicketId, UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleTicketQuery
   implements TicketListQueryPort, TicketDetailQueryPort, MyTicketsQueryPort
 {
-  public constructor(
-    @Inject(TicketDatabaseClient) private readonly db: TicketDatabaseClient,
-  ) {}
+  public constructor(@Inject(TicketDatabaseClient) private readonly db: TicketDatabaseClient) {}
 
   public async findTickets(params: {
     boardId?: BoardId;
@@ -36,10 +32,7 @@ export class DrizzleTicketQuery
     const conditions = this.buildConditions(params);
 
     const [countResult, rows] = await Promise.all([
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(tickets)
-        .where(conditions),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(tickets).where(conditions),
       this.db
         .select()
         .from(tickets)
@@ -56,11 +49,7 @@ export class DrizzleTicketQuery
   }
 
   public async findById(ticketId: TicketId): Promise<TicketState | null> {
-    const rows = await this.db
-      .select()
-      .from(tickets)
-      .where(eq(tickets.id, ticketId))
-      .limit(1);
+    const rows = await this.db.select().from(tickets).where(eq(tickets.id, ticketId)).limit(1);
     const row = rows[0];
     if (!row) return null;
 
@@ -74,10 +63,7 @@ export class DrizzleTicketQuery
     const condition = eq(tickets.assigneeId, userId as string);
 
     const [countResult, rows] = await Promise.all([
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(tickets)
-        .where(condition),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(tickets).where(condition),
       this.db
         .select()
         .from(tickets)

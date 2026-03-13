@@ -1,3 +1,4 @@
+import type { TicketHistoryEntry } from '../../vo/history.js';
 import type {
   AssignTicketCommand,
   CommentTicketCommand,
@@ -26,7 +27,6 @@ import type {
 } from './events.js';
 import type { TicketState } from './state.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
-import type { TicketHistoryEntry } from '../../vo/history.js';
 
 function historyEntry(
   action: TicketHistoryEntry['action'],
@@ -145,10 +145,7 @@ export const TicketEntity = {
         ...state,
         status: 'open',
         assigneeId: null,
-        history: [
-          ...state.history,
-          historyEntry('unassigned', state.assigneeId!, cmd.now),
-        ],
+        history: [...state.history, historyEntry('unassigned', state.assigneeId!, cmd.now)],
         updatedAt: cmd.now,
       },
       event,

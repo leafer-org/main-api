@@ -79,7 +79,10 @@ describe('LoginProcessEntity.verifyOtp', () => {
 
       expect(isLeft(result)).toBe(false);
       if (!isLeft(result)) {
-        expect(result.value.event).toEqual({ type: 'login_process.otp_verify_failed', lastTryAt: NOW });
+        expect(result.value.event).toEqual({
+          type: 'login_process.otp_verify_failed',
+          lastTryAt: NOW,
+        });
         expect(result.value.state.type).toBe('OtpRequested');
       }
     });

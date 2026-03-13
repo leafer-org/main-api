@@ -10,7 +10,10 @@ import { type Either, Left, Right } from '@/infra/lib/box.js';
 export function sendOtp(
   state: LoginProcessState | null,
   cmd: CreateOtpCommand,
-): Either<LoginBlockedError | OtpThrottleError, { state: LoginProcessState; event: LoginProcessStartedEvent }> {
+): Either<
+  LoginBlockedError | OtpThrottleError,
+  { state: LoginProcessState; event: LoginProcessStartedEvent }
+> {
   if (state?.type === 'Blocked' && state.blockedUntil.getTime() > cmd.now.getTime()) {
     return Left(new LoginBlockedError({ blockedUntil: state.blockedUntil.toISOString() }));
   }

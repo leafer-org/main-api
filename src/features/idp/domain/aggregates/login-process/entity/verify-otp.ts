@@ -22,7 +22,10 @@ type VerifyOtpEvent =
 export function verifyOtp(
   state: LoginProcessState | null,
   cmd: VerifyOtpCommand,
-): Either<LoginBlockedError | InvalidOtpError, { state: LoginProcessState; event: VerifyOtpEvent }> {
+): Either<
+  LoginBlockedError | InvalidOtpError,
+  { state: LoginProcessState; event: VerifyOtpEvent }
+> {
   if (state?.type === 'Blocked' && isActivelyBlocked(state, cmd.now)) {
     return Left(new LoginBlockedError({ blockedUntil: state.blockedUntil.toISOString() }));
   }

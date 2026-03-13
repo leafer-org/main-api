@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq, gt, inArray } from 'drizzle-orm';
 
+import { InteractionDedupPort, InteractionWritePort } from '../../application/ports.js';
 import { InteractionDatabaseClient } from './client.js';
 import { interactions } from './schema.js';
-import { InteractionDedupPort, InteractionWritePort } from '../../application/ports.js';
 import type { InteractionType } from '@/kernel/domain/events/interaction.events.js';
 import type { ItemId, UserId } from '@/kernel/domain/ids.js';
 

@@ -2,8 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { OrganizationEntity } from '../../../domain/aggregates/organization/entity.js';
 import { OrganizationNotFoundError } from '../../../domain/aggregates/organization/errors.js';
+import {
+  OrganizationPermissionCheckService,
+  OrgPermissionDeniedError,
+} from '../../organization-permission.js';
 import { OrganizationRepository } from '../../ports.js';
-import { OrganizationPermissionCheckService, OrgPermissionDeniedError } from '../../organization-permission.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
@@ -24,10 +27,7 @@ export class TransferOwnershipInteractor {
     userId: UserId;
     toUserId: UserId;
   }) {
-    const auth = await this.permissionCheck.mustBeEmployee(
-      command.organizationId,
-      command.userId,
-    );
+    const auth = await this.permissionCheck.mustBeEmployee(command.organizationId, command.userId);
     if (isLeft(auth)) return auth;
 
     if (!auth.value.isOwner) {

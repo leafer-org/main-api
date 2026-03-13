@@ -60,11 +60,7 @@ describe('h3-geo', () => {
 
     it('returns {ag}:global + {ag}:{root}:global for each root', () => {
       const cats = itemGlobalCategories(['adults'], ['root-1', 'root-2']);
-      expect(cats).toEqual([
-        'adults:global',
-        'adults:root-1:global',
-        'adults:root-2:global',
-      ]);
+      expect(cats).toEqual(['adults:global', 'adults:root-1:global', 'adults:root-2:global']);
     });
 
     it('duplicates for multiple ageGroups', () => {

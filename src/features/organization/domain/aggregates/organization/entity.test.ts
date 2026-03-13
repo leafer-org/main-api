@@ -158,19 +158,19 @@ describe('OrganizationEntity', () => {
     it('submits from rejected status', () => {
       let state = createOrg();
       // Submit → reject → submit again
-      let r = OrganizationEntity.submitInfoForModeration(state, {
+      const r = OrganizationEntity.submitInfoForModeration(state, {
         type: 'SubmitInfoForModeration',
         now: NOW,
       });
       if (isLeft(r)) throw new Error('Expected Right');
       state = r.value.state;
 
-      r = OrganizationEntity.rejectInfoModeration(state, {
+      const r2 = OrganizationEntity.rejectInfoModeration(state, {
         type: 'RejectInfoModeration',
         now: NOW,
       });
-      if (isLeft(r)) throw new Error('Expected Right');
-      state = r.value.state;
+      if (isLeft(r2)) throw new Error('Expected Right');
+      state = r2.value.state;
 
       const result = OrganizationEntity.submitInfoForModeration(state, {
         type: 'SubmitInfoForModeration',

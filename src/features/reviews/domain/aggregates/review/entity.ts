@@ -1,11 +1,12 @@
+import { Rating } from '../../vo/rating.js';
 import type {
   ApproveReviewCommand,
   CreateReviewCommand,
   DeleteReviewCommand,
   DisputeReviewCommand,
   EditReviewCommand,
-  ReplyToReviewCommand,
   RejectReviewCommand,
+  ReplyToReviewCommand,
   ResolveDisputeCommand,
 } from './commands.js';
 import {
@@ -20,16 +21,15 @@ import type {
   ReviewApprovedEvent,
   ReviewCreatedEvent,
   ReviewDeletedEvent,
+  ReviewDisputedEvent,
   ReviewDisputeRemovedEvent,
   ReviewDisputeUpheldEvent,
-  ReviewDisputedEvent,
   ReviewEditedEvent,
   ReviewRejectedEvent,
   ReviewRepliedEvent,
 } from './events.js';
 import type { ReviewState } from './state.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
-import { Rating } from '../../vo/rating.js';
 
 export type { ReviewState } from './state.js';
 

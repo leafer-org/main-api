@@ -1,8 +1,7 @@
-import type { EntityState } from '@/infra/ddd/entity-state.js';
-import type { BoardId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
-
 import type { BoardAutomationEntity } from './entities/board-automation.entity.js';
 import type { BoardSubscriptionEntity } from './entities/board-subscription.entity.js';
+import type { EntityState } from '@/infra/ddd/entity-state.js';
+import type { BoardId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 
 export type BoardScope = 'platform' | 'organization';
 

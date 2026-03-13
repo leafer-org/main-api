@@ -9,11 +9,11 @@ import {
   RecommendationService,
 } from '../../ports.js';
 import type { CategoryItemFilters, SortOption } from './types.js';
+import { Right } from '@/infra/lib/box.js';
 import {
   userGeoCategoryWithCatalog,
   userGlobalCategoryWithCatalog,
 } from '@/infra/lib/geo/h3-geo.js';
-import { Right } from '@/infra/lib/box.js';
 import { nextOffsetCursor, parseOffsetCursor } from '@/infra/lib/pagination/index.js';
 import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 import type { CategoryId, ItemId, UserId } from '@/kernel/domain/ids.js';

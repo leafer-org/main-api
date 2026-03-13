@@ -182,7 +182,10 @@ describe('Organization Items (e2e)', () => {
         .set('Authorization', `Bearer ${user.accessToken}`)
         .send({
           widgets: [
-            { type: 'base-info', data: { title: 'Updated Title', description: 'Updated desc', imageId: null } },
+            {
+              type: 'base-info',
+              data: { title: 'Updated Title', description: 'Updated desc', imageId: null },
+            },
           ],
         })
         .expect(200);

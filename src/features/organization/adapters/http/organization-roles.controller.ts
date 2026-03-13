@@ -1,16 +1,16 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 
-import { GetOrganizationRolesInteractor } from '../../application/use-cases/manage-roles/get-organization-roles.interactor.js';
 import { CreateEmployeeRoleInteractor } from '../../application/use-cases/manage-roles/create-employee-role.interactor.js';
-import { UpdateEmployeeRoleInteractor } from '../../application/use-cases/manage-roles/update-employee-role.interactor.js';
 import { DeleteEmployeeRoleInteractor } from '../../application/use-cases/manage-roles/delete-employee-role.interactor.js';
+import { GetOrganizationRolesInteractor } from '../../application/use-cases/manage-roles/get-organization-roles.interactor.js';
+import { UpdateEmployeeRoleInteractor } from '../../application/use-cases/manage-roles/update-employee-role.interactor.js';
+import type { OrganizationPermission } from '../../domain/aggregates/organization/config.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { EmployeeRoleId, OrganizationId } from '@/kernel/domain/ids.js';
-import type { OrganizationPermission } from '../../domain/aggregates/organization/config.js';
 
 @Controller('organizations/:id/roles')
 export class OrganizationRolesController {

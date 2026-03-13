@@ -1,12 +1,12 @@
 import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post } from '@nestjs/common';
 
+import { OrganizationQueryPort } from '../../application/ports.js';
+import { ApproveInfoModerationInteractor } from '../../application/use-cases/manage-org/approve-info-moderation.interactor.js';
 import { CreateOrganizationInteractor } from '../../application/use-cases/manage-org/create-organization.interactor.js';
 import { GetOrganizationDetailInteractor } from '../../application/use-cases/manage-org/get-organization-detail.interactor.js';
-import { UpdateInfoDraftInteractor } from '../../application/use-cases/manage-org/update-info-draft.interactor.js';
-import { SubmitInfoForModerationInteractor } from '../../application/use-cases/manage-org/submit-info-for-moderation.interactor.js';
-import { ApproveInfoModerationInteractor } from '../../application/use-cases/manage-org/approve-info-moderation.interactor.js';
 import { RejectInfoModerationInteractor } from '../../application/use-cases/manage-org/reject-info-moderation.interactor.js';
-import { OrganizationQueryPort } from '../../application/ports.js';
+import { SubmitInfoForModerationInteractor } from '../../application/use-cases/manage-org/submit-info-for-moderation.interactor.js';
+import { UpdateInfoDraftInteractor } from '../../application/use-cases/manage-org/update-info-draft.interactor.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
@@ -68,7 +68,9 @@ export class OrganizationsController {
 
     const detail = result.value;
     if (!detail) {
-      throw domainToHttpError<'getOrganization'>({ 404: { type: 'organization_not_found', isDomain: true as const } });
+      throw domainToHttpError<'getOrganization'>({
+        404: { type: 'organization_not_found', isDomain: true as const },
+      });
     }
 
     const employees = await this.organizationQuery.findEmployees(orgId);
@@ -122,9 +124,7 @@ export class OrganizationsController {
 
   @Post(':id/approve-moderation')
   @HttpCode(204)
-  public async approveModeration(
-    @Param('id') id: string,
-  ): Promise<void> {
+  public async approveModeration(@Param('id') id: string): Promise<void> {
     const result = await this.approveInfoModeration.execute({
       organizationId: OrganizationId.raw(id),
     });
@@ -136,9 +136,7 @@ export class OrganizationsController {
 
   @Post(':id/reject-moderation')
   @HttpCode(204)
-  public async rejectModeration(
-    @Param('id') id: string,
-  ): Promise<void> {
+  public async rejectModeration(@Param('id') id: string): Promise<void> {
     const result = await this.rejectInfoModeration.execute({
       organizationId: OrganizationId.raw(id),
     });

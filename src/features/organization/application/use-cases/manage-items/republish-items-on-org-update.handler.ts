@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import type { InfoModerationApprovedEvent } from '../../../domain/aggregates/organization/events.js';
 import { ItemEventPublisher, ItemRepository, OrganizationRepository } from '../../ports.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { OrganizationId } from '@/kernel/domain/ids.js';
-import type { InfoModerationApprovedEvent } from '../../../domain/aggregates/organization/events.js';
 
 @Injectable()
 export class RepublishItemsOnOrgUpdateHandler {
@@ -14,10 +14,12 @@ export class RepublishItemsOnOrgUpdateHandler {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
   ) {}
 
-  public async handle(event: InfoModerationApprovedEvent & { organizationId: OrganizationId }): Promise<void> {
+  public async handle(
+    event: InfoModerationApprovedEvent & { organizationId: OrganizationId },
+  ): Promise<void> {
     await this.txHost.startTransaction(async (tx) => {
       const org = await this.organizationRepository.findById(tx, event.organizationId);
-      const infoPublication = org?.infoPublication
+      const infoPublication = org?.infoPublication;
       if (!infoPublication) return;
 
       const publishedItems = await this.itemRepository.findPublishedByOrganizationId(

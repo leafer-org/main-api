@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { ItemQueryPort } from '../../ports.js';
 import { OrganizationPermissionCheckService } from '../../organization-permission.js';
+import { ItemQueryPort } from '../../ports.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import type { ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 
@@ -18,10 +18,7 @@ export class GetItemDetailInteractor {
     userId: UserId;
     itemId: ItemId;
   }) {
-    const auth = await this.permissionCheck.mustBeEmployee(
-      command.organizationId,
-      command.userId,
-    );
+    const auth = await this.permissionCheck.mustBeEmployee(command.organizationId, command.userId);
     if (isLeft(auth)) return auth;
 
     const readModel = await this.itemQuery.findDetail(command.itemId);

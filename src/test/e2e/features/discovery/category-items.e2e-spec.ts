@@ -20,10 +20,14 @@ import { RecommendationService } from '@/features/discovery/application/ports.js
 import { GorseSyncPort } from '@/features/discovery/application/sync-ports.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
+import type { OrgFilterId } from '@/features/tickets/domain/vo/filters.js';
 import { categoryStreamingContract } from '@/infra/kafka-contracts/category.contract.js';
 import { itemStreamingContract } from '@/infra/kafka-contracts/item.contract.js';
 import type { Contract, ContractMessage } from '@/infra/lib/nest-kafka/contract/contract.js';
 import { KafkaProducerService } from '@/infra/lib/nest-kafka/producer/kafka-producer.service.js';
+import type { CategoryId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
 
 const FIXED_OTP = '123456';
 const WAIT_OPTIONS = { timeout: 15_000, interval: 500 };
@@ -91,12 +95,17 @@ describe('Discovery Category Items HTTP (e2e)', () => {
     title?: string;
     publishedAt?: string;
   }) {
-    const widgets: object[] = [
+    const widgets: ItemWidget[] = [
       { type: 'base-info', title: params.title ?? 'Test Item', description: 'Desc', imageId: null },
-      { type: 'owner', organizationId: params.orgId, name: 'Org', avatarId: null },
-      { type: 'category', categoryIds: params.categoryIds, attributes: [] },
+      {
+        type: 'owner',
+        organizationId: params.orgId as OrganizationId,
+        name: 'Org',
+        avatarId: null,
+      },
+      { type: 'category', categoryIds: params.categoryIds as CategoryId[], attributes: [] },
       { type: 'location', cityId: params.cityId ?? CITY_ID, lat: 55.75, lng: 37.62, address: null },
-      { type: 'age-group', value: params.ageGroup ?? AGE_GROUP },
+      { type: 'age-group', value: (params.ageGroup as AgeGroup) ?? AGE_GROUP },
     ];
 
     if (params.price !== undefined) {
@@ -242,8 +251,9 @@ describe('Discovery Category Items HTTP (e2e)', () => {
 
         for (let i = 0; i < ids.length; i++) {
           const date = new Date(Date.now() - (ids.length - i) * 60_000);
+          // biome-ignore lint/performance/noAwaitInLoops: test
           await seedItem({
-            itemId: ids[i],
+            itemId: ids[i] as ItemId,
             typeId,
             orgId,
             categoryIds: [categoryId],

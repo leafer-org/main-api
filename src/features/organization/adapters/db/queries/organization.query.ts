@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import type { OrganizationDetailReadModel } from '../../../domain/read-models/organization-detail.read-model.js';
+import { OrganizationQueryPort } from '../../../application/ports.js';
 import type { EmployeeListReadModel } from '../../../domain/read-models/employee-list.read-model.js';
 import type { EmployeeRoleListReadModel } from '../../../domain/read-models/employee-role-list.read-model.js';
-import { OrganizationQueryPort } from '../../../application/ports.js';
+import type { OrganizationDetailReadModel } from '../../../domain/read-models/organization-detail.read-model.js';
 import { OrganizationDatabaseClient } from '../client.js';
+import type { OrganizationJsonState } from '../json-state.js';
 import { organizations } from '../schema.js';
 import type { OrganizationId } from '@/kernel/domain/ids.js';
-import type { OrganizationJsonState } from '../json-state.js';
 
 @Injectable()
 export class DrizzleOrganizationQuery implements OrganizationQueryPort {
@@ -17,7 +17,11 @@ export class DrizzleOrganizationQuery implements OrganizationQueryPort {
   ) {}
 
   public async findDetail(id: OrganizationId): Promise<OrganizationDetailReadModel | null> {
-    const rows = await this.db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, id))
+      .limit(1);
     const row = rows[0];
     if (!row) return null;
 
@@ -30,7 +34,12 @@ export class DrizzleOrganizationQuery implements OrganizationQueryPort {
         ? {
             name: s.infoPublication.name,
             description: s.infoPublication.description,
-            avatarId: (s.infoPublication.avatarId ?? null) as OrganizationDetailReadModel['infoPublication'] extends infer T ? T extends { avatarId: infer A } ? A : never : never,
+            avatarId: (s.infoPublication.avatarId ??
+              null) as OrganizationDetailReadModel['infoPublication'] extends infer T
+              ? T extends { avatarId: infer A }
+                ? A
+                : never
+              : never,
             publishedAt: new Date(s.infoPublication.publishedAt),
           }
         : null,
@@ -41,7 +50,11 @@ export class DrizzleOrganizationQuery implements OrganizationQueryPort {
   }
 
   public async findEmployees(id: OrganizationId): Promise<EmployeeListReadModel> {
-    const rows = await this.db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, id))
+      .limit(1);
     const row = rows[0];
     if (!row) return { employees: [] };
 
@@ -60,7 +73,11 @@ export class DrizzleOrganizationQuery implements OrganizationQueryPort {
   }
 
   public async findRoles(id: OrganizationId): Promise<EmployeeRoleListReadModel> {
-    const rows = await this.db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, id))
+      .limit(1);
     const row = rows[0];
     if (!row) return { roles: [] };
 

@@ -22,6 +22,6 @@ export class ItemDetailController {
       throw domainToHttpError(result.error.toResponse());
     }
 
-    return result.value as PublicResponse['getDiscoveryItemDetail'];
+    return { ...result.value, publishedAt: result.value.publishedAt.toISOString() };
   }
 }

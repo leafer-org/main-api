@@ -22,18 +22,18 @@ import { GorseRecommendationAdapter } from './adapters/gorse/recommendation.adap
 import { CategoriesController } from './adapters/http/categories.controller.js';
 import { CategoryItemsController } from './adapters/http/category-items.controller.js';
 import { FeedController } from './adapters/http/feed.controller.js';
+import { ItemDetailController } from './adapters/http/item-detail.controller.js';
 import { LikedItemsController } from './adapters/http/liked-items.controller.js';
 import { LikesController } from './adapters/http/likes.controller.js';
-import { ItemDetailController } from './adapters/http/item-detail.controller.js';
 import { SearchController } from './adapters/http/search.controller.js';
 import { CategoryProjectionKafkaHandler } from './adapters/kafka/category-projection.handler.js';
 import { InteractionProjectionKafkaHandler } from './adapters/kafka/interaction-projection.handler.js';
 // --- Kafka Handlers ---
 import { ItemProjectionKafkaHandler } from './adapters/kafka/item-projection.handler.js';
-import { UserProjectionKafkaHandler } from './adapters/kafka/user-projection.handler.js';
 import { ItemTypeProjectionKafkaHandler } from './adapters/kafka/item-type-projection.handler.js';
 import { OwnerProjectionKafkaHandler } from './adapters/kafka/owner-projection.handler.js';
 import { ReviewProjectionKafkaHandler } from './adapters/kafka/review-projection.handler.js';
+import { UserProjectionKafkaHandler } from './adapters/kafka/user-projection.handler.js';
 // --- Real Adapters ---
 import { MeilisearchSyncAdapter } from './adapters/meilisearch/meilisearch-sync.adapter.js';
 import { MeiliSearchQuery } from './adapters/meilisearch/search.adapter.js';
@@ -68,10 +68,10 @@ import { UnlikeItemInteractor } from './application/use-cases/likes/unlike-item.
 import { ProjectCategoryHandler } from './application/use-cases/project-category/project-category.handler.js';
 import { ProjectInteractionHandler } from './application/use-cases/project-interaction/project-interaction.handler.js';
 import { ProjectItemHandler } from './application/use-cases/project-item/project-item.handler.js';
-import { ProjectUserHandler } from './application/use-cases/project-user/project-user.handler.js';
 import { ProjectItemTypeHandler } from './application/use-cases/project-item-type/project-item-type.handler.js';
 import { ProjectOwnerHandler } from './application/use-cases/project-owner/project-owner.handler.js';
 import { ProjectReviewHandler } from './application/use-cases/project-review/project-review.handler.js';
+import { ProjectUserHandler } from './application/use-cases/project-user/project-user.handler.js';
 import { SearchItemsInteractor } from './application/use-cases/search/search-items.interactor.js';
 import { GetItemDetailInteractor } from './application/use-cases/view-item/get-item-detail.interactor.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';

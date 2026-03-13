@@ -109,7 +109,13 @@ describe('Boards (e2e)', () => {
     it('should return 401 without auth', async () => {
       await e2e.agent
         .post('/admin/boards')
-        .send({ name: 'Board', description: null, scope: 'platform', organizationId: null, manualCreation: false })
+        .send({
+          name: 'Board',
+          description: null,
+          scope: 'platform',
+          organizationId: null,
+          manualCreation: false,
+        })
         .expect(401);
     });
 
@@ -119,7 +125,13 @@ describe('Boards (e2e)', () => {
       await e2e.agent
         .post('/admin/boards')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'Board', description: null, scope: 'platform', organizationId: null, manualCreation: false })
+        .send({
+          name: 'Board',
+          description: null,
+          scope: 'platform',
+          organizationId: null,
+          manualCreation: false,
+        })
         .expect(403);
     });
   });

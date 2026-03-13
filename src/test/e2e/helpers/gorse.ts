@@ -29,32 +29,47 @@ async function gorseRequest<T>(method: string, path: string, body?: unknown): Pr
 /**
  * Вставляет items напрямую в Gorse (минуя Kafka).
  */
-export async function gorseInsertItems(items: { ItemId: string; Labels: string[]; Categories?: string[]; Timestamp?: string }[]): Promise<void> {
-  await gorseRequest('POST', '/api/items', items.map(i => ({
-    ItemId: i.ItemId,
-    IsHidden: false,
-    Labels: i.Labels,
-    Categories: i.Categories ?? [],
-    Timestamp: i.Timestamp ?? new Date().toISOString(),
-    Comment: '',
-  })));
+export async function gorseInsertItems(
+  items: { ItemId: string; Labels: string[]; Categories?: string[]; Timestamp?: string }[],
+): Promise<void> {
+  await gorseRequest(
+    'POST',
+    '/api/items',
+    items.map((i) => ({
+      ItemId: i.ItemId,
+      IsHidden: false,
+      Labels: i.Labels,
+      Categories: i.Categories ?? [],
+      Timestamp: i.Timestamp ?? new Date().toISOString(),
+      Comment: '',
+    })),
+  );
 }
 
 /**
  * Вставляет feedback напрямую в Gorse (минуя Kafka).
  */
-export async function gorseInsertFeedback(feedback: { UserId: string; ItemId: string; FeedbackType: string }[]): Promise<void> {
-  await gorseRequest('PUT', '/api/feedback', feedback.map(f => ({
-    FeedbackType: f.FeedbackType,
-    UserId: f.UserId,
-    ItemId: f.ItemId,
-    Timestamp: new Date().toISOString(),
-  })));
+export async function gorseInsertFeedback(
+  feedback: { UserId: string; ItemId: string; FeedbackType: string }[],
+): Promise<void> {
+  await gorseRequest(
+    'PUT',
+    '/api/feedback',
+    feedback.map((f) => ({
+      FeedbackType: f.FeedbackType,
+      UserId: f.UserId,
+      ItemId: f.ItemId,
+      Timestamp: new Date().toISOString(),
+    })),
+  );
 }
 
 export async function gorseGetUser(userId: string): Promise<{ Labels: string[] } | null> {
   try {
-    return await gorseRequest<{ Labels: string[] }>('GET', `/api/user/${encodeURIComponent(userId)}`);
+    return await gorseRequest<{ Labels: string[] }>(
+      'GET',
+      `/api/user/${encodeURIComponent(userId)}`,
+    );
   } catch {
     return null;
   }
@@ -78,7 +93,10 @@ export async function waitForGorsePopular(
 
     const qs = new URLSearchParams({ n: '10' });
     if (category) qs.set('category', category);
-    const results = await gorseRequest<{ Id: string; Score: number }[]>('GET', `/api/non-personalized/popular?${qs.toString()}`);
+    const results = await gorseRequest<{ Id: string; Score: number }[]>(
+      'GET',
+      `/api/non-personalized/popular?${qs.toString()}`,
+    );
 
     if (results.length > 0) {
       console.log(`[waitForGorsePopular] got ${results.length} popular items`);

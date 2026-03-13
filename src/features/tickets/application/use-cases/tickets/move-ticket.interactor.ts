@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { BoardNotFoundError } from '../../../domain/aggregates/board/errors.js';
-import { TicketNotFoundError } from '../../../domain/aggregates/ticket/errors.js';
 import { TicketEntity } from '../../../domain/aggregates/ticket/entity.js';
+import { TicketNotFoundError } from '../../../domain/aggregates/ticket/errors.js';
 import { BoardRepository, TicketRepository } from '../../ports.js';
-import { Left, isLeft } from '@/infra/lib/box.js';
+import { isLeft, Left } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CategoryAncestorLookupPort } from '../../application/ports.js';
-import { GorseSyncAdapter } from './gorse-sync.adapter.js';
 import type { ItemReadModel } from '../../domain/read-models/item.read-model.js';
+import { GorseSyncAdapter } from './gorse-sync.adapter.js';
 import type { GorseClient } from '@/infra/lib/nest-gorse/index.js';
 import { ServiceMock } from '@/infra/test/mock.js';
 import type { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
@@ -30,7 +30,11 @@ function makeDeps() {
 }
 
 function makeAdapter(deps: ReturnType<typeof makeDeps>) {
-  return new GorseSyncAdapter(deps.client, deps.ancestorLookup, deps.cityCoordinates);
+  return new GorseSyncAdapter(
+    deps.client as unknown as GorseClient,
+    deps.ancestorLookup,
+    deps.cityCoordinates,
+  );
 }
 
 describe('GorseSyncAdapter', () => {

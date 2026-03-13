@@ -12,15 +12,15 @@ import { OrganizationRolesController } from './adapters/http/organization-roles.
 import { OrganizationsController } from './adapters/http/organizations.controller.js';
 import { OutboxItemEventPublisher } from './adapters/kafka/publishers/item-event.publisher.js';
 import { OutboxOrganizationEventPublisher } from './adapters/kafka/publishers/organization-event.publisher.js';
+import { OrganizationPermissionCheckService } from './application/organization-permission.js';
 import {
   ItemEventPublisher,
   ItemQueryPort,
+  ItemRepository,
   OrganizationEventPublisher,
   OrganizationQueryPort,
   OrganizationRepository,
-  ItemRepository,
 } from './application/ports.js';
-import { OrganizationPermissionCheckService } from './application/organization-permission.js';
 import { ChangeEmployeeRoleInteractor } from './application/use-cases/manage-employees/change-employee-role.interactor.js';
 import { GetOrganizationEmployeesInteractor } from './application/use-cases/manage-employees/get-organization-employees.interactor.js';
 import { InviteEmployeeInteractor } from './application/use-cases/manage-employees/invite-employee.interactor.js';
@@ -67,7 +67,10 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     { provide: ItemQueryPort, useClass: DrizzleItemQuery },
     { provide: OrganizationEventPublisher, useClass: OutboxOrganizationEventPublisher },
     { provide: ItemEventPublisher, useClass: OutboxItemEventPublisher },
-    { provide: OrganizationPermissionCheckService, useClass: DrizzleOrganizationPermissionCheckService },
+    {
+      provide: OrganizationPermissionCheckService,
+      useClass: DrizzleOrganizationPermissionCheckService,
+    },
 
     // Use cases — Organization
     CreateOrganizationInteractor,

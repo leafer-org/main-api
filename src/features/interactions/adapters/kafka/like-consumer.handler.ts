@@ -16,9 +16,7 @@ export class LikeConsumerKafkaHandler {
   public constructor(private readonly handler: ConsumeLikeHandler) {}
 
   @ContractHandler(likeStreamingContract)
-  public async handle(
-    message: ContractKafkaMessage<typeof likeStreamingContract>,
-  ): Promise<void> {
+  public async handle(message: ContractKafkaMessage<typeof likeStreamingContract>): Promise<void> {
     const payload = message.value;
 
     if (payload.type === 'item.liked') {

@@ -1,7 +1,5 @@
-import type { TicketState } from '../domain/aggregates/ticket/state.js';
-import type { TicketStatus } from '../domain/aggregates/ticket/state.js';
-import type { BoardState } from '../domain/aggregates/board/state.js';
-import type { BoardScope } from '../domain/aggregates/board/state.js';
+import type { BoardScope, BoardState } from '../domain/aggregates/board/state.js';
+import type { TicketState, TicketStatus } from '../domain/aggregates/ticket/state.js';
 import type { TriggerId } from '../domain/vo/triggers.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type {
@@ -74,9 +72,7 @@ export type BoardListItem = {
 };
 
 export abstract class BoardListQueryPort {
-  public abstract findBoards(params?: {
-    scope?: BoardScope;
-  }): Promise<BoardListItem[]>;
+  public abstract findBoards(params?: { scope?: BoardScope }): Promise<BoardListItem[]>;
 }
 
 // --- Service ports ---

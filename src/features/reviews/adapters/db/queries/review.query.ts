@@ -3,16 +3,16 @@ import type { SQL } from 'drizzle-orm';
 import { and, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 
 import { ReviewQueryPort } from '../../../application/ports.js';
-import type { ReviewListItemReadModel } from '../../../domain/read-models/review-list-item.read-model.js';
 import type { ReviewState } from '../../../domain/aggregates/review/state.js';
-import { toDomain } from '../repositories/review.repository.js';
+import type { ReviewListItemReadModel } from '../../../domain/read-models/review-list-item.read-model.js';
 import { ReviewDatabaseClient } from '../client.js';
+import { toDomain } from '../repositories/review.repository.js';
 import { reviews } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { OrganizationId, ReviewId, UserId } from '@/kernel/domain/ids.js';
 import type { ReviewTarget } from '@/kernel/domain/events/review.events.js';
+import type { OrganizationId, ReviewId, UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleReviewQuery implements ReviewQueryPort {
@@ -29,7 +29,8 @@ export class DrizzleReviewQuery implements ReviewQueryPort {
     target: ReviewTarget,
   ): Promise<ReviewId | null> {
     const db = this.txHost.get(tx);
-    const tid = target.targetType === 'item' ? (target.itemId as string) : (target.organizationId as string);
+    const tid =
+      target.targetType === 'item' ? (target.itemId as string) : (target.organizationId as string);
 
     const rows = await db
       .select({ id: reviews.id })
@@ -53,7 +54,8 @@ export class DrizzleReviewQuery implements ReviewQueryPort {
     target: ReviewTarget,
   ): Promise<{ count: number; sum: number }> {
     const db = this.txHost.get(tx);
-    const tid = target.targetType === 'item' ? (target.itemId as string) : (target.organizationId as string);
+    const tid =
+      target.targetType === 'item' ? (target.itemId as string) : (target.organizationId as string);
 
     const result = await db
       .select({
@@ -116,10 +118,7 @@ export class DrizzleReviewQuery implements ReviewQueryPort {
       conditions.push(
         or(
           eq(reviews.status, 'published'),
-          and(
-            eq(reviews.status, 'pending'),
-            eq(reviews.authorId, params.callerUserId as string),
-          ),
+          and(eq(reviews.status, 'pending'), eq(reviews.authorId, params.callerUserId as string)),
         )!,
       );
     } else {

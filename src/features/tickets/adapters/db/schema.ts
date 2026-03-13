@@ -27,7 +27,5 @@ export const boards = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
   },
-  (table) => [
-    index('boards_scope_idx').on(table.scope),
-  ],
+  (table) => [index('boards_scope_idx').on(table.scope)],
 );

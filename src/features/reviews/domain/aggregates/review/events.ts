@@ -1,5 +1,5 @@
-import type { ReviewTarget } from '@/kernel/domain/events/review.events.js';
 import type { Rating } from '../../vo/rating.js';
+import type { ReviewTarget } from '@/kernel/domain/events/review.events.js';
 
 export type ReviewCreatedEvent = {
   type: 'review.created';

@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { BoardNotFoundError } from '../../../domain/aggregates/board/errors.js';
 import { BoardRepository } from '../../ports.js';
-import { Left, isLeft } from '@/infra/lib/box.js';
+import { isLeft, Left } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { BoardId } from '@/kernel/domain/ids.js';

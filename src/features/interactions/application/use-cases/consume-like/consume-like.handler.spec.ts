@@ -49,9 +49,7 @@ describe('ConsumeLikeHandler', () => {
 
     await handler.handleUnliked({ userId: USER_ID, itemId: ITEM_ID, timestamp: TIMESTAMP });
 
-    expect(write.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'unlike' }),
-    );
+    expect(write.insert).toHaveBeenCalledWith(expect.objectContaining({ type: 'unlike' }));
     expect(publisher.publish).toHaveBeenCalledWith(
       expect.objectContaining({ interactionType: 'unlike' }),
     );

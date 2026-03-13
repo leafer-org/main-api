@@ -13,14 +13,15 @@ import { waitForAllConsumers } from '../../helpers/kafka.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
 import { configureApp } from '@/apps/configure-app.js';
-import { InteractionDatabaseClient } from '@/features/interactions/adapters/db/client.js';
-import { interactions } from '@/features/interactions/adapters/db/schema.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
+import { InteractionDatabaseClient } from '@/features/interactions/adapters/db/client.js';
+import { interactions } from '@/features/interactions/adapters/db/schema.js';
 import { likeStreamingContract } from '@/infra/kafka-contracts/like.contract.js';
 import { reviewStreamingContract } from '@/infra/kafka-contracts/review.contract.js';
 import type { Contract, ContractMessage } from '@/infra/lib/nest-kafka/contract/contract.js';
 import { KafkaProducerService } from '@/infra/lib/nest-kafka/producer/kafka-producer.service.js';
+import type { ItemId } from '@/kernel/domain/ids.js';
 
 const FIXED_OTP = '123456';
 const WAIT_OPTIONS = { timeout: 15_000, interval: 500 };
@@ -44,10 +45,7 @@ async function produce<C extends Contract>(contract: C, message: ContractMessage
 }
 
 async function getInteractionRows(filterUserId: string) {
-  return interactionDb
-    .select()
-    .from(interactions)
-    .where(eq(interactions.userId, filterUserId));
+  return interactionDb.select().from(interactions).where(eq(interactions.userId, filterUserId));
 }
 
 // ─── Bootstrap ────────────────────────────────────────────────────
@@ -91,7 +89,7 @@ afterAll(async () => {
 
 describe('POST /interactions/views', () => {
   it('записывает batch views и возвращает 204', async () => {
-    const itemIds = [randomUUID(), randomUUID(), randomUUID()];
+    const itemIds: string[] = [randomUUID(), randomUUID(), randomUUID()];
 
     await agent
       .post('/interactions/views')
@@ -100,12 +98,12 @@ describe('POST /interactions/views', () => {
       .expect(204);
 
     const rows = await getInteractionRows(userId);
-    const viewRows = rows.filter((r) => r.type === 'view' && itemIds.includes(r.itemId));
+    const viewRows = rows.filter((r) => r.type === 'view' && itemIds.includes(r.itemId as ItemId));
     expect(viewRows).toHaveLength(3);
   });
 
   it('дедуплицирует views — повторный batch за час не создаёт дублей', async () => {
-    const itemIds = [randomUUID(), randomUUID()];
+    const itemIds: string[] = [randomUUID(), randomUUID()];
 
     // Первый запрос
     await agent
@@ -150,10 +148,7 @@ describe('POST /interactions/click', () => {
   });
 
   it('возвращает 401 без авторизации', async () => {
-    await agent
-      .post('/interactions/click')
-      .send({ itemId: randomUUID() })
-      .expect(401);
+    await agent.post('/interactions/click').send({ itemId: randomUUID() }).expect(401);
   });
 });
 
@@ -173,10 +168,7 @@ describe('POST /interactions/show-contacts', () => {
   });
 
   it('возвращает 401 без авторизации', async () => {
-    await agent
-      .post('/interactions/show-contacts')
-      .send({ itemId: randomUUID() })
-      .expect(401);
+    await agent.post('/interactions/show-contacts').send({ itemId: randomUUID() }).expect(401);
   });
 });
 

@@ -8,6 +8,8 @@ import type {
   RemoveSubscriptionCommand,
   UpdateBoardCommand,
 } from './commands.js';
+import { BoardAutomationEntity } from './entities/board-automation.entity.js';
+import { BoardSubscriptionEntity } from './entities/board-subscription.entity.js';
 import {
   AutomationNotFoundError,
   MemberAlreadyExistsError,
@@ -26,16 +28,12 @@ import type {
 } from './events.js';
 import type { BoardState } from './state.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
-import { BoardSubscriptionEntity } from './entities/board-subscription.entity.js';
-import { BoardAutomationEntity } from './entities/board-automation.entity.js';
 
 export type { BoardState } from './state.js';
 export { BoardSubscriptionEntity, BoardAutomationEntity };
 
 export const BoardEntity = {
-  create(
-    cmd: CreateBoardCommand,
-  ): Either<never, { state: BoardState; event: BoardCreatedEvent }> {
+  create(cmd: CreateBoardCommand): Either<never, { state: BoardState; event: BoardCreatedEvent }> {
     const event: BoardCreatedEvent = {
       type: 'board.created',
       boardId: cmd.boardId,
@@ -229,13 +227,8 @@ export const BoardEntity = {
   removeAutomation(
     state: BoardState,
     cmd: RemoveAutomationCommand,
-  ): Either<
-    AutomationNotFoundError,
-    { state: BoardState; event: BoardAutomationRemovedEvent }
-  > {
-    const exists = state.automations.some(
-      (a) => (a.id as string) === (cmd.automationId as string),
-    );
+  ): Either<AutomationNotFoundError, { state: BoardState; event: BoardAutomationRemovedEvent }> {
+    const exists = state.automations.some((a) => (a.id as string) === (cmd.automationId as string));
     if (!exists) {
       return Left(new AutomationNotFoundError());
     }

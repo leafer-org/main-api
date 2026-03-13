@@ -1,1 +1,4 @@
-export { userStreamingContract, type UserStreamingMessage } from '@/infra/kafka-contracts/user.contract.js';
+export {
+  type UserStreamingMessage,
+  userStreamingContract,
+} from '@/infra/kafka-contracts/user.contract.js';

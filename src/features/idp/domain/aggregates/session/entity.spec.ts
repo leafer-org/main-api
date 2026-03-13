@@ -123,9 +123,7 @@ describe('SessionEntity', () => {
       const state = makeSession();
       const result = SessionEntity.delete(state, { type: 'DeleteSession' });
 
-      expect(result).toEqual(
-        Right({ state: null, event: { type: 'session.deleted' } }),
-      );
+      expect(result).toEqual(Right({ state: null, event: { type: 'session.deleted' } }));
     });
 
     it('возвращает SessionNotFoundError если state = null', () => {

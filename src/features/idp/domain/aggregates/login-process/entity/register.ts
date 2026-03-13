@@ -8,7 +8,10 @@ import { type Either, Left, Right } from '@/infra/lib/box.js';
 export function register(
   state: LoginProcessState | null,
   cmd: RegisterCommand,
-): Either<RegistrationSessionMismatchError | RegistractionError, { state: LoginProcessState; event: RegistrationCompletedEvent }> {
+): Either<
+  RegistrationSessionMismatchError | RegistractionError,
+  { state: LoginProcessState; event: RegistrationCompletedEvent }
+> {
   if (!state || state.type !== 'NewRegistration') {
     return Left(new RegistractionError());
   }

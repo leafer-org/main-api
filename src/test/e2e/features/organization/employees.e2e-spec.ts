@@ -11,9 +11,9 @@ import { waitForAllConsumers } from '../../helpers/kafka.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
 import { configureApp } from '@/apps/configure-app.js';
-import { SUBSCRIPTION_PLANS } from '@/features/organization/domain/aggregates/organization/config.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
+import { SUBSCRIPTION_PLANS } from '@/features/organization/domain/aggregates/organization/config.js';
 
 const FIXED_OTP = '123456';
 

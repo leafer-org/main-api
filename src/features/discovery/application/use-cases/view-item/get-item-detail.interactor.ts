@@ -8,9 +8,7 @@ import type { ItemId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class GetItemDetailInteractor {
-  public constructor(
-    @Inject(ItemQueryPort) private readonly itemQuery: ItemQueryPort,
-  ) {}
+  public constructor(@Inject(ItemQueryPort) private readonly itemQuery: ItemQueryPort) {}
 
   public async execute(query: { itemId: ItemId }) {
     const item = await this.itemQuery.findById(query.itemId);

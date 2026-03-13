@@ -22,7 +22,11 @@ export class DrizzleReviewRepository extends ReviewRepository {
 
   public async findById(tx: Transaction, reviewId: ReviewId): Promise<ReviewState | null> {
     const db = this.txHost.get(tx);
-    const rows = await db.select().from(reviews).where(eq(reviews.id, reviewId as string)).limit(1);
+    const rows = await db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.id, reviewId as string))
+      .limit(1);
     const row = rows[0];
     if (!row) return null;
 

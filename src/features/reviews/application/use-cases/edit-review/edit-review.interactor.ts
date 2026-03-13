@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { ReviewEntity } from '../../../domain/aggregates/review/entity.js';
+import { ReviewNotFoundError } from '../../../domain/aggregates/review/errors.js';
 import { Rating } from '../../../domain/vo/rating.js';
 import { ReviewEventPublisher, ReviewQueryPort, ReviewRepository } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { ReviewId } from '@/kernel/domain/ids.js';
-import { ReviewNotFoundError } from '../../../domain/aggregates/review/errors.js';
 
 @Injectable()
 export class EditReviewInteractor {
@@ -19,11 +19,7 @@ export class EditReviewInteractor {
     @Inject(Clock) private readonly clock: Clock,
   ) {}
 
-  public async execute(command: {
-    reviewId: ReviewId;
-    rating?: number;
-    text?: string | null;
-  }) {
+  public async execute(command: { reviewId: ReviewId; rating?: number; text?: string | null }) {
     const rating = command.rating !== undefined ? Rating.create(command.rating) : undefined;
     const now = this.clock.now();
 

@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { ItemEntity } from '../../../domain/aggregates/item/entity.js';
 import { ItemNotFoundError } from '../../../domain/aggregates/item/errors.js';
-import { ItemRepository } from '../../ports.js';
 import { OrganizationPermissionCheckService } from '../../organization-permission.js';
+import { ItemRepository } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';

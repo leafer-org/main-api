@@ -1,10 +1,4 @@
-import type {
-  CategoryId,
-  FileId,
-  ItemId,
-  OrganizationId,
-  TypeId,
-} from '@/kernel/domain/ids.js';
+import type { CategoryId, FileId, ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 

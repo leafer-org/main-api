@@ -1,18 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import type { TicketState } from '../../../domain/aggregates/ticket/state.js';
-import type { TicketStatus } from '../../../domain/aggregates/ticket/state.js';
-import type { TicketHistoryEntry } from '../../../domain/vo/history.js';
 import { TicketRepository } from '../../../application/ports.js';
-import { tickets } from '../schema.js';
+import type { TicketState, TicketStatus } from '../../../domain/aggregates/ticket/state.js';
+import type { TicketHistoryAction, TicketHistoryEntry } from '../../../domain/vo/history.js';
+import type { TicketData } from '../../../domain/vo/ticket-data.js';
+import type { TriggerId } from '../../../domain/vo/triggers.js';
 import type { TicketJsonState } from '../json-state.js';
+import { tickets } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type { BoardId, TicketId, UserId } from '@/kernel/domain/ids.js';
-import type { TriggerId } from '../../../domain/vo/triggers.js';
-import type { TicketData } from '../../../domain/vo/ticket-data.js';
-import type { TicketHistoryAction } from '../../../domain/vo/history.js';
 
 @Injectable()
 export class DrizzleTicketRepository extends TicketRepository {

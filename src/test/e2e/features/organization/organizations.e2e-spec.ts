@@ -94,10 +94,7 @@ describe('Organizations (e2e)', () => {
     });
 
     it('should return 401 without auth', async () => {
-      await e2e.agent
-        .post('/organizations')
-        .send({ name: 'Org', description: 'desc' })
-        .expect(401);
+      await e2e.agent.post('/organizations').send({ name: 'Org', description: 'desc' }).expect(401);
     });
   });
 

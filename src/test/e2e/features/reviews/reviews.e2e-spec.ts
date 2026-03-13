@@ -457,7 +457,7 @@ describe('Reviews (e2e)', () => {
           targetType: 'item',
           targetId: item.itemId,
           organizationId: org.id,
-          rating: 4 + (i * 0.5),
+          rating: 4 + i * 0.5,
           text: `Review ${i}`,
         }).expect(201);
       }

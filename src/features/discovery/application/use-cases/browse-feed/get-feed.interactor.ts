@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { toListView } from '../../../domain/mappers/item-list-view.mapper.js';
 import { ItemQueryPort, RecommendationService } from '../../ports.js';
-import { userGeoCategory, userGlobalCategory } from '@/infra/lib/geo/h3-geo.js';
 import { Right } from '@/infra/lib/box.js';
+import { userGeoCategory, userGlobalCategory } from '@/infra/lib/geo/h3-geo.js';
 import { nextOffsetCursor, parseOffsetCursor } from '@/infra/lib/pagination/index.js';
 import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 import type { ItemId, UserId } from '@/kernel/domain/ids.js';

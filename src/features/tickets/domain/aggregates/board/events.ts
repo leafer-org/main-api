@@ -1,3 +1,6 @@
+import type { BoardAutomationEntity } from './entities/board-automation.entity.js';
+import type { BoardSubscriptionEntity } from './entities/board-subscription.entity.js';
+import type { BoardScope } from './state.js';
 import type {
   BoardAutomationId,
   BoardId,
@@ -5,10 +8,6 @@ import type {
   OrganizationId,
   UserId,
 } from '@/kernel/domain/ids.js';
-
-import type { BoardAutomationEntity } from './entities/board-automation.entity.js';
-import type { BoardSubscriptionEntity } from './entities/board-subscription.entity.js';
-import type { BoardScope } from './state.js';
 
 export type BoardCreatedEvent = {
   type: 'board.created';

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import type { OrganizationEntity } from '../../../domain/aggregates/organization/entity.js';
 import { OrganizationRepository } from '../../../application/ports.js';
+import type { OrganizationEntity } from '../../../domain/aggregates/organization/entity.js';
 import { organizations } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';

@@ -1,6 +1,6 @@
-import type { BoardId, TicketId, UserId } from '@/kernel/domain/ids.js';
 import type { TicketData } from '../../vo/ticket-data.js';
 import type { TriggerId } from '../../vo/triggers.js';
+import type { BoardId, TicketId, UserId } from '@/kernel/domain/ids.js';
 
 export type TicketCreatedEvent = {
   type: 'ticket.created';

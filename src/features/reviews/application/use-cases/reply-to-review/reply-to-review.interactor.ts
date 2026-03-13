@@ -16,11 +16,7 @@ export class ReplyToReviewInteractor {
     @Inject(Clock) private readonly clock: Clock,
   ) {}
 
-  public async execute(command: {
-    reviewId: ReviewId;
-    repliedBy: UserId;
-    replyText: string;
-  }) {
+  public async execute(command: { reviewId: ReviewId; repliedBy: UserId; replyText: string }) {
     const now = this.clock.now();
 
     return this.txHost.startTransaction(async (tx) => {

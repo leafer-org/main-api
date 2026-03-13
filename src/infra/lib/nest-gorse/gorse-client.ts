@@ -100,7 +100,10 @@ export class GorseClient implements OnModuleInit {
     return this.request<string[]>('GET', `/api/recommend/${encodeURIComponent(userId)}?${qs}`);
   }
 
-  public async getPopular(params: URLSearchParams, category?: string): Promise<{ Id: string; Score: number }[]> {
+  public async getPopular(
+    params: URLSearchParams,
+    category?: string,
+  ): Promise<{ Id: string; Score: number }[]> {
     if (category) params.set('category', category);
     const qs = params.toString();
     return this.request('GET', `/api/non-personalized/popular?${qs}`);

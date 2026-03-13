@@ -10,7 +10,6 @@ import type { AttributeId, CategoryId, ItemId, TypeId, UserId } from '@/kernel/d
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 import type { AgeGroup } from '@/kernel/domain/vo/role.js';
 
-
 // --- Query Ports ---
 
 /**

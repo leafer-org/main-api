@@ -73,16 +73,18 @@ describe('Organization Roles (e2e)', () => {
 
       expect(res.body).toHaveLength(1);
       expect(res.body[0].name).toBe('ADMIN');
-      expect(res.body[0].permissions).toEqual(expect.arrayContaining([
-        'manage_employees',
-        'manage_roles',
-        'edit_organization',
-        'publish_organization',
-        'edit_items',
-        'publish_items',
-        'unpublish_items',
-        'manage_subscription',
-      ]));
+      expect(res.body[0].permissions).toEqual(
+        expect.arrayContaining([
+          'manage_employees',
+          'manage_roles',
+          'edit_organization',
+          'publish_organization',
+          'edit_items',
+          'publish_items',
+          'unpublish_items',
+          'manage_subscription',
+        ]),
+      );
     });
   });
 
@@ -202,7 +204,9 @@ describe('Organization Roles (e2e)', () => {
         .expect(201);
 
       await e2e.agent
-        .delete(`/organizations/${org.id}/roles/${adminRoleId}?replacementRoleId=${createRes.body.id}`)
+        .delete(
+          `/organizations/${org.id}/roles/${adminRoleId}?replacementRoleId=${createRes.body.id}`,
+        )
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(400);
     });

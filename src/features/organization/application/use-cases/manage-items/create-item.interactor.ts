@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { ItemEntity } from '../../../domain/aggregates/item/entity.js';
 import { OrganizationNotFoundError } from '../../../domain/aggregates/organization/errors.js';
-import { ItemRepository, OrganizationRepository } from '../../ports.js';
 import { OrganizationPermissionCheckService } from '../../organization-permission.js';
+import { ItemRepository, OrganizationRepository } from '../../ports.js';
 import { CreateDomainError } from '@/infra/ddd/error.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';

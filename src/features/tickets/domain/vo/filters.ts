@@ -48,4 +48,3 @@ export const FILTER_META: Record<
 export type SubscriptionFilter =
   | { type: 'json-logic'; rule: unknown }
   | { type: 'programmatic'; filterId: string; params: Record<string, unknown> };
-

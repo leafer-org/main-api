@@ -1,11 +1,11 @@
 import type { EntityId } from '@/infra/ddd/entity.js';
 
-function createEntityId<T extends EntityId<string>>(){
+function createEntityId<T extends EntityId<string>>() {
   return {
     raw(id: string): T {
-      return id as T
-    }
-  }
+      return id as T;
+    },
+  };
 }
 
 export type FileId = EntityId<'File'>;

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { Rating } from '../../vo/rating.js';
 import { ReviewEntity } from './entity.js';
 import type { ReviewState } from './state.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import { OrganizationId, ReviewId, UserId } from '@/kernel/domain/ids.js';
-import { Rating } from '../../vo/rating.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 

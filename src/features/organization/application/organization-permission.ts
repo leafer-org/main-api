@@ -1,5 +1,5 @@
-import type { EmployeeEntity } from '../domain/aggregates/organization/entity.js';
 import type { OrganizationPermission } from '../domain/aggregates/organization/config.js';
+import type { EmployeeEntity } from '../domain/aggregates/organization/entity.js';
 import { CreateDomainError } from '@/infra/ddd/error.js';
 import type { Either } from '@/infra/lib/box.js';
 import type { OrganizationId, UserId } from '@/kernel/domain/ids.js';

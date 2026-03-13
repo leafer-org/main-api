@@ -5,7 +5,7 @@ import { TicketEntity } from '../../../domain/aggregates/ticket/entity.js';
 import type { TicketData } from '../../../domain/vo/ticket-data.js';
 import { ManualCreationNotAllowedError, NotABoardMemberError } from '../../errors.js';
 import { BoardRepository, TicketIdGenerator, TicketRepository } from '../../ports.js';
-import { Left, isLeft } from '@/infra/lib/box.js';
+import { isLeft, Left } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';

@@ -5,7 +5,10 @@ import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import { reviewStreamingContract } from '@/infra/kafka-contracts/review.contract.js';
 import { OutboxService } from '@/infra/lib/nest-outbox/outbox.service.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { ReviewCreatedEvent, ReviewDeletedEvent } from '@/kernel/domain/events/review.events.js';
+import type {
+  ReviewCreatedEvent,
+  ReviewDeletedEvent,
+} from '@/kernel/domain/events/review.events.js';
 
 function serializeTarget(target: ReviewCreatedEvent['target']) {
   return {

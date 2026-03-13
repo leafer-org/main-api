@@ -1,30 +1,27 @@
-import type { OrganizationEntity } from '../domain/aggregates/organization/entity.js';
 import type { ItemEntity } from '../domain/aggregates/item/entity.js';
-import type { OrganizationDetailReadModel } from '../domain/read-models/organization-detail.read-model.js';
+import type { OrganizationEntity } from '../domain/aggregates/organization/entity.js';
 import type { EmployeeListReadModel } from '../domain/read-models/employee-list.read-model.js';
 import type { EmployeeRoleListReadModel } from '../domain/read-models/employee-role-list.read-model.js';
-import type { ItemListReadModel } from '../domain/read-models/item-list.read-model.js';
 import type { ItemDetailReadModel } from '../domain/read-models/item-detail.read-model.js';
+import type { ItemListReadModel } from '../domain/read-models/item-list.read-model.js';
+import type { OrganizationDetailReadModel } from '../domain/read-models/organization-detail.read-model.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type {
-  OrganizationPublishedEvent,
-  OrganizationUnpublishedEvent,
-  OrganizationModerationRequestedEvent,
-} from '@/kernel/domain/events/organization.events.js';
-import type {
+  ItemModerationRequestedEvent,
   ItemPublishedEvent,
   ItemUnpublishedEvent,
-  ItemModerationRequestedEvent,
 } from '@/kernel/domain/events/item.events.js';
+import type {
+  OrganizationModerationRequestedEvent,
+  OrganizationPublishedEvent,
+  OrganizationUnpublishedEvent,
+} from '@/kernel/domain/events/organization.events.js';
 import type { ItemId, OrganizationId } from '@/kernel/domain/ids.js';
 
 // --- Organization repository ---
 
 export abstract class OrganizationRepository {
-  public abstract findById(
-    tx: Transaction,
-    id: OrganizationId,
-  ): Promise<OrganizationEntity | null>;
+  public abstract findById(tx: Transaction, id: OrganizationId): Promise<OrganizationEntity | null>;
 
   public abstract save(tx: Transaction, state: OrganizationEntity): Promise<void>;
 }
@@ -69,10 +66,7 @@ export abstract class OrganizationEventPublisher {
 }
 
 export abstract class ItemEventPublisher {
-  public abstract publishItemPublished(
-    tx: Transaction,
-    event: ItemPublishedEvent,
-  ): Promise<void>;
+  public abstract publishItemPublished(tx: Transaction, event: ItemPublishedEvent): Promise<void>;
 
   public abstract publishItemUnpublished(
     tx: Transaction,

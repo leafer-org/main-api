@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { ItemEventPublisher } from '../../../application/ports.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
-import { itemModerationContract } from '@/infra/kafka-contracts/item-moderation.contract.js';
 import { itemStreamingContract } from '@/infra/kafka-contracts/item.contract.js';
+import { itemModerationContract } from '@/infra/kafka-contracts/item-moderation.contract.js';
 import { OutboxService } from '@/infra/lib/nest-outbox/outbox.service.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type {

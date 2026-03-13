@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { BoardEntity } from '../../../domain/aggregates/board/entity.js';
 import { BoardNotFoundError } from '../../../domain/aggregates/board/errors.js';
 import { BoardRepository, TicketIdGenerator } from '../../ports.js';
-import { Left, isLeft } from '@/infra/lib/box.js';
+import { isLeft, Left } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';

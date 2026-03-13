@@ -1,8 +1,12 @@
-import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { OrganizationId, ReviewId, UserId } from '@/kernel/domain/ids.js';
-import type { ReviewTarget, ReviewCreatedEvent, ReviewDeletedEvent } from '@/kernel/domain/events/review.events.js';
 import type { ReviewState } from '../domain/aggregates/review/state.js';
 import type { ReviewListItemReadModel } from '../domain/read-models/review-list-item.read-model.js';
+import type { Transaction } from '@/kernel/application/ports/tx-host.js';
+import type {
+  ReviewCreatedEvent,
+  ReviewDeletedEvent,
+  ReviewTarget,
+} from '@/kernel/domain/events/review.events.js';
+import type { OrganizationId, ReviewId, UserId } from '@/kernel/domain/ids.js';
 
 // --- Review repository ---
 
@@ -57,13 +61,7 @@ export abstract class ReviewQueryPort {
 // --- Review event publisher ---
 
 export abstract class ReviewEventPublisher {
-  public abstract publishReviewCreated(
-    tx: Transaction,
-    event: ReviewCreatedEvent,
-  ): Promise<void>;
+  public abstract publishReviewCreated(tx: Transaction, event: ReviewCreatedEvent): Promise<void>;
 
-  public abstract publishReviewDeleted(
-    tx: Transaction,
-    event: ReviewDeletedEvent,
-  ): Promise<void>;
+  public abstract publishReviewDeleted(tx: Transaction, event: ReviewDeletedEvent): Promise<void>;
 }

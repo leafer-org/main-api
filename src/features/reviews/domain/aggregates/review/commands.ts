@@ -1,6 +1,6 @@
-import type { OrganizationId, ReviewId, UserId } from '@/kernel/domain/ids.js';
-import type { ReviewTarget } from '@/kernel/domain/events/review.events.js';
 import type { Rating } from '../../vo/rating.js';
+import type { ReviewTarget } from '@/kernel/domain/events/review.events.js';
+import type { OrganizationId, ReviewId, UserId } from '@/kernel/domain/ids.js';
 
 export type CreateReviewCommand = {
   type: 'CreateReview';

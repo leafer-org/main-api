@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpException,
   Inject,
   Param,
   Patch,
@@ -11,19 +12,21 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { HttpException } from '@nestjs/common';
 
-import { CreateBoardInteractor } from '../../application/use-cases/boards/create-board.interactor.js';
-import { UpdateBoardInteractor } from '../../application/use-cases/boards/update-board.interactor.js';
-import { DeleteBoardInteractor } from '../../application/use-cases/boards/delete-board.interactor.js';
-import { AddSubscriptionInteractor } from '../../application/use-cases/boards/add-subscription.interactor.js';
-import { RemoveSubscriptionInteractor } from '../../application/use-cases/boards/remove-subscription.interactor.js';
-import { AddMemberInteractor } from '../../application/use-cases/boards/add-member.interactor.js';
-import { RemoveMemberInteractor } from '../../application/use-cases/boards/remove-member.interactor.js';
 import { AddAutomationInteractor } from '../../application/use-cases/boards/add-automation.interactor.js';
+import { AddMemberInteractor } from '../../application/use-cases/boards/add-member.interactor.js';
+import { AddSubscriptionInteractor } from '../../application/use-cases/boards/add-subscription.interactor.js';
+import { CreateBoardInteractor } from '../../application/use-cases/boards/create-board.interactor.js';
+import { DeleteBoardInteractor } from '../../application/use-cases/boards/delete-board.interactor.js';
 import { RemoveAutomationInteractor } from '../../application/use-cases/boards/remove-automation.interactor.js';
+import { RemoveMemberInteractor } from '../../application/use-cases/boards/remove-member.interactor.js';
+import { RemoveSubscriptionInteractor } from '../../application/use-cases/boards/remove-subscription.interactor.js';
+import { UpdateBoardInteractor } from '../../application/use-cases/boards/update-board.interactor.js';
 import { GetBoardsQuery } from '../../application/use-cases/queries/get-boards.query.js';
 import { GetTriggersQuery } from '../../application/use-cases/queries/get-triggers.query.js';
+import type { BoardScope } from '../../domain/aggregates/board/state.js';
+import type { SubscriptionFilter } from '../../domain/vo/filters.js';
+import type { TriggerId, TriggerScope } from '../../domain/vo/triggers.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import { isLeft } from '@/infra/lib/box.js';
@@ -34,10 +37,6 @@ import {
   OrganizationId,
   UserId,
 } from '@/kernel/domain/ids.js';
-import type { BoardScope } from '../../domain/aggregates/board/state.js';
-import type { TriggerId } from '../../domain/vo/triggers.js';
-import type { TriggerScope } from '../../domain/vo/triggers.js';
-import type { SubscriptionFilter } from '../../domain/vo/filters.js';
 
 function throwDomainError(error: { toResponse(): Record<number, unknown> }): never {
   const response = error.toResponse();
@@ -204,10 +203,7 @@ export class BoardsController {
   }
 
   @Post(':boardId/members')
-  public async addBoardMember(
-    @Param('boardId') boardId: string,
-    @Body() body: { userId: string },
-  ) {
+  public async addBoardMember(@Param('boardId') boardId: string, @Body() body: { userId: string }) {
     const result = await this.addMember.execute({
       boardId: BoardId.raw(boardId),
       userId: UserId.raw(body.userId),

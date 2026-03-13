@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import type { ItemListReadModel } from '../../../domain/read-models/item-list.read-model.js';
-import type { ItemDetailReadModel } from '../../../domain/read-models/item-detail.read-model.js';
 import { ItemQueryPort } from '../../../application/ports.js';
+import type { ItemDetailReadModel } from '../../../domain/read-models/item-detail.read-model.js';
+import type { ItemListReadModel } from '../../../domain/read-models/item-list.read-model.js';
 import { OrganizationDatabaseClient } from '../client.js';
+import type { ItemJsonState } from '../json-state.js';
 import { items } from '../schema.js';
 import type { ItemId, OrganizationId } from '@/kernel/domain/ids.js';
 import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
-import type { ItemJsonState } from '../json-state.js';
 
 @Injectable()
 export class DrizzleItemQuery implements ItemQueryPort {
@@ -17,10 +17,7 @@ export class DrizzleItemQuery implements ItemQueryPort {
   ) {}
 
   public async findByOrganizationId(orgId: OrganizationId): Promise<ItemListReadModel> {
-    const rows = await this.db
-      .select()
-      .from(items)
-      .where(eq(items.organizationId, orgId));
+    const rows = await this.db.select().from(items).where(eq(items.organizationId, orgId));
 
     return {
       items: rows.map((row) => {
@@ -29,7 +26,9 @@ export class DrizzleItemQuery implements ItemQueryPort {
         return {
           itemId: s.itemId as ItemListReadModel['items'][0]['itemId'],
           typeId: s.typeId as ItemListReadModel['items'][0]['typeId'],
-          draftStatus: s.draft ? (s.draft.status as ItemListReadModel['items'][0]['draftStatus']) : null,
+          draftStatus: s.draft
+            ? (s.draft.status as ItemListReadModel['items'][0]['draftStatus'])
+            : null,
           hasPublication: s.publication !== null,
           createdAt: new Date(s.createdAt),
           updatedAt: new Date(s.updatedAt),
@@ -53,7 +52,10 @@ export class DrizzleItemQuery implements ItemQueryPort {
         ? {
             widgets: s.draft.widgets as ItemWidget[],
             status: s.draft.status as ItemDetailReadModel['draft'] extends infer T
-              ? T extends { status: infer S } ? S : never : never,
+              ? T extends { status: infer S }
+                ? S
+                : never
+              : never,
             updatedAt: new Date(s.draft.updatedAt),
           }
         : null,

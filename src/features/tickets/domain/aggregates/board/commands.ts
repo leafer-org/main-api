@@ -1,3 +1,6 @@
+import type { SubscriptionFilter } from '../../vo/filters.js';
+import type { TriggerId } from '../../vo/triggers.js';
+import type { BoardScope } from './state.js';
 import type {
   BoardAutomationId,
   BoardId,
@@ -5,10 +8,6 @@ import type {
   OrganizationId,
   UserId,
 } from '@/kernel/domain/ids.js';
-
-import type { SubscriptionFilter } from '../../vo/filters.js';
-import type { TriggerId } from '../../vo/triggers.js';
-import type { BoardScope } from './state.js';
 
 export type CreateBoardCommand = {
   type: 'CreateBoard';

@@ -1,9 +1,5 @@
 import type { CreateUserCommand, UpdateProfileCommand, UpdateUserRoleCommand } from './commands.js';
-import type {
-  UserCreatedEvent,
-  UserProfileUpdatedEvent,
-  UserRoleUpdatedEvent,
-} from './events.js';
+import type { UserCreatedEvent, UserProfileUpdatedEvent, UserRoleUpdatedEvent } from './events.js';
 import type { UserState } from './state.js';
 import { UserAlreadyExistsError, UserNotFoundError } from './user.errors.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';

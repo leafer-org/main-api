@@ -4,14 +4,8 @@ import { createTypeboxContract } from '@/infra/lib/nest-kafka/contract/create-ty
 
 const ModerationResultMessage = Type.Object({
   id: Type.String(),
-  type: Type.Union([
-    Type.Literal('moderation.approved'),
-    Type.Literal('moderation.rejected'),
-  ]),
-  entityType: Type.Union([
-    Type.Literal('organization'),
-    Type.Literal('item'),
-  ]),
+  type: Type.Union([Type.Literal('moderation.approved'), Type.Literal('moderation.rejected')]),
+  entityType: Type.Union([Type.Literal('organization'), Type.Literal('item')]),
   entityId: Type.String(),
 });
 

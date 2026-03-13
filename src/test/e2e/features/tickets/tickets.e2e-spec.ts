@@ -82,11 +82,7 @@ describe('Tickets (e2e)', () => {
     return boardId;
   }
 
-  async function createTicket(
-    token: string,
-    boardId: string,
-    overrides?: { message?: string },
-  ) {
+  async function createTicket(token: string, boardId: string, overrides?: { message?: string }) {
     const res = await e2e.agent
       .post('/admin/tickets')
       .set('Authorization', `Bearer ${token}`)
@@ -148,7 +144,9 @@ describe('Tickets (e2e)', () => {
         .send({ userId: adminUserId })
         .expect(201);
 
-      const ticket = await createTicket(accessToken, boardId, { message: 'Модерация нового товара' });
+      const ticket = await createTicket(accessToken, boardId, {
+        message: 'Модерация нового товара',
+      });
 
       expect(ticket.ticketId).toBeDefined();
       expect(ticket.boardId).toBe(boardId);
@@ -230,7 +228,10 @@ describe('Tickets (e2e)', () => {
     it('should return list of tickets', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -251,7 +252,10 @@ describe('Tickets (e2e)', () => {
     it('should filter tickets by boardId', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardA = await createBoardWithMember(accessToken, adminUserId);
@@ -259,7 +263,13 @@ describe('Tickets (e2e)', () => {
       const boardBRes = await e2e.agent
         .post('/admin/boards')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'Board B', description: null, scope: 'platform', organizationId: null, manualCreation: true })
+        .send({
+          name: 'Board B',
+          description: null,
+          scope: 'platform',
+          organizationId: null,
+          manualCreation: true,
+        })
         .expect(201);
       await e2e.agent
         .post(`/admin/boards/${boardBRes.body.boardId}/members`)
@@ -286,7 +296,10 @@ describe('Tickets (e2e)', () => {
     it('should return ticket detail with history', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -323,7 +336,10 @@ describe('Tickets (e2e)', () => {
     it('should assign ticket to a board member', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -338,13 +354,18 @@ describe('Tickets (e2e)', () => {
     it('should reject assigning to a non-member', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
       const ticket = await createTicket(accessToken, boardId);
 
-      const { userId: nonMemberId } = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
+      const { userId: nonMemberId } = await registerUser(e2e.agent, FIXED_OTP, {
+        phone: '+79990000020',
+      });
 
       const res = await e2e.agent
         .post(`/admin/tickets/${ticket.ticketId}/assign`)
@@ -362,7 +383,10 @@ describe('Tickets (e2e)', () => {
     it('should unassign an in-progress ticket back to open', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -388,7 +412,10 @@ describe('Tickets (e2e)', () => {
     it('should reject unassigning an open ticket', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -409,7 +436,10 @@ describe('Tickets (e2e)', () => {
     it('should mark an in-progress ticket as done', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -433,7 +463,10 @@ describe('Tickets (e2e)', () => {
     it('should reject marking an open ticket as done', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -454,7 +487,10 @@ describe('Tickets (e2e)', () => {
     it('should reopen a done ticket', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -484,7 +520,10 @@ describe('Tickets (e2e)', () => {
     it('should reject reopening an open ticket', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -505,14 +544,23 @@ describe('Tickets (e2e)', () => {
     it('should move ticket to an allowed board', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       // Create target board
       const targetRes = await e2e.agent
         .post('/admin/boards')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'Target Board', description: null, scope: 'platform', organizationId: null, manualCreation: false })
+        .send({
+          name: 'Target Board',
+          description: null,
+          scope: 'platform',
+          organizationId: null,
+          manualCreation: false,
+        })
         .expect(201);
       const targetBoardId = targetRes.body.boardId;
 
@@ -520,7 +568,13 @@ describe('Tickets (e2e)', () => {
       const sourceRes = await e2e.agent
         .post('/admin/boards')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'Source Board', description: null, scope: 'platform', organizationId: null, manualCreation: true })
+        .send({
+          name: 'Source Board',
+          description: null,
+          scope: 'platform',
+          organizationId: null,
+          manualCreation: true,
+        })
         .expect(201);
       const sourceBoardId = sourceRes.body.boardId;
 
@@ -528,7 +582,12 @@ describe('Tickets (e2e)', () => {
       await e2e.agent
         .patch(`/admin/boards/${sourceBoardId}`)
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'Source Board', description: null, manualCreation: true, allowedTransferBoardIds: [targetBoardId] })
+        .send({
+          name: 'Source Board',
+          description: null,
+          manualCreation: true,
+          allowedTransferBoardIds: [targetBoardId],
+        })
         .expect(200);
 
       // Add admin as member
@@ -552,7 +611,10 @@ describe('Tickets (e2e)', () => {
     it('should reject move to disallowed board', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -574,7 +636,10 @@ describe('Tickets (e2e)', () => {
     it('should add a comment to a ticket', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -605,10 +670,15 @@ describe('Tickets (e2e)', () => {
     it('should reassign an in-progress ticket to another member', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
-      const { userId: otherUserId } = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000030' });
+      const { userId: otherUserId } = await registerUser(e2e.agent, FIXED_OTP, {
+        phone: '+79990000030',
+      });
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
 
@@ -635,7 +705,10 @@ describe('Tickets (e2e)', () => {
     it('should reject reassigning an open ticket', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -657,7 +730,10 @@ describe('Tickets (e2e)', () => {
     it('should return tickets assigned to current user', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);
@@ -683,7 +759,10 @@ describe('Tickets (e2e)', () => {
     it('should complete: create → assign → comment → done → reopen → assign → done', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
-      const meRes = await e2e.agent.get('/me').set('Authorization', `Bearer ${accessToken}`).expect(200);
+      const meRes = await e2e.agent
+        .get('/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
       const adminUserId = meRes.body.id;
 
       const boardId = await createBoardWithMember(accessToken, adminUserId);

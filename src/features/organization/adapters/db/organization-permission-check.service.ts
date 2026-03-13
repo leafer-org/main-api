@@ -1,13 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { EmployeeEntity } from '../../domain/aggregates/organization/entity.js';
-import type { OrganizationPermission } from '../../domain/aggregates/organization/config.js';
 import {
   NotEmployeeError,
-  OrgPermissionDeniedError,
   OrganizationPermissionCheckService,
+  OrgPermissionDeniedError,
 } from '../../application/organization-permission.js';
 import { OrganizationRepository } from '../../application/ports.js';
+import type { OrganizationPermission } from '../../domain/aggregates/organization/config.js';
+import type { EmployeeEntity } from '../../domain/aggregates/organization/entity.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
 import type { OrganizationId, UserId } from '@/kernel/domain/ids.js';

@@ -7,11 +7,11 @@ import { DISCOVERY_CONSUMER_ID } from '../features/discovery/adapters/kafka/cons
 import { DiscoveryModule } from '../features/discovery/discovery.module.js';
 import { IDP_CONSUMER_ID } from '../features/idp/adapters/kafka/consumer-ids.js';
 import { IdpModule } from '../features/idp/idp.module.js';
+import { INTERACTIONS_CONSUMER_ID } from '../features/interactions/adapters/kafka/consumer-ids.js';
+import { InteractionsModule } from '../features/interactions/interactions.module.js';
 import { MediaModule } from '../features/media/media.module.js';
 import { ORGANIZATION_CONSUMER_ID } from '../features/organization/adapters/kafka/consumer-ids.js';
 import { OrganizationModule } from '../features/organization/organization.module.js';
-import { INTERACTIONS_CONSUMER_ID } from '../features/interactions/adapters/kafka/consumer-ids.js';
-import { InteractionsModule } from '../features/interactions/interactions.module.js';
 import { ReviewsModule } from '../features/reviews/reviews.module.js';
 import { TicketsModule } from '../features/tickets/tickets.module.js';
 import { MainDbModule } from './db.module.js';

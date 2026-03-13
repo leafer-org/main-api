@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
 
+import { ChangeEmployeeRoleInteractor } from '../../application/use-cases/manage-employees/change-employee-role.interactor.js';
 import { GetOrganizationEmployeesInteractor } from '../../application/use-cases/manage-employees/get-organization-employees.interactor.js';
 import { InviteEmployeeInteractor } from '../../application/use-cases/manage-employees/invite-employee.interactor.js';
 import { RemoveEmployeeInteractor } from '../../application/use-cases/manage-employees/remove-employee.interactor.js';
-import { ChangeEmployeeRoleInteractor } from '../../application/use-cases/manage-employees/change-employee-role.interactor.js';
 import { TransferOwnershipInteractor } from '../../application/use-cases/manage-employees/transfer-ownership.interactor.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';

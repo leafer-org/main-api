@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { InteractionDedupPort, InteractionPublisherPort, InteractionWritePort } from '../../ports.js';
+import {
+  InteractionDedupPort,
+  InteractionPublisherPort,
+  InteractionWritePort,
+} from '../../ports.js';
 import { RecordViewsInteractor } from './record-views.interactor.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { ServiceMock } from '@/infra/test/mock.js';

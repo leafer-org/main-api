@@ -1,31 +1,22 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  Post,
-  Query,
-} from '@nestjs/common';
-import { HttpException } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpException, Param, Post, Query } from '@nestjs/common';
 
-import { CreateTicketInteractor } from '../../application/use-cases/tickets/create-ticket.interactor.js';
-import { AssignTicketInteractor } from '../../application/use-cases/tickets/assign-ticket.interactor.js';
-import { ReassignTicketInteractor } from '../../application/use-cases/tickets/reassign-ticket.interactor.js';
-import { UnassignTicketInteractor } from '../../application/use-cases/tickets/unassign-ticket.interactor.js';
-import { MoveTicketInteractor } from '../../application/use-cases/tickets/move-ticket.interactor.js';
-import { MarkDoneInteractor } from '../../application/use-cases/tickets/mark-done.interactor.js';
-import { ReopenTicketInteractor } from '../../application/use-cases/tickets/reopen-ticket.interactor.js';
-import { AddCommentInteractor } from '../../application/use-cases/tickets/add-comment.interactor.js';
-import { GetTicketsQuery } from '../../application/use-cases/queries/get-tickets.query.js';
 import { GetMyTicketsQuery } from '../../application/use-cases/queries/get-my-tickets.query.js';
 import { GetTicketDetailQuery } from '../../application/use-cases/queries/get-ticket-detail.query.js';
+import { GetTicketsQuery } from '../../application/use-cases/queries/get-tickets.query.js';
+import { AddCommentInteractor } from '../../application/use-cases/tickets/add-comment.interactor.js';
+import { AssignTicketInteractor } from '../../application/use-cases/tickets/assign-ticket.interactor.js';
+import { CreateTicketInteractor } from '../../application/use-cases/tickets/create-ticket.interactor.js';
+import { MarkDoneInteractor } from '../../application/use-cases/tickets/mark-done.interactor.js';
+import { MoveTicketInteractor } from '../../application/use-cases/tickets/move-ticket.interactor.js';
+import { ReassignTicketInteractor } from '../../application/use-cases/tickets/reassign-ticket.interactor.js';
+import { ReopenTicketInteractor } from '../../application/use-cases/tickets/reopen-ticket.interactor.js';
+import { UnassignTicketInteractor } from '../../application/use-cases/tickets/unassign-ticket.interactor.js';
+import type { TicketStatus } from '../../domain/aggregates/ticket/state.js';
+import type { TicketData } from '../../domain/vo/ticket-data.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { BoardId, TicketId, UserId } from '@/kernel/domain/ids.js';
-import type { TicketStatus } from '../../domain/aggregates/ticket/state.js';
-import type { TicketData } from '../../domain/vo/ticket-data.js';
 
 function throwDomainError(error: { toResponse(): Record<number, unknown> }): never {
   const response = error.toResponse();
@@ -152,10 +143,7 @@ export class TicketsController {
 
   @Post(':ticketId/assign')
   @HttpCode(200)
-  public async assign(
-    @Param('ticketId') ticketId: string,
-    @Body() body: { assigneeId: string },
-  ) {
+  public async assign(@Param('ticketId') ticketId: string, @Body() body: { assigneeId: string }) {
     const result = await this.assignTicket.execute({
       ticketId: TicketId.raw(ticketId),
       assigneeId: UserId.raw(body.assigneeId),
@@ -163,7 +151,11 @@ export class TicketsController {
 
     if (isLeft(result)) throwDomainError(result.error);
 
-    return { ticketId: result.value.ticketId, status: result.value.status, assigneeId: result.value.assigneeId };
+    return {
+      ticketId: result.value.ticketId,
+      status: result.value.status,
+      assigneeId: result.value.assigneeId,
+    };
   }
 
   @Post(':ticketId/reassign')
@@ -181,7 +173,11 @@ export class TicketsController {
 
     if (isLeft(result)) throwDomainError(result.error);
 
-    return { ticketId: result.value.ticketId, status: result.value.status, assigneeId: result.value.assigneeId };
+    return {
+      ticketId: result.value.ticketId,
+      status: result.value.status,
+      assigneeId: result.value.assigneeId,
+    };
   }
 
   @Post(':ticketId/unassign')
@@ -210,7 +206,11 @@ export class TicketsController {
 
     if (isLeft(result)) throwDomainError(result.error);
 
-    return { ticketId: result.value.ticketId, boardId: result.value.boardId, status: result.value.status };
+    return {
+      ticketId: result.value.ticketId,
+      boardId: result.value.boardId,
+      status: result.value.status,
+    };
   }
 
   @Post(':ticketId/done')

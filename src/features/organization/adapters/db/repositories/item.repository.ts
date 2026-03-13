@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq, isNotNull, sql } from 'drizzle-orm';
 
-import type { ItemEntity } from '../../../domain/aggregates/item/entity.js';
 import { ItemRepository } from '../../../application/ports.js';
+import type { ItemEntity } from '../../../domain/aggregates/item/entity.js';
 import { items } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';

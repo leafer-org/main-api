@@ -109,7 +109,11 @@ describe('GET /items/:itemId (Item Detail)', () => {
     }
 
     if (options?.paymentStrategy) {
-      widgets.push({ type: 'payment', strategy: options.paymentStrategy, price: options.price ?? null });
+      widgets.push({
+        type: 'payment',
+        strategy: options.paymentStrategy,
+        price: options.price ?? null,
+      });
     }
 
     if (options?.itemRating !== undefined || options?.itemReviewCount !== undefined) {
@@ -317,8 +321,16 @@ describe('GET /items/:itemId (Item Detail)', () => {
 
     const schedule = res.body.widgets.find((w: { type: string }) => w.type === 'schedule');
     expect(schedule.entries).toHaveLength(2);
-    expect(schedule.entries[0]).toMatchObject({ dayOfWeek: 1, startTime: '10:00', endTime: '12:00' });
-    expect(schedule.entries[1]).toMatchObject({ dayOfWeek: 3, startTime: '14:00', endTime: '16:00' });
+    expect(schedule.entries[0]).toMatchObject({
+      dayOfWeek: 1,
+      startTime: '10:00',
+      endTime: '12:00',
+    });
+    expect(schedule.entries[1]).toMatchObject({
+      dayOfWeek: 3,
+      startTime: '14:00',
+      endTime: '16:00',
+    });
   });
 
   // ─── Разные товары — разный набор виджетов ─────────────────────────

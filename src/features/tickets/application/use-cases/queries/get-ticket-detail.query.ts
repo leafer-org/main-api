@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { TicketNotFoundError } from '../../../domain/aggregates/ticket/errors.js';
 import { TicketDetailQueryPort } from '../../ports.js';
-import { Left, isLeft } from '@/infra/lib/box.js';
+import { isLeft, Left } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import type { TicketId } from '@/kernel/domain/ids.js';
 import { Permissions } from '@/kernel/domain/permissions.js';

@@ -18,11 +18,7 @@ export class DisputeReviewInteractor {
     @Inject(Clock) private readonly clock: Clock,
   ) {}
 
-  public async execute(command: {
-    reviewId: ReviewId;
-    disputedBy: UserId;
-    reason: string;
-  }) {
+  public async execute(command: { reviewId: ReviewId; disputedBy: UserId; reason: string }) {
     const now = this.clock.now();
 
     return this.txHost.startTransaction(async (tx) => {
