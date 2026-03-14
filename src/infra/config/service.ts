@@ -43,7 +43,7 @@ export class MainConfigService extends CreateConfigService({
   MEDIA_IMAGE_PROXY_SALT: Type.Optional(Type.String()),
   MEDIA_BUCKET_PUBLIC: Type.Optional(Type.String()),
   MEDIA_BUCKET_PRIVATE: Type.Optional(Type.String()),
-  MEDIA_MAX_FILE_SIZE: Type.Decode(Type.String({ default: '5242880' }), toInt),
+  MEDIA_MAX_FILE_SIZE: Type.Decode(Type.String({ default: '20971520' }), toInt),
   // Search / Meilisearch
   MEILI_URL: Type.String({ default: 'http://localhost:7700' }),
   MEILI_API_KEY: Type.String({ default: 'devMasterKey123456' }),

@@ -121,6 +121,7 @@ export async function startContainers(options?: ContainerOptions) {
         AWS_REGION: 'us-east-1',
         IMGPROXY_KEY,
         IMGPROXY_SALT,
+        IMGPROXY_MAX_SRC_FILE_SIZE: '20971520',
       })
       .withWaitStrategy(Wait.forHttp('/health', 8080).forStatusCode(200))
       .start();
