@@ -161,6 +161,27 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body.user).toHaveProperty('createdAt');
     });
 
+    it('should generate default fullName when not provided', async () => {
+      await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
+
+      const verifyRes = await e2e.agent
+        .post('/auth/verify-otp')
+        .send({ phoneNumber: PHONE, code: FIXED_OTP })
+        .expect(200);
+
+      const res = await e2e.agent
+        .post('/auth/complete-profile')
+        .send({
+          registrationSessionId: verifyRes.body.registrationSessionId,
+          cityId: 'city-1',
+        })
+        .expect(200);
+
+      expect(res.body).toHaveProperty('accessToken');
+      expect(res.body).toHaveProperty('refreshToken');
+      expect(res.body.user.fullName).toMatch(/^Пользователь \d{4}$/);
+    });
+
     it('should return 400 for an invalid registration session', async () => {
       await e2e.agent
         .post('/auth/complete-profile')

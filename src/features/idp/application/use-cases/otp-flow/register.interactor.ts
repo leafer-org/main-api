@@ -41,7 +41,7 @@ export class RegisterInteractor {
 
   public async execute(command: {
     registrationSessionId: string;
-    fullName: string;
+    fullName?: string;
     avatarId?: string;
     cityId: string;
     lat?: number;

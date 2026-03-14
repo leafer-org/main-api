@@ -127,7 +127,7 @@ export class AuthController {
   ): Promise<PublicResponse['completeProfile']> {
     const result = await this.register.execute({
       registrationSessionId: body.registrationSessionId,
-      fullName: body.fullName ?? '',
+      fullName: body.fullName,
       avatarId: body.avatarId,
       cityId: body.cityId,
       lat: body.lat,

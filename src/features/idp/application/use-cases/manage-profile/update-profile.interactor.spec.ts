@@ -62,7 +62,7 @@ describe('UpdateProfileInteractor', () => {
       new MockTransactionHost(),
     );
 
-    const result = await interactor.execute({ userId: USER_ID, fullName: '' });
+    const result = await interactor.execute({ userId: USER_ID, fullName: 'A' });
 
     expect(isLeft(result)).toBe(true);
     expect(userRepo.findById).not.toHaveBeenCalled();

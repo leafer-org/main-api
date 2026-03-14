@@ -21,7 +21,12 @@ export const FullName = {
    * - длина от 2 до 100 символов
    * - только буквы (unicode), пробелы, дефисы, апострофы
    */
-  create: (value: string): Either<InvalidFullNameError, FullName> => {
+  create: (value?: string): Either<InvalidFullNameError, FullName> => {
+    if (!value?.trim()) {
+      const code = Math.floor(1000 + Math.random() * 9000);
+      return Right(`Пользователь ${code}` as FullName);
+    }
+
     const normalized = normalize(value);
 
     if (normalized.length < MIN_LENGTH || normalized.length > MAX_LENGTH) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { FullName, InvalidFullNameError } from './full-name.js';
-import { Left, Right } from '@/infra/lib/box.js';
+import { isRight, Left, Right } from '@/infra/lib/box.js';
 
 describe('FullName', () => {
   describe('create', () => {
@@ -31,12 +31,32 @@ describe('FullName', () => {
       expect(FullName.create('Аб')).toEqual(Right(FullName.raw('Аб')));
     });
 
-    it('should reject empty string', () => {
-      expect(FullName.create('')).toEqual(Left(new InvalidFullNameError()));
+    it('should generate default name for empty string', () => {
+      const result = FullName.create('');
+      expect(isRight(result)).toBe(true);
+      expect((result as { value: string }).value).toMatch(/^Пользователь \d{4}$/);
     });
 
-    it('should reject whitespace-only string', () => {
-      expect(FullName.create('   ')).toEqual(Left(new InvalidFullNameError()));
+    it('should generate default name for whitespace-only string', () => {
+      const result = FullName.create('   ');
+      expect(isRight(result)).toBe(true);
+      expect((result as { value: string }).value).toMatch(/^Пользователь \d{4}$/);
+    });
+
+    it('should generate default name when called without argument', () => {
+      const result = FullName.create();
+      expect(isRight(result)).toBe(true);
+      expect((result as { value: string }).value).toMatch(/^Пользователь \d{4}$/);
+    });
+
+    it('should generate default name with 4-digit code between 1000 and 9999', () => {
+      const results = Array.from({ length: 50 }, () => FullName.create());
+      for (const result of results) {
+        expect(isRight(result)).toBe(true);
+        const code = Number((result as { value: string }).value.replace('Пользователь ', ''));
+        expect(code).toBeGreaterThanOrEqual(1000);
+        expect(code).toBeLessThanOrEqual(9999);
+      }
     });
 
     it('should reject single character', () => {
