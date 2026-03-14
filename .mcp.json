@@ -1,5 +1,9 @@
 {
   "mcpServers": {
+    "shadcn": {
+      "type": "http",
+      "url": "https://mcp.shadcn.dev/sse"
+    },
     "miro": {
       "type": "http",
       "url": "https://mcp.miro.com/"

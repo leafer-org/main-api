@@ -17,7 +17,7 @@
     "test": "vitest run --passWithNoTests --reporter=default",
     "test:cov": "vitest run --passWithNoTests --reporter=default --coverage.enabled --coverage.reporter=cobertura",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
-    "openapi-bundle": "npx @redocly/cli bundle ./http-contracts/main.yaml --output ./src/infra/contracts/generated-public-schema.json --ext json",
+    "openapi-bundle": "npx @redocly/cli bundle ../http-contracts/main.yaml --output ./src/infra/contracts/generated-public-schema.json --ext json",
     "openapi-gen": "npx openapi-typescript ./src/infra/contracts/generated-public-schema.json -o ./src/infra/contracts/generated-public-schema.d.ts && biome format --write ./src/infra/contracts/generated-public-schema.d.ts",
     "openapi": "yarn openapi-bundle && yarn openapi-gen",
     "seed": "npx tsx scripts/seed.ts",

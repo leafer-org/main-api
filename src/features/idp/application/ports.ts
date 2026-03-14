@@ -61,6 +61,7 @@ export abstract class SessionRepository {
     userId: UserId,
     excludeSessionId: SessionId,
   ): Promise<void>;
+  public abstract deleteAllByUserId(tx: Transaction, userId: UserId): Promise<void>;
 }
 
 export abstract class RoleRepository {

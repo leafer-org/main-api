@@ -10,6 +10,7 @@ import { DrizzleSessionRepository } from './adapters/db/repositories/session.rep
 import { DrizzleSessionValidation } from './adapters/db/repositories/session-validation.adapter.js';
 import { DrizzleUserRepository } from './adapters/db/repositories/user.repository.js';
 import { DrizzleUserLookupAdapter } from './adapters/db/user-lookup.adapter.js';
+import { AdminSessionsController } from './adapters/http/admin-sessions.controller.js';
 import { AdminUsersController } from './adapters/http/admin-users.controller.js';
 import { AuthController } from './adapters/http/auth.controller.js';
 import { MeController } from './adapters/http/me.controller.js';
@@ -40,9 +41,13 @@ import {
   UserSessionsQueryPort,
 } from './application/ports.js';
 import { OnUserEventHandler } from './application/use-cases/admin-users-list/on-user-event.handler.js';
+import { DeleteAdminSessionInteractor } from './application/use-cases/admin-sessions/delete-admin-session.interactor.js';
+import { DeleteAllAdminSessionsInteractor } from './application/use-cases/admin-sessions/delete-all-admin-sessions.interactor.js';
+import { GetAdminUserSessionsInteractor } from './application/use-cases/admin-sessions/get-admin-user-sessions.interactor.js';
 import { SearchAdminUsersInteractor } from './application/use-cases/admin-users-list/search-admin-users.interactor.js';
 import { UpdateProfileInteractor } from './application/use-cases/manage-profile/update-profile.interactor.js';
 import { GetMeInteractor } from './application/use-cases/me/get-me.interactor.js';
+import { GetMyPermissionsInteractor } from './application/use-cases/me/get-my-permissions.interactor.js';
 import { CreateOtpInteractor } from './application/use-cases/otp-flow/create-otp.interactor.js';
 import { RegisterInteractor } from './application/use-cases/otp-flow/register.interactor.js';
 import { VerifyOtpInteractor } from './application/use-cases/otp-flow/verify-otp.interactor.js';
@@ -71,6 +76,7 @@ import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
     RolesController,
     UsersRoleController,
     AdminUsersController,
+    AdminSessionsController,
   ],
   providers: [
     // Adapters
@@ -108,11 +114,15 @@ import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
     DeleteRoleInteractor,
     UpdateUserRoleInteractor,
     GetMeInteractor,
+    GetMyPermissionsInteractor,
     GetUserSessionsInteractor,
     GetRoleInteractor,
     GetRolesListInteractor,
     GetPermissionsSchemaInteractor,
     SearchAdminUsersInteractor,
+    GetAdminUserSessionsInteractor,
+    DeleteAdminSessionInteractor,
+    DeleteAllAdminSessionsInteractor,
   ],
   exports: [SessionValidationPort, UserLookupPort],
 })

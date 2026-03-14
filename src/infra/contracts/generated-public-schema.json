@@ -704,6 +704,64 @@
         }
       }
     },
+    "/me/permissions": {
+      "get": {
+        "operationId": "getMyPermissions",
+        "tags": [
+          "auth",
+          "profile"
+        ],
+        "summary": "Получение пермишенов текущего пользователя",
+        "description": "Возвращает разрешённые действия текущего пользователя на основе его роли.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Пермишены пользователя",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "permissions"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "permissions": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/sessions": {
       "get": {
         "operationId": "getMeSessions",
@@ -1658,6 +1716,168 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{userId}/sessions": {
+      "get": {
+        "operationId": "getAdminUserSessions",
+        "tags": [
+          "admin",
+          "sessions"
+        ],
+        "summary": "Получение сессий пользователя (admin)",
+        "description": "Возвращает список активных сессий указанного пользователя.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список сессий",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "sessions"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "sessions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UserSession"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAllAdminSessions",
+        "tags": [
+          "admin",
+          "sessions"
+        ],
+        "summary": "Удаление всех сессий пользователя (admin)",
+        "description": "Удаляет все сессии указанного пользователя.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Все сессии удалены"
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{userId}/sessions/{sessionId}": {
+      "delete": {
+        "operationId": "deleteAdminSession",
+        "tags": [
+          "admin",
+          "sessions"
+        ],
+        "summary": "Удаление сессии пользователя (admin)",
+        "description": "Удаляет указанную сессию пользователя.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Сессия удалена"
+          },
+          "401": {
+            "description": "Сессия не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -10097,12 +10317,36 @@
           }
         }
       },
+      "CategoryAttribute": {
+        "type": "object",
+        "required": [
+          "attributeId",
+          "name",
+          "required",
+          "schema"
+        ],
+        "properties": {
+          "attributeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/AttributeSchema"
+          }
+        }
+      },
       "CmsCategoryListItem": {
         "type": "object",
         "required": [
           "id",
           "name",
-          "status"
+          "status",
+          "attributes"
         ],
         "properties": {
           "id": {
@@ -10124,29 +10368,12 @@
               "published",
               "unpublished"
             ]
-          }
-        }
-      },
-      "CategoryAttribute": {
-        "type": "object",
-        "required": [
-          "attributeId",
-          "name",
-          "required",
-          "schema"
-        ],
-        "properties": {
-          "attributeId": {
-            "type": "string"
           },
-          "name": {
-            "type": "string"
-          },
-          "required": {
-            "type": "boolean"
-          },
-          "schema": {
-            "$ref": "#/components/schemas/AttributeSchema"
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryAttribute"
+            }
           }
         }
       },

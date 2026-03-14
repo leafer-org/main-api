@@ -10,6 +10,7 @@ import type {
   ItemTypeUpdatedEvent,
 } from '@/kernel/domain/events/item-type.events.js';
 import type { CategoryId, TypeId } from '@/kernel/domain/ids.js';
+import type { CategoryAttribute } from '@/kernel/domain/vo/category-attribute.js';
 
 // --- Category repository ---
 
@@ -58,6 +59,7 @@ export type CategoryListItem = {
   parentCategoryId: CategoryId | null;
   name: string;
   status: CategoryEntity['status'];
+  attributes: CategoryAttribute[];
 };
 
 export abstract class CategoryQueryPort {

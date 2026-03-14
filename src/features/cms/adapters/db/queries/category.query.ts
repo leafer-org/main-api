@@ -19,6 +19,7 @@ export class DrizzleCategoryQuery implements CategoryQueryPort {
         parentCategoryId: cmsCategories.parentCategoryId,
         name: cmsCategories.name,
         status: cmsCategories.status,
+        attributes: cmsCategories.attributes,
       })
       .from(cmsCategories)
       .orderBy(cmsCategories.name);
@@ -28,6 +29,7 @@ export class DrizzleCategoryQuery implements CategoryQueryPort {
       parentCategoryId: row.parentCategoryId ? CategoryId.raw(row.parentCategoryId) : null,
       name: row.name,
       status: row.status as CategoryEntity['status'],
+      attributes: row.attributes as CategoryAttribute[],
     }));
   }
 

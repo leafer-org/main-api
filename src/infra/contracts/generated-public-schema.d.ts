@@ -144,6 +144,26 @@ export interface paths {
     patch: operations['updateProfile'];
     trace?: never;
   };
+  '/me/permissions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Получение пермишенов текущего пользователя
+     * @description Возвращает разрешённые действия текущего пользователя на основе его роли.
+     */
+    get: operations['getMyPermissions'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/me/sessions': {
     parameters: {
       query?: never;
@@ -295,6 +315,50 @@ export interface paths {
     put?: never;
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/users/{userId}/sessions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Получение сессий пользователя (admin)
+     * @description Возвращает список активных сессий указанного пользователя.
+     */
+    get: operations['getAdminUserSessions'];
+    put?: never;
+    post?: never;
+    /**
+     * Удаление всех сессий пользователя (admin)
+     * @description Удаляет все сессии указанного пользователя.
+     */
+    delete: operations['deleteAllAdminSessions'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/users/{userId}/sessions/{sessionId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Удаление сессии пользователя (admin)
+     * @description Удаляет указанную сессию пользователя.
+     */
+    delete: operations['deleteAdminSession'];
     options?: never;
     head?: never;
     patch?: never;
@@ -2041,18 +2105,19 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
+    CategoryAttribute: {
+      attributeId: string;
+      name: string;
+      required: boolean;
+      schema: components['schemas']['AttributeSchema'];
+    };
     CmsCategoryListItem: {
       id: string;
       parentCategoryId?: string | null;
       name: string;
       /** @enum {string} */
       status: 'draft' | 'published' | 'unpublished';
-    };
-    CategoryAttribute: {
-      attributeId: string;
-      name: string;
-      required: boolean;
-      schema: components['schemas']['AttributeSchema'];
+      attributes: components['schemas']['CategoryAttribute'][];
     };
     CmsCategoryDetail: {
       id: string;
@@ -2780,6 +2845,48 @@ export interface operations {
       };
     };
   };
+  getMyPermissions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Пермишены пользователя */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            permissions: {
+              [key: string]: unknown;
+            };
+          };
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
   getMeSessions: {
     parameters: {
       query?: never;
@@ -3404,6 +3511,107 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  getAdminUserSessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список сессий */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            sessions: components['schemas']['UserSession'][];
+          };
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  deleteAllAdminSessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Все сессии удалены */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  deleteAdminSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+        sessionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Сессия удалена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Сессия не найдена */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
     };

@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../admin"
+		},
+		{
+			"path": "../mobile"
+		},
+		{
+			"path": "../http-contracts"
+		}
+	],
+	"settings": {}
+}

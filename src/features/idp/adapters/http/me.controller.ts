@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch } from '@
 
 import { UpdateProfileInteractor } from '../../application/use-cases/manage-profile/update-profile.interactor.js';
 import { GetMeInteractor } from '../../application/use-cases/me/get-me.interactor.js';
+import { GetMyPermissionsInteractor } from '../../application/use-cases/me/get-my-permissions.interactor.js';
 import { DeleteAllSessionsInteractor } from '../../application/use-cases/session/delete-all-sessions.interactor.js';
 import { DeleteSessionInteractor } from '../../application/use-cases/session/delete-session.interactor.js';
 import { GetUserSessionsInteractor } from '../../application/use-cases/user-sessions/get-user-sessions.interactor.js';
@@ -18,6 +19,7 @@ import { SessionId } from '@/kernel/domain/ids.js';
 export class MeController {
   public constructor(
     private readonly getMeInteractor: GetMeInteractor,
+    private readonly getMyPermissions: GetMyPermissionsInteractor,
     private readonly updateProfile: UpdateProfileInteractor,
     private readonly getUserSessions: GetUserSessionsInteractor,
     private readonly deleteAllSessions: DeleteAllSessionsInteractor,
@@ -48,6 +50,12 @@ export class MeController {
       createdAt: me.createdAt.toISOString(),
       updatedAt: me.updatedAt.toISOString(),
     };
+  }
+
+  @Get('permissions')
+  public async getPermissions(): Promise<PublicResponse['getMyPermissions']> {
+    const result = await this.getMyPermissions.execute();
+    return result.value;
   }
 
   @Patch('profile')

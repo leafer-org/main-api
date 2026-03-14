@@ -73,4 +73,9 @@ export class DrizzleSessionRepository extends SessionRepository {
       .delete(sessions)
       .where(and(eq(sessions.userId, userId), ne(sessions.id, excludeSessionId)));
   }
+
+  public async deleteAllByUserId(tx: Transaction, userId: UserId): Promise<void> {
+    const db = this.txHost.get(tx);
+    await db.delete(sessions).where(eq(sessions.userId, userId));
+  }
 }
