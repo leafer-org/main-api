@@ -128,7 +128,7 @@ export class AuthController {
     const result = await this.register.execute({
       registrationSessionId: body.registrationSessionId,
       fullName: body.fullName ?? '',
-      avatarId: body.avatarMedia?.mediaId,
+      avatarId: body.avatarId,
       cityId: body.cityId,
       lat: body.lat,
       lng: body.lng,

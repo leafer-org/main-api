@@ -51,6 +51,23 @@ services:
       timeout: 3s
       retries: 10
 
+  redpanda-init:
+    image: redpandadata/redpanda:latest
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    volumes:
+      - ./topicctl/topics:/topics:ro
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        for f in /topics/*.yaml; do
+          name=$$(grep -A1 '^meta:' "$$f" | grep 'name:' | awk '{print $$2}')
+          partitions=$$(grep -A2 '^spec:' "$$f" | grep 'partitions:' | awk '{print $$2}')
+          rpk topic create "$$name" -p "$${partitions:-1}" --brokers redpanda:29092 || true
+        done
+
   redpanda-console:
     image: redpandadata/console:latest
     ports:
@@ -106,17 +123,51 @@ services:
       mc anonymous set download local/media-public
       "
 
+  imgproxy:
+    image: darthsim/imgproxy:latest
+    environment:
+      IMGPROXY_KEY: 52cf861eb25d56e6a93f8964368d4cc6a9978eb417d79023074508bab67f8ac0
+      IMGPROXY_SALT: 7d043fe44cc7034e062c90b15fdb29a02efa4582501cbbd6439fd76b1f25bc72
+      IMGPROXY_USE_S3: "true"
+      IMGPROXY_S3_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_REGION: us-east-1
+    ports:
+      - "8081:8080"
+    depends_on:
+      minio:
+        condition: service_healthy
+
+  gorse-postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: gorse
+      POSTGRES_PASSWORD: gorse
+      POSTGRES_DB: gorse
+    volumes:
+      - gorse_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gorse -d gorse"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    profiles:
+      - gorse
+
   gorse:
-    image: zhenghaoz/gorse-in-one:0.4.15
+    image: zhenghaoz/gorse-in-one:0.5.5
     environment:
       GORSE_CACHE_STORE: redis://redis:6379/1
-      GORSE_DATA_STORE: redis://redis:6379/2
+      GORSE_DATA_STORE: postgres://gorse:gorse@gorse-postgres:5432/gorse?sslmode=disable
     ports:
       - "8088:8088"
     volumes:
       - ./gorse-config.toml:/etc/gorse/config.toml
     depends_on:
       redis:
+        condition: service_healthy
+      gorse-postgres:
         condition: service_healthy
     profiles:
       - gorse
@@ -127,3 +178,4 @@ volumes:
   redpanda_data:
   meili_data:
   minio_data:
+  gorse_postgres_data:

@@ -34,6 +34,12 @@ export abstract class ImageProxyUrlSigner {
   public abstract sign(url: string): string;
 }
 
+// --- Config port ---
+
+export abstract class MediaConfig {
+  public abstract readonly publicBucket: string;
+}
+
 // --- ID generation ---
 
 export abstract class FileIdGenerator {

@@ -39,9 +39,10 @@ export class MainConfigService extends CreateConfigService({
   S3_FORCE_PATH_STYLE: Type.Decode(Type.String({ default: 'true' }), toBool),
   MEDIA_PUBLIC_CDN_URL: Type.Optional(Type.String()),
   MEDIA_IMAGE_PROXY_URL: Type.Optional(Type.String()),
+  MEDIA_IMAGE_PROXY_KEY: Type.Optional(Type.String()),
+  MEDIA_IMAGE_PROXY_SALT: Type.Optional(Type.String()),
   MEDIA_BUCKET_PUBLIC: Type.Optional(Type.String()),
   MEDIA_BUCKET_PRIVATE: Type.Optional(Type.String()),
-  MEDIA_IMAGE_PROXY_SECRET: Type.Optional(Type.String()),
   // Search / Meilisearch
   MEILI_URL: Type.String({ default: 'http://localhost:7700' }),
   MEILI_API_KEY: Type.String({ default: 'devMasterKey123456' }),

@@ -300,6 +300,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/cities': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Список городов
+     * @description Возвращает список доступных городов.
+     */
+    get: operations['getCities'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/media/upload-request': {
     parameters: {
       query?: never;
@@ -314,26 +334,6 @@ export interface paths {
      * @description Возвращает presigned URL и идентификатор файла для загрузки.
      */
     post: operations['mediaUploadRequest'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/media/confirm-upload': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Подтверждение загрузки файлов
-     * @description Переводит загруженные файлы из временного хранилища в постоянное.
-     */
-    post: operations['mediaConfirmUpload'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1681,16 +1681,6 @@ export interface components {
       /** @description JWT refresh-токен */
       refreshToken: string;
     };
-    /** @enum {string} */
-    MediaVisibility: 'PUBLIC' | 'PRIVATE';
-    LinkMediaData: {
-      bucket: string;
-      objectKey: string;
-      /** @description Идентификатор загруженного медиа-объекта */
-      mediaId: string;
-      visibility: components['schemas']['MediaVisibility'];
-      contentType?: string;
-    };
     Avatar: {
       /** Format: uri */
       largeUrl: string;
@@ -1749,15 +1739,11 @@ export interface components {
     UploadRequest: {
       name: string;
       mimeType: string;
-      bucket: string;
     };
     UploadRequestResult: {
       fileId: string;
       /** Format: uri */
       uploadUrl: string;
-    };
-    ConfirmUploadInput: {
-      fileIds: string[];
     };
     PreviewDownloadUrlResult: {
       /** Format: uri */
@@ -2597,7 +2583,8 @@ export interface operations {
           /** @description Идентификатор сессии регистрации из verifyOtp */
           registrationSessionId: string;
           fullName?: string;
-          avatarMedia?: components['schemas']['LinkMediaData'];
+          /** @description Идентификатор медиа для аватара */
+          avatarId?: string;
           /** @description Идентификатор города */
           cityId: string;
           /** @description Широта */
@@ -3418,6 +3405,42 @@ export interface operations {
       };
     };
   };
+  getCities: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список городов */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            id: string;
+            name: string;
+            /** @description Широта */
+            lat: number;
+            /** @description Долгота */
+            lng: number;
+          }[];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
   mediaUploadRequest: {
     parameters: {
       query?: never;
@@ -3438,68 +3461,6 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['UploadRequestResult'];
-        };
-      };
-      /** @description Ошибка валидации / Доменная ошибка */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json':
-            | components['schemas']['OpenApiValidationError']
-            | components['schemas']['DomainErrorResponse'];
-        };
-      };
-      /** @description Не авторизован */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['DomainErrorResponse'];
-        };
-      };
-      /** @description Файл не найден */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['DomainErrorResponse'];
-        };
-      };
-      /** @description Внутренняя ошибка сервера */
-      500: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['OpenApiValidationError'];
-        };
-      };
-    };
-  };
-  mediaConfirmUpload: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ConfirmUploadInput'];
-      };
-    };
-    responses: {
-      /** @description Загрузка подтверждена */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': Record<string, never>;
         };
       };
       /** @description Ошибка валидации / Доменная ошибка */

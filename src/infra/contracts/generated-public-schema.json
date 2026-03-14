@@ -14,7 +14,9 @@
     "/auth/request-otp": {
       "post": {
         "operationId": "requestOtp",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Запрос одноразового кода подтверждения",
         "description": "Создаёт и отправляет OTP пользователю.",
         "requestBody": {
@@ -23,7 +25,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["phoneNumber"],
+                "required": [
+                  "phoneNumber"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "phoneNumber": {
@@ -33,7 +37,10 @@
                   },
                   "channel": {
                     "type": "string",
-                    "enum": ["sms", "whatsapp"],
+                    "enum": [
+                      "sms",
+                      "whatsapp"
+                    ],
                     "description": "Канал доставки OTP"
                   },
                   "locale": {
@@ -89,18 +96,25 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["type", "isDomain"],
+                  "required": [
+                    "type",
+                    "isDomain"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["login_blocked"]
+                      "enum": [
+                        "login_blocked"
+                      ]
                     },
                     "message": {
                       "type": "string"
                     },
                     "isDomain": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "retryAfterSec": {
                       "type": "number",
@@ -138,7 +152,9 @@
     "/auth/verify-otp": {
       "post": {
         "operationId": "verifyOtp",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Подтверждение одноразового кода",
         "description": "Проверяет OTP и возвращает пару токенов.",
         "requestBody": {
@@ -147,7 +163,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["phoneNumber", "code"],
+                "required": [
+                  "phoneNumber",
+                  "code"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "phoneNumber": {
@@ -177,12 +196,18 @@
                   "oneOf": [
                     {
                       "type": "object",
-                      "required": ["type", "accessToken", "refreshToken"],
+                      "required": [
+                        "type",
+                        "accessToken",
+                        "refreshToken"
+                      ],
                       "additionalProperties": false,
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["authenticated"]
+                          "enum": [
+                            "authenticated"
+                          ]
                         },
                         "accessToken": {
                           "type": "string",
@@ -198,12 +223,17 @@
                     },
                     {
                       "type": "object",
-                      "required": ["type", "registrationSessionId"],
+                      "required": [
+                        "type",
+                        "registrationSessionId"
+                      ],
                       "additionalProperties": false,
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["new_registration"]
+                          "enum": [
+                            "new_registration"
+                          ]
                         },
                         "registrationSessionId": {
                           "type": "string",
@@ -239,18 +269,25 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["type", "isDomain"],
+                  "required": [
+                    "type",
+                    "isDomain"
+                  ],
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["login_blocked"]
+                      "enum": [
+                        "login_blocked"
+                      ]
                     },
                     "message": {
                       "type": "string"
                     },
                     "isDomain": {
                       "type": "boolean",
-                      "enum": [true]
+                      "enum": [
+                        true
+                      ]
                     },
                     "retryAfterSec": {
                       "type": "number",
@@ -287,7 +324,9 @@
     "/auth/refresh": {
       "get": {
         "operationId": "refresh",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Обновление токенов авторизации",
         "description": "Обновляет токены по refresh-cookie или заголовку.",
         "parameters": [
@@ -354,7 +393,10 @@
     "/auth/complete-profile": {
       "post": {
         "operationId": "completeProfile",
-        "tags": ["auth", "profile"],
+        "tags": [
+          "auth",
+          "profile"
+        ],
         "summary": "Дополнение профиля пользователя",
         "description": "Обновляет профиль после первичного входа.",
         "requestBody": {
@@ -363,7 +405,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["registrationSessionId", "cityId"],
+                "required": [
+                  "registrationSessionId",
+                  "cityId"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "registrationSessionId": {
@@ -376,8 +421,10 @@
                     "minLength": 1,
                     "maxLength": 100
                   },
-                  "avatarMedia": {
-                    "$ref": "#/components/schemas/LinkMediaData"
+                  "avatarId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Идентификатор медиа для аватара"
                   },
                   "cityId": {
                     "type": "string",
@@ -404,7 +451,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["user", "accessToken", "refreshToken"],
+                  "required": [
+                    "user",
+                    "accessToken",
+                    "refreshToken"
+                  ],
                   "additionalProperties": false,
                   "properties": {
                     "user": {
@@ -468,7 +519,9 @@
     "/auth/logout": {
       "post": {
         "operationId": "logout",
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Выход из аккаунта",
         "description": "Удаляет текущую сессию пользователя.",
         "security": [
@@ -506,7 +559,10 @@
     "/me": {
       "get": {
         "operationId": "getMe",
-        "tags": ["auth", "profile"],
+        "tags": [
+          "auth",
+          "profile"
+        ],
         "summary": "Получение текущего пользователя",
         "description": "Возвращает профиль текущего пользователя.",
         "security": [
@@ -551,7 +607,10 @@
     "/me/profile": {
       "patch": {
         "operationId": "updateProfile",
-        "tags": ["auth", "profile"],
+        "tags": [
+          "auth",
+          "profile"
+        ],
         "summary": "Обновление профиля пользователя",
         "description": "Обновляет профиль текущего пользователя.",
         "security": [
@@ -565,7 +624,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["fullName"],
+                "required": [
+                  "fullName"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "fullName": {
@@ -646,7 +707,10 @@
     "/me/sessions": {
       "get": {
         "operationId": "getMeSessions",
-        "tags": ["auth", "sessions"],
+        "tags": [
+          "auth",
+          "sessions"
+        ],
         "summary": "Получение списка активных сессий",
         "description": "Возвращает список активных сессий текущего пользователя.",
         "security": [
@@ -661,7 +725,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["sessions"],
+                  "required": [
+                    "sessions"
+                  ],
                   "additionalProperties": false,
                   "properties": {
                     "sessions": {
@@ -699,7 +765,10 @@
       },
       "delete": {
         "operationId": "deleteAllSessions",
-        "tags": ["auth", "sessions"],
+        "tags": [
+          "auth",
+          "sessions"
+        ],
         "summary": "Выход со всех устройств",
         "description": "Удаляет все сессии текущего пользователя, кроме текущей.",
         "security": [
@@ -737,7 +806,10 @@
     "/me/sessions/{sessionId}": {
       "delete": {
         "operationId": "deleteSession",
-        "tags": ["auth", "sessions"],
+        "tags": [
+          "auth",
+          "sessions"
+        ],
         "summary": "Удаление сессии",
         "description": "Удаляет указанную сессию текущего пользователя.",
         "security": [
@@ -806,7 +878,9 @@
     "/roles": {
       "get": {
         "operationId": "getRoles",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Получение списка всех ролей",
         "description": "Возвращает список всех ролей в системе.",
         "security": [
@@ -821,7 +895,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["roles"],
+                  "required": [
+                    "roles"
+                  ],
                   "properties": {
                     "roles": {
                       "type": "array",
@@ -858,7 +934,9 @@
       },
       "post": {
         "operationId": "createRole",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Создание роли",
         "description": "Создаёт новую роль с указанными разрешениями.",
         "security": [
@@ -872,7 +950,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name"],
+                "required": [
+                  "name"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -909,18 +989,25 @@
                     },
                     {
                       "type": "object",
-                      "required": ["type", "isDomain"],
+                      "required": [
+                        "type",
+                        "isDomain"
+                      ],
                       "properties": {
                         "type": {
                           "type": "string",
-                          "enum": ["role_already_exists"]
+                          "enum": [
+                            "role_already_exists"
+                          ]
                         },
                         "message": {
                           "type": "string"
                         },
                         "isDomain": {
                           "type": "boolean",
-                          "enum": [true]
+                          "enum": [
+                            true
+                          ]
                         }
                       }
                     }
@@ -965,7 +1052,9 @@
     "/roles/permissions-schema": {
       "get": {
         "operationId": "getPermissionsSchema",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Получение схемы разрешений",
         "description": "Возвращает схему всех доступных разрешений для построения UI.",
         "security": [
@@ -982,7 +1071,12 @@
                   "type": "array",
                   "items": {
                     "type": "object",
-                    "required": ["action", "key", "type", "default"],
+                    "required": [
+                      "action",
+                      "key",
+                      "type",
+                      "default"
+                    ],
                     "properties": {
                       "action": {
                         "type": "string"
@@ -992,7 +1086,10 @@
                       },
                       "type": {
                         "type": "string",
-                        "enum": ["boolean", "enum"]
+                        "enum": [
+                          "boolean",
+                          "enum"
+                        ]
                       },
                       "values": {
                         "type": "array",
@@ -1033,7 +1130,9 @@
     "/roles/{roleId}": {
       "get": {
         "operationId": "getRole",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Получение роли по ID",
         "description": "Возвращает детальную информацию о роли.",
         "security": [
@@ -1107,7 +1206,9 @@
       },
       "patch": {
         "operationId": "updateRole",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Обновление разрешений роли",
         "description": "Обновляет разрешения указанной роли. Статические роли не могут быть изменены.",
         "security": [
@@ -1132,7 +1233,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["permissions"],
+                "required": [
+                  "permissions"
+                ],
                 "properties": {
                   "permissions": {
                     "type": "object",
@@ -1205,7 +1308,9 @@
       },
       "delete": {
         "operationId": "deleteRole",
-        "tags": ["roles"],
+        "tags": [
+          "roles"
+        ],
         "summary": "Удаление роли",
         "description": "Удаляет роль и переназначает всех пользователей на замещающую роль. Статические роли не могут быть удалены.",
         "security": [
@@ -1230,7 +1335,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["replacementRoleId"],
+                "required": [
+                  "replacementRoleId"
+                ],
                 "properties": {
                   "replacementRoleId": {
                     "type": "string",
@@ -1305,7 +1412,10 @@
     "/users/{userId}/role": {
       "patch": {
         "operationId": "updateUserRole",
-        "tags": ["roles", "users"],
+        "tags": [
+          "roles",
+          "users"
+        ],
         "summary": "Назначение роли пользователю",
         "description": "Обновляет роль пользователя. Все сессии пользователя будут удалены.",
         "security": [
@@ -1330,7 +1440,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["roleId"],
+                "required": [
+                  "roleId"
+                ],
                 "properties": {
                   "roleId": {
                     "type": "string",
@@ -1415,7 +1527,10 @@
     "/admin/users": {
       "get": {
         "operationId": "searchAdminUsers",
-        "tags": ["admin", "users"],
+        "tags": [
+          "admin",
+          "users"
+        ],
         "summary": "Поиск пользователей (admin)",
         "description": "Поиск пользователей с фильтрацией по роли и текстовому запросу.",
         "security": [
@@ -1467,7 +1582,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["users", "total"],
+                  "required": [
+                    "users",
+                    "total"
+                  ],
                   "properties": {
                     "users": {
                       "type": "array",
@@ -1547,10 +1665,73 @@
         }
       }
     },
+    "/cities": {
+      "get": {
+        "operationId": "getCities",
+        "tags": [
+          "cities"
+        ],
+        "summary": "Список городов",
+        "description": "Возвращает список доступных городов.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Список городов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "lat",
+                      "lng"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "lat": {
+                        "type": "number",
+                        "description": "Широта"
+                      },
+                      "lng": {
+                        "type": "number",
+                        "description": "Долгота"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/upload-request": {
       "post": {
         "operationId": "mediaUploadRequest",
-        "tags": ["media"],
+        "tags": [
+          "media"
+        ],
         "summary": "Получение presigned URL для загрузки файла",
         "description": "Возвращает presigned URL и идентификатор файла для загрузки.",
         "security": [],
@@ -1625,88 +1806,12 @@
         }
       }
     },
-    "/media/confirm-upload": {
-      "post": {
-        "operationId": "mediaConfirmUpload",
-        "tags": ["media"],
-        "summary": "Подтверждение загрузки файлов",
-        "description": "Переводит загруженные файлы из временного хранилища в постоянное.",
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConfirmUploadInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Загрузка подтверждена",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Ошибка валидации / Доменная ошибка",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/OpenApiValidationError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/DomainErrorResponse"
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Не авторизован",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DomainErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Файл не найден",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DomainErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Внутренняя ошибка сервера",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenApiValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/media/preview/{mediaId}": {
       "get": {
         "operationId": "mediaPreview",
-        "tags": ["media"],
+        "tags": [
+          "media"
+        ],
         "summary": "Получение preview URL для временного файла",
         "description": "Возвращает presigned URL для предпросмотра файла до подтверждения загрузки.",
         "security": [],
@@ -1778,7 +1883,9 @@
     "/banners": {
       "get": {
         "operationId": "getBanners",
-        "tags": ["Banners"],
+        "tags": [
+          "Banners"
+        ],
         "description": "Get all banners",
         "parameters": [
           {
@@ -1818,7 +1925,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["edges", "pageInfo", "totalCount"],
+                  "required": [
+                    "edges",
+                    "pageInfo",
+                    "totalCount"
+                  ],
                   "properties": {
                     "edges": {
                       "type": "array",
@@ -1874,7 +1985,9 @@
     "/categories": {
       "get": {
         "operationId": "getCategories",
-        "tags": ["Discovery"],
+        "tags": [
+          "Discovery"
+        ],
         "description": "Список дочерних категорий с количеством товаров",
         "parameters": [
           {
@@ -1907,7 +2020,9 @@
     "/categories/{id}/items": {
       "get": {
         "operationId": "getCategoryItems",
-        "tags": ["Discovery"],
+        "tags": [
+          "Discovery"
+        ],
         "description": "Товары в категории с фильтрами и сортировкой",
         "parameters": [
           {
@@ -1925,7 +2040,13 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["personal", "price-asc", "price-desc", "rating-desc", "newest"],
+              "enum": [
+                "personal",
+                "price-asc",
+                "price-desc",
+                "rating-desc",
+                "newest"
+              ],
               "default": "personal"
             },
             "description": "Режим сортировки"
@@ -1966,7 +2087,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["adults", "children", "all"],
+              "enum": [
+                "adults",
+                "children",
+                "all"
+              ],
               "default": "adults"
             },
             "description": "Возрастная группа"
@@ -2112,7 +2237,9 @@
     "/categories/{id}/filters": {
       "get": {
         "operationId": "getCategoryFilters",
-        "tags": ["Discovery"],
+        "tags": [
+          "Discovery"
+        ],
         "description": "Доступные фильтры для страницы категории",
         "parameters": [
           {
@@ -2152,7 +2279,9 @@
     "/feed": {
       "get": {
         "operationId": "getFeed",
-        "tags": ["Discovery"],
+        "tags": [
+          "Discovery"
+        ],
         "description": "Персонализированная лента рекомендаций по всему каталогу",
         "parameters": [
           {
@@ -2170,7 +2299,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["adults", "children", "all"],
+              "enum": [
+                "adults",
+                "children",
+                "all"
+              ],
               "default": "adults"
             },
             "description": "Возрастная группа"
@@ -2232,7 +2365,9 @@
     "/search": {
       "get": {
         "operationId": "searchItems",
-        "tags": ["Discovery"],
+        "tags": [
+          "Discovery"
+        ],
         "description": "Полнотекстовый поиск товаров через Meilisearch с динамическими фасетными фильтрами",
         "parameters": [
           {
@@ -2259,7 +2394,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["adults", "children", "all"],
+              "enum": [
+                "adults",
+                "children",
+                "all"
+              ],
               "default": "adults"
             },
             "description": "Возрастная группа"
@@ -2329,7 +2468,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["items", "facets", "total"],
+                  "required": [
+                    "items",
+                    "facets",
+                    "total"
+                  ],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -2341,7 +2484,10 @@
                       "$ref": "#/components/schemas/SearchFacets"
                     },
                     "nextCursor": {
-                      "type": ["string", "null"]
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "total": {
                       "type": "integer",
@@ -2358,7 +2504,9 @@
     "/liked-items": {
       "get": {
         "operationId": "getLikedItems",
-        "tags": ["Discovery"],
+        "tags": [
+          "Discovery"
+        ],
         "description": "Список лайкнутых товаров пользователя с поиском по названию",
         "security": [
           {
@@ -2417,7 +2565,9 @@
     "/items/{itemId}": {
       "get": {
         "operationId": "getDiscoveryItemDetail",
-        "tags": ["Discovery"],
+        "tags": [
+          "Discovery"
+        ],
         "description": "Детальная страница товара — полные данные всех виджетов",
         "parameters": [
           {
@@ -2457,7 +2607,9 @@
     "/items/{itemId}/like": {
       "post": {
         "operationId": "likeItem",
-        "tags": ["Discovery"],
+        "tags": [
+          "Discovery"
+        ],
         "description": "Поставить лайк на товар",
         "security": [
           {
@@ -2490,7 +2642,9 @@
       },
       "delete": {
         "operationId": "unlikeItem",
-        "tags": ["Discovery"],
+        "tags": [
+          "Discovery"
+        ],
         "description": "Убрать лайк с товара",
         "security": [
           {
@@ -2522,7 +2676,9 @@
     "/interactions/views": {
       "post": {
         "operationId": "recordViews",
-        "tags": ["Interactions"],
+        "tags": [
+          "Interactions"
+        ],
         "description": "Записать показы карточек (batch). Дедупликация — 1 view на item в час.",
         "security": [
           {
@@ -2535,7 +2691,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["itemIds"],
+                "required": [
+                  "itemIds"
+                ],
                 "properties": {
                   "itemIds": {
                     "type": "array",
@@ -2565,7 +2723,9 @@
     "/interactions/click": {
       "post": {
         "operationId": "recordClick",
-        "tags": ["Interactions"],
+        "tags": [
+          "Interactions"
+        ],
         "description": "Записать клик (переход на detail page)",
         "security": [
           {
@@ -2578,7 +2738,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["itemId"],
+                "required": [
+                  "itemId"
+                ],
                 "properties": {
                   "itemId": {
                     "type": "string",
@@ -2603,7 +2765,9 @@
     "/interactions/show-contacts": {
       "post": {
         "operationId": "recordShowContacts",
-        "tags": ["Interactions"],
+        "tags": [
+          "Interactions"
+        ],
         "description": "Записать раскрытие контактов организации",
         "security": [
           {
@@ -2616,7 +2780,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["itemId"],
+                "required": [
+                  "itemId"
+                ],
                 "properties": {
                   "itemId": {
                     "type": "string",
@@ -2641,7 +2807,9 @@
     "/reviews": {
       "get": {
         "operationId": "getReviewsByTarget",
-        "tags": ["reviews"],
+        "tags": [
+          "reviews"
+        ],
         "summary": "Список отзывов по сущности",
         "description": "Возвращает опубликованные отзывы по item или организации. Если пользователь авторизован, его pending-отзыв включается с флагами isMine и isPending.",
         "security": [
@@ -2656,7 +2824,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["item", "organization"]
+              "enum": [
+                "item",
+                "organization"
+              ]
             }
           },
           {
@@ -2710,7 +2881,9 @@
       },
       "post": {
         "operationId": "createReview",
-        "tags": ["reviews"],
+        "tags": [
+          "reviews"
+        ],
         "summary": "Создать отзыв",
         "description": "Создаёт отзыв на item или организацию. Если рейтинг >= 4, публикуется сразу; иначе отправляется на модерацию.",
         "security": [
@@ -2724,11 +2897,19 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["targetType", "targetId", "organizationId", "rating"],
+                "required": [
+                  "targetType",
+                  "targetId",
+                  "organizationId",
+                  "rating"
+                ],
                 "properties": {
                   "targetType": {
                     "type": "string",
-                    "enum": ["item", "organization"]
+                    "enum": [
+                      "item",
+                      "organization"
+                    ]
                   },
                   "targetId": {
                     "type": "string"
@@ -2799,7 +2980,9 @@
     "/reviews/my": {
       "get": {
         "operationId": "getMyReviews",
-        "tags": ["reviews"],
+        "tags": [
+          "reviews"
+        ],
         "summary": "Мои отзывы",
         "description": "Возвращает отзывы текущего пользователя с пагинацией.",
         "security": [
@@ -2846,7 +3029,9 @@
     "/reviews/by-ids": {
       "post": {
         "operationId": "getReviewsByIds",
-        "tags": ["reviews"],
+        "tags": [
+          "reviews"
+        ],
         "summary": "Пакетная загрузка отзывов",
         "description": "Возвращает отзывы по массиву ID (для тикет-системы).",
         "security": [
@@ -2860,7 +3045,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["ids"],
+                "required": [
+                  "ids"
+                ],
                 "properties": {
                   "ids": {
                     "type": "array",
@@ -2882,7 +3069,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["items"],
+                  "required": [
+                    "items"
+                  ],
                   "properties": {
                     "items": {
                       "type": "array",
@@ -2914,7 +3103,9 @@
     "/reviews/organization/{orgId}": {
       "get": {
         "operationId": "getOrganizationReviews",
-        "tags": ["reviews"],
+        "tags": [
+          "reviews"
+        ],
         "summary": "Отзывы организации",
         "description": "Возвращает отзывы на все items и саму организацию.",
         "security": [
@@ -2979,7 +3170,9 @@
     "/reviews/{reviewId}": {
       "get": {
         "operationId": "getReviewById",
-        "tags": ["reviews"],
+        "tags": [
+          "reviews"
+        ],
         "summary": "Получить отзыв по ID",
         "description": "Возвращает полную информацию об отзыве по ID.",
         "security": [
@@ -3025,7 +3218,9 @@
       },
       "patch": {
         "operationId": "editReview",
-        "tags": ["reviews"],
+        "tags": [
+          "reviews"
+        ],
         "summary": "Редактировать отзыв",
         "description": "Редактирует отзыв в статусе pending. Если новый рейтинг >= 4, отзыв автоматически публикуется.",
         "security": [
@@ -3056,7 +3251,10 @@
                     "maximum": 5
                   },
                   "text": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 }
               }
@@ -3108,7 +3306,9 @@
       },
       "delete": {
         "operationId": "deleteReview",
-        "tags": ["reviews"],
+        "tags": [
+          "reviews"
+        ],
         "summary": "Удалить отзыв",
         "description": "Удаляет опубликованный отзыв. Рейтинг пересчитывается.",
         "security": [
@@ -3159,7 +3359,9 @@
     "/reviews/{reviewId}/approve": {
       "post": {
         "operationId": "approveReview",
-        "tags": ["reviews-moderation"],
+        "tags": [
+          "reviews-moderation"
+        ],
         "summary": "Одобрить отзыв",
         "description": "Модератор одобряет отзыв в статусе pending. Отзыв публикуется, рейтинг пересчитывается.",
         "security": [
@@ -3220,7 +3422,9 @@
     "/reviews/{reviewId}/reject": {
       "post": {
         "operationId": "rejectReview",
-        "tags": ["reviews-moderation"],
+        "tags": [
+          "reviews-moderation"
+        ],
         "summary": "Отклонить отзыв",
         "description": "Модератор отклоняет отзыв в статусе pending.",
         "security": [
@@ -3244,7 +3448,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["reason"],
+                "required": [
+                  "reason"
+                ],
                 "properties": {
                   "reason": {
                     "type": "string",
@@ -3305,7 +3511,9 @@
     "/reviews/{reviewId}/reply": {
       "post": {
         "operationId": "replyToReview",
-        "tags": ["reviews"],
+        "tags": [
+          "reviews"
+        ],
         "summary": "Ответить на отзыв",
         "description": "Владелец организации отвечает на опубликованный отзыв. Один ответ на отзыв.",
         "security": [
@@ -3329,7 +3537,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["text"],
+                "required": [
+                  "text"
+                ],
                 "properties": {
                   "text": {
                     "type": "string",
@@ -3397,7 +3607,9 @@
     "/reviews/{reviewId}/dispute": {
       "post": {
         "operationId": "disputeReview",
-        "tags": ["reviews"],
+        "tags": [
+          "reviews"
+        ],
         "summary": "Оспорить отзыв",
         "description": "Продавец оспаривает опубликованный отзыв. Отзыв скрывается из витрины, рейтинг пересчитывается. Оспорить можно только один раз.",
         "security": [
@@ -3421,7 +3633,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["reason"],
+                "required": [
+                  "reason"
+                ],
                 "properties": {
                   "reason": {
                     "type": "string",
@@ -3489,7 +3703,9 @@
     "/reviews/{reviewId}/resolve-dispute": {
       "post": {
         "operationId": "resolveDispute",
-        "tags": ["reviews-moderation"],
+        "tags": [
+          "reviews-moderation"
+        ],
         "summary": "Разрешить спор по отзыву",
         "description": "Модератор разрешает спор: uphold — восстановить отзыв, remove — удалить окончательно.",
         "security": [
@@ -3513,11 +3729,16 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["resolution"],
+                "required": [
+                  "resolution"
+                ],
                 "properties": {
                   "resolution": {
                     "type": "string",
-                    "enum": ["uphold", "remove"]
+                    "enum": [
+                      "uphold",
+                      "remove"
+                    ]
                   }
                 }
               }
@@ -3574,7 +3795,9 @@
     "/cms/categories": {
       "get": {
         "operationId": "getCmsCategories",
-        "tags": ["cms-categories"],
+        "tags": [
+          "cms-categories"
+        ],
         "summary": "Список категорий (CMS)",
         "description": "Возвращает все категории для административной панели.",
         "security": [
@@ -3610,7 +3833,9 @@
       },
       "post": {
         "operationId": "createCmsCategory",
-        "tags": ["cms-categories"],
+        "tags": [
+          "cms-categories"
+        ],
         "summary": "Создание категории",
         "description": "Создаёт новую категорию.",
         "security": [
@@ -3624,20 +3849,30 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["id", "name", "allowedTypeIds"],
+                "required": [
+                  "id",
+                  "name",
+                  "allowedTypeIds"
+                ],
                 "properties": {
                   "id": {
                     "type": "string"
                   },
                   "parentCategoryId": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "name": {
                     "type": "string",
                     "minLength": 1
                   },
                   "iconId": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "allowedTypeIds": {
                     "type": "array",
@@ -3704,7 +3939,9 @@
     "/cms/categories/{id}": {
       "get": {
         "operationId": "getCmsCategoryDetail",
-        "tags": ["cms-categories"],
+        "tags": [
+          "cms-categories"
+        ],
         "summary": "Детали категории (CMS)",
         "description": "Возвращает полную информацию о категории.",
         "security": [
@@ -3757,7 +3994,9 @@
       },
       "patch": {
         "operationId": "updateCmsCategory",
-        "tags": ["cms-categories"],
+        "tags": [
+          "cms-categories"
+        ],
         "summary": "Обновление категории",
         "description": "Обновляет параметры категории.",
         "security": [
@@ -3781,17 +4020,26 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "allowedTypeIds"],
+                "required": [
+                  "name",
+                  "allowedTypeIds"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
                     "minLength": 1
                   },
                   "iconId": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "parentCategoryId": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "allowedTypeIds": {
                     "type": "array",
@@ -3858,7 +4106,9 @@
     "/cms/categories/{id}/publish": {
       "post": {
         "operationId": "publishCmsCategory",
-        "tags": ["cms-categories"],
+        "tags": [
+          "cms-categories"
+        ],
         "summary": "Публикация категории",
         "description": "Публикует категорию, делая её доступной в Discovery.",
         "security": [
@@ -3913,7 +4163,9 @@
     "/cms/categories/{id}/unpublish": {
       "post": {
         "operationId": "unpublishCmsCategory",
-        "tags": ["cms-categories"],
+        "tags": [
+          "cms-categories"
+        ],
         "summary": "Снятие категории с публикации",
         "description": "Снимает категорию с публикации.",
         "security": [
@@ -3978,7 +4230,9 @@
     "/cms/categories/{id}/attributes": {
       "post": {
         "operationId": "addCmsCategoryAttribute",
-        "tags": ["cms-categories"],
+        "tags": [
+          "cms-categories"
+        ],
         "summary": "Добавление атрибута к категории",
         "description": "Добавляет атрибут к категории.",
         "security": [
@@ -4002,7 +4256,12 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["attributeId", "name", "required", "schema"],
+                "required": [
+                  "attributeId",
+                  "name",
+                  "required",
+                  "schema"
+                ],
                 "properties": {
                   "attributeId": {
                     "type": "string"
@@ -4076,7 +4335,9 @@
     "/cms/categories/{id}/attributes/{attributeId}": {
       "delete": {
         "operationId": "removeCmsCategoryAttribute",
-        "tags": ["cms-categories"],
+        "tags": [
+          "cms-categories"
+        ],
         "summary": "Удаление атрибута из категории",
         "description": "Удаляет атрибут из категории.",
         "security": [
@@ -4149,7 +4410,9 @@
     "/cms/item-types": {
       "get": {
         "operationId": "getCmsItemTypes",
-        "tags": ["cms-item-types"],
+        "tags": [
+          "cms-item-types"
+        ],
         "summary": "Список типов товаров (CMS)",
         "description": "Возвращает все типы товаров.",
         "security": [
@@ -4185,7 +4448,9 @@
       },
       "post": {
         "operationId": "createCmsItemType",
-        "tags": ["cms-item-types"],
+        "tags": [
+          "cms-item-types"
+        ],
         "summary": "Создание типа товара",
         "description": "Создаёт новый тип товара с указанными виджетами.",
         "security": [
@@ -4199,7 +4464,12 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["id", "name", "availableWidgetTypes", "requiredWidgetTypes"],
+                "required": [
+                  "id",
+                  "name",
+                  "availableWidgetTypes",
+                  "requiredWidgetTypes"
+                ],
                 "properties": {
                   "id": {
                     "type": "string"
@@ -4269,7 +4539,9 @@
     "/cms/item-types/{id}": {
       "patch": {
         "operationId": "updateCmsItemType",
-        "tags": ["cms-item-types"],
+        "tags": [
+          "cms-item-types"
+        ],
         "summary": "Обновление типа товара",
         "description": "Обновляет параметры типа товара.",
         "security": [
@@ -4293,7 +4565,11 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "availableWidgetTypes", "requiredWidgetTypes"],
+                "required": [
+                  "name",
+                  "availableWidgetTypes",
+                  "requiredWidgetTypes"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -4370,7 +4646,9 @@
     "/organizations": {
       "post": {
         "operationId": "createOrganization",
-        "tags": ["organizations"],
+        "tags": [
+          "organizations"
+        ],
         "summary": "Создание организации",
         "description": "Создаёт новую организацию. Текущий пользователь становится владельцем с ролью ADMIN.",
         "security": [
@@ -4384,7 +4662,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "description"],
+                "required": [
+                  "name",
+                  "description"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -4394,7 +4675,10 @@
                     "type": "string"
                   },
                   "avatarId": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 }
               }
@@ -4431,7 +4715,9 @@
     "/organizations/{id}": {
       "get": {
         "operationId": "getOrganization",
-        "tags": ["organizations"],
+        "tags": [
+          "organizations"
+        ],
         "summary": "Детали организации",
         "description": "Возвращает полную информацию об организации (для сотрудника/владельца).",
         "security": [
@@ -4487,7 +4773,9 @@
       },
       "patch": {
         "operationId": "updateInfoDraft",
-        "tags": ["organizations"],
+        "tags": [
+          "organizations"
+        ],
         "summary": "Обновление черновика профиля",
         "description": "Обновляет черновик профиля организации (name, description, avatarId).",
         "security": [
@@ -4511,7 +4799,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "description"],
+                "required": [
+                  "name",
+                  "description"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -4521,7 +4812,10 @@
                     "type": "string"
                   },
                   "avatarId": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 }
               }
@@ -4585,7 +4879,9 @@
     "/organizations/{id}/submit-for-moderation": {
       "post": {
         "operationId": "submitInfoForModeration",
-        "tags": ["organizations"],
+        "tags": [
+          "organizations"
+        ],
         "summary": "Отправить профиль на модерацию",
         "description": "Отправляет черновик профиля организации на модерацию. Возможно только из статуса draft или rejected.",
         "security": [
@@ -4646,7 +4942,9 @@
     "/organizations/{id}/approve-moderation": {
       "post": {
         "operationId": "approveInfoModeration",
-        "tags": ["organizations"],
+        "tags": [
+          "organizations"
+        ],
         "summary": "Одобрить модерацию профиля",
         "description": "Одобряет модерацию профиля организации. Требуется глобальный permission ORGANIZATION.MODERATE.",
         "security": [
@@ -4707,7 +5005,9 @@
     "/organizations/{id}/reject-moderation": {
       "post": {
         "operationId": "rejectInfoModeration",
-        "tags": ["organizations"],
+        "tags": [
+          "organizations"
+        ],
         "summary": "Отклонить модерацию профиля",
         "description": "Отклоняет модерацию профиля организации. Требуется глобальный permission ORGANIZATION.MODERATE.",
         "security": [
@@ -4768,7 +5068,9 @@
     "/organizations/{id}/employees": {
       "get": {
         "operationId": "getOrganizationEmployees",
-        "tags": ["organization-employees"],
+        "tags": [
+          "organization-employees"
+        ],
         "summary": "Список сотрудников",
         "description": "Возвращает список сотрудников организации с их ролями.",
         "security": [
@@ -4827,7 +5129,9 @@
       },
       "post": {
         "operationId": "inviteEmployee",
-        "tags": ["organization-employees"],
+        "tags": [
+          "organization-employees"
+        ],
         "summary": "Приглашение сотрудника",
         "description": "Приглашает пользователя в организацию по номеру телефона.",
         "security": [
@@ -4851,7 +5155,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["phone", "roleId"],
+                "required": [
+                  "phone",
+                  "roleId"
+                ],
                 "properties": {
                   "phone": {
                     "type": "string",
@@ -4923,7 +5230,9 @@
     "/organizations/{id}/employees/{userId}": {
       "delete": {
         "operationId": "removeEmployee",
-        "tags": ["organization-employees"],
+        "tags": [
+          "organization-employees"
+        ],
         "summary": "Удаление сотрудника",
         "description": "Удаляет сотрудника из организации. Владельца удалить нельзя.",
         "security": [
@@ -4990,7 +5299,9 @@
       },
       "patch": {
         "operationId": "changeEmployeeRole",
-        "tags": ["organization-employees"],
+        "tags": [
+          "organization-employees"
+        ],
         "summary": "Изменение роли сотрудника",
         "description": "Назначает сотруднику другую роль.",
         "security": [
@@ -5022,7 +5333,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["roleId"],
+                "required": [
+                  "roleId"
+                ],
                 "properties": {
                   "roleId": {
                     "type": "string"
@@ -5089,7 +5402,9 @@
     "/organizations/{id}/transfer-ownership": {
       "post": {
         "operationId": "transferOwnership",
-        "tags": ["organization-employees"],
+        "tags": [
+          "organization-employees"
+        ],
         "summary": "Передача владения",
         "description": "Передаёт владение организацией другому сотруднику. Новый владелец получает роль ADMIN.",
         "security": [
@@ -5113,7 +5428,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["userId"],
+                "required": [
+                  "userId"
+                ],
                 "properties": {
                   "userId": {
                     "type": "string",
@@ -5167,7 +5484,9 @@
     "/organizations/{id}/roles": {
       "get": {
         "operationId": "getOrganizationRoles",
-        "tags": ["organization-roles"],
+        "tags": [
+          "organization-roles"
+        ],
         "summary": "Список ролей",
         "description": "Возвращает список ролей организации с пермишенами.",
         "security": [
@@ -5226,7 +5545,9 @@
       },
       "post": {
         "operationId": "createEmployeeRole",
-        "tags": ["organization-roles"],
+        "tags": [
+          "organization-roles"
+        ],
         "summary": "Создание роли",
         "description": "Создаёт новую роль в организации с указанными пермишенами.",
         "security": [
@@ -5250,7 +5571,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "permissions"],
+                "required": [
+                  "name",
+                  "permissions"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -5324,7 +5648,9 @@
     "/organizations/{id}/roles/{roleId}": {
       "patch": {
         "operationId": "updateEmployeeRole",
-        "tags": ["organization-roles"],
+        "tags": [
+          "organization-roles"
+        ],
         "summary": "Обновление роли",
         "description": "Обновляет имя и пермишены роли.",
         "security": [
@@ -5356,7 +5682,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "permissions"],
+                "required": [
+                  "name",
+                  "permissions"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -5428,7 +5757,9 @@
       },
       "delete": {
         "operationId": "deleteEmployeeRole",
-        "tags": ["organization-roles"],
+        "tags": [
+          "organization-roles"
+        ],
         "summary": "Удаление роли",
         "description": "Удаляет роль. Все сотрудники с этой ролью переназначаются на replacementRoleId. Роль ADMIN удалить нельзя.",
         "security": [
@@ -5506,7 +5837,9 @@
     "/organizations/{orgId}/items": {
       "post": {
         "operationId": "createItem",
-        "tags": ["organization-items"],
+        "tags": [
+          "organization-items"
+        ],
         "summary": "Создание товара",
         "description": "Создаёт новый товар (черновик) в организации. Виджеты валидируются по типу товара и плану подписки.",
         "security": [
@@ -5530,7 +5863,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["typeId", "widgets"],
+                "required": [
+                  "typeId",
+                  "widgets"
+                ],
                 "properties": {
                   "typeId": {
                     "type": "string"
@@ -5601,7 +5937,9 @@
       },
       "get": {
         "operationId": "getOrganizationItems",
-        "tags": ["organization-items"],
+        "tags": [
+          "organization-items"
+        ],
         "summary": "Список товаров организации",
         "description": "Возвращает список товаров организации с информацией о статусе черновика и публикации.",
         "security": [
@@ -5662,7 +6000,9 @@
     "/organizations/{orgId}/items/{itemId}": {
       "get": {
         "operationId": "getItemDetail",
-        "tags": ["organization-items"],
+        "tags": [
+          "organization-items"
+        ],
         "summary": "Детали товара",
         "description": "Возвращает полную информацию о товаре, включая черновик и публикацию.",
         "security": [
@@ -5726,7 +6066,9 @@
       },
       "patch": {
         "operationId": "updateItemDraft",
-        "tags": ["organization-items"],
+        "tags": [
+          "organization-items"
+        ],
         "summary": "Обновление черновика товара",
         "description": "Обновляет виджеты черновика товара. Невозможно, если черновик на модерации.",
         "security": [
@@ -5758,7 +6100,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["widgets"],
+                "required": [
+                  "widgets"
+                ],
                 "properties": {
                   "widgets": {
                     "type": "array",
@@ -5826,7 +6170,9 @@
       },
       "delete": {
         "operationId": "deleteItemDraft",
-        "tags": ["organization-items"],
+        "tags": [
+          "organization-items"
+        ],
         "summary": "Удаление черновика товара",
         "description": "Удаляет черновик товара. Если нет публикации — удаляет товар целиком.",
         "security": [
@@ -5895,7 +6241,9 @@
     "/organizations/{orgId}/items/{itemId}/submit-for-moderation": {
       "post": {
         "operationId": "submitItemForModeration",
-        "tags": ["organization-items"],
+        "tags": [
+          "organization-items"
+        ],
         "summary": "Отправить товар на модерацию",
         "description": "Отправляет черновик товара на модерацию. Возможно только из статуса draft или rejected.",
         "security": [
@@ -5964,7 +6312,9 @@
     "/organizations/{orgId}/items/{itemId}/approve-moderation": {
       "post": {
         "operationId": "approveItemModeration",
-        "tags": ["organization-items"],
+        "tags": [
+          "organization-items"
+        ],
         "summary": "Одобрить модерацию товара",
         "description": "Одобряет модерацию товара. Требуется глобальный permission ORGANIZATION.MODERATE.",
         "security": [
@@ -6033,7 +6383,9 @@
     "/organizations/{orgId}/items/{itemId}/reject-moderation": {
       "post": {
         "operationId": "rejectItemModeration",
-        "tags": ["organization-items"],
+        "tags": [
+          "organization-items"
+        ],
         "summary": "Отклонить модерацию товара",
         "description": "Отклоняет модерацию товара. Требуется глобальный permission ORGANIZATION.MODERATE.",
         "security": [
@@ -6102,7 +6454,9 @@
     "/organizations/{orgId}/items/{itemId}/unpublish": {
       "post": {
         "operationId": "unpublishItem",
-        "tags": ["organization-items"],
+        "tags": [
+          "organization-items"
+        ],
         "summary": "Снять товар с публикации",
         "description": "Снимает товар с публикации. Данные публикации копируются в новый черновик.",
         "security": [
@@ -6171,7 +6525,10 @@
     "/admin/boards": {
       "get": {
         "operationId": "getAdminBoards",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Список досок",
         "security": [
           {
@@ -6184,7 +6541,10 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["platform", "organization"]
+              "enum": [
+                "platform",
+                "organization"
+              ]
             },
             "description": "Фильтр по scope"
           }
@@ -6227,7 +6587,10 @@
       },
       "post": {
         "operationId": "createAdminBoard",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Создание доски",
         "security": [
           {
@@ -6240,21 +6603,34 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "scope", "manualCreation"],
+                "required": [
+                  "name",
+                  "scope",
+                  "manualCreation"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
                     "minLength": 1
                   },
                   "description": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "scope": {
                     "type": "string",
-                    "enum": ["platform", "organization"]
+                    "enum": [
+                      "platform",
+                      "organization"
+                    ]
                   },
                   "organizationId": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "manualCreation": {
                     "type": "boolean"
@@ -6311,7 +6687,10 @@
     "/admin/boards/{boardId}": {
       "patch": {
         "operationId": "updateAdminBoard",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Обновление доски",
         "security": [
           {
@@ -6334,14 +6713,21 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "manualCreation", "allowedTransferBoardIds"],
+                "required": [
+                  "name",
+                  "manualCreation",
+                  "allowedTransferBoardIds"
+                ],
                 "properties": {
                   "name": {
                     "type": "string",
                     "minLength": 1
                   },
                   "description": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "manualCreation": {
                     "type": "boolean"
@@ -6419,7 +6805,10 @@
       },
       "delete": {
         "operationId": "deleteAdminBoard",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Удаление доски",
         "security": [
           {
@@ -6476,7 +6865,10 @@
     "/admin/boards/{boardId}/subscriptions": {
       "post": {
         "operationId": "addAdminBoardSubscription",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Добавление подписки на триггер",
         "security": [
           {
@@ -6499,7 +6891,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["triggerId", "filters"],
+                "required": [
+                  "triggerId",
+                  "filters"
+                ],
                 "properties": {
                   "triggerId": {
                     "type": "string"
@@ -6522,7 +6917,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["boardId", "subscriptions"],
+                  "required": [
+                    "boardId",
+                    "subscriptions"
+                  ],
                   "properties": {
                     "boardId": {
                       "type": "string"
@@ -6584,7 +6982,10 @@
     "/admin/boards/{boardId}/subscriptions/{subId}": {
       "delete": {
         "operationId": "removeAdminBoardSubscription",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Удаление подписки на триггер",
         "security": [
           {
@@ -6649,7 +7050,10 @@
     "/admin/boards/{boardId}/members": {
       "post": {
         "operationId": "addAdminBoardMember",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Добавление участника доски",
         "security": [
           {
@@ -6672,7 +7076,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["userId"],
+                "required": [
+                  "userId"
+                ],
                 "properties": {
                   "userId": {
                     "type": "string"
@@ -6689,7 +7095,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["boardId", "memberIds"],
+                  "required": [
+                    "boardId",
+                    "memberIds"
+                  ],
                   "properties": {
                     "boardId": {
                       "type": "string"
@@ -6761,7 +7170,10 @@
     "/admin/boards/{boardId}/members/{userId}": {
       "delete": {
         "operationId": "removeAdminBoardMember",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Удаление участника доски",
         "security": [
           {
@@ -6826,7 +7238,10 @@
     "/admin/boards/{boardId}/automation": {
       "put": {
         "operationId": "addAdminBoardAutomation",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Добавление автоматизации",
         "security": [
           {
@@ -6849,7 +7264,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["agentId", "systemPrompt"],
+                "required": [
+                  "agentId",
+                  "systemPrompt"
+                ],
                 "properties": {
                   "agentId": {
                     "type": "string"
@@ -6859,7 +7277,10 @@
                     "minLength": 1
                   },
                   "onUncertainMoveToBoardId": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 }
               }
@@ -6873,7 +7294,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["boardId", "automations"],
+                  "required": [
+                    "boardId",
+                    "automations"
+                  ],
                   "properties": {
                     "boardId": {
                       "type": "string"
@@ -6935,7 +7359,10 @@
     "/admin/boards/{boardId}/automation/{automationId}": {
       "delete": {
         "operationId": "removeAdminBoardAutomation",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Удаление автоматизации",
         "security": [
           {
@@ -7000,7 +7427,9 @@
     "/admin/tickets": {
       "get": {
         "operationId": "getAdminTickets",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Список тикетов",
         "security": [
           {
@@ -7021,7 +7450,11 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["open", "in-progress", "done"]
+              "enum": [
+                "open",
+                "in-progress",
+                "done"
+              ]
             },
             "description": "Фильтр по статусу"
           },
@@ -7060,7 +7493,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["tickets", "total"],
+                  "required": [
+                    "tickets",
+                    "total"
+                  ],
                   "properties": {
                     "tickets": {
                       "type": "array",
@@ -7100,7 +7536,9 @@
       },
       "post": {
         "operationId": "createAdminTicket",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Ручное создание тикета",
         "security": [
           {
@@ -7113,7 +7551,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["boardId", "message"],
+                "required": [
+                  "boardId",
+                  "message"
+                ],
                 "properties": {
                   "boardId": {
                     "type": "string"
@@ -7137,7 +7578,13 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["ticketId", "boardId", "message", "status", "createdAt"],
+                  "required": [
+                    "ticketId",
+                    "boardId",
+                    "message",
+                    "status",
+                    "createdAt"
+                  ],
                   "properties": {
                     "ticketId": {
                       "type": "string"
@@ -7150,7 +7597,11 @@
                     },
                     "status": {
                       "type": "string",
-                      "enum": ["open", "in-progress", "done"]
+                      "enum": [
+                        "open",
+                        "in-progress",
+                        "done"
+                      ]
                     },
                     "createdAt": {
                       "type": "string",
@@ -7214,7 +7665,9 @@
     "/admin/tickets/my": {
       "get": {
         "operationId": "getAdminMyTickets",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Мои тикеты",
         "security": [
           {
@@ -7249,7 +7702,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["tickets", "total"],
+                  "required": [
+                    "tickets",
+                    "total"
+                  ],
                   "properties": {
                     "tickets": {
                       "type": "array",
@@ -7291,7 +7747,9 @@
     "/admin/tickets/{ticketId}": {
       "get": {
         "operationId": "getAdminTicketDetail",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Детали тикета",
         "security": [
           {
@@ -7355,7 +7813,9 @@
     "/admin/tickets/{ticketId}/assign": {
       "post": {
         "operationId": "assignAdminTicket",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Назначить тикет",
         "security": [
           {
@@ -7378,7 +7838,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["assigneeId"],
+                "required": [
+                  "assigneeId"
+                ],
                 "properties": {
                   "assigneeId": {
                     "type": "string"
@@ -7395,14 +7857,22 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["ticketId", "status", "assigneeId"],
+                  "required": [
+                    "ticketId",
+                    "status",
+                    "assigneeId"
+                  ],
                   "properties": {
                     "ticketId": {
                       "type": "string"
                     },
                     "status": {
                       "type": "string",
-                      "enum": ["open", "in-progress", "done"]
+                      "enum": [
+                        "open",
+                        "in-progress",
+                        "done"
+                      ]
                     },
                     "assigneeId": {
                       "type": "string"
@@ -7458,7 +7928,9 @@
     "/admin/tickets/{ticketId}/reassign": {
       "post": {
         "operationId": "reassignAdminTicket",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Переназначить тикет",
         "security": [
           {
@@ -7481,7 +7953,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["assigneeId"],
+                "required": [
+                  "assigneeId"
+                ],
                 "properties": {
                   "assigneeId": {
                     "type": "string"
@@ -7498,14 +7972,22 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["ticketId", "status", "assigneeId"],
+                  "required": [
+                    "ticketId",
+                    "status",
+                    "assigneeId"
+                  ],
                   "properties": {
                     "ticketId": {
                       "type": "string"
                     },
                     "status": {
                       "type": "string",
-                      "enum": ["open", "in-progress", "done"]
+                      "enum": [
+                        "open",
+                        "in-progress",
+                        "done"
+                      ]
                     },
                     "assigneeId": {
                       "type": "string"
@@ -7568,7 +8050,9 @@
     "/admin/tickets/{ticketId}/unassign": {
       "post": {
         "operationId": "unassignAdminTicket",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Отказаться от тикета",
         "security": [
           {
@@ -7635,7 +8119,9 @@
     "/admin/tickets/{ticketId}/move": {
       "post": {
         "operationId": "moveAdminTicket",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Перенаправить тикет на другую доску",
         "security": [
           {
@@ -7658,7 +8144,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["toBoardId", "comment"],
+                "required": [
+                  "toBoardId",
+                  "comment"
+                ],
                 "properties": {
                   "toBoardId": {
                     "type": "string"
@@ -7679,7 +8168,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["ticketId", "boardId", "status"],
+                  "required": [
+                    "ticketId",
+                    "boardId",
+                    "status"
+                  ],
                   "properties": {
                     "ticketId": {
                       "type": "string"
@@ -7689,7 +8182,11 @@
                     },
                     "status": {
                       "type": "string",
-                      "enum": ["open", "in-progress", "done"]
+                      "enum": [
+                        "open",
+                        "in-progress",
+                        "done"
+                      ]
                     }
                   }
                 }
@@ -7749,7 +8246,9 @@
     "/admin/tickets/{ticketId}/done": {
       "post": {
         "operationId": "markAdminTicketDone",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Отметить тикет как обработанный",
         "security": [
           {
@@ -7816,7 +8315,9 @@
     "/admin/tickets/{ticketId}/reopen": {
       "post": {
         "operationId": "reopenAdminTicket",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Переоткрыть тикет",
         "security": [
           {
@@ -7883,7 +8384,9 @@
     "/admin/tickets/{ticketId}/comments": {
       "post": {
         "operationId": "addAdminTicketComment",
-        "tags": ["tickets"],
+        "tags": [
+          "tickets"
+        ],
         "summary": "Добавить комментарий к тикету",
         "security": [
           {
@@ -7906,7 +8409,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["text"],
+                "required": [
+                  "text"
+                ],
                 "properties": {
                   "text": {
                     "type": "string",
@@ -7924,14 +8429,21 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["ticketId", "status"],
+                  "required": [
+                    "ticketId",
+                    "status"
+                  ],
                   "properties": {
                     "ticketId": {
                       "type": "string"
                     },
                     "status": {
                       "type": "string",
-                      "enum": ["open", "in-progress", "done"]
+                      "enum": [
+                        "open",
+                        "in-progress",
+                        "done"
+                      ]
                     }
                   }
                 }
@@ -7984,7 +8496,10 @@
     "/admin/boards/triggers": {
       "get": {
         "operationId": "getAdminTicketTriggers",
-        "tags": ["tickets", "boards"],
+        "tags": [
+          "tickets",
+          "boards"
+        ],
         "summary": "Справочник триггеров",
         "security": [
           {
@@ -7997,7 +8512,10 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["platform", "organization"]
+              "enum": [
+                "platform",
+                "organization"
+              ]
             },
             "description": "Фильтр по scope"
           }
@@ -8051,7 +8569,11 @@
     "schemas": {
       "ErrorDetail": {
         "type": "object",
-        "required": ["errorCode", "message", "path"],
+        "required": [
+          "errorCode",
+          "message",
+          "path"
+        ],
         "properties": {
           "errorCode": {
             "type": "string",
@@ -8074,7 +8596,12 @@
       },
       "OpenApiValidationError": {
         "type": "object",
-        "required": ["statusCode", "message", "errors", "isDomain"],
+        "required": [
+          "statusCode",
+          "message",
+          "errors",
+          "isDomain"
+        ],
         "properties": {
           "statusCode": {
             "type": "integer",
@@ -8082,7 +8609,9 @@
           },
           "isDomain": {
             "type": "boolean",
-            "enum": [false]
+            "enum": [
+              false
+            ]
           },
           "message": {
             "type": "string",
@@ -8098,7 +8627,10 @@
       },
       "DomainErrorResponse": {
         "type": "object",
-        "required": ["type", "isDomain"],
+        "required": [
+          "type",
+          "isDomain"
+        ],
         "properties": {
           "type": {
             "type": "string",
@@ -8110,7 +8642,9 @@
           },
           "isDomain": {
             "type": "boolean",
-            "enum": [true]
+            "enum": [
+              true
+            ]
           },
           "data": {
             "type": "object",
@@ -8121,22 +8655,32 @@
       },
       "ThrottledErrorResponse": {
         "type": "object",
-        "required": ["type", "isDomain", "data"],
+        "required": [
+          "type",
+          "isDomain",
+          "data"
+        ],
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["throttled"]
+            "enum": [
+              "throttled"
+            ]
           },
           "isDomain": {
             "type": "boolean",
-            "enum": [true]
+            "enum": [
+              true
+            ]
           },
           "message": {
             "type": "string"
           },
           "data": {
             "type": "object",
-            "required": ["retryAfterSec"],
+            "required": [
+              "retryAfterSec"
+            ],
             "properties": {
               "retryAfterSec": {
                 "type": "number",
@@ -8149,7 +8693,10 @@
       },
       "TokenPair": {
         "type": "object",
-        "required": ["accessToken", "refreshToken"],
+        "required": [
+          "accessToken",
+          "refreshToken"
+        ],
         "properties": {
           "accessToken": {
             "type": "string",
@@ -8163,37 +8710,14 @@
           }
         }
       },
-      "MediaVisibility": {
-        "type": "string",
-        "enum": ["PUBLIC", "PRIVATE"]
-      },
-      "LinkMediaData": {
-        "type": "object",
-        "required": ["bucket", "objectKey", "mediaId", "visibility"],
-        "properties": {
-          "bucket": {
-            "type": "string"
-          },
-          "objectKey": {
-            "type": "string"
-          },
-          "mediaId": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Идентификатор загруженного медиа-объекта"
-          },
-          "visibility": {
-            "$ref": "#/components/schemas/MediaVisibility"
-          },
-          "contentType": {
-            "type": "string",
-            "maxLength": 255
-          }
-        }
-      },
       "Avatar": {
         "type": "object",
-        "required": ["largeUrl", "mediumUrl", "smallUrl", "thumbUrl"],
+        "required": [
+          "largeUrl",
+          "mediumUrl",
+          "smallUrl",
+          "thumbUrl"
+        ],
         "properties": {
           "largeUrl": {
             "type": "string",
@@ -8215,7 +8739,12 @@
       },
       "User": {
         "type": "object",
-        "required": ["id", "phoneNumber", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "phoneNumber",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -8247,7 +8776,11 @@
       },
       "UserSession": {
         "type": "object",
-        "required": ["id", "createdAt", "expiresAt"],
+        "required": [
+          "id",
+          "createdAt",
+          "expiresAt"
+        ],
         "additionalProperties": false,
         "properties": {
           "id": {
@@ -8269,7 +8802,14 @@
       },
       "Role": {
         "type": "object",
-        "required": ["id", "name", "permissions", "isStatic", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "name",
+          "permissions",
+          "isStatic",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -8297,7 +8837,10 @@
       },
       "UploadRequest": {
         "type": "object",
-        "required": ["name", "mimeType", "bucket"],
+        "required": [
+          "name",
+          "mimeType"
+        ],
         "additionalProperties": false,
         "properties": {
           "name": {
@@ -8308,16 +8851,15 @@
           "mimeType": {
             "type": "string",
             "maxLength": 255
-          },
-          "bucket": {
-            "type": "string",
-            "minLength": 1
           }
         }
       },
       "UploadRequestResult": {
         "type": "object",
-        "required": ["fileId", "uploadUrl"],
+        "required": [
+          "fileId",
+          "uploadUrl"
+        ],
         "properties": {
           "fileId": {
             "type": "string",
@@ -8329,24 +8871,11 @@
           }
         }
       },
-      "ConfirmUploadInput": {
-        "type": "object",
-        "required": ["fileIds"],
-        "additionalProperties": false,
-        "properties": {
-          "fileIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1
-            },
-            "minItems": 1
-          }
-        }
-      },
       "PreviewDownloadUrlResult": {
         "type": "object",
-        "required": ["url"],
+        "required": [
+          "url"
+        ],
         "properties": {
           "url": {
             "type": "string",
@@ -8388,7 +8917,10 @@
       },
       "SortDirection": {
         "type": "string",
-        "enum": ["ASC", "DESC"]
+        "enum": [
+          "ASC",
+          "DESC"
+        ]
       },
       "Sort": {
         "type": "object",
@@ -8403,7 +8935,10 @@
       },
       "BannerFile": {
         "type": "object",
-        "required": ["id", "url"],
+        "required": [
+          "id",
+          "url"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -8417,7 +8952,14 @@
       },
       "Banner": {
         "type": "object",
-        "required": ["createdAt", "id", "isNew", "logo", "opacity", "sequence"],
+        "required": [
+          "createdAt",
+          "id",
+          "isNew",
+          "logo",
+          "opacity",
+          "sequence"
+        ],
         "properties": {
           "createdAt": {
             "type": "string",
@@ -8442,22 +8984,36 @@
             "minimum": 0
           },
           "subtitle": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "title": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "url": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
       "BannerEdge": {
         "type": "object",
-        "required": ["node"],
+        "required": [
+          "node"
+        ],
         "properties": {
           "cursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "node": {
             "$ref": "#/components/schemas/Banner"
@@ -8466,10 +9022,16 @@
       },
       "PageInfo": {
         "type": "object",
-        "required": ["hasNextPage", "hasPreviousPage"],
+        "required": [
+          "hasNextPage",
+          "hasPreviousPage"
+        ],
         "properties": {
           "endCursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "hasNextPage": {
             "type": "boolean"
@@ -8478,13 +9040,21 @@
             "type": "boolean"
           },
           "startCursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
       "CategoryListItem": {
         "type": "object",
-        "required": ["categoryId", "name", "childCount", "itemCount"],
+        "required": [
+          "categoryId",
+          "name",
+          "childCount",
+          "itemCount"
+        ],
         "properties": {
           "categoryId": {
             "type": "string"
@@ -8493,7 +9063,10 @@
             "type": "string"
           },
           "iconId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "childCount": {
             "type": "integer",
@@ -8507,44 +9080,69 @@
       },
       "ItemPayment": {
         "type": "object",
-        "required": ["strategy"],
+        "required": [
+          "strategy"
+        ],
         "properties": {
           "strategy": {
             "type": "string",
-            "enum": ["free", "one-time", "subscription"]
+            "enum": [
+              "free",
+              "one-time",
+              "subscription"
+            ]
           },
           "price": {
-            "type": ["number", "null"]
+            "type": [
+              "number",
+              "null"
+            ]
           }
         }
       },
       "ItemOwnerSummary": {
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
           "name": {
             "type": "string"
           },
           "avatarId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
       "ItemLocationSummary": {
         "type": "object",
-        "required": ["cityId"],
+        "required": [
+          "cityId"
+        ],
         "properties": {
           "cityId": {
             "type": "string"
           },
           "address": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
       "ItemListView": {
         "type": "object",
-        "required": ["itemId", "typeId", "title", "reviewCount", "categoryIds"],
+        "required": [
+          "itemId",
+          "typeId",
+          "title",
+          "reviewCount",
+          "categoryIds"
+        ],
         "properties": {
           "itemId": {
             "type": "string"
@@ -8556,10 +9154,16 @@
             "type": "string"
           },
           "description": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "imageId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "price": {
             "oneOf": [
@@ -8572,7 +9176,10 @@
             ]
           },
           "rating": {
-            "type": ["number", "null"]
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "reviewCount": {
             "type": "integer"
@@ -8607,7 +9214,9 @@
       },
       "CursorPaginatedItems": {
         "type": "object",
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "properties": {
           "items": {
             "type": "array",
@@ -8616,7 +9225,10 @@
             }
           },
           "nextCursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -8624,31 +9236,44 @@
         "oneOf": [
           {
             "type": "object",
-            "required": ["type"],
+            "required": [
+              "type"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["text"]
+                "enum": [
+                  "text"
+                ]
               }
             }
           },
           {
             "type": "object",
-            "required": ["type"],
+            "required": [
+              "type"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["boolean"]
+                "enum": [
+                  "boolean"
+                ]
               }
             }
           },
           {
             "type": "object",
-            "required": ["type", "options"],
+            "required": [
+              "type",
+              "options"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["enum"]
+                "enum": [
+                  "enum"
+                ]
               },
               "options": {
                 "type": "array",
@@ -8660,11 +9285,15 @@
           },
           {
             "type": "object",
-            "required": ["type"],
+            "required": [
+              "type"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["number"]
+                "enum": [
+                  "number"
+                ]
               },
               "min": {
                 "type": "number"
@@ -8678,7 +9307,11 @@
       },
       "AttributeFilter": {
         "type": "object",
-        "required": ["attributeId", "name", "schema"],
+        "required": [
+          "attributeId",
+          "name",
+          "schema"
+        ],
         "properties": {
           "attributeId": {
             "type": "string"
@@ -8693,7 +9326,10 @@
       },
       "TypeFilter": {
         "type": "object",
-        "required": ["typeId", "name"],
+        "required": [
+          "typeId",
+          "name"
+        ],
         "properties": {
           "typeId": {
             "type": "string"
@@ -8732,7 +9368,12 @@
       },
       "CategoryFilters": {
         "type": "object",
-        "required": ["categoryId", "attributeFilters", "typeFilters", "commonFilters"],
+        "required": [
+          "categoryId",
+          "attributeFilters",
+          "typeFilters",
+          "commonFilters"
+        ],
         "properties": {
           "categoryId": {
             "type": "string"
@@ -8756,7 +9397,11 @@
       },
       "SearchFacetCategory": {
         "type": "object",
-        "required": ["categoryId", "name", "count"],
+        "required": [
+          "categoryId",
+          "name",
+          "count"
+        ],
         "properties": {
           "categoryId": {
             "type": "string"
@@ -8771,7 +9416,11 @@
       },
       "SearchFacetType": {
         "type": "object",
-        "required": ["typeId", "name", "count"],
+        "required": [
+          "typeId",
+          "name",
+          "count"
+        ],
         "properties": {
           "typeId": {
             "type": "string"
@@ -8786,7 +9435,10 @@
       },
       "SearchFacetAttributeValue": {
         "type": "object",
-        "required": ["value", "count"],
+        "required": [
+          "value",
+          "count"
+        ],
         "properties": {
           "value": {
             "type": "string"
@@ -8798,7 +9450,11 @@
       },
       "SearchFacetAttribute": {
         "type": "object",
-        "required": ["attributeId", "name", "values"],
+        "required": [
+          "attributeId",
+          "name",
+          "values"
+        ],
         "properties": {
           "attributeId": {
             "type": "string"
@@ -8816,7 +9472,11 @@
       },
       "SearchFacets": {
         "type": "object",
-        "required": ["categories", "types", "attributes"],
+        "required": [
+          "categories",
+          "types",
+          "attributes"
+        ],
         "properties": {
           "categories": {
             "type": "array",
@@ -8834,7 +9494,10 @@
             "oneOf": [
               {
                 "type": "object",
-                "required": ["min", "max"],
+                "required": [
+                  "min",
+                  "max"
+                ],
                 "properties": {
                   "min": {
                     "type": "number"
@@ -8864,7 +9527,9 @@
           },
           {
             "type": "object",
-            "required": ["likedAt"],
+            "required": [
+              "likedAt"
+            ],
             "properties": {
               "likedAt": {
                 "type": "string",
@@ -8876,7 +9541,9 @@
       },
       "CursorPaginatedLikedItems": {
         "type": "object",
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "properties": {
           "items": {
             "type": "array",
@@ -8885,13 +9552,19 @@
             }
           },
           "nextCursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
       "Error": {
         "type": "object",
-        "required": ["statusCode", "message"],
+        "required": [
+          "statusCode",
+          "message"
+        ],
         "properties": {
           "statusCode": {
             "type": "integer"
@@ -8906,7 +9579,11 @@
       },
       "ScheduleEntry": {
         "type": "object",
-        "required": ["dayOfWeek", "startTime", "endTime"],
+        "required": [
+          "dayOfWeek",
+          "startTime",
+          "endTime"
+        ],
         "properties": {
           "dayOfWeek": {
             "type": "integer"
@@ -8923,11 +9600,17 @@
         "oneOf": [
           {
             "type": "object",
-            "required": ["type", "title", "description"],
+            "required": [
+              "type",
+              "title",
+              "description"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["base-info"]
+                "enum": [
+                  "base-info"
+                ]
               },
               "title": {
                 "type": "string"
@@ -8936,31 +9619,50 @@
                 "type": "string"
               },
               "imageId": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           },
           {
             "type": "object",
-            "required": ["type", "value"],
+            "required": [
+              "type",
+              "value"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["age-group"]
+                "enum": [
+                  "age-group"
+                ]
               },
               "value": {
                 "type": "string",
-                "enum": ["children", "adults", "all"]
+                "enum": [
+                  "children",
+                  "adults",
+                  "all"
+                ]
               }
             }
           },
           {
             "type": "object",
-            "required": ["type", "cityId", "lat", "lng"],
+            "required": [
+              "type",
+              "cityId",
+              "lat",
+              "lng"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["location"]
+                "enum": [
+                  "location"
+                ]
               },
               "cityId": {
                 "type": "string"
@@ -8972,34 +9674,54 @@
                 "type": "number"
               },
               "address": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           },
           {
             "type": "object",
-            "required": ["type", "strategy"],
+            "required": [
+              "type",
+              "strategy"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["payment"]
+                "enum": [
+                  "payment"
+                ]
               },
               "strategy": {
                 "type": "string",
-                "enum": ["free", "one-time", "subscription"]
+                "enum": [
+                  "free",
+                  "one-time",
+                  "subscription"
+                ]
               },
               "price": {
-                "type": ["number", "null"]
+                "type": [
+                  "number",
+                  "null"
+                ]
               }
             }
           },
           {
             "type": "object",
-            "required": ["type", "categoryIds"],
+            "required": [
+              "type",
+              "categoryIds"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["category"]
+                "enum": [
+                  "category"
+                ]
               },
               "categoryIds": {
                 "type": "array",
@@ -9011,11 +9733,17 @@
           },
           {
             "type": "object",
-            "required": ["type", "organizationId", "name"],
+            "required": [
+              "type",
+              "organizationId",
+              "name"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["owner"]
+                "enum": [
+                  "owner"
+                ]
               },
               "organizationId": {
                 "type": "string"
@@ -9024,20 +9752,31 @@
                 "type": "string"
               },
               "avatarId": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           },
           {
             "type": "object",
-            "required": ["type", "reviewCount"],
+            "required": [
+              "type",
+              "reviewCount"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["item-review"]
+                "enum": [
+                  "item-review"
+                ]
               },
               "rating": {
-                "type": ["number", "null"]
+                "type": [
+                  "number",
+                  "null"
+                ]
               },
               "reviewCount": {
                 "type": "integer"
@@ -9046,14 +9785,22 @@
           },
           {
             "type": "object",
-            "required": ["type", "reviewCount"],
+            "required": [
+              "type",
+              "reviewCount"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["owner-review"]
+                "enum": [
+                  "owner-review"
+                ]
               },
               "rating": {
-                "type": ["number", "null"]
+                "type": [
+                  "number",
+                  "null"
+                ]
               },
               "reviewCount": {
                 "type": "integer"
@@ -9062,11 +9809,16 @@
           },
           {
             "type": "object",
-            "required": ["type", "dates"],
+            "required": [
+              "type",
+              "dates"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["event-date-time"]
+                "enum": [
+                  "event-date-time"
+                ]
               },
               "dates": {
                 "type": "array",
@@ -9079,11 +9831,16 @@
           },
           {
             "type": "object",
-            "required": ["type", "entries"],
+            "required": [
+              "type",
+              "entries"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["schedule"]
+                "enum": [
+                  "schedule"
+                ]
               },
               "entries": {
                 "type": "array",
@@ -9100,7 +9857,12 @@
       },
       "ItemDetailView": {
         "type": "object",
-        "required": ["itemId", "typeId", "widgets", "publishedAt"],
+        "required": [
+          "itemId",
+          "typeId",
+          "widgets",
+          "publishedAt"
+        ],
         "properties": {
           "itemId": {
             "type": "string"
@@ -9145,7 +9907,10 @@
           },
           "targetType": {
             "type": "string",
-            "enum": ["item", "organization"]
+            "enum": [
+              "item",
+              "organization"
+            ]
           },
           "targetId": {
             "type": "string"
@@ -9156,17 +9921,29 @@
             "maximum": 5
           },
           "text": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "published"]
+            "enum": [
+              "pending",
+              "published"
+            ]
           },
           "replyText": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "repliedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "isMine": {
@@ -9183,7 +9960,9 @@
       },
       "CursorPaginatedReviews": {
         "type": "object",
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "properties": {
           "items": {
             "type": "array",
@@ -9192,7 +9971,10 @@
             }
           },
           "nextCursor": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -9226,7 +10008,10 @@
           },
           "targetType": {
             "type": "string",
-            "enum": ["item", "organization"]
+            "enum": [
+              "item",
+              "organization"
+            ]
           },
           "targetId": {
             "type": "string"
@@ -9240,30 +10025,56 @@
             "maximum": 5
           },
           "text": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "published", "disputed", "deleted"]
+            "enum": [
+              "pending",
+              "published",
+              "disputed",
+              "deleted"
+            ]
           },
           "replyText": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "repliedBy": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "repliedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "disputeReason": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "disputedBy": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "disputedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "wasDisputed": {
@@ -9281,26 +10092,42 @@
       },
       "CmsCategoryListItem": {
         "type": "object",
-        "required": ["id", "name", "status"],
+        "required": [
+          "id",
+          "name",
+          "status"
+        ],
         "properties": {
           "id": {
             "type": "string"
           },
           "parentCategoryId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
             "type": "string"
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "unpublished"]
+            "enum": [
+              "draft",
+              "published",
+              "unpublished"
+            ]
           }
         }
       },
       "CategoryAttribute": {
         "type": "object",
-        "required": ["attributeId", "name", "required", "schema"],
+        "required": [
+          "attributeId",
+          "name",
+          "required",
+          "schema"
+        ],
         "properties": {
           "attributeId": {
             "type": "string"
@@ -9332,13 +10159,19 @@
             "type": "string"
           },
           "parentCategoryId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
             "type": "string"
           },
           "iconId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "allowedTypeIds": {
             "type": "array",
@@ -9354,10 +10187,17 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "unpublished"]
+            "enum": [
+              "draft",
+              "published",
+              "unpublished"
+            ]
           },
           "publishedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "createdAt": {
@@ -9387,7 +10227,12 @@
       },
       "ItemTypeListItem": {
         "type": "object",
-        "required": ["id", "name", "availableWidgetTypes", "requiredWidgetTypes"],
+        "required": [
+          "id",
+          "name",
+          "availableWidgetTypes",
+          "requiredWidgetTypes"
+        ],
         "properties": {
           "id": {
             "type": "string"
@@ -9450,11 +10295,19 @@
       },
       "InfoDraftStatus": {
         "type": "string",
-        "enum": ["draft", "moderation-request", "rejected"]
+        "enum": [
+          "draft",
+          "moderation-request",
+          "rejected"
+        ]
       },
       "InfoDraft": {
         "type": "object",
-        "required": ["name", "description", "status"],
+        "required": [
+          "name",
+          "description",
+          "status"
+        ],
         "properties": {
           "name": {
             "type": "string"
@@ -9463,7 +10316,10 @@
             "type": "string"
           },
           "avatarId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "$ref": "#/components/schemas/InfoDraftStatus"
@@ -9472,7 +10328,12 @@
       },
       "Employee": {
         "type": "object",
-        "required": ["userId", "roleId", "isOwner", "joinedAt"],
+        "required": [
+          "userId",
+          "roleId",
+          "isOwner",
+          "joinedAt"
+        ],
         "properties": {
           "userId": {
             "type": "string"
@@ -9504,7 +10365,11 @@
       },
       "EmployeeRole": {
         "type": "object",
-        "required": ["id", "name", "permissions"],
+        "required": [
+          "id",
+          "name",
+          "permissions"
+        ],
         "properties": {
           "id": {
             "type": "string"
@@ -9522,11 +10387,20 @@
       },
       "SubscriptionPlanId": {
         "type": "string",
-        "enum": ["free", "individual", "team"]
+        "enum": [
+          "free",
+          "individual",
+          "team"
+        ]
       },
       "Subscription": {
         "type": "object",
-        "required": ["planId", "maxEmployees", "maxPublishedItems", "availableWidgetTypes"],
+        "required": [
+          "planId",
+          "maxEmployees",
+          "maxPublishedItems",
+          "availableWidgetTypes"
+        ],
         "properties": {
           "planId": {
             "$ref": "#/components/schemas/SubscriptionPlanId"
@@ -9564,8 +10438,15 @@
             "$ref": "#/components/schemas/InfoDraft"
           },
           "infoPublication": {
-            "type": ["object", "null"],
-            "required": ["name", "description", "publishedAt"],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "name",
+              "description",
+              "publishedAt"
+            ],
             "properties": {
               "name": {
                 "type": "string"
@@ -9574,7 +10455,10 @@
                 "type": "string"
               },
               "avatarId": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "publishedAt": {
                 "type": "string",
@@ -9609,7 +10493,13 @@
       },
       "ItemListItem": {
         "type": "object",
-        "required": ["itemId", "organizationId", "typeId", "createdAt", "updatedAt"],
+        "required": [
+          "itemId",
+          "organizationId",
+          "typeId",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "itemId": {
             "type": "string"
@@ -9624,7 +10514,10 @@
             "type": "boolean"
           },
           "draftStatus": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "hasPublication": {
             "type": "boolean"
@@ -9641,7 +10534,10 @@
       },
       "ItemWidget": {
         "type": "object",
-        "required": ["type", "data"],
+        "required": [
+          "type",
+          "data"
+        ],
         "properties": {
           "type": {
             "$ref": "#/components/schemas/WidgetType"
@@ -9654,11 +10550,21 @@
       },
       "ItemDraftStatus": {
         "type": "string",
-        "enum": ["draft", "moderation-request", "rejected"]
+        "enum": [
+          "draft",
+          "moderation-request",
+          "rejected"
+        ]
       },
       "ItemDetail": {
         "type": "object",
-        "required": ["itemId", "organizationId", "typeId", "createdAt", "updatedAt"],
+        "required": [
+          "itemId",
+          "organizationId",
+          "typeId",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "itemId": {
             "type": "string"
@@ -9670,8 +10576,15 @@
             "type": "string"
           },
           "draft": {
-            "type": ["object", "null"],
-            "required": ["widgets", "status", "updatedAt"],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "widgets",
+              "status",
+              "updatedAt"
+            ],
             "properties": {
               "widgets": {
                 "type": "array",
@@ -9689,8 +10602,14 @@
             }
           },
           "publication": {
-            "type": ["object", "null"],
-            "required": ["widgets", "publishedAt"],
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "widgets",
+              "publishedAt"
+            ],
             "properties": {
               "widgets": {
                 "type": "array",
@@ -9734,11 +10653,17 @@
             "type": "string"
           },
           "description": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "scope": {
             "type": "string",
-            "enum": ["platform", "organization"]
+            "enum": [
+              "platform",
+              "organization"
+            ]
           },
           "manualCreation": {
             "type": "boolean"
@@ -9762,11 +10687,16 @@
         "oneOf": [
           {
             "type": "object",
-            "required": ["type", "rule"],
+            "required": [
+              "type",
+              "rule"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["json-logic"]
+                "enum": [
+                  "json-logic"
+                ]
               },
               "rule": {
                 "type": "object",
@@ -9776,11 +10706,17 @@
           },
           {
             "type": "object",
-            "required": ["type", "filterId", "params"],
+            "required": [
+              "type",
+              "filterId",
+              "params"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["programmatic"]
+                "enum": [
+                  "programmatic"
+                ]
               },
               "filterId": {
                 "type": "string"
@@ -9798,7 +10734,11 @@
       },
       "BoardSubscription": {
         "type": "object",
-        "required": ["id", "triggerId", "filters"],
+        "required": [
+          "id",
+          "triggerId",
+          "filters"
+        ],
         "properties": {
           "id": {
             "type": "string"
@@ -9816,7 +10756,13 @@
       },
       "BoardAutomation": {
         "type": "object",
-        "required": ["id", "enabled", "agentId", "systemPrompt", "onUncertain"],
+        "required": [
+          "id",
+          "enabled",
+          "agentId",
+          "systemPrompt",
+          "onUncertain"
+        ],
         "properties": {
           "id": {
             "type": "string"
@@ -9832,10 +10778,15 @@
           },
           "onUncertain": {
             "type": "object",
-            "required": ["moveToBoardId"],
+            "required": [
+              "moveToBoardId"
+            ],
             "properties": {
               "moveToBoardId": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           }
@@ -9863,14 +10814,23 @@
             "type": "string"
           },
           "description": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "scope": {
             "type": "string",
-            "enum": ["platform", "organization"]
+            "enum": [
+              "platform",
+              "organization"
+            ]
           },
           "organizationId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "manualCreation": {
             "type": "boolean"
@@ -9911,7 +10871,14 @@
       },
       "TicketListItem": {
         "type": "object",
-        "required": ["ticketId", "boardId", "message", "status", "createdAt", "updatedAt"],
+        "required": [
+          "ticketId",
+          "boardId",
+          "message",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "ticketId": {
             "type": "string"
@@ -9923,14 +10890,24 @@
             "type": "string"
           },
           "triggerId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "type": "string",
-            "enum": ["open", "in-progress", "done"]
+            "enum": [
+              "open",
+              "in-progress",
+              "done"
+            ]
           },
           "assigneeId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "createdAt": {
             "type": "string",
@@ -9946,7 +10923,10 @@
         "type": "object",
         "properties": {
           "item": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "properties": {
               "id": {
                 "type": "string"
@@ -9964,7 +10944,10 @@
                 "type": "string"
               },
               "imageUrl": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "categoryIds": {
                 "type": "array",
@@ -9975,7 +10958,10 @@
             }
           },
           "organization": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "properties": {
               "id": {
                 "type": "string"
@@ -9987,7 +10973,10 @@
                 "type": "string"
               },
               "avatarUrl": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           }
@@ -9995,7 +10984,12 @@
       },
       "TicketHistoryEntry": {
         "type": "object",
-        "required": ["action", "actorId", "data", "timestamp"],
+        "required": [
+          "action",
+          "actorId",
+          "data",
+          "timestamp"
+        ],
         "properties": {
           "action": {
             "type": "string",
@@ -10046,17 +11040,27 @@
             "type": "string"
           },
           "triggerId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "data": {
             "$ref": "#/components/schemas/TicketData"
           },
           "status": {
             "type": "string",
-            "enum": ["open", "in-progress", "done"]
+            "enum": [
+              "open",
+              "in-progress",
+              "done"
+            ]
           },
           "assigneeId": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "history": {
             "type": "array",
@@ -10076,7 +11080,11 @@
       },
       "TriggerInfo": {
         "type": "object",
-        "required": ["triggerId", "name", "scope"],
+        "required": [
+          "triggerId",
+          "name",
+          "scope"
+        ],
         "properties": {
           "triggerId": {
             "type": "string"
@@ -10086,7 +11094,10 @@
           },
           "scope": {
             "type": "string",
-            "enum": ["platform", "organization"]
+            "enum": [
+              "platform",
+              "organization"
+            ]
           }
         }
       }

@@ -12,13 +12,15 @@ import {
   type MimeType,
   MimeType as MimeTypeVO,
 } from '../../../domain/vo/mime-type.js';
-import { FileIdGenerator, FileRepository, FileStorageService } from '../../ports.js';
+import { FileIdGenerator, FileRepository, FileStorageService, MediaConfig } from '../../ports.js';
 import { type Either, isLeft, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 
 @Injectable()
 export class RequestUploadInteractor {
+  private readonly bucket: string;
+
   public constructor(
     @Inject(Clock)
     private readonly clock: Clock,
@@ -30,23 +32,27 @@ export class RequestUploadInteractor {
     private readonly idGenerator: FileIdGenerator,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
-  ) {}
+    @Inject(MediaConfig)
+    private readonly mediaConfig: MediaConfig,
+  ) {
+    this.bucket = this.mediaConfig.publicBucket;
+  }
 
-  public async execute(command: { name: string; bucket: string; mimeType: string }) {
+  public async execute(command: { name: string; mimeType: string }) {
     const parsedEither = this.parseCommand(command);
     if (isLeft(parsedEither)) return parsedEither;
 
     const { name, mimeType } = parsedEither.value;
     const now = this.clock.now();
     const fileId = this.idGenerator.generateFileId();
-    const tempBucket = `${command.bucket}-temp`;
+    const tempBucket = `${this.bucket}-temp`;
 
     return this.txHost.startTransaction(async (tx) => {
       const eventEither = fileDecide(null, {
         type: 'UploadFile',
         id: fileId,
         name: name as string,
-        bucket: command.bucket,
+        bucket: this.bucket,
         mimeType: mimeType as string,
         now,
       });

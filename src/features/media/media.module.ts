@@ -3,7 +3,7 @@ import { Global, Module } from '@nestjs/common';
 import { DrizzleFileRepository } from './adapters/db/repositories/file.repository.js';
 import { MediaController } from './adapters/http/media.controller.js';
 import { UuidFileIdGenerator } from './adapters/id/file-id-generator.service.js';
-import { HmacImageProxyUrlSigner } from './adapters/media/image-proxy-url-signer.js';
+import { ImgproxyUrlSigner } from './adapters/media/image-proxy-url-signer.js';
 import { MediaServiceAdapter } from './adapters/media/media.service.js';
 import {
   CachedMediaUrlService,
@@ -11,7 +11,7 @@ import {
 } from './adapters/media/media-url.service.js';
 import { S3FileStorageService } from './adapters/s3/file-storage.service.js';
 import { S3ClientService } from './adapters/s3/s3-client.service.js';
-import { FileIdGenerator, FileRepository, FileStorageService } from './application/ports.js';
+import { FileIdGenerator, FileRepository, FileStorageService, MediaConfig } from './application/ports.js';
 import { FreeFileInteractor } from './application/use-cases/free-file.interactor.js';
 import { FreeFilesInteractor } from './application/use-cases/free-files.interactor.js';
 import { GetDownloadUrlInteractor } from './application/use-cases/get-download-url.interactor.js';
@@ -37,10 +37,18 @@ import { MediaService } from '@/kernel/application/ports/media.js';
     { provide: FileIdGenerator, useClass: UuidFileIdGenerator },
     { provide: Clock, useClass: SystemClock },
     {
+      provide: MediaConfig,
+      useFactory: (config: MainConfigService) => ({
+        publicBucket: config.get('MEDIA_BUCKET_PUBLIC') ?? 'media-public',
+      }),
+      inject: [MainConfigService],
+    },
+    {
       provide: IMAGE_PROXY_URL_SIGNER,
       useFactory: (config: MainConfigService) => {
-        const secret = config.get('MEDIA_IMAGE_PROXY_SECRET');
-        return secret ? new HmacImageProxyUrlSigner(secret) : null;
+        const key = config.get('MEDIA_IMAGE_PROXY_KEY');
+        const salt = config.get('MEDIA_IMAGE_PROXY_SALT');
+        return key && salt ? new ImgproxyUrlSigner(key, salt) : null;
       },
       inject: [MainConfigService],
     },

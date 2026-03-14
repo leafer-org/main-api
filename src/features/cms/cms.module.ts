@@ -3,18 +3,21 @@ import { Global, Module } from '@nestjs/common';
 import { DrizzleCatalogValidationAdapter } from './adapters/db/catalog-validation.adapter.js';
 import { DrizzleCityCoordinatesAdapter } from './adapters/db/city-coordinates.adapter.js';
 import { DrizzleCategoryQuery } from './adapters/db/queries/category.query.js';
+import { DrizzleCityQuery } from './adapters/db/queries/city.query.js';
 import { DrizzleItemTypeQuery } from './adapters/db/queries/item-type.query.js';
 import { DrizzleCategoryRepository } from './adapters/db/repositories/category.repository.js';
 import { OutboxCategoryEventPublisher } from './adapters/db/repositories/category-event-publisher.js';
 import { DrizzleItemTypeRepository } from './adapters/db/repositories/item-type.repository.js';
 import { OutboxItemTypeEventPublisher } from './adapters/db/repositories/item-type-event-publisher.js';
 import { CategoriesController } from './adapters/http/categories.controller.js';
+import { CitiesController } from './adapters/http/cities.controller.js';
 import { ItemTypesController } from './adapters/http/item-types.controller.js';
 import { CategoryCascadeKafkaHandler } from './adapters/kafka/category-cascade.handler.js';
 import {
   CategoryEventPublisher,
   CategoryQueryPort,
   CategoryRepository,
+  CityQueryPort,
   ItemTypeEventPublisher,
   ItemTypeQueryPort,
   ItemTypeRepository,
@@ -30,6 +33,7 @@ import { UnpublishCategoryInteractor } from './application/use-cases/category/un
 import { UnpublishChildrenHandler } from './application/use-cases/category/unpublish-children.handler.js';
 import { UpdateCategoryInteractor } from './application/use-cases/category/update-category.interactor.js';
 import { CreateItemTypeInteractor } from './application/use-cases/item-type/create-item-type.interactor.js';
+import { GetCitiesInteractor } from './application/use-cases/cities/get-cities.interactor.js';
 import { GetItemTypeListInteractor } from './application/use-cases/item-type/get-item-type-list.interactor.js';
 import { UpdateItemTypeInteractor } from './application/use-cases/item-type/update-item-type.interactor.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
@@ -38,7 +42,7 @@ import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates
 
 @Global()
 @Module({
-  controllers: [CategoriesController, ItemTypesController],
+  controllers: [CategoriesController, CitiesController, ItemTypesController],
   providers: [
     // Infrastructure
     { provide: Clock, useClass: SystemClock },
@@ -50,6 +54,7 @@ import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates
     { provide: ItemTypeEventPublisher, useClass: OutboxItemTypeEventPublisher },
     { provide: CategoryQueryPort, useClass: DrizzleCategoryQuery },
     { provide: ItemTypeQueryPort, useClass: DrizzleItemTypeQuery },
+    { provide: CityQueryPort, useClass: DrizzleCityQuery },
     { provide: CatalogValidationPort, useClass: DrizzleCatalogValidationAdapter },
     { provide: CityCoordinatesPort, useClass: DrizzleCityCoordinatesAdapter },
 
@@ -62,6 +67,9 @@ import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates
     RemoveAttributeInteractor,
     GetCategoryListInteractor,
     GetCategoryDetailInteractor,
+
+    // City use cases
+    GetCitiesInteractor,
 
     // ItemType use cases
     CreateItemTypeInteractor,

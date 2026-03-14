@@ -162,11 +162,15 @@ export class CachedMediaUrlService {
       return this.wrapWithImageProxy(baseUrl, file.mimeType, options.imageProxy);
     }
 
+    // When image proxy is active, use s3:// source directly
+    // (imgproxy accesses S3 internally, avoiding network issues with presigned URLs)
+    if (this.imageProxyUrl && options.imageProxy && MimeType.isImage(MimeType.raw(file.mimeType))) {
+      return this.wrapWithImageProxy(`s3://${bucket}/${file.id}`, file.mimeType, options.imageProxy);
+    }
+
     const ttlSec =
       options.visibility === 'PUBLIC' ? PUBLIC_PRESIGNED_TTL_SEC : PRIVATE_PRESIGNED_TTL_SEC;
-    const presignedUrl = await this.fileStorage.generateDownloadUrl(bucket, file.id, ttlSec);
-
-    return this.wrapWithImageProxy(presignedUrl, file.mimeType, options.imageProxy);
+    return this.fileStorage.generateDownloadUrl(bucket, file.id, ttlSec);
   }
 
   private wrapWithImageProxy(
@@ -174,22 +178,23 @@ export class CachedMediaUrlService {
     mimeType: string,
     proxyOptions?: ImageProxyOptions,
   ): string {
-    if (!this.imageProxyUrl) return sourceUrl;
+    if (!this.imageProxyUrl || !proxyOptions) return sourceUrl;
     if (!MimeType.isImage(MimeType.raw(mimeType))) return sourceUrl;
 
-    const params = new URLSearchParams();
-    params.set('url', sourceUrl);
-    if (proxyOptions?.width) params.set('w', String(proxyOptions.width));
-    if (proxyOptions?.height) params.set('h', String(proxyOptions.height));
-    if (proxyOptions?.quality) params.set('q', String(proxyOptions.quality));
-    if (proxyOptions?.format) params.set('f', proxyOptions.format);
+    const parts: string[] = [];
+    if (proxyOptions.width || proxyOptions.height) {
+      parts.push(`rs:fit:${proxyOptions.width ?? 0}:${proxyOptions.height ?? 0}`);
+    }
+    if (proxyOptions.quality) parts.push(`q:${proxyOptions.quality}`);
 
-    const proxyUrl = `${this.imageProxyUrl}?${params.toString()}`;
+    const formatSuffix = proxyOptions.format ? `@${proxyOptions.format}` : '';
+    const processing = parts.length > 0 ? `${parts.join('/')}/` : '';
+    const path = `/${processing}plain/${sourceUrl}${formatSuffix}`;
 
     if (this.urlSigner) {
-      return this.urlSigner.sign(proxyUrl);
+      return `${this.imageProxyUrl}${this.urlSigner.sign(path)}`;
     }
 
-    return proxyUrl;
+    return `${this.imageProxyUrl}/insecure${path}`;
   }
 }

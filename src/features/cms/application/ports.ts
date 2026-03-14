@@ -75,3 +75,16 @@ export type ItemTypeListItem = {
 export abstract class ItemTypeQueryPort {
   public abstract findAll(): Promise<ItemTypeListItem[]>;
 }
+
+// --- City query port ---
+
+export type CityListItem = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+};
+
+export abstract class CityQueryPort {
+  public abstract findAll(): Promise<CityListItem[]>;
+}

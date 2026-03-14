@@ -25,7 +25,8 @@
   },
   "module": {
     "type": "nodenext",
-    "strict": true
+    "strict": true,
+    "resolveFully": true
   },
   "minify": false,
   "sourceMaps": false,

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 
 import { RefreshTokenService } from '../../application/ports.js';
 import type { RefreshTokenPayload } from '../../domain/aggregates/session/token.types.js';

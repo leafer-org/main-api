@@ -1,32 +1,42 @@
 import { resolve } from 'node:path';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { RedpandaContainer, type StartedRedpandaContainer } from '@testcontainers/redpanda';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
+import { GenericContainer, Network, type StartedNetwork, type StartedTestContainer, Wait } from 'testcontainers';
 
 import { applyTopics } from './kafka.js';
 
 const GORSE_CONFIG_PATH = resolve(import.meta.dirname, 'gorse-config.toml');
 
+const IMGPROXY_KEY = 'aabbccdd11223344aabbccdd11223344aabbccdd11223344aabbccdd11223344';
+const IMGPROXY_SALT = '11223344aabbccdd11223344aabbccdd11223344aabbccdd11223344aabbccdd';
+
 export type ContainerOptions = {
   gorse?: boolean;
+  imgproxy?: boolean;
 };
 
+let network: StartedNetwork | null = null;
 let pgContainer: StartedPostgreSqlContainer | null = null;
 let minioContainer: StartedTestContainer | null = null;
 let redpandaContainer: StartedRedpandaContainer | null = null;
 let meiliContainer: StartedTestContainer | null = null;
 let redisContainer: StartedTestContainer | null = null;
 let gorseContainer: StartedTestContainer | null = null;
+let imgproxyContainer: StartedTestContainer | null = null;
 
 export async function startContainers(options?: ContainerOptions) {
   if (pgContainer && minioContainer && redpandaContainer && meiliContainer && redisContainer)
     return;
+
+  network = await new Network().start();
 
   [pgContainer, minioContainer, redpandaContainer, meiliContainer, redisContainer] =
     await Promise.all([
       new PostgreSqlContainer('postgres:18-alpine').start(),
 
       new GenericContainer('minio/minio:latest')
+        .withNetwork(network)
+        .withNetworkAliases('minio')
         .withExposedPorts(9000)
         .withEnvironment({
           MINIO_ROOT_USER: 'minioadmin',
@@ -98,6 +108,29 @@ export async function startContainers(options?: ContainerOptions) {
     process.env.GORSE_URL = `http://${gorseHost}:${gorsePort}`;
     process.env.GORSE_API_KEY = 'e2e-test-gorse-key';
   }
+
+  if (options?.imgproxy && !imgproxyContainer) {
+    imgproxyContainer = await new GenericContainer('darthsim/imgproxy:latest')
+      .withNetwork(network)
+      .withExposedPorts(8080)
+      .withEnvironment({
+        IMGPROXY_USE_S3: 'true',
+        IMGPROXY_S3_ENDPOINT: 'http://minio:9000',
+        AWS_ACCESS_KEY_ID: 'minioadmin',
+        AWS_SECRET_ACCESS_KEY: 'minioadmin',
+        AWS_REGION: 'us-east-1',
+        IMGPROXY_KEY,
+        IMGPROXY_SALT,
+      })
+      .withWaitStrategy(Wait.forHttp('/health', 8080).forStatusCode(200))
+      .start();
+
+    const proxyHost = imgproxyContainer.getHost();
+    const proxyPort = imgproxyContainer.getMappedPort(8080);
+    process.env.MEDIA_IMAGE_PROXY_URL = `http://${proxyHost}:${proxyPort}`;
+    process.env.MEDIA_IMAGE_PROXY_KEY = IMGPROXY_KEY;
+    process.env.MEDIA_IMAGE_PROXY_SALT = IMGPROXY_SALT;
+  }
 }
 
 export async function stopContainers() {
@@ -108,6 +141,7 @@ export async function stopContainers() {
     meiliContainer?.stop(),
     redisContainer?.stop(),
     gorseContainer?.stop(),
+    imgproxyContainer?.stop(),
   ]);
   pgContainer = null;
   minioContainer = null;
@@ -115,4 +149,7 @@ export async function stopContainers() {
   meiliContainer = null;
   redisContainer = null;
   gorseContainer = null;
+  imgproxyContainer = null;
+  await network?.stop();
+  network = null;
 }
