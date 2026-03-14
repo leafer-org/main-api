@@ -2,9 +2,9 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
-  PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
 
@@ -29,18 +29,26 @@ export class S3ClientService {
     });
   }
 
-  public async getPresignedUploadUrl(
+  public async getPresignedUploadPost(
     bucket: string,
     key: string,
     mimeType: string,
+    maxFileSize: number,
     expiresIn = DEFAULT_UPLOAD_EXPIRES_IN,
-  ): Promise<string> {
-    const command = new PutObjectCommand({
+  ): Promise<{ url: string; fields: Record<string, string> }> {
+    const { url, fields } = await createPresignedPost(this.client, {
       Bucket: bucket,
       Key: key,
-      ContentType: mimeType,
+      Expires: expiresIn,
+      Conditions: [
+        ['content-length-range', 1, maxFileSize],
+        ['eq', '$Content-Type', mimeType],
+      ],
+      Fields: {
+        'Content-Type': mimeType,
+      },
     });
-    return getSignedUrl(this.client, command, { expiresIn });
+    return { url, fields };
   }
 
   public async getPresignedDownloadUrl(

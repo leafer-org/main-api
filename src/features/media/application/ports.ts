@@ -15,8 +15,18 @@ export abstract class FileRepository {
 
 // --- Service ports ---
 
+export type PresignedPost = {
+  url: string;
+  fields: Record<string, string>;
+};
+
 export abstract class FileStorageService {
-  public abstract generateUploadUrl(bucket: string, key: string, mimeType: string): Promise<string>;
+  public abstract generateUploadPost(
+    bucket: string,
+    key: string,
+    mimeType: string,
+    maxFileSize: number,
+  ): Promise<PresignedPost>;
   public abstract generateDownloadUrl(
     bucket: string,
     key: string,
@@ -38,6 +48,7 @@ export abstract class ImageProxyUrlSigner {
 
 export abstract class MediaConfig {
   public abstract readonly publicBucket: string;
+  public abstract readonly maxFileSize: number;
 }
 
 // --- ID generation ---

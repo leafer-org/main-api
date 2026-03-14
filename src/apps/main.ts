@@ -12,5 +12,12 @@ async function bootstrap() {
   configureApp(app);
   await app.listen(config.get('PORT'));
   logger.log(`Server running on port ${config.get('PORT')}`);
+
+  const onSignal = async () => {
+    await app.close();
+    process.exit(0);
+  };
+  process.on('SIGTERM', onSignal);
+  process.on('SIGINT', onSignal);
 }
 void bootstrap();

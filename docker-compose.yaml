@@ -133,8 +133,9 @@ services:
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
       AWS_REGION: us-east-1
+      IMGPROXY_MAX_SRC_RESOLUTION: 50
     ports:
-      - "8081:8080"
+      - "8083:8080"
     depends_on:
       minio:
         condition: service_healthy

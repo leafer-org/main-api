@@ -1744,6 +1744,9 @@ export interface components {
       fileId: string;
       /** Format: uri */
       uploadUrl: string;
+      uploadFields: {
+        [key: string]: string;
+      };
     };
     PreviewDownloadUrlResult: {
       /** Format: uri */

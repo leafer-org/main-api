@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "serve": "node dist/apps/main.js",
-    "dev": "concurrently \"swc src -w -s --copy-files -d dist --strip-leading-paths\" \"node --watch dist/apps/main.js\"",
+    "dev": "concurrently \"swc src -w -s --copy-files -d dist --strip-leading-paths\" \"node --watch-path dist/apps --watch-path dist/features --watch-path dist/infra --watch-path dist/kernel dist/apps/main.js\"",
     "build": "swc src -d dist --strip-leading-paths --copy-files",
     "check": "yarn lint:check && yarn lint:types && yarn test",
     "lint:fix": "biome check src --write",
@@ -24,8 +24,9 @@
     "seed:cities": "npx tsx scripts/seed-cities.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.775.0",
-    "@aws-sdk/s3-request-presigner": "^3.775.0",
+    "@aws-sdk/client-s3": "^3.1009.0",
+    "@aws-sdk/s3-presigned-post": "^3.1009.0",
+    "@aws-sdk/s3-request-presigner": "^3.1009.0",
     "@confluentinc/kafka-javascript": "^1.8.2",
     "@dotenvx/dotenvx": "^1.52.0",
     "@nestjs/common": "^11.0.1",

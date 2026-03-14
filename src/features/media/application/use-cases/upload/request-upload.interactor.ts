@@ -64,13 +64,14 @@ export class RequestUploadInteractor {
 
       await this.fileRepository.save(tx, newState);
 
-      const uploadUrl = await this.fileStorage.generateUploadUrl(
+      const { url: uploadUrl, fields: uploadFields } = await this.fileStorage.generateUploadPost(
         tempBucket,
         fileId,
         mimeType as string,
+        this.mediaConfig.maxFileSize,
       );
 
-      return Right({ fileId, uploadUrl });
+      return Right({ fileId, uploadUrl, uploadFields });
     });
   }
 

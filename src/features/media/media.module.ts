@@ -40,6 +40,7 @@ import { MediaService } from '@/kernel/application/ports/media.js';
       provide: MediaConfig,
       useFactory: (config: MainConfigService) => ({
         publicBucket: config.get('MEDIA_BUCKET_PUBLIC') ?? 'media-public',
+        maxFileSize: config.get('MEDIA_MAX_FILE_SIZE'),
       }),
       inject: [MainConfigService],
     },

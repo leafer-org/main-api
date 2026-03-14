@@ -8858,7 +8858,8 @@
         "type": "object",
         "required": [
           "fileId",
-          "uploadUrl"
+          "uploadUrl",
+          "uploadFields"
         ],
         "properties": {
           "fileId": {
@@ -8868,6 +8869,12 @@
           "uploadUrl": {
             "type": "string",
             "format": "uri"
+          },
+          "uploadFields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       },

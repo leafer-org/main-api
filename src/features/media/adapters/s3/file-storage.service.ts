@@ -1,14 +1,19 @@
 import { Injectable } from '@nestjs/common';
 
-import { FileStorageService } from '../../application/ports.js';
+import { type PresignedPost, FileStorageService } from '../../application/ports.js';
 import { S3ClientService } from './s3-client.service.js';
 
 @Injectable()
 export class S3FileStorageService implements FileStorageService {
   public constructor(private readonly s3: S3ClientService) {}
 
-  public async generateUploadUrl(bucket: string, key: string, mimeType: string): Promise<string> {
-    return this.s3.getPresignedUploadUrl(bucket, key, mimeType);
+  public async generateUploadPost(
+    bucket: string,
+    key: string,
+    mimeType: string,
+    maxFileSize: number,
+  ): Promise<PresignedPost> {
+    return this.s3.getPresignedUploadPost(bucket, key, mimeType, maxFileSize);
   }
 
   public async generateDownloadUrl(

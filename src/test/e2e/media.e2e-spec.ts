@@ -23,6 +23,20 @@ const TINY_PNG = Buffer.from(
   'base64',
 );
 
+async function uploadViaPresignedPost(
+  uploadUrl: string,
+  uploadFields: Record<string, string>,
+  file: Buffer,
+  contentType: string,
+): Promise<Response> {
+  const formData = new FormData();
+  for (const [key, value] of Object.entries(uploadFields)) {
+    formData.append(key, value);
+  }
+  formData.append('file', new Blob([new Uint8Array(file)], { type: contentType }));
+  return fetch(uploadUrl, { method: 'POST', body: formData });
+}
+
 describe('Media Controller (e2e)', () => {
   let e2e: E2eApp;
 
@@ -62,7 +76,7 @@ describe('Media Controller (e2e)', () => {
   // ─── POST /media/upload-request ──────────────────────────────────
 
   describe('POST /media/upload-request', () => {
-    it('should create a file record and return fileId + presigned uploadUrl', async () => {
+    it('should create a file record and return fileId + presigned post data', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       const response = await e2e.agent
@@ -76,11 +90,14 @@ describe('Media Controller (e2e)', () => {
 
       expect(response.body).toHaveProperty('fileId');
       expect(response.body).toHaveProperty('uploadUrl');
+      expect(response.body).toHaveProperty('uploadFields');
       expect(response.body.fileId).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
       );
       expect(response.body.uploadUrl).toContain(process.env.S3_ENDPOINT);
       expect(response.body.uploadUrl).toContain('media-public-temp');
+      expect(typeof response.body.uploadFields).toBe('object');
+      expect(response.body.uploadFields).toHaveProperty('Content-Type', 'image/png');
     });
 
     it('should return 400 for invalid mimeType', async () => {
@@ -113,18 +130,13 @@ describe('Media Controller (e2e)', () => {
 
   describe('GET /media/preview/:mediaId', () => {
     it('should return presigned preview URL for a temporary file', async () => {
-      // Create an upload request (file is temporary)
       const uploadRes = await e2e.agent
         .post('/media/upload-request')
         .send({ name: 'preview-test.png', mimeType: 'image/png' })
         .expect(200);
 
-      // Upload dummy data
-      await fetch(uploadRes.body.uploadUrl, {
-        method: 'PUT',
-        body: Buffer.from('fake-image'),
-        headers: { 'Content-Type': 'image/png' },
-      });
+      const { uploadUrl, uploadFields } = uploadRes.body;
+      await uploadViaPresignedPost(uploadUrl, uploadFields, Buffer.from('fake-image'), 'image/png');
 
       const res = await e2e.agent.get(`/media/preview/${uploadRes.body.fileId}`).expect(200);
 
@@ -146,13 +158,9 @@ describe('Media Controller (e2e)', () => {
         .send({ name: 'proxy-test.png', mimeType: 'image/png' })
         .expect(200);
 
-      const { fileId, uploadUrl } = uploadRes.body;
+      const { fileId, uploadUrl, uploadFields } = uploadRes.body;
 
-      await fetch(uploadUrl, {
-        method: 'PUT',
-        body: TINY_PNG,
-        headers: { 'Content-Type': 'image/png' },
-      });
+      await uploadViaPresignedPost(uploadUrl, uploadFields, TINY_PNG, 'image/png');
 
       const mediaService = e2e.app.get(MediaService);
       const txHost = e2e.app.get(TransactionHost);
@@ -206,11 +214,13 @@ describe('Media Controller (e2e)', () => {
         .send({ name: 'document.pdf', mimeType: 'application/pdf' })
         .expect(200);
 
-      await fetch(uploadRes.body.uploadUrl, {
-        method: 'PUT',
-        body: Buffer.from('fake-pdf-content'),
-        headers: { 'Content-Type': 'application/pdf' },
-      });
+      const { uploadUrl, uploadFields } = uploadRes.body;
+      await uploadViaPresignedPost(
+        uploadUrl,
+        uploadFields,
+        Buffer.from('fake-pdf-content'),
+        'application/pdf',
+      );
 
       const mediaService = e2e.app.get(MediaService);
       const txHost = e2e.app.get(TransactionHost);
