@@ -1053,6 +1053,46 @@ export interface paths {
     patch: operations['updateCmsItemType'];
     trace?: never;
   };
+  '/admin/organizations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Создание организации админом
+     * @description Создаёт организацию без владельца. Возвращает claim token для привязки владельца. Требуется ORGANIZATION.MANAGE.
+     */
+    post: operations['adminCreateOrganization'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/organizations/{id}/regenerate-token': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Перегенерация claim token
+     * @description Генерирует новый claim token для непривязанной организации. Требуется ORGANIZATION.MANAGE.
+     */
+    post: operations['regenerateClaimToken'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/organizations': {
     parameters: {
       query?: never;
@@ -1073,6 +1113,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/organizations/claim': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Привязка владельца к организации
+     * @description Привязывает текущего пользователя как владельца организации по claim token.
+     */
+    post: operations['claimOrganization'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/organizations/{id}': {
     parameters: {
       query?: never;
@@ -1087,7 +1147,11 @@ export interface paths {
     get: operations['getOrganization'];
     put?: never;
     post?: never;
-    delete?: never;
+    /**
+     * Удаление организации
+     * @description Удаляет организацию и все её товары. Доступно владельцу организации или админу с ORGANIZATION.MANAGE.
+     */
+    delete: operations['deleteOrganization'];
     options?: never;
     head?: never;
     /**
@@ -1151,6 +1215,26 @@ export interface paths {
      * @description Отклоняет модерацию профиля организации. Требуется глобальный permission ORGANIZATION.MODERATE.
      */
     post: operations['rejectInfoModeration'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/{id}/unpublish': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Снять организацию с публикации
+     * @description Снимает организацию с публикации и снимает все опубликованные товары. Требуется publish_organization или ORGANIZATION.MANAGE.
+     */
+    post: operations['unpublishOrganization'];
     delete?: never;
     options?: never;
     head?: never;
@@ -5518,6 +5602,111 @@ export interface operations {
       };
     };
   };
+  adminCreateOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+          description?: string;
+          avatarId?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description Организация создана */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            claimToken: string;
+          };
+        };
+      };
+      /** @description Ошибка валидации */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется ORGANIZATION.MANAGE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  regenerateClaimToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Новый claim token */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** Format: uuid */
+            claimToken: string;
+          };
+        };
+      };
+      /** @description Организация уже привязана */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется ORGANIZATION.MANAGE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
   createOrganization: {
     parameters: {
       query?: never;
@@ -5556,6 +5745,43 @@ export interface operations {
       401: components['responses']['UnauthorizedError'];
     };
   };
+  claimOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** Format: uuid */
+          token: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Организация привязана */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrganizationDetail'];
+        };
+      };
+      /** @description Доменная ошибка (невалидный токен или организация уже привязана) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+    };
+  };
   getOrganization: {
     parameters: {
       query?: never;
@@ -5575,6 +5801,45 @@ export interface operations {
         content: {
           'application/json': components['schemas']['OrganizationDetail'];
         };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  deleteOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Организация удалена */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       401: components['responses']['UnauthorizedError'];
       /** @description Нет доступа */
@@ -5782,6 +6047,54 @@ export interface operations {
       };
       401: components['responses']['UnauthorizedError'];
       /** @description Нет доступа (требуется ORGANIZATION.MODERATE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  unpublishOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Организация снята с публикации */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (организация не опубликована) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется publish_organization) */
       403: {
         headers: {
           [name: string]: unknown;

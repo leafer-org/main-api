@@ -88,6 +88,11 @@ export class DrizzleItemRepository extends ItemRepository {
     await db.delete(items).where(eq(items.id, itemId));
   }
 
+  public async deleteByOrganizationId(tx: Transaction, orgId: OrganizationId): Promise<void> {
+    const db = this.txHost.get(tx);
+    await db.delete(items).where(eq(items.organizationId, orgId));
+  }
+
   private toJson(state: ItemEntity): unknown {
     return {
       ...state,

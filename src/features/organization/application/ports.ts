@@ -24,6 +24,8 @@ export abstract class OrganizationRepository {
   public abstract findById(tx: Transaction, id: OrganizationId): Promise<OrganizationEntity | null>;
 
   public abstract save(tx: Transaction, state: OrganizationEntity): Promise<void>;
+
+  public abstract delete(tx: Transaction, id: OrganizationId): Promise<void>;
 }
 
 // --- Item repository ---
@@ -44,6 +46,8 @@ export abstract class ItemRepository {
   public abstract save(tx: Transaction, state: ItemEntity): Promise<void>;
 
   public abstract delete(tx: Transaction, itemId: ItemId): Promise<void>;
+
+  public abstract deleteByOrganizationId(tx: Transaction, orgId: OrganizationId): Promise<void>;
 }
 
 // --- Event publisher ports ---
@@ -77,6 +81,15 @@ export abstract class ItemEventPublisher {
     tx: Transaction,
     event: ItemModerationRequestedEvent,
   ): Promise<void>;
+}
+
+// --- Claim token query port ---
+
+export abstract class ClaimTokenQueryPort {
+  public abstract findOrganizationByClaimToken(
+    tx: Transaction,
+    token: string,
+  ): Promise<OrganizationEntity | null>;
 }
 
 // --- Query ports ---

@@ -1,17 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { OrganizationEntity } from '../../../domain/aggregates/organization/entity.js';
-import { OrganizationNotFoundError } from '../../../domain/aggregates/organization/errors.js';
 import { OrganizationRepository } from '../../ports.js';
-import { isLeft, Left, Right } from '@/infra/lib/box.js';
+import { isLeft, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { OrganizationId } from '@/kernel/domain/ids.js';
+import type { EmployeeRoleId, FileId, OrganizationId } from '@/kernel/domain/ids.js';
 import { Permissions } from '@/kernel/domain/permissions.js';
 
 @Injectable()
-export class RejectInfoModerationInteractor {
+export class AdminCreateOrganizationInteractor {
   public constructor(
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
     @Inject(OrganizationRepository) private readonly organizationRepository: OrganizationRepository,
@@ -19,25 +18,37 @@ export class RejectInfoModerationInteractor {
     @Inject(Clock) private readonly clock: Clock,
   ) {}
 
-  public async execute(command: { organizationId: OrganizationId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.moderateOrganization);
+  public async execute(command: {
+    id: OrganizationId;
+    name: string;
+    description: string;
+    avatarId: FileId | null;
+    adminRoleId: EmployeeRoleId;
+    claimToken: string;
+  }) {
+    const auth = await this.permissionCheck.mustCan(Permissions.manageOrganization);
     if (isLeft(auth)) return auth;
 
     const now = this.clock.now();
 
     return this.txHost.startTransaction(async (tx) => {
-      const state = await this.organizationRepository.findById(tx, command.organizationId);
-      if (!state) return Left(new OrganizationNotFoundError());
-
-      const result = OrganizationEntity.rejectInfoModeration(state, {
-        type: 'RejectInfoModeration',
+      const result = OrganizationEntity.adminCreate({
+        type: 'AdminCreateOrganization',
+        id: command.id,
+        name: command.name,
+        description: command.description,
+        avatarId: command.avatarId,
+        adminRoleId: command.adminRoleId,
+        claimToken: command.claimToken,
         now,
       });
+
       if (isLeft(result)) return result;
 
-      await this.organizationRepository.save(tx, result.value.state);
+      const { state } = result.value;
+      await this.organizationRepository.save(tx, state);
 
-      return Right(undefined);
+      return Right({ organizationId: state.id, claimToken: command.claimToken });
     });
   }
 }

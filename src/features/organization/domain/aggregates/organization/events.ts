@@ -15,6 +15,29 @@ export type OrganizationCreatedEvent = {
   createdAt: Date;
 };
 
+export type OrganizationAdminCreatedEvent = {
+  type: 'organization.admin-created';
+  id: OrganizationId;
+  name: string;
+  description: string;
+  avatarId: FileId | null;
+  adminRoleId: EmployeeRoleId;
+  claimToken: string;
+  createdAt: Date;
+};
+
+export type OrganizationClaimedEvent = {
+  type: 'organization.claimed';
+  userId: UserId;
+  claimedAt: Date;
+};
+
+export type ClaimTokenRegeneratedEvent = {
+  type: 'organization.claim-token-regenerated';
+  newToken: string;
+  regeneratedAt: Date;
+};
+
 // --- Info ---
 
 export type InfoDraftUpdatedEvent = {
@@ -103,6 +126,12 @@ export type EmployeeRoleDeletedEvent = {
   deletedAt: Date;
 };
 
+export type InfoUnpublishedEvent = {
+  type: 'organization.info-unpublished';
+  organizationId: OrganizationId;
+  unpublishedAt: Date;
+};
+
 // --- Subscription ---
 
 export type SubscriptionChangedEvent = {
@@ -124,6 +153,9 @@ export type DowngradedToFreeEvent = {
 
 export type OrganizationEvent =
   | OrganizationCreatedEvent
+  | OrganizationAdminCreatedEvent
+  | OrganizationClaimedEvent
+  | ClaimTokenRegeneratedEvent
   | InfoDraftUpdatedEvent
   | InfoSubmittedForModerationEvent
   | InfoModerationApprovedEvent
@@ -135,5 +167,6 @@ export type OrganizationEvent =
   | EmployeeRoleCreatedEvent
   | EmployeeRoleUpdatedEvent
   | EmployeeRoleDeletedEvent
+  | InfoUnpublishedEvent
   | SubscriptionChangedEvent
   | DowngradedToFreeEvent;

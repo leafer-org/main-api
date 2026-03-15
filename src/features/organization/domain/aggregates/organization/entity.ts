@@ -1,16 +1,20 @@
 import type {
+  AdminCreateOrganizationCommand,
   ApproveInfoModerationCommand,
   ChangeEmployeeRoleCommand,
   ChangeSubscriptionCommand,
+  ClaimOrganizationCommand,
   CreateEmployeeRoleCommand,
   CreateOrganizationCommand,
   DeleteEmployeeRoleCommand,
   DowngradeToFreeCommand,
   InviteEmployeeCommand,
+  RegenerateClaimTokenCommand,
   RejectInfoModerationCommand,
   RemoveEmployeeCommand,
   SubmitInfoForModerationCommand,
   TransferOwnershipCommand,
+  UnpublishOrganizationCommand,
   UpdateEmployeeRoleCommand,
   UpdateInfoDraftCommand,
 } from './commands.js';
@@ -20,18 +24,22 @@ import { EmployeeRoleEntity } from './entities/employee-role.entity.js';
 import { InfoDraftEntity } from './entities/info-draft.entity.js';
 import { InfoPublicationEntity } from './entities/info-publication.entity.js';
 import { SubscriptionEntity } from './entities/subscription.entity.js';
-import type {
-  CannotDeleteAdminRoleError,
-  CannotRemoveOwnerError,
-  EmployeeAlreadyExistsError,
-  EmployeeLimitReachedError,
-  EmployeeNotFoundError,
-  InfoNotInDraftError,
-  InfoNotInModerationError,
-  TransferTargetNotEmployeeError,
+import {
+  InvalidClaimTokenError,
+  OrganizationAlreadyClaimedError,
+  RoleNotFoundError,
+  type CannotDeleteAdminRoleError,
+  type CannotRemoveOwnerError,
+  type EmployeeAlreadyExistsError,
+  type EmployeeLimitReachedError,
+  type EmployeeNotFoundError,
+  type InfoNotInDraftError,
+  type InfoNotInModerationError,
+  InfoNotPublishedError,
+  type TransferTargetNotEmployeeError,
 } from './errors.js';
-import { RoleNotFoundError } from './errors.js';
 import type {
+  ClaimTokenRegeneratedEvent,
   DowngradedToFreeEvent,
   EmployeeInvitedEvent,
   EmployeeRemovedEvent,
@@ -43,6 +51,9 @@ import type {
   InfoModerationApprovedEvent,
   InfoModerationRejectedEvent,
   InfoSubmittedForModerationEvent,
+  InfoUnpublishedEvent,
+  OrganizationAdminCreatedEvent,
+  OrganizationClaimedEvent,
   OrganizationCreatedEvent,
   OwnershipTransferredEvent,
   SubscriptionChangedEvent,
@@ -71,6 +82,8 @@ export type OrganizationEntity = EntityState<{
   roles: EmployeeRoleEntity[];
 
   subscription: SubscriptionEntity;
+
+  claimToken: string | null;
 
   createdAt: Date;
   updatedAt: Date;
@@ -104,11 +117,99 @@ export const OrganizationEntity = {
         EmployeeRoleEntity.createOne(event.adminRoleId, ADMIN_ROLE_NAME, [...ALL_PERMISSIONS]),
       ],
       subscription: SubscriptionEntity.fromPlan('free'),
+      claimToken: null,
       createdAt: event.createdAt,
       updatedAt: event.createdAt,
     };
 
     return Right({ state, event });
+  },
+
+  adminCreate(
+    cmd: AdminCreateOrganizationCommand,
+  ): Either<never, { state: OrganizationEntity; event: OrganizationAdminCreatedEvent }> {
+    const event: OrganizationAdminCreatedEvent = {
+      type: 'organization.admin-created',
+      id: cmd.id,
+      name: cmd.name,
+      description: cmd.description,
+      avatarId: cmd.avatarId,
+      adminRoleId: cmd.adminRoleId,
+      claimToken: cmd.claimToken,
+      createdAt: cmd.now,
+    };
+
+    const state: OrganizationEntity = {
+      id: event.id,
+      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId),
+      infoPublication: null,
+      employees: [],
+      roles: [
+        EmployeeRoleEntity.createOne(event.adminRoleId, ADMIN_ROLE_NAME, [...ALL_PERMISSIONS]),
+      ],
+      subscription: SubscriptionEntity.fromPlan('free'),
+      claimToken: event.claimToken,
+      createdAt: event.createdAt,
+      updatedAt: event.createdAt,
+    };
+
+    return Right({ state, event });
+  },
+
+  claim(
+    state: OrganizationEntity,
+    cmd: ClaimOrganizationCommand,
+  ): Either<
+    OrganizationAlreadyClaimedError | InvalidClaimTokenError,
+    { state: OrganizationEntity; event: OrganizationClaimedEvent }
+  > {
+    if (state.claimToken === null) {
+      return Left(new OrganizationAlreadyClaimedError());
+    }
+    if (state.claimToken !== cmd.claimToken) {
+      return Left(new InvalidClaimTokenError());
+    }
+
+    const event: OrganizationClaimedEvent = {
+      type: 'organization.claimed',
+      userId: cmd.userId,
+      claimedAt: cmd.now,
+    };
+
+    const adminRole = EmployeeRoleEntity.findAdmin(state.roles);
+
+    return Right({
+      state: {
+        ...state,
+        claimToken: null,
+        employees: [EmployeeEntity.createOwner(cmd.userId, adminRole.id, cmd.now)],
+        updatedAt: cmd.now,
+      },
+      event,
+    });
+  },
+
+  regenerateClaimToken(
+    state: OrganizationEntity,
+    cmd: RegenerateClaimTokenCommand,
+  ): Either<
+    OrganizationAlreadyClaimedError,
+    { state: OrganizationEntity; event: ClaimTokenRegeneratedEvent }
+  > {
+    if (state.claimToken === null) {
+      return Left(new OrganizationAlreadyClaimedError());
+    }
+
+    const event: ClaimTokenRegeneratedEvent = {
+      type: 'organization.claim-token-regenerated',
+      newToken: cmd.newToken,
+      regeneratedAt: cmd.now,
+    };
+
+    return Right({
+      state: { ...state, claimToken: cmd.newToken, updatedAt: cmd.now },
+      event,
+    });
   },
 
   updateInfoDraft(
@@ -389,6 +490,24 @@ export const OrganizationEntity = {
     };
 
     return Right({ state: { ...state, subscription: newSub, updatedAt: cmd.now }, event });
+  },
+
+  unpublishInfo(
+    state: OrganizationEntity,
+    cmd: UnpublishOrganizationCommand,
+  ): Either<InfoNotPublishedError, { state: OrganizationEntity; event: InfoUnpublishedEvent }> {
+    if (!state.infoPublication) return Left(new InfoNotPublishedError());
+
+    const event: InfoUnpublishedEvent = {
+      type: 'organization.info-unpublished',
+      organizationId: state.id,
+      unpublishedAt: cmd.now,
+    };
+
+    return Right({
+      state: { ...state, infoPublication: null, updatedAt: cmd.now },
+      event,
+    });
   },
 
   downgradeToFree(

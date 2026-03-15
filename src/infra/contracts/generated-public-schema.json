@@ -5122,6 +5122,177 @@
         }
       }
     },
+    "/admin/organizations": {
+      "post": {
+        "operationId": "adminCreateOrganization",
+        "tags": [
+          "admin-organizations"
+        ],
+        "summary": "Создание организации админом",
+        "description": "Создаёт организацию без владельца. Возвращает claim token для привязки владельца. Требуется ORGANIZATION.MANAGE.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "avatarId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Организация создана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "claimToken"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "claimToken": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Нет доступа (требуется ORGANIZATION.MANAGE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/organizations/{id}/regenerate-token": {
+      "post": {
+        "operationId": "regenerateClaimToken",
+        "tags": [
+          "admin-organizations"
+        ],
+        "summary": "Перегенерация claim token",
+        "description": "Генерирует новый claim token для непривязанной организации. Требуется ORGANIZATION.MANAGE.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Новый claim token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "claimToken"
+                  ],
+                  "properties": {
+                    "claimToken": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Организация уже привязана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Нет доступа (требуется ORGANIZATION.MANAGE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Организация не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/organizations": {
       "post": {
         "operationId": "createOrganization",
@@ -5181,6 +5352,65 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/organizations/claim": {
+      "post": {
+        "operationId": "claimOrganization",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Привязка владельца к организации",
+        "description": "Привязывает текущего пользователя как владельца организации по claim token.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Организация привязана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Доменная ошибка (невалидный токен или организация уже привязана)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -5334,6 +5564,57 @@
           },
           "403": {
             "description": "Нет доступа (требуется edit_organization)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Организация не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteOrganization",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Удаление организации",
+        "description": "Удаляет организацию и все её товары. Доступно владельцу организации или админу с ORGANIZATION.MANAGE.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Организация удалена"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Нет доступа",
             "content": {
               "application/json": {
                 "schema": {
@@ -5523,6 +5804,69 @@
           },
           "403": {
             "description": "Нет доступа (требуется ORGANIZATION.MODERATE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Организация не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{id}/unpublish": {
+      "post": {
+        "operationId": "unpublishOrganization",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Снять организацию с публикации",
+        "description": "Снимает организацию с публикации и снимает все опубликованные товары. Требуется publish_organization или ORGANIZATION.MANAGE.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Организация снята с публикации"
+          },
+          "400": {
+            "description": "Доменная ошибка (организация не опубликована)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Нет доступа (требуется publish_organization)",
             "content": {
               "application/json": {
                 "schema": {

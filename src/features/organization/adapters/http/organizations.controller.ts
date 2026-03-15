@@ -1,11 +1,14 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post } from '@nestjs/common';
 
 import { OrganizationQueryPort } from '../../application/ports.js';
-import { ApproveInfoModerationInteractor } from '../../application/use-cases/manage-org/approve-info-moderation.interactor.js';
+import { ApproveInfoModerationInteractor } from '../../application/use-cases/moderation/approve-info-moderation.interactor.js';
+import { ClaimOrganizationInteractor } from '../../application/use-cases/create-and-claim-organization/claim-organization.interactor.js';
 import { CreateOrganizationInteractor } from '../../application/use-cases/manage-org/create-organization.interactor.js';
+import { DeleteOrganizationInteractor } from '../../application/use-cases/manage-org/delete-organization.interactor.js';
 import { GetOrganizationDetailInteractor } from '../../application/use-cases/manage-org/get-organization-detail.interactor.js';
-import { RejectInfoModerationInteractor } from '../../application/use-cases/manage-org/reject-info-moderation.interactor.js';
-import { SubmitInfoForModerationInteractor } from '../../application/use-cases/manage-org/submit-info-for-moderation.interactor.js';
+import { RejectInfoModerationInteractor } from '../../application/use-cases/moderation/reject-info-moderation.interactor.js';
+import { SubmitInfoForModerationInteractor } from '../../application/use-cases/moderation/submit-info-for-moderation.interactor.js';
+import { UnpublishOrganizationInteractor } from '../../application/use-cases/manage-org/unpublish-organization.interactor.js';
 import { UpdateInfoDraftInteractor } from '../../application/use-cases/manage-org/update-info-draft.interactor.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
@@ -18,11 +21,14 @@ import { EmployeeRoleId, FileId, OrganizationId } from '@/kernel/domain/ids.js';
 export class OrganizationsController {
   public constructor(
     private readonly createOrganization: CreateOrganizationInteractor,
+    private readonly deleteOrganization: DeleteOrganizationInteractor,
+    private readonly claimOrganization: ClaimOrganizationInteractor,
     private readonly getOrganizationDetail: GetOrganizationDetailInteractor,
     private readonly updateInfoDraft: UpdateInfoDraftInteractor,
     private readonly submitInfoForModeration: SubmitInfoForModerationInteractor,
     private readonly approveInfoModeration: ApproveInfoModerationInteractor,
     private readonly rejectInfoModeration: RejectInfoModerationInteractor,
+    private readonly unpublishOrganization: UnpublishOrganizationInteractor,
     @Inject(OrganizationQueryPort) private readonly organizationQuery: OrganizationQueryPort,
   ) {}
 
@@ -48,6 +54,45 @@ export class OrganizationsController {
     const roles = await this.organizationQuery.findRoles(orgId);
 
     return this.toOrganizationDetailResponse(detail!, employees, roles);
+  }
+
+  @Post('claim')
+  @HttpCode(200)
+  public async claim(
+    @Body() body: PublicBody['claimOrganization'],
+    @CurrentUser() user: JwtUserPayload,
+  ): Promise<PublicResponse['claimOrganization']> {
+    const result = await this.claimOrganization.execute({
+      token: body.token,
+      userId: user.userId,
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'claimOrganization'>(result.error.toResponse());
+    }
+
+    const orgId = result.value.id;
+    const detail = await this.organizationQuery.findDetail(orgId);
+    const employees = await this.organizationQuery.findEmployees(orgId);
+    const roles = await this.organizationQuery.findRoles(orgId);
+
+    return this.toOrganizationDetailResponse(detail!, employees, roles);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  public async remove(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtUserPayload,
+  ): Promise<void> {
+    const result = await this.deleteOrganization.execute({
+      organizationId: OrganizationId.raw(id),
+      userId: user.userId,
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'deleteOrganization'>(result.error.toResponse());
+    }
   }
 
   @Get(':id')
@@ -143,6 +188,22 @@ export class OrganizationsController {
 
     if (isLeft(result)) {
       throw domainToHttpError<'rejectInfoModeration'>(result.error.toResponse());
+    }
+  }
+
+  @Post(':id/unpublish')
+  @HttpCode(204)
+  public async unpublish(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtUserPayload,
+  ): Promise<void> {
+    const result = await this.unpublishOrganization.execute({
+      organizationId: OrganizationId.raw(id),
+      userId: user.userId,
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'unpublishOrganization'>(result.error.toResponse());
     }
   }
 

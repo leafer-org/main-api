@@ -25,3 +25,12 @@ export class TransferTargetNotEmployeeError extends CreateDomainError(
   'transfer_target_not_employee',
   400,
 ) {}
+
+export class OrganizationAlreadyClaimedError extends CreateDomainError(
+  'organization_already_claimed',
+  400,
+) {}
+
+export class InvalidClaimTokenError extends CreateDomainError('invalid_claim_token', 400) {}
+
+export class InfoNotPublishedError extends CreateDomainError('info_not_published', 400) {}

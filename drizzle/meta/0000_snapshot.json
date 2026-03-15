@@ -1,5 +1,5 @@
 {
-  "id": "f075321b-03a5-486f-bb3c-7e7ea65f0a09",
+  "id": "989cf955-df85-43ff-953a-8562b2604277",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1560,6 +1560,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "claim_token": {
+          "name": "claim_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1573,7 +1579,23 @@
           "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "organizations_claim_token_idx": {
+          "name": "organizations_claim_token_idx",
+          "columns": [
+            {
+              "expression": "claim_token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

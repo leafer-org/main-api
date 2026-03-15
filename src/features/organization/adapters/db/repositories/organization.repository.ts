@@ -20,7 +20,7 @@ export class DrizzleOrganizationRepository extends OrganizationRepository {
     const row = rows[0];
     if (!row) return null;
 
-    return this.toDomain(row.state);
+    return this.toDomain(row.state, row.claimToken);
   }
 
   public async save(tx: Transaction, state: OrganizationEntity): Promise<void> {
@@ -31,6 +31,7 @@ export class DrizzleOrganizationRepository extends OrganizationRepository {
       .values({
         id: state.id,
         state: this.toJson(state),
+        claimToken: state.claimToken,
         createdAt: state.createdAt,
         updatedAt: state.updatedAt,
       })
@@ -38,9 +39,15 @@ export class DrizzleOrganizationRepository extends OrganizationRepository {
         target: organizations.id,
         set: {
           state: this.toJson(state),
+          claimToken: state.claimToken,
           updatedAt: state.updatedAt,
         },
       });
+  }
+
+  public async delete(tx: Transaction, id: OrganizationId): Promise<void> {
+    const db = this.txHost.get(tx);
+    await db.delete(organizations).where(eq(organizations.id, id));
   }
 
   private toJson(state: OrganizationEntity): unknown {
@@ -61,12 +68,13 @@ export class DrizzleOrganizationRepository extends OrganizationRepository {
     };
   }
 
-  private toDomain(json: unknown): OrganizationEntity {
+  private toDomain(json: unknown, claimToken: string | null): OrganizationEntity {
     const raw = json as Record<string, unknown>;
     const state = raw as unknown as OrganizationEntity;
 
     return {
       ...state,
+      claimToken,
       createdAt: new Date(raw['createdAt'] as string),
       updatedAt: new Date(raw['updatedAt'] as string),
       infoPublication: state.infoPublication

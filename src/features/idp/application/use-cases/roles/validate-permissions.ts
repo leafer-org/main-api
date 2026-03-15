@@ -25,7 +25,7 @@ export function validatePermissions(
         errors.push(`Permission ${action} must be a boolean, got ${typeof value}`);
       }
     } else if (perm.context.type === 'enum') {
-      if (!perm.context.values.includes(value as string)) {
+      if (!perm.context.values.includes(value as never)) {
         errors.push(
           `Permission ${action} must be one of [${perm.context.values.join(', ')}], got ${String(value)}`,
         );

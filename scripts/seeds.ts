@@ -66,6 +66,8 @@ export async function seedStaticRoles(connectionUri: string) {
           'USER.MANAGE': true,
           'SESSION.MANAGE': 'all',
           'CMS.MANAGE': true,
+          'ORGANIZATION.MODERATE': true,
+          'ORGANIZATION.MANAGE': true,
           'TICKET_BOARD.MANAGE': true,
           'TICKET.MANAGE': true,
           'TICKET.REASSIGN': true,

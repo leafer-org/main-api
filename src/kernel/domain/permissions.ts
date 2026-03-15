@@ -7,6 +7,7 @@ export const Permissions = {
   manageCms: BooleanPerm('CMS.MANAGE', false),
   moderateReview: BooleanPerm('REVIEW.MODERATE', false),
   moderateOrganization: BooleanPerm('ORGANIZATION.MODERATE', false),
+  manageOrganization: BooleanPerm('ORGANIZATION.MANAGE', false),
   manageTicketBoard: BooleanPerm('TICKET_BOARD.MANAGE', false),
   manageTicket: BooleanPerm('TICKET.MANAGE', false),
   reassignTicket: BooleanPerm('TICKET.REASSIGN', false),

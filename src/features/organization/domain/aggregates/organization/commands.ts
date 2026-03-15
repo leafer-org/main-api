@@ -94,6 +94,37 @@ export type DeleteEmployeeRoleCommand = {
   now: Date;
 };
 
+// --- Admin Lifecycle ---
+
+export type AdminCreateOrganizationCommand = {
+  type: 'AdminCreateOrganization';
+  id: OrganizationId;
+  name: string;
+  description: string;
+  avatarId: FileId | null;
+  adminRoleId: EmployeeRoleId;
+  claimToken: string;
+  now: Date;
+};
+
+export type ClaimOrganizationCommand = {
+  type: 'ClaimOrganization';
+  claimToken: string;
+  userId: UserId;
+  now: Date;
+};
+
+export type RegenerateClaimTokenCommand = {
+  type: 'RegenerateClaimToken';
+  newToken: string;
+  now: Date;
+};
+
+export type UnpublishOrganizationCommand = {
+  type: 'UnpublishOrganization';
+  now: Date;
+};
+
 // --- Subscription ---
 
 export type ChangeSubscriptionCommand = {
@@ -111,6 +142,9 @@ export type DowngradeToFreeCommand = {
 
 export type OrganizationCommand =
   | CreateOrganizationCommand
+  | AdminCreateOrganizationCommand
+  | ClaimOrganizationCommand
+  | RegenerateClaimTokenCommand
   | UpdateInfoDraftCommand
   | SubmitInfoForModerationCommand
   | ApproveInfoModerationCommand
@@ -122,5 +156,6 @@ export type OrganizationCommand =
   | CreateEmployeeRoleCommand
   | UpdateEmployeeRoleCommand
   | DeleteEmployeeRoleCommand
+  | UnpublishOrganizationCommand
   | ChangeSubscriptionCommand
   | DowngradeToFreeCommand;

@@ -29,6 +29,7 @@ export type OrganizationJsonState = {
     maxPublishedItems: number;
     availableWidgetTypes: string[];
   };
+  claimToken: string | null;
   createdAt: string;
   updatedAt: string;
 };

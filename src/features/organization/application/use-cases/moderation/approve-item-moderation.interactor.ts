@@ -2,18 +2,18 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { ItemEntity } from '../../../domain/aggregates/item/entity.js';
 import { ItemNotFoundError } from '../../../domain/aggregates/item/errors.js';
+import { OrganizationPermissionCheckService } from '../../organization-permission.js';
 import { ItemEventPublisher, ItemRepository } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
-import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { ItemId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class ApproveItemModerationInteractor {
   public constructor(
-    @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
+    @Inject(OrganizationPermissionCheckService)
+    private readonly permissionCheck: OrganizationPermissionCheckService,
     @Inject(ItemRepository) private readonly itemRepository: ItemRepository,
     @Inject(ItemEventPublisher) private readonly eventPublisher: ItemEventPublisher,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
@@ -21,7 +21,7 @@ export class ApproveItemModerationInteractor {
   ) {}
 
   public async execute(command: { itemId: ItemId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.moderateOrganization);
+    const auth = await this.permissionCheck.mustCanModerate();
     if (isLeft(auth)) return auth;
 
     const now = this.clock.now();

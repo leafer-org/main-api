@@ -205,6 +205,7 @@ CREATE TABLE "items" (
 CREATE TABLE "organizations" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"state" jsonb NOT NULL,
+	"claim_token" text,
 	"created_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL
 );
@@ -268,6 +269,7 @@ CREATE INDEX "interactions_item_idx" ON "interactions" USING btree ("item_id","t
 CREATE INDEX "interactions_type_idx" ON "interactions" USING btree ("type","timestamp");--> statement-breakpoint
 CREATE INDEX "interactions_dedup_idx" ON "interactions" USING btree ("user_id","item_id","type","timestamp");--> statement-breakpoint
 CREATE INDEX "items_organization_id_idx" ON "items" USING btree ("organization_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "organizations_claim_token_idx" ON "organizations" USING btree ("claim_token");--> statement-breakpoint
 CREATE INDEX "reviews_author_target_idx" ON "reviews" USING btree ("author_id","target_type","target_id");--> statement-breakpoint
 CREATE INDEX "reviews_target_status_idx" ON "reviews" USING btree ("target_type","target_id","status");--> statement-breakpoint
 CREATE INDEX "reviews_organization_status_idx" ON "reviews" USING btree ("organization_id","status");--> statement-breakpoint

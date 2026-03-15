@@ -19,4 +19,7 @@ export abstract class OrganizationPermissionCheckService {
     userId: UserId,
     permission: OrganizationPermission,
   ): Promise<Either<OrgPermissionDeniedError, EmployeeEntity>>;
+
+  /** Allows users with ORGANIZATION.MODERATE or ORGANIZATION.MANAGE global permission */
+  public abstract mustCanModerate(): Promise<Either<OrgPermissionDeniedError, void>>;
 }
