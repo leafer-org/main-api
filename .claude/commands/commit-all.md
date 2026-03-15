@@ -27,6 +27,7 @@ Run `git status` and `git diff` (staged + unstaged) in the repo directory. If th
   - First line: `type(scope): short summary` (under 72 chars)
   - Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `style`
   - Blank line, then bullet-point body describing the key changes and motivation
+  - Текст коммита пиши на русском языке
   - !!!NOT END with `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
 - Use a HEREDOC to pass the commit message
 
@@ -40,4 +41,10 @@ After processing all repos, output a summary table:
 | admin | committed / skipped | short message or — |
 | mobile | committed / skipped | short message or — |
 
-Do NOT push to remote. Only commit locally.
+
+### 5. Спросить про push
+После вывода таблицы спроси пользователя: «Запушить изменения во все репозитории?»
+- Если пользователь согласится — выполни `git push` в каждом репозитории, где был коммит
+- Если откажется — ничего не делай
+
+Do NOT push automatically. Only push after explicit user confirmation.
