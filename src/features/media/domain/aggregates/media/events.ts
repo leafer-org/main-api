@@ -20,4 +20,29 @@ export type MediaFreedEvent = {
   type: 'media.freed';
 };
 
-export type MediaEvent = MediaUploadedEvent | MediaUsedEvent | MediaFreedEvent;
+export type VideoProcessingInitiatedEvent = {
+  type: 'video.processing-initiated';
+  mediaId: MediaId;
+};
+
+export type VideoProcessingCompletedEvent = {
+  type: 'video.processing-completed';
+  mediaId: MediaId;
+  thumbnailMediaId: MediaId;
+  hlsManifestKey: string;
+  duration: number;
+};
+
+export type VideoProcessingFailedEvent = {
+  type: 'video.processing-failed';
+  mediaId: MediaId;
+  reason: string;
+};
+
+export type MediaEvent =
+  | MediaUploadedEvent
+  | MediaUsedEvent
+  | MediaFreedEvent
+  | VideoProcessingInitiatedEvent
+  | VideoProcessingCompletedEvent
+  | VideoProcessingFailedEvent;

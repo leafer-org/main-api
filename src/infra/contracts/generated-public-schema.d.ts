@@ -444,6 +444,66 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/media/video/upload-init': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Инициализация multipart загрузки видео
+     * @description Создаёт media record, инициирует S3 multipart upload, возвращает presigned URLs для частей.
+     */
+    post: operations['mediaVideoUploadInit'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/media/video/upload-complete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Завершение multipart загрузки видео
+     * @description Завершает S3 multipart upload и ставит видео в очередь обработки.
+     */
+    post: operations['mediaVideoUploadComplete'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/media/video/status/{mediaId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Статус обработки видео
+     * @description Возвращает текущий статус обработки видео.
+     */
+    get: operations['mediaVideoStatus'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/media/preview/{mediaId}': {
     parameters: {
       query?: never;
@@ -1967,6 +2027,33 @@ export interface components {
       uploadFields: {
         [key: string]: string;
       };
+    };
+    VideoUploadInitRequest: {
+      name: string;
+      mimeType: string;
+      fileSize: number;
+    };
+    VideoUploadInitResult: {
+      mediaId: string;
+      uploadId: string;
+      partUrls: string[];
+    };
+    VideoUploadCompleteRequest: {
+      mediaId: string;
+      uploadId: string;
+      parts: {
+        partNumber: number;
+        etag: string;
+      }[];
+    };
+    VideoUploadCompleteResult: {
+      mediaId: string;
+    };
+    VideoStatusResult: {
+      mediaId: string;
+      /** @enum {string} */
+      processingStatus: 'pending' | 'processing' | 'ready' | 'failed';
+      duration?: number | null;
     };
     PreviewDownloadUrlResult: {
       /** Format: uri */
@@ -4023,6 +4110,134 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  mediaVideoUploadInit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VideoUploadInitRequest'];
+      };
+    };
+    responses: {
+      /** @description Multipart upload инициирован */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VideoUploadInitResult'];
+        };
+      };
+      /** @description Ошибка валидации / Доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Медиа не найдено */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  mediaVideoUploadComplete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VideoUploadCompleteRequest'];
+      };
+    };
+    responses: {
+      /** @description Upload завершён, видео в очереди обработки */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VideoUploadCompleteResult'];
+        };
+      };
+      /** @description Ошибка валидации / Доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Медиа не найдено */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  mediaVideoStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        mediaId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Статус обработки */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VideoStatusResult'];
+        };
+      };
+      /** @description Медиа не найдено */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
     };

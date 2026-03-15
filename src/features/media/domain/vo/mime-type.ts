@@ -22,4 +22,6 @@ export const MimeType = {
   raw: (value: string): MimeType => value as MimeType,
 
   isImage: (value: MimeType): boolean => (value as string).startsWith('image/'),
+
+  isVideo: (value: MimeType): boolean => (value as string).startsWith('video/'),
 };

@@ -20,4 +20,29 @@ export type FreeMediaCommand = {
   type: 'FreeMedia';
 };
 
-export type MediaCommand = UploadMediaCommand | UseMediaCommand | FreeMediaCommand;
+export type InitiateVideoProcessingCommand = {
+  type: 'InitiateVideoProcessing';
+  mediaId: MediaId;
+};
+
+export type CompleteVideoProcessingCommand = {
+  type: 'CompleteVideoProcessing';
+  mediaId: MediaId;
+  thumbnailMediaId: MediaId;
+  hlsManifestKey: string;
+  duration: number;
+};
+
+export type FailVideoProcessingCommand = {
+  type: 'FailVideoProcessing';
+  mediaId: MediaId;
+  reason: string;
+};
+
+export type MediaCommand =
+  | UploadMediaCommand
+  | UseMediaCommand
+  | FreeMediaCommand
+  | InitiateVideoProcessingCommand
+  | CompleteVideoProcessingCommand
+  | FailVideoProcessingCommand;

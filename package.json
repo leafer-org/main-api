@@ -20,6 +20,8 @@
     "openapi-bundle": "npx @redocly/cli bundle ../http-contracts/main.yaml --output ./src/infra/contracts/generated-public-schema.json --ext json",
     "openapi-gen": "npx openapi-typescript ./src/infra/contracts/generated-public-schema.json -o ./src/infra/contracts/generated-public-schema.d.ts && biome format --write ./src/infra/contracts/generated-public-schema.d.ts",
     "openapi": "yarn openapi-bundle && yarn openapi-gen",
+    "serve:file-processor": "node dist/apps/file-processor.js",
+    "dev:file-processor": "concurrently \"swc src -w -s --copy-files -d dist --strip-leading-paths\" \"node --watch-path dist/apps --watch-path dist/features --watch-path dist/infra --watch-path dist/kernel dist/apps/file-processor.js\"",
     "seed": "npx tsx scripts/seed.ts",
     "seed:cities": "npx tsx scripts/seed-cities.ts"
   },
@@ -38,6 +40,7 @@
     "@trpc/server": "^11.9.0",
     "argon2": "^0.43.0",
     "bowser": "^2.14.1",
+    "bullmq": "^5.71.0",
     "cookie": "^1.0.2",
     "drizzle-orm": "^0.45.1",
     "express-openapi-validator": "^5.6.2",

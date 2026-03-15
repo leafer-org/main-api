@@ -2267,6 +2267,179 @@
         }
       }
     },
+    "/media/video/upload-init": {
+      "post": {
+        "operationId": "mediaVideoUploadInit",
+        "tags": [
+          "media"
+        ],
+        "summary": "Инициализация multipart загрузки видео",
+        "description": "Создаёт media record, инициирует S3 multipart upload, возвращает presigned URLs для частей.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoUploadInitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Multipart upload инициирован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoUploadInitResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации / Доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Медиа не найдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/video/upload-complete": {
+      "post": {
+        "operationId": "mediaVideoUploadComplete",
+        "tags": [
+          "media"
+        ],
+        "summary": "Завершение multipart загрузки видео",
+        "description": "Завершает S3 multipart upload и ставит видео в очередь обработки.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoUploadCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Upload завершён, видео в очереди обработки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoUploadCompleteResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации / Доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Медиа не найдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/video/status/{mediaId}": {
+      "get": {
+        "operationId": "mediaVideoStatus",
+        "tags": [
+          "media"
+        ],
+        "summary": "Статус обработки видео",
+        "description": "Возвращает текущий статус обработки видео.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статус обработки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoStatusResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Медиа не найдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/preview/{mediaId}": {
       "get": {
         "operationId": "mediaPreview",
@@ -9977,6 +10150,131 @@
             "additionalProperties": {
               "type": "string"
             }
+          }
+        }
+      },
+      "VideoUploadInitRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "mimeType",
+          "fileSize"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "mimeType": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "fileSize": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "VideoUploadInitResult": {
+        "type": "object",
+        "required": [
+          "mediaId",
+          "uploadId",
+          "partUrls"
+        ],
+        "properties": {
+          "mediaId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uploadId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "partUrls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      },
+      "VideoUploadCompleteRequest": {
+        "type": "object",
+        "required": [
+          "mediaId",
+          "uploadId",
+          "parts"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mediaId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uploadId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "partNumber",
+                "etag"
+              ],
+              "properties": {
+                "partNumber": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "etag": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "VideoUploadCompleteResult": {
+        "type": "object",
+        "required": [
+          "mediaId"
+        ],
+        "properties": {
+          "mediaId": {
+            "type": "string"
+          }
+        }
+      },
+      "VideoStatusResult": {
+        "type": "object",
+        "required": [
+          "mediaId",
+          "processingStatus"
+        ],
+        "properties": {
+          "mediaId": {
+            "type": "string"
+          },
+          "processingStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "ready",
+              "failed"
+            ]
+          },
+          "duration": {
+            "type": [
+              "integer",
+              "null"
+            ]
           }
         }
       },

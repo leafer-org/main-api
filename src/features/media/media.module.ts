@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 
 import { DrizzleMediaRepository } from './adapters/db/repositories/file.repository.js';
+import { DrizzleVideoDetailsRepository } from './adapters/db/repositories/video-details.repository.js';
 import { MediaController } from './adapters/http/media.controller.js';
 import { UuidMediaIdGenerator } from './adapters/id/file-id-generator.service.js';
 import { ImgproxyUrlSigner } from './adapters/media/image-proxy-url-signer.js';
@@ -9,13 +10,24 @@ import {
   CachedMediaUrlService,
   IMAGE_PROXY_URL_SIGNER,
 } from './adapters/media/media-url.service.js';
+import { BullMQVideoProcessingQueue } from './adapters/queue/bullmq-video-processing-queue.js';
 import { S3FileStorageService } from './adapters/s3/file-storage.service.js';
 import { S3ClientService } from './adapters/s3/s3-client.service.js';
-import { FileStorageService, MediaConfig, MediaIdGenerator, MediaRepository } from './application/ports.js';
+import {
+  FileStorageService,
+  MediaConfig,
+  MediaIdGenerator,
+  MediaRepository,
+  VideoDetailsRepository,
+  VideoProcessingQueue,
+} from './application/ports.js';
 import { FreeFileInteractor } from './application/use-cases/free-file.interactor.js';
 import { FreeFilesInteractor } from './application/use-cases/free-files.interactor.js';
 import { GetDownloadUrlInteractor } from './application/use-cases/get-download-url.interactor.js';
 import { GetPreviewDownloadUrlInteractor } from './application/use-cases/get-preview-download-url.interactor.js';
+import { GetVideoStatusInteractor } from './application/use-cases/get-video-status.interactor.js';
+import { CompleteVideoUploadInteractor } from './application/use-cases/upload/complete-video-upload.interactor.js';
+import { InitVideoUploadInteractor } from './application/use-cases/upload/init-video-upload.interactor.js';
 import { RequestUploadInteractor } from './application/use-cases/upload/request-upload.interactor.js';
 import { UseFileInteractor } from './application/use-cases/use-file.interactor.js';
 import { UseFilesInteractor } from './application/use-cases/use-files.interactor.js';
@@ -23,6 +35,18 @@ import { MainConfigModule } from '@/infra/config/module.js';
 import { MainConfigService } from '@/infra/config/service.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
+
+export const MAX_VIDEO_FILE_SIZE = 500 * 1024 * 1024; // 500MB
+
+export const mediaConfigFactory = {
+  provide: MediaConfig,
+  useFactory: (config: MainConfigService) => ({
+    publicBucket: config.get('MEDIA_BUCKET_PUBLIC') ?? 'media-public',
+    maxFileSize: config.get('MEDIA_MAX_FILE_SIZE'),
+    maxVideoFileSize: MAX_VIDEO_FILE_SIZE,
+  }),
+  inject: [MainConfigService],
+};
 
 @Global()
 @Module({
@@ -33,17 +57,12 @@ import { MediaService } from '@/kernel/application/ports/media.js';
     S3ClientService,
     CachedMediaUrlService,
     { provide: MediaRepository, useClass: DrizzleMediaRepository },
+    { provide: VideoDetailsRepository, useClass: DrizzleVideoDetailsRepository },
     { provide: FileStorageService, useClass: S3FileStorageService },
     { provide: MediaIdGenerator, useClass: UuidMediaIdGenerator },
+    { provide: VideoProcessingQueue, useClass: BullMQVideoProcessingQueue },
     { provide: Clock, useClass: SystemClock },
-    {
-      provide: MediaConfig,
-      useFactory: (config: MainConfigService) => ({
-        publicBucket: config.get('MEDIA_BUCKET_PUBLIC') ?? 'media-public',
-        maxFileSize: config.get('MEDIA_MAX_FILE_SIZE'),
-      }),
-      inject: [MainConfigService],
-    },
+    mediaConfigFactory,
     {
       provide: IMAGE_PROXY_URL_SIGNER,
       useFactory: (config: MainConfigService) => {
@@ -57,12 +76,15 @@ import { MediaService } from '@/kernel/application/ports/media.js';
     { provide: MediaService, useClass: MediaServiceAdapter },
     // use cases
     RequestUploadInteractor,
+    InitVideoUploadInteractor,
+    CompleteVideoUploadInteractor,
     UseFileInteractor,
     UseFilesInteractor,
     FreeFileInteractor,
     FreeFilesInteractor,
     GetDownloadUrlInteractor,
     GetPreviewDownloadUrlInteractor,
+    GetVideoStatusInteractor,
   ],
   exports: [MediaService],
 })

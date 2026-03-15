@@ -1,6 +1,9 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 
 import { GetPreviewDownloadUrlInteractor } from '../../application/use-cases/get-preview-download-url.interactor.js';
+import { GetVideoStatusInteractor } from '../../application/use-cases/get-video-status.interactor.js';
+import { CompleteVideoUploadInteractor } from '../../application/use-cases/upload/complete-video-upload.interactor.js';
+import { InitVideoUploadInteractor } from '../../application/use-cases/upload/init-video-upload.interactor.js';
 import { RequestUploadInteractor } from '../../application/use-cases/upload/request-upload.interactor.js';
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
@@ -13,11 +16,13 @@ import { MediaId } from '@/kernel/domain/ids.js';
 export class MediaController {
   public constructor(
     private readonly requestUpload: RequestUploadInteractor,
+    private readonly initVideoUpload: InitVideoUploadInteractor,
+    private readonly completeVideoUpload: CompleteVideoUploadInteractor,
     private readonly getPreviewDownloadUrl: GetPreviewDownloadUrlInteractor,
+    private readonly getVideoStatus: GetVideoStatusInteractor,
   ) {}
 
   @Post('image/upload-request')
-  @Public()
   @HttpCode(200)
   public async uploadRequest(
     @Body() body: PublicBody['mediaUploadRequest'],
@@ -34,7 +39,59 @@ export class MediaController {
     return result.value;
   }
 
-@Get('preview/:mediaId')
+  @Post('video/upload-init')
+  @HttpCode(200)
+  public async videoUploadInit(
+    @Body() body: PublicBody['mediaVideoUploadInit'],
+  ): Promise<PublicResponse['mediaVideoUploadInit']> {
+    const result = await this.initVideoUpload.execute({
+      name: body.name,
+      mimeType: body.mimeType,
+      fileSize: body.fileSize,
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'mediaVideoUploadInit'>(result.error.toResponse());
+    }
+
+    return result.value;
+  }
+
+  @Post('video/upload-complete')
+  @HttpCode(200)
+  public async videoUploadComplete(
+    @Body() body: PublicBody['mediaVideoUploadComplete'],
+  ): Promise<PublicResponse['mediaVideoUploadComplete']> {
+    const result = await this.completeVideoUpload.execute({
+      mediaId: MediaId.raw(body.mediaId),
+      uploadId: body.uploadId,
+      parts: body.parts,
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'mediaVideoUploadComplete'>(result.error.toResponse());
+    }
+
+    return result.value;
+  }
+
+  @Get('video/status/:mediaId')
+  public async videoStatus(
+    @Param('mediaId') mediaId: string,
+  ): Promise<PublicResponse['mediaVideoStatus']> {
+    const result = await this.getVideoStatus.execute({
+      mediaId: MediaId.raw(mediaId),
+    });
+
+    const data = result.value;
+    if (!data) {
+      throw domainToHttpError<'mediaVideoStatus'>({ 404: { type: 'media_not_found', isDomain: true } });
+    }
+
+    return data;
+  }
+
+  @Get('preview/:mediaId')
   public async preview(@Param('mediaId') mediaId: string): Promise<PublicResponse['mediaPreview']> {
     const result = await this.getPreviewDownloadUrl.execute({
       fileId: MediaId.raw(mediaId),

@@ -141,6 +141,17 @@ services:
       minio:
         condition: service_healthy
 
+  bull-board:
+    image: deadly0/bull-board
+    ports:
+      - "3100:3000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
   gorse-postgres:
     image: postgres:18-alpine
     environment:
