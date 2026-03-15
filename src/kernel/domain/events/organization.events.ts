@@ -1,11 +1,13 @@
-import type { FileId, OrganizationId } from '../ids.js';
+import type { MediaId, OrganizationId } from '../ids.js';
+import type { MediaItem } from '../vo/media-item.js';
 
 export type OrganizationPublishedEvent = {
   id: string;
   type: 'organization.published';
   organizationId: OrganizationId;
   name: string;
-  avatarId: FileId | null;
+  avatarId: MediaId | null;
+  media: MediaItem[];
   republished: boolean;
   publishedAt: Date;
 };
@@ -23,7 +25,8 @@ export type OrganizationModerationRequestedEvent = {
   organizationId: OrganizationId;
   name: string;
   description: string;
-  avatarId: FileId | null;
+  avatarId: MediaId | null;
+  media: MediaItem[];
   submittedAt: Date;
 };
 

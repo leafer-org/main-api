@@ -83,7 +83,7 @@ CREATE TABLE "discovery_items" (
 	"type_id" text NOT NULL,
 	"title" text,
 	"description" text,
-	"image_id" text,
+	"media" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"age_group" text,
 	"city_id" text,
 	"lat" double precision,
@@ -184,8 +184,9 @@ CREATE TABLE "interactions" (
 	"timestamp" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "files" (
+CREATE TABLE "media" (
 	"id" uuid PRIMARY KEY NOT NULL,
+	"type" text NOT NULL,
 	"name" text NOT NULL,
 	"bucket" text NOT NULL,
 	"mime_type" text NOT NULL,

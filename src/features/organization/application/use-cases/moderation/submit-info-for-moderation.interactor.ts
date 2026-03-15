@@ -49,6 +49,7 @@ export class SubmitInfoForModerationInteractor {
         name: event.name,
         description: event.description,
         avatarId: event.avatarId,
+        media: event.media,
         submittedAt: event.submittedAt,
       });
 

@@ -10,7 +10,7 @@ export function toDetailView(item: ItemReadModel): ItemDetailView {
       type: 'base-info',
       title: item.baseInfo.title,
       description: item.baseInfo.description,
-      imageId: item.baseInfo.imageId,
+      media: item.baseInfo.media,
     });
   }
 

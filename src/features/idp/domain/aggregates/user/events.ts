@@ -1,6 +1,6 @@
 import type { FullName } from '../../vo/full-name.js';
 import type { PhoneNumber } from '../../vo/phone-number.js';
-import type { FileId, UserId } from '@/kernel/domain/ids.js';
+import type { MediaId, UserId } from '@/kernel/domain/ids.js';
 import type { Role } from '@/kernel/domain/vo/role.js';
 
 export type UserCreatedEvent = {
@@ -8,7 +8,7 @@ export type UserCreatedEvent = {
   id: UserId;
   phoneNumber: PhoneNumber;
   fullName: FullName;
-  avatarId: FileId | undefined;
+  avatarId: MediaId | undefined;
   role: Role;
   cityId: string;
   lat?: number;
@@ -19,7 +19,7 @@ export type UserCreatedEvent = {
 export type UserProfileUpdatedEvent = {
   type: 'user.profile_updated';
   fullName: FullName;
-  avatarId: FileId | undefined;
+  avatarId: MediaId | undefined;
   cityId?: string;
   lat?: number;
   lng?: number;

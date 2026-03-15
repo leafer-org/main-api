@@ -114,7 +114,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       typeId,
       organizationId: orgId,
       widgets: [
-        { type: 'base-info', title: 'Test Item', description: 'Desc', imageId: null },
+        { type: 'base-info', title: 'Test Item', description: 'Desc', media: [] },
         { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
         { type: 'category', categoryIds, attributes: [] },
       ],

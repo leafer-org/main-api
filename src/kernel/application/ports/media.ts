@@ -1,5 +1,5 @@
 import type { Transaction } from './tx-host.js';
-import type { FileId } from '@/kernel/domain/ids.js';
+import type { MediaId } from '@/kernel/domain/ids.js';
 
 export type MediaVisibility = 'PUBLIC' | 'PRIVATE';
 
@@ -17,19 +17,19 @@ export type GetDownloadUrlOptions = {
 
 export abstract class MediaService {
   public abstract getDownloadUrl(
-    fileId: FileId,
+    fileId: MediaId,
     options: GetDownloadUrlOptions,
   ): Promise<string | null>;
 
   public abstract getDownloadUrls(
-    requests: { fileId: FileId; options: GetDownloadUrlOptions }[],
+    requests: { fileId: MediaId; options: GetDownloadUrlOptions }[],
   ): Promise<(string | null)[]>;
 
-  public abstract getPreviewDownloadUrl(fileId: FileId): Promise<string | null>;
+  public abstract getPreviewDownloadUrl(fileId: MediaId): Promise<string | null>;
 
-  public abstract useFiles(tx: Transaction, fileIds: FileId[]): Promise<void>;
+  public abstract useFiles(tx: Transaction, fileIds: MediaId[]): Promise<void>;
 
-  public abstract freeFiles(tx: Transaction, fileIds: FileId[]): Promise<void>;
+  public abstract freeFiles(tx: Transaction, fileIds: MediaId[]): Promise<void>;
 
   public createDownloadUrlsLoader(options: GetDownloadUrlOptions): DownloadUrlLoader {
     return new DownloadUrlLoader(this, options);
@@ -37,7 +37,7 @@ export abstract class MediaService {
 }
 
 export class DownloadUrlLoader {
-  private batch: { fileId: FileId; resolve: (url: string) => void }[] = [];
+  private batch: { fileId: MediaId; resolve: (url: string) => void }[] = [];
   private scheduled = false;
 
   public constructor(
@@ -45,7 +45,7 @@ export class DownloadUrlLoader {
     private readonly options: GetDownloadUrlOptions,
   ) {}
 
-  public get(fileId: FileId | null): Promise<string> {
+  public get(fileId: MediaId | null): Promise<string> {
     if (!fileId) return Promise.resolve('');
     return new Promise<string>((resolve) => {
       this.batch.push({ fileId, resolve });

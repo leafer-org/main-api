@@ -11,6 +11,7 @@ const OrganizationStreamingMessage = Type.Object({
   organizationId: Type.String(),
   name: Type.Optional(Type.String()),
   avatarId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  media: Type.Optional(Type.Array(Type.Object({ type: Type.String(), mediaId: Type.String() }))),
   republished: Type.Optional(Type.Boolean()),
   publishedAt: Type.Optional(Type.String()),
   unpublishedAt: Type.Optional(Type.String()),

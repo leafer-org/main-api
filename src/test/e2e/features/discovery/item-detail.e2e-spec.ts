@@ -51,7 +51,7 @@ describe('GET /items/:itemId (Item Detail)', () => {
     options?: {
       title?: string;
       description?: string;
-      imageId?: string | null;
+      media?: { type: string; mediaId: string }[];
       cityId?: string;
       lat?: number;
       lng?: number;
@@ -80,7 +80,7 @@ describe('GET /items/:itemId (Item Detail)', () => {
         type: 'base-info',
         title: options?.title ?? 'Test Item',
         description: options?.description ?? 'Test Description',
-        imageId: options?.imageId ?? null,
+        media: options?.media ?? [],
       },
       {
         type: 'owner',

@@ -8,7 +8,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import type { CategoryId, MediaId, TypeId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import { Permissions } from '@/kernel/domain/permissions.js';
 
@@ -26,7 +26,7 @@ export class CreateCategoryInteractor {
     id: CategoryId;
     parentCategoryId: CategoryId | null;
     name: string;
-    iconId: FileId;
+    iconId: MediaId;
     allowedTypeIds: TypeId[];
     ageGroups: AgeGroup[];
   }) {

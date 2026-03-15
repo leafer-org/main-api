@@ -13,7 +13,7 @@ import type {
   CategoryPublishedEvent,
   CategoryUnpublishedEvent,
 } from '@/kernel/domain/events/category.events.js';
-import { AttributeId, CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import { AttributeId, CategoryId, MediaId, TypeId } from '@/kernel/domain/ids.js';
 import { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 
@@ -40,7 +40,7 @@ export class CategoryCascadeKafkaHandler {
           ? CategoryId.raw(payload.parentCategoryId)
           : null,
         name: payload.name!,
-        iconId: FileId.raw(payload.iconId!),
+        iconId: MediaId.raw(payload.iconId!),
         allowedTypeIds: (payload.allowedTypeIds ?? []).map((id) => TypeId.raw(id)),
         ancestorIds: (payload.ancestorIds ?? []).map((id) => CategoryId.raw(id)),
         attributes: (payload.attributes ?? []).map((a) => ({

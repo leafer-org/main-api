@@ -4,12 +4,14 @@ export type OrganizationJsonState = {
     name: string;
     description: string;
     avatarId: string | null;
+    media: { type: string; mediaId: string }[];
     status: string;
   };
   infoPublication: {
     name: string;
     description: string;
     avatarId: string | null;
+    media: { type: string; mediaId: string }[];
     publishedAt: string;
   } | null;
   employees: {

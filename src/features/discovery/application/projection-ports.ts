@@ -2,7 +2,7 @@ import type { CategoryReadModel } from '../domain/read-models/category.read-mode
 import type { ItemReadModel } from '../domain/read-models/item.read-model.js';
 import type { ItemTypeReadModel } from '../domain/read-models/item-type.read-model.js';
 import type { OwnerReadModel } from '../domain/read-models/owner.read-model.js';
-import type { CategoryId, FileId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { CategoryId, MediaId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
 
 /**
  * Проекция товаров в PG. `updateOwnerData` / `deleteByOrganizationId` возвращают
@@ -14,7 +14,7 @@ export abstract class ItemProjectionPort {
   public abstract deleteByOrganizationId(organizationId: OrganizationId): Promise<ItemId[]>;
   public abstract updateOwnerData(
     organizationId: OrganizationId,
-    data: { name: string; avatarId: FileId | null },
+    data: { name: string; avatarId: MediaId | null },
   ): Promise<ItemId[]>;
   public abstract updateItemReview(
     itemId: ItemId,
@@ -42,7 +42,7 @@ export abstract class OwnerProjectionPort {
   public abstract upsert(owner: OwnerReadModel): Promise<void>;
   public abstract updateData(
     ownerId: OrganizationId,
-    data: { name: string; avatarId: FileId | null; updatedAt: Date },
+    data: { name: string; avatarId: MediaId | null; updatedAt: Date },
   ): Promise<void>;
   public abstract updateReview(
     ownerId: OrganizationId,

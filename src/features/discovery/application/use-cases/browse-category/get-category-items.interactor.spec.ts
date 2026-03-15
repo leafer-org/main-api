@@ -25,7 +25,7 @@ function makeItem(id: string, overrides?: Partial<ItemReadModel>): ItemReadModel
   return {
     itemId: ItemId.raw(id),
     typeId: TypeId.raw('type-1'),
-    baseInfo: { title: `Item ${id}`, description: '', imageId: null },
+    baseInfo: { title: `Item ${id}`, description: '', media: [] },
     publishedAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     ...overrides,

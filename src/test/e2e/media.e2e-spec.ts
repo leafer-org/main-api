@@ -13,7 +13,7 @@ import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import { FileId } from '@/kernel/domain/ids.js';
+import { MediaId } from '@/kernel/domain/ids.js';
 
 const FIXED_OTP = '123456';
 
@@ -73,14 +73,14 @@ describe('Media Controller (e2e)', () => {
     await stopContainers();
   });
 
-  // ─── POST /media/upload-request ──────────────────────────────────
+  // ─── POST /media/image/upload-request ──────────────────────────────────
 
-  describe('POST /media/upload-request', () => {
+  describe('POST /media/image/upload-request', () => {
     it('should create a file record and return fileId + presigned post data', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       const response = await e2e.agent
-        .post('/media/upload-request')
+        .post('/media/image/upload-request')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           name: 'test-image.png',
@@ -102,7 +102,7 @@ describe('Media Controller (e2e)', () => {
 
     it('should return 400 for invalid mimeType', async () => {
       const res = await e2e.agent
-        .post('/media/upload-request')
+        .post('/media/image/upload-request')
         .send({ name: 'file.txt', mimeType: 'not-a-mime' })
         .expect(400);
 
@@ -111,7 +111,7 @@ describe('Media Controller (e2e)', () => {
 
     it('should return 400 for empty file name', async () => {
       await e2e.agent
-        .post('/media/upload-request')
+        .post('/media/image/upload-request')
         .send({ name: '', mimeType: 'image/png' })
         .expect(400);
     });
@@ -120,7 +120,7 @@ describe('Media Controller (e2e)', () => {
       const longName = 'a'.repeat(256);
 
       await e2e.agent
-        .post('/media/upload-request')
+        .post('/media/image/upload-request')
         .send({ name: longName, mimeType: 'image/png' })
         .expect(400);
     });
@@ -131,7 +131,7 @@ describe('Media Controller (e2e)', () => {
   describe('GET /media/preview/:mediaId', () => {
     it('should return presigned preview URL for a temporary file', async () => {
       const uploadRes = await e2e.agent
-        .post('/media/upload-request')
+        .post('/media/image/upload-request')
         .send({ name: 'preview-test.png', mimeType: 'image/png' })
         .expect(200);
 
@@ -154,7 +154,7 @@ describe('Media Controller (e2e)', () => {
   describe('Image Proxy (via MediaService)', () => {
     async function uploadAndUseImage(): Promise<string> {
       const uploadRes = await e2e.agent
-        .post('/media/upload-request')
+        .post('/media/image/upload-request')
         .send({ name: 'proxy-test.png', mimeType: 'image/png' })
         .expect(200);
 
@@ -165,7 +165,7 @@ describe('Media Controller (e2e)', () => {
       const mediaService = e2e.app.get(MediaService);
       const txHost = e2e.app.get(TransactionHost);
       await txHost.startTransaction(async (tx) => {
-        await mediaService.useFiles(tx, [FileId.raw(fileId)]);
+        await mediaService.useFiles(tx, [MediaId.raw(fileId)]);
       });
 
       return fileId;
@@ -175,7 +175,7 @@ describe('Media Controller (e2e)', () => {
       const fileId = await uploadAndUseImage();
       const mediaService = e2e.app.get(MediaService);
 
-      const url = await mediaService.getDownloadUrl(FileId.raw(fileId), {
+      const url = await mediaService.getDownloadUrl(MediaId.raw(fileId), {
         visibility: 'PUBLIC',
         imageProxy: { width: 128, height: 128 },
       });
@@ -194,11 +194,11 @@ describe('Media Controller (e2e)', () => {
 
       const [small, large] = await mediaService.getDownloadUrls([
         {
-          fileId: FileId.raw(fileId),
+          fileId: MediaId.raw(fileId),
           options: { visibility: 'PUBLIC', imageProxy: { width: 64, height: 64 } },
         },
         {
-          fileId: FileId.raw(fileId),
+          fileId: MediaId.raw(fileId),
           options: { visibility: 'PUBLIC', imageProxy: { width: 512, height: 512 } },
         },
       ]);
@@ -210,7 +210,7 @@ describe('Media Controller (e2e)', () => {
 
     it('should bypass proxy for non-image files', async () => {
       const uploadRes = await e2e.agent
-        .post('/media/upload-request')
+        .post('/media/image/upload-request')
         .send({ name: 'document.pdf', mimeType: 'application/pdf' })
         .expect(200);
 
@@ -225,10 +225,10 @@ describe('Media Controller (e2e)', () => {
       const mediaService = e2e.app.get(MediaService);
       const txHost = e2e.app.get(TransactionHost);
       await txHost.startTransaction(async (tx) => {
-        await mediaService.useFiles(tx, [FileId.raw(uploadRes.body.fileId)]);
+        await mediaService.useFiles(tx, [MediaId.raw(uploadRes.body.fileId)]);
       });
 
-      const url = await mediaService.getDownloadUrl(FileId.raw(uploadRes.body.fileId), {
+      const url = await mediaService.getDownloadUrl(MediaId.raw(uploadRes.body.fileId), {
         visibility: 'PUBLIC',
         imageProxy: { width: 128, height: 128 },
       });
@@ -242,7 +242,7 @@ describe('Media Controller (e2e)', () => {
       const fileId = await uploadAndUseImage();
       const mediaService = e2e.app.get(MediaService);
 
-      const url = await mediaService.getDownloadUrl(FileId.raw(fileId), {
+      const url = await mediaService.getDownloadUrl(MediaId.raw(fileId), {
         visibility: 'PUBLIC',
         imageProxy: { width: 64, height: 64, format: 'webp' },
       });
@@ -260,7 +260,7 @@ describe('Media Controller (e2e)', () => {
       const fileId = await uploadAndUseImage();
       const mediaService = e2e.app.get(MediaService);
 
-      const url = await mediaService.getDownloadUrl(FileId.raw(fileId), {
+      const url = await mediaService.getDownloadUrl(MediaId.raw(fileId), {
         visibility: 'PUBLIC',
       });
 

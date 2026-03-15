@@ -1,7 +1,7 @@
 import type {
   AttributeId,
   CategoryId,
-  FileId,
+  MediaId,
   OrganizationId,
   ServiceComponentId,
 } from '../ids.js';
@@ -12,7 +12,7 @@ export type BaseInfoComponent = {
   id: ServiceComponentId;
   title: string;
   description: string;
-  photoId: FileId;
+  photoId: MediaId;
 };
 
 export type AgeGroupComponent = {

@@ -70,7 +70,7 @@ async function seedItem(
       type: 'base-info',
       title: options?.title ?? 'Test Item',
       description: 'Desc',
-      imageId: null,
+      media: [],
     },
     { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
     { type: 'category', categoryIds: [], attributes: [] },

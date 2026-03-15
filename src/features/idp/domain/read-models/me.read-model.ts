@@ -1,6 +1,6 @@
 import type { FullName } from '../vo/full-name.js';
 import type { PhoneNumber } from '../vo/phone-number.js';
-import type { FileId, SessionId, UserId } from '@/kernel/domain/ids.js';
+import type { MediaId, SessionId, UserId } from '@/kernel/domain/ids.js';
 import type { Role } from '@/kernel/domain/vo/role.js';
 
 export type MeReadModel = {
@@ -11,5 +11,5 @@ export type MeReadModel = {
   phoneNumber: PhoneNumber;
   createdAt: Date;
   updatedAt: Date;
-  avatarId: FileId | undefined;
+  avatarId: MediaId | undefined;
 };

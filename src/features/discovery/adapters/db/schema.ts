@@ -24,7 +24,7 @@ export const discoveryItems = pgTable(
     typeId: text('type_id').notNull(),
     title: text('title'),
     description: text('description'),
-    imageId: text('image_id'),
+    media: jsonb('media').$type<{ type: string; mediaId: string }[]>().notNull().default([]),
     ageGroup: text('age_group'),
     cityId: text('city_id'),
     lat: doublePrecision('lat'),

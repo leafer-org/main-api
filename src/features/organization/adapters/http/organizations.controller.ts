@@ -15,7 +15,7 @@ import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
-import { EmployeeRoleId, FileId, OrganizationId } from '@/kernel/domain/ids.js';
+import { EmployeeRoleId, MediaId, OrganizationId } from '@/kernel/domain/ids.js';
 
 @Controller('organizations')
 export class OrganizationsController {
@@ -45,7 +45,8 @@ export class OrganizationsController {
       creatorUserId: user.userId,
       name: body.name,
       description: body.description,
-      avatarId: body.avatarId ? FileId.raw(body.avatarId) : null,
+      avatarId: body.avatarId ? MediaId.raw(body.avatarId) : null,
+      media: (body.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })),
       adminRoleId,
     });
 
@@ -137,7 +138,8 @@ export class OrganizationsController {
       userId: user.userId,
       name: body.name,
       description: body.description,
-      avatarId: body.avatarId ? FileId.raw(body.avatarId) : null,
+      avatarId: body.avatarId ? MediaId.raw(body.avatarId) : null,
+      media: (body.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })),
     });
 
     if (isLeft(result)) {
@@ -218,6 +220,7 @@ export class OrganizationsController {
         name: detail.infoDraft.name,
         description: detail.infoDraft.description,
         avatarId: detail.infoDraft.avatarId ?? null,
+        media: detail.infoDraft.media.map((m) => ({ type: m.type, mediaId: m.mediaId as string })),
         status: detail.infoDraft.status,
       },
       infoPublication: detail.infoPublication
@@ -225,6 +228,7 @@ export class OrganizationsController {
             name: detail.infoPublication.name,
             description: detail.infoPublication.description,
             avatarId: detail.infoPublication.avatarId ?? null,
+            media: detail.infoPublication.media.map((m) => ({ type: m.type, mediaId: m.mediaId as string })),
             publishedAt: detail.infoPublication.publishedAt.toISOString(),
           }
         : null,

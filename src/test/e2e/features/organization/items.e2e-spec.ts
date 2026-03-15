@@ -96,7 +96,7 @@ describe('Organization Items (e2e)', () => {
         .set('Authorization', `Bearer ${other.accessToken}`)
         .send({
           typeId: itemType.id,
-          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', imageId: null } }],
+          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', media: [] } }],
         })
         .expect(403);
     });
@@ -184,7 +184,7 @@ describe('Organization Items (e2e)', () => {
           widgets: [
             {
               type: 'base-info',
-              data: { title: 'Updated Title', description: 'Updated desc', imageId: null },
+              data: { title: 'Updated Title', description: 'Updated desc', media: [] },
             },
           ],
         })

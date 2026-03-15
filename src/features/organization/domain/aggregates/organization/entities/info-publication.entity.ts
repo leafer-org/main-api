@@ -1,11 +1,13 @@
 import type { InfoDraftEntity } from './info-draft.entity.js';
 import type { EntityState } from '@/infra/ddd/entity-state.js';
-import type { FileId } from '@/kernel/domain/ids.js';
+import type { MediaId } from '@/kernel/domain/ids.js';
+import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 
 export type InfoPublicationEntity = EntityState<{
   name: string;
   description: string;
-  avatarId: FileId | null;
+  avatarId: MediaId | null;
+  media: MediaItem[];
   publishedAt: Date;
 }>;
 
@@ -15,6 +17,7 @@ export const InfoPublicationEntity = {
       name: draft.name,
       description: draft.description,
       avatarId: draft.avatarId,
+      media: draft.media,
       publishedAt,
     };
   },

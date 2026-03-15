@@ -96,7 +96,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
     publishedAt?: string;
   }) {
     const widgets: ItemWidget[] = [
-      { type: 'base-info', title: params.title ?? 'Test Item', description: 'Desc', imageId: null },
+      { type: 'base-info', title: params.title ?? 'Test Item', description: 'Desc', media: [] },
       {
         type: 'owner',
         organizationId: params.orgId as OrganizationId,

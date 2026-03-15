@@ -12,7 +12,7 @@ import type {
   OrganizationPublishedEvent,
   OrganizationUnpublishedEvent,
 } from '@/kernel/domain/events/organization.events.js';
-import { FileId, OrganizationId } from '@/kernel/domain/ids.js';
+import { MediaId, OrganizationId } from '@/kernel/domain/ids.js';
 
 @KafkaConsumerHandlers(DISCOVERY_CONSUMER_ID)
 @Injectable()
@@ -31,7 +31,8 @@ export class OwnerProjectionKafkaHandler {
         type: 'organization.published',
         organizationId: OrganizationId.raw(payload.organizationId),
         name: payload.name!,
-        avatarId: payload.avatarId ? FileId.raw(payload.avatarId) : null,
+        avatarId: payload.avatarId ? MediaId.raw(payload.avatarId) : null,
+        media: (payload.media ?? []).map((m) => ({ type: m.type as 'image' | 'video', mediaId: MediaId.raw(m.mediaId) })),
         republished: payload.republished ?? false,
         publishedAt: new Date(payload.publishedAt!),
       } satisfies OrganizationPublishedEvent);

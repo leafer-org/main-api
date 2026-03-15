@@ -17,7 +17,7 @@ type DiscoveryItemDocument = {
   categoryIds: string[];
   price: number | null;
   attributeValues: string[];
-  imageId: string | null;
+  media: { type: string; mediaId: string }[];
   paymentStrategy: string | null;
   rating: number | null;
   reviewCount: number;
@@ -39,7 +39,7 @@ function toDocument(item: ItemReadModel): DiscoveryItemDocument {
     price: item.payment?.price ?? null,
     attributeValues:
       item.category?.attributeValues.map((av) => `${String(av.attributeId)}:${av.value}`) ?? [],
-    imageId: item.baseInfo?.imageId ? String(item.baseInfo.imageId) : null,
+    media: item.baseInfo?.media.map((m) => ({ type: m.type, mediaId: String(m.mediaId) })) ?? [],
     paymentStrategy: item.payment?.strategy ?? null,
     rating: item.itemReview?.rating ?? null,
     reviewCount: item.itemReview?.reviewCount ?? 0,

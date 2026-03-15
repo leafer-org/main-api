@@ -1,4 +1,4 @@
-import type { CategoryId, FileId, TypeId } from '../ids.js';
+import type { CategoryId, MediaId, TypeId } from '../ids.js';
 import type { AgeGroup } from '../vo/age-group.js';
 import type { CategoryAttribute } from '../vo/category-attribute.js';
 
@@ -10,7 +10,7 @@ export type CategoryPublishedEvent = {
   categoryId: CategoryId;
   parentCategoryId: CategoryId | null;
   name: string;
-  iconId: FileId;
+  iconId: MediaId;
   allowedTypeIds: TypeId[];
   ancestorIds: CategoryId[];
   attributes: CategoryAttribute[];

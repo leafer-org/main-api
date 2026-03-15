@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { fileApply } from './apply.js';
-import type { FileState } from './state.js';
-import { FileId } from '@/kernel/domain/ids.js';
+import { mediaApply } from './apply.js';
+import type { MediaState } from './state.js';
+import { MediaId } from '@/kernel/domain/ids.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
-const FILE_ID = FileId.raw('file-1');
+const MEDIA_ID = MediaId.raw('file-1');
 const NOW = new Date('2024-06-01T12:00:00.000Z');
 const LATER = new Date('2024-06-02T12:00:00.000Z');
 
-const makeTemporaryFile = (): FileState => ({
-  id: FILE_ID,
+const makeTemporaryMedia = (): MediaState => ({
+  id: MEDIA_ID,
+  type: 'image',
   name: 'photo.jpg',
   bucket: 'public',
   mimeType: 'image/jpeg',
@@ -21,12 +22,13 @@ const makeTemporaryFile = (): FileState => ({
 
 // ─── Тесты ──────────────────────────────────────────────────────────────────
 
-describe('fileApply', () => {
-  describe('file.uploaded', () => {
-    it('создаёт FileState из null с isTemporary = true', () => {
-      const result = fileApply(null, {
-        type: 'file.uploaded',
-        id: FILE_ID,
+describe('mediaApply', () => {
+  describe('media.uploaded', () => {
+    it('создаёт MediaState из null с isTemporary = true', () => {
+      const result = mediaApply(null, {
+        type: 'media.uploaded',
+        id: MEDIA_ID,
+        mediaType: 'image',
         name: 'photo.jpg',
         bucket: 'public',
         mimeType: 'image/jpeg',
@@ -34,7 +36,8 @@ describe('fileApply', () => {
       });
 
       expect(result).toEqual({
-        id: FILE_ID,
+        id: MEDIA_ID,
+        type: 'image',
         name: 'photo.jpg',
         bucket: 'public',
         mimeType: 'image/jpeg',
@@ -44,11 +47,11 @@ describe('fileApply', () => {
     });
   });
 
-  describe('file.used', () => {
+  describe('media.used', () => {
     it('устанавливает isTemporary = false', () => {
-      const state = makeTemporaryFile();
-      const result = fileApply(state, {
-        type: 'file.used',
+      const state = makeTemporaryMedia();
+      const result = mediaApply(state, {
+        type: 'media.used',
         usedAt: LATER,
       });
 
@@ -60,18 +63,18 @@ describe('fileApply', () => {
 
     it('выбрасывает ошибку если state = null', () => {
       expect(() =>
-        fileApply(null, {
-          type: 'file.used',
+        mediaApply(null, {
+          type: 'media.used',
           usedAt: LATER,
         }),
       ).toThrow('State is required');
     });
   });
 
-  describe('file.freed', () => {
+  describe('media.freed', () => {
     it('возвращает null (агрегат удалён)', () => {
-      const state = makeTemporaryFile();
-      const result = fileApply(state, { type: 'file.freed' });
+      const state = makeTemporaryMedia();
+      const result = mediaApply(state, { type: 'media.freed' });
 
       expect(result).toBeNull();
     });

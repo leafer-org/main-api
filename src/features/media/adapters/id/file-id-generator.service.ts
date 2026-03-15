@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 
-import { FileIdGenerator } from '../../application/ports.js';
-import { FileId } from '@/kernel/domain/ids.js';
+import { MediaIdGenerator } from '../../application/ports.js';
+import { MediaId } from '@/kernel/domain/ids.js';
 
 @Injectable()
-export class UuidFileIdGenerator implements FileIdGenerator {
-  public generateFileId(): FileId {
-    return FileId.raw(randomUUID());
+export class UuidMediaIdGenerator implements MediaIdGenerator {
+  public generateMediaId(): MediaId {
+    return MediaId.raw(randomUUID());
   }
 }

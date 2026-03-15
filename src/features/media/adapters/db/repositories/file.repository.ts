@@ -1,25 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { eq, inArray } from 'drizzle-orm';
 
-import { FileRepository } from '../../../application/ports.js';
-import type { FileState } from '../../../domain/aggregates/file/state.js';
-import { files } from '../schema.js';
+import { MediaRepository } from '../../../application/ports.js';
+import type { MediaState } from '../../../domain/aggregates/media/state.js';
+import { media } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import { FileId } from '@/kernel/domain/ids.js';
+import { MediaId } from '@/kernel/domain/ids.js';
 
 @Injectable()
-export class DrizzleFileRepository implements FileRepository {
+export class DrizzleMediaRepository implements MediaRepository {
   public constructor(private readonly txHost: TransactionHostPg) {}
 
-  public async findById(tx: Transaction, id: FileId): Promise<FileState | null> {
+  public async findById(tx: Transaction, id: MediaId): Promise<MediaState | null> {
     const db = this.txHost.get(tx);
-    const rows = await db.select().from(files).where(eq(files.id, id)).limit(1);
+    const rows = await db.select().from(media).where(eq(media.id, id)).limit(1);
     const row = rows[0];
     if (!row) return null;
 
     return {
-      id: FileId.raw(row.id),
+      id: MediaId.raw(row.id),
+      type: row.type as MediaState['type'],
       name: row.name,
       bucket: row.bucket,
       mimeType: row.mimeType,
@@ -28,16 +29,17 @@ export class DrizzleFileRepository implements FileRepository {
     };
   }
 
-  public async findByIds(tx: Transaction, ids: FileId[]): Promise<Map<FileId, FileState>> {
+  public async findByIds(tx: Transaction, ids: MediaId[]): Promise<Map<MediaId, MediaState>> {
     if (ids.length === 0) return new Map();
 
     const db = this.txHost.get(tx);
-    const rows = await db.select().from(files).where(inArray(files.id, ids));
-    const map = new Map<FileId, FileState>();
+    const rows = await db.select().from(media).where(inArray(media.id, ids));
+    const map = new Map<MediaId, MediaState>();
 
     for (const row of rows) {
-      map.set(FileId.raw(row.id), {
-        id: FileId.raw(row.id),
+      map.set(MediaId.raw(row.id), {
+        id: MediaId.raw(row.id),
+        type: row.type as MediaState['type'],
         name: row.name,
         bucket: row.bucket,
         mimeType: row.mimeType,
@@ -49,12 +51,13 @@ export class DrizzleFileRepository implements FileRepository {
     return map;
   }
 
-  public async save(tx: Transaction, state: FileState): Promise<void> {
+  public async save(tx: Transaction, state: MediaState): Promise<void> {
     const db = this.txHost.get(tx);
     await db
-      .insert(files)
+      .insert(media)
       .values({
         id: state.id,
+        type: state.type,
         name: state.name,
         bucket: state.bucket,
         mimeType: state.mimeType,
@@ -62,8 +65,9 @@ export class DrizzleFileRepository implements FileRepository {
         createdAt: state.createdAt,
       })
       .onConflictDoUpdate({
-        target: files.id,
+        target: media.id,
         set: {
+          type: state.type,
           name: state.name,
           bucket: state.bucket,
           mimeType: state.mimeType,
@@ -72,15 +76,15 @@ export class DrizzleFileRepository implements FileRepository {
       });
   }
 
-  public async deleteById(tx: Transaction, id: FileId): Promise<void> {
+  public async deleteById(tx: Transaction, id: MediaId): Promise<void> {
     const db = this.txHost.get(tx);
-    await db.delete(files).where(eq(files.id, id));
+    await db.delete(media).where(eq(media.id, id));
   }
 
-  public async deleteByIds(tx: Transaction, ids: FileId[]): Promise<void> {
+  public async deleteByIds(tx: Transaction, ids: MediaId[]): Promise<void> {
     if (ids.length === 0) return;
 
     const db = this.txHost.get(tx);
-    await db.delete(files).where(inArray(files.id, ids));
+    await db.delete(media).where(inArray(media.id, ids));
   }
 }

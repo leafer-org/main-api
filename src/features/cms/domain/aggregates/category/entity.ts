@@ -25,7 +25,7 @@ import type {
 } from './events.js';
 import type { EntityState } from '@/infra/ddd/entity-state.js';
 import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
-import type { CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import type { CategoryId, MediaId, TypeId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import { CategoryAttribute } from '@/kernel/domain/vo/category-attribute.js';
 
@@ -35,7 +35,7 @@ export type CategoryEntity = EntityState<{
   id: CategoryId;
   parentCategoryId: CategoryId | null;
   name: string;
-  iconId: FileId;
+  iconId: MediaId;
   allowedTypeIds: TypeId[];
   ageGroups: AgeGroup[];
   attributes: CategoryAttribute[];

@@ -1,16 +1,16 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import {
-  FileRepository,
   FileStorageService,
   type ImageProxyUrlSigner,
+  MediaRepository,
 } from '../../application/ports.js';
 import { MimeType } from '../../domain/vo/mime-type.js';
 import { MainConfigService } from '@/infra/config/service.js';
 import type { GetDownloadUrlOptions, ImageProxyOptions } from '@/kernel/application/ports/media.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
-import type { FileId } from '@/kernel/domain/ids.js';
+import type { MediaId } from '@/kernel/domain/ids.js';
 
 const PUBLIC_CACHE_TTL_MS = 55 * 60 * 1000; // 55 minutes
 const PRIVATE_CACHE_TTL_MS = 50 * 60 * 1000; // 50 minutes (presigned URL valid for 60)
@@ -37,8 +37,8 @@ export class CachedMediaUrlService {
   private readonly cdnUrl: string | undefined;
 
   public constructor(
-    @Inject(FileRepository)
-    private readonly fileRepository: FileRepository,
+    @Inject(MediaRepository)
+    private readonly mediaRepository: MediaRepository,
     @Inject(FileStorageService)
     private readonly fileStorage: FileStorageService,
     @Inject(IMAGE_PROXY_URL_SIGNER)
@@ -52,7 +52,7 @@ export class CachedMediaUrlService {
   }
 
   public async getDownloadUrl(
-    fileId: FileId,
+    fileId: MediaId,
     options: GetDownloadUrlOptions,
   ): Promise<string | null> {
     const cacheKey = this.buildCacheKey(fileId, options);
@@ -68,7 +68,7 @@ export class CachedMediaUrlService {
   }
 
   public async getDownloadUrls(
-    requests: { fileId: FileId; options: GetDownloadUrlOptions }[],
+    requests: { fileId: MediaId; options: GetDownloadUrlOptions }[],
   ): Promise<(string | null)[]> {
     const settled = await Promise.allSettled(
       requests.map(({ fileId, options }) => this.getDownloadUrl(fileId, options)),
@@ -81,9 +81,9 @@ export class CachedMediaUrlService {
     });
   }
 
-  public async getPreviewDownloadUrl(fileId: FileId): Promise<string | null> {
+  public async getPreviewDownloadUrl(fileId: MediaId): Promise<string | null> {
     const noTx = NO_TRANSACTION as Transaction;
-    const file = await this.fileRepository.findById(noTx, fileId);
+    const file = await this.mediaRepository.findById(noTx, fileId);
     if (!file) return null;
     if (!file.isTemporary) return null;
 
@@ -91,7 +91,7 @@ export class CachedMediaUrlService {
     return this.fileStorage.generateDownloadUrl(tempBucket, file.id, PREVIEW_PRESIGNED_TTL_SEC);
   }
 
-  private buildCacheKey(fileId: FileId, options: GetDownloadUrlOptions): string {
+  private buildCacheKey(fileId: MediaId, options: GetDownloadUrlOptions): string {
     const parts: string[] = [options.visibility, fileId];
 
     if (options.imageProxy) {
@@ -131,7 +131,7 @@ export class CachedMediaUrlService {
   }
 
   private async resolveWithTimeout(
-    fileId: FileId,
+    fileId: MediaId,
     options: GetDownloadUrlOptions,
     cacheKey: string,
   ): Promise<string | null> {
@@ -149,9 +149,9 @@ export class CachedMediaUrlService {
     }
   }
 
-  private async resolveUrl(fileId: FileId, options: GetDownloadUrlOptions): Promise<string | null> {
+  private async resolveUrl(fileId: MediaId, options: GetDownloadUrlOptions): Promise<string | null> {
     const noTx = NO_TRANSACTION as Transaction;
-    const file = await this.fileRepository.findById(noTx, fileId);
+    const file = await this.mediaRepository.findById(noTx, fileId);
     if (!file) return null;
 
     const bucket = file.isTemporary ? `${file.bucket}-temp` : file.bucket;

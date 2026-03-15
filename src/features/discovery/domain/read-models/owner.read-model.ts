@@ -1,5 +1,5 @@
 import type { OrganizationPublishedEvent } from '@/kernel/domain/events/organization.events.js';
-import { type FileId, OrganizationId } from '@/kernel/domain/ids.js';
+import { type MediaId, OrganizationId } from '@/kernel/domain/ids.js';
 
 /**
  * Read model владельца-организации. Хранится отдельно от товаров для независимого
@@ -8,7 +8,7 @@ import { type FileId, OrganizationId } from '@/kernel/domain/ids.js';
 export type OwnerReadModel = {
   ownerId: OrganizationId;
   name: string;
-  avatarId: FileId | null;
+  avatarId: MediaId | null;
   rating: number | null;
   reviewCount: number;
   updatedAt: Date;

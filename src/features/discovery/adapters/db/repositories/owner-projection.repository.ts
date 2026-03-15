@@ -5,7 +5,7 @@ import { OwnerProjectionPort } from '../../../application/projection-ports.js';
 import type { OwnerReadModel } from '../../../domain/read-models/owner.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
 import { discoveryOwners } from '../schema.js';
-import type { FileId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { MediaId, OrganizationId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleOwnerProjectionRepository implements OwnerProjectionPort {
@@ -36,7 +36,7 @@ export class DrizzleOwnerProjectionRepository implements OwnerProjectionPort {
 
   public async updateData(
     ownerId: OrganizationId,
-    data: { name: string; avatarId: FileId | null; updatedAt: Date },
+    data: { name: string; avatarId: MediaId | null; updatedAt: Date },
   ): Promise<void> {
     await this.dbClient.db
       .update(discoveryOwners)

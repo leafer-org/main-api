@@ -62,7 +62,7 @@ export async function createItem(
   const widgets = overrides.widgets ?? [
     {
       type: 'base-info',
-      data: { title: 'Test Item', description: 'Test item description', imageId: null },
+      data: { title: 'Test Item', description: 'Test item description', media: [] },
     },
   ];
 

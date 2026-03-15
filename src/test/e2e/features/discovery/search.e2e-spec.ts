@@ -74,7 +74,7 @@ describe('Discovery Search HTTP (e2e)', () => {
         type: 'base-info',
         title: opts.title ?? 'Test Item',
         description: opts.description ?? 'Description',
-        imageId: null,
+        media: [],
       },
       {
         type: 'owner',

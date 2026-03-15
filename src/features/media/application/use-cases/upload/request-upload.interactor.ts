@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { fileApply } from '../../../domain/aggregates/file/apply.js';
-import { fileDecide } from '../../../domain/aggregates/file/decide.js';
+import { mediaApply } from '../../../domain/aggregates/media/apply.js';
+import { mediaDecide } from '../../../domain/aggregates/media/decide.js';
 import {
   type FileName,
   FileName as FileNameVO,
@@ -12,7 +12,7 @@ import {
   type MimeType,
   MimeType as MimeTypeVO,
 } from '../../../domain/vo/mime-type.js';
-import { FileIdGenerator, FileRepository, FileStorageService, MediaConfig } from '../../ports.js';
+import { FileStorageService, MediaConfig, MediaIdGenerator, MediaRepository } from '../../ports.js';
 import { type Either, isLeft, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
@@ -24,12 +24,12 @@ export class RequestUploadInteractor {
   public constructor(
     @Inject(Clock)
     private readonly clock: Clock,
-    @Inject(FileRepository)
-    private readonly fileRepository: FileRepository,
+    @Inject(MediaRepository)
+    private readonly mediaRepository: MediaRepository,
     @Inject(FileStorageService)
     private readonly fileStorage: FileStorageService,
-    @Inject(FileIdGenerator)
-    private readonly idGenerator: FileIdGenerator,
+    @Inject(MediaIdGenerator)
+    private readonly idGenerator: MediaIdGenerator,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
     @Inject(MediaConfig)
@@ -44,13 +44,14 @@ export class RequestUploadInteractor {
 
     const { name, mimeType } = parsedEither.value;
     const now = this.clock.now();
-    const fileId = this.idGenerator.generateFileId();
+    const mediaId = this.idGenerator.generateMediaId();
     const tempBucket = `${this.bucket}-temp`;
 
     return this.txHost.startTransaction(async (tx) => {
-      const eventEither = fileDecide(null, {
-        type: 'UploadFile',
-        id: fileId,
+      const eventEither = mediaDecide(null, {
+        type: 'UploadMedia',
+        id: mediaId,
+        mediaType: 'image',
         name: name as string,
         bucket: this.bucket,
         mimeType: mimeType as string,
@@ -59,19 +60,19 @@ export class RequestUploadInteractor {
 
       if (isLeft(eventEither)) return eventEither;
 
-      const newState = fileApply(null, eventEither.value);
-      if (!newState) throw new Error('Unexpected null state after file.uploaded');
+      const newState = mediaApply(null, eventEither.value);
+      if (!newState) throw new Error('Unexpected null state after media.uploaded');
 
-      await this.fileRepository.save(tx, newState);
+      await this.mediaRepository.save(tx, newState);
 
       const { url: uploadUrl, fields: uploadFields } = await this.fileStorage.generateUploadPost(
         tempBucket,
-        fileId,
+        mediaId,
         mimeType as string,
         this.mediaConfig.maxFileSize,
       );
 
-      return Right({ fileId, uploadUrl, uploadFields });
+      return Right({ fileId: mediaId, uploadUrl, uploadFields });
     });
   }
 

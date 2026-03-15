@@ -23,7 +23,7 @@ import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse, PublicSchemas } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
-import { AttributeId, CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import { AttributeId, CategoryId, MediaId, TypeId } from '@/kernel/domain/ids.js';
 import { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 
 function toCategoryDetailDto(
@@ -107,7 +107,7 @@ export class CategoriesController {
       id: CategoryId.raw(body.id),
       parentCategoryId: body.parentCategoryId ? CategoryId.raw(body.parentCategoryId) : null,
       name: body.name,
-      iconId: FileId.raw(body.iconId),
+      iconId: MediaId.raw(body.iconId),
       allowedTypeIds: body.allowedTypeIds.map((typeId) => TypeId.raw(typeId)),
       ageGroups: body.ageGroups.map((v) => AgeGroup.restore(v)),
     });
@@ -128,7 +128,7 @@ export class CategoriesController {
     const result = await this.updateCategory.execute({
       id: CategoryId.raw(id),
       name: body.name,
-      iconId: FileId.raw(body.iconId),
+      iconId: MediaId.raw(body.iconId),
       parentCategoryId: body.parentCategoryId ? CategoryId.raw(body.parentCategoryId) : null,
       allowedTypeIds: body.allowedTypeIds.map((typeId) => TypeId.raw(typeId)),
       ageGroups: body.ageGroups.map((v) => AgeGroup.restore(v)),

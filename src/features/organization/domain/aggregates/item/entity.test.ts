@@ -17,7 +17,7 @@ const BASE_WIDGET: ItemWidget = {
   type: 'base-info',
   title: 'Test Item',
   description: 'Description',
-  imageId: null,
+  media: [],
 };
 
 const OWNER_WIDGET: ItemWidget = {

@@ -7,7 +7,7 @@ import { UserRepository } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import { FileId, type UserId } from '@/kernel/domain/ids.js';
+import { MediaId, type UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class UpdateProfileInteractor {
@@ -40,7 +40,7 @@ export class UpdateProfileInteractor {
       const result = UserEntity.updateProfile(state, {
         type: 'UpdateProfile',
         fullName,
-        avatarId: command.avatarId ? FileId.raw(command.avatarId) : state.avatarId,
+        avatarId: command.avatarId ? MediaId.raw(command.avatarId) : state.avatarId,
         cityId: command.cityId,
         lat: command.lat,
         lng: command.lng,

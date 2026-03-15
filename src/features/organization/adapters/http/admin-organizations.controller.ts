@@ -8,7 +8,7 @@ import { AdminCreateItemInteractor } from '../../application/use-cases/manage-it
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
-import { EmployeeRoleId, FileId, ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
+import { EmployeeRoleId, MediaId, ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
 import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
 
 @Controller('admin/organizations')
@@ -54,7 +54,8 @@ export class AdminOrganizationsController {
       id: orgId,
       name: body.name,
       description: body.description ?? '',
-      avatarId: body.avatarId ? FileId.raw(body.avatarId) : null,
+      avatarId: body.avatarId ? MediaId.raw(body.avatarId) : null,
+      media: (body.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })),
       adminRoleId,
       claimToken,
     });

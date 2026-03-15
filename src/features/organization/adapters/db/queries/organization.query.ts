@@ -40,6 +40,7 @@ export class DrizzleOrganizationQuery implements OrganizationQueryPort {
                 ? A
                 : never
               : never,
+            media: (s.infoPublication.media ?? []) as OrganizationDetailReadModel['infoDraft']['media'],
             publishedAt: new Date(s.infoPublication.publishedAt),
           }
         : null,

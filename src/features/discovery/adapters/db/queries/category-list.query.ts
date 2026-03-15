@@ -5,7 +5,7 @@ import { CategoryListQueryPort } from '../../../application/ports.js';
 import type { CategoryListReadModel } from '../../../domain/read-models/category-list.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
 import { discoveryCategories } from '../schema.js';
-import { CategoryId, FileId } from '@/kernel/domain/ids.js';
+import { CategoryId, MediaId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleCategoryListQuery implements CategoryListQueryPort {
@@ -33,7 +33,7 @@ export class DrizzleCategoryListQuery implements CategoryListQueryPort {
     return categories.map((cat) => ({
       categoryId: CategoryId.raw(cat.categoryId),
       name: cat.name,
-      iconId: FileId.raw(cat.iconId),
+      iconId: MediaId.raw(cat.iconId),
       childCount: cat.childCount,
       itemCount: cat.itemCount,
     }));

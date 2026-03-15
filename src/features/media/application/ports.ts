@@ -1,16 +1,16 @@
-import type { FileState } from '../domain/aggregates/file/state.js';
+import type { MediaState } from '../domain/aggregates/media/state.js';
 import type { ImageProxyOptions, MediaVisibility } from '@/kernel/application/ports/media.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { FileId } from '@/kernel/domain/ids.js';
+import type { MediaId } from '@/kernel/domain/ids.js';
 
 // --- Repository ports ---
 
-export abstract class FileRepository {
-  public abstract findById(tx: Transaction, id: FileId): Promise<FileState | null>;
-  public abstract findByIds(tx: Transaction, ids: FileId[]): Promise<Map<FileId, FileState>>;
-  public abstract save(tx: Transaction, state: FileState): Promise<void>;
-  public abstract deleteById(tx: Transaction, id: FileId): Promise<void>;
-  public abstract deleteByIds(tx: Transaction, ids: FileId[]): Promise<void>;
+export abstract class MediaRepository {
+  public abstract findById(tx: Transaction, id: MediaId): Promise<MediaState | null>;
+  public abstract findByIds(tx: Transaction, ids: MediaId[]): Promise<Map<MediaId, MediaState>>;
+  public abstract save(tx: Transaction, state: MediaState): Promise<void>;
+  public abstract deleteById(tx: Transaction, id: MediaId): Promise<void>;
+  public abstract deleteByIds(tx: Transaction, ids: MediaId[]): Promise<void>;
 }
 
 // --- Service ports ---
@@ -53,8 +53,8 @@ export abstract class MediaConfig {
 
 // --- ID generation ---
 
-export abstract class FileIdGenerator {
-  public abstract generateFileId(): FileId;
+export abstract class MediaIdGenerator {
+  public abstract generateMediaId(): MediaId;
 }
 
 // Re-export for convenience

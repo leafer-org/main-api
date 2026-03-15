@@ -1,12 +1,13 @@
-import type { FileEvent } from './events.js';
-import type { FileState } from './state.js';
+import type { MediaEvent } from './events.js';
+import type { MediaState } from './state.js';
 import { assertNever } from '@/infra/ddd/utils.js';
 
-export function fileApply(state: FileState | null, event: FileEvent): FileState | null {
+export function mediaApply(state: MediaState | null, event: MediaEvent): MediaState | null {
   switch (event.type) {
-    case 'file.uploaded':
+    case 'media.uploaded':
       return {
         id: event.id,
+        type: event.mediaType,
         name: event.name,
         bucket: event.bucket,
         mimeType: event.mimeType,
@@ -14,15 +15,15 @@ export function fileApply(state: FileState | null, event: FileEvent): FileState 
         createdAt: event.createdAt,
       };
 
-    case 'file.used': {
-      if (!state) throw new Error('State is required for file.used');
+    case 'media.used': {
+      if (!state) throw new Error('State is required for media.used');
       return {
         ...state,
         isTemporary: false,
       };
     }
 
-    case 'file.freed': {
+    case 'media.freed': {
       return null;
     }
 

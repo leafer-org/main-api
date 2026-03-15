@@ -8,7 +8,7 @@ export function toListView(item: ItemReadModel): ItemListView {
     typeId: item.typeId,
     title: item.baseInfo?.title ?? '',
     description: item.baseInfo?.description ?? null,
-    imageId: item.baseInfo?.imageId ?? null,
+    media: item.baseInfo?.media ?? [],
     price: item.payment ?? null,
     rating: item.itemReview?.rating ?? null,
     reviewCount: item.itemReview?.reviewCount ?? 0,

@@ -2187,7 +2187,7 @@
         }
       }
     },
-    "/media/upload-request": {
+    "/media/image/upload-request": {
       "post": {
         "operationId": "mediaUploadRequest",
         "tags": [
@@ -5296,6 +5296,12 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "media": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/MediaItem"
+                    }
                   }
                 }
               }
@@ -5570,6 +5576,12 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "media": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/MediaItem"
+                    }
                   }
                 }
               }
@@ -5766,6 +5778,12 @@
                       "string",
                       "null"
                     ]
+                  },
+                  "media": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/MediaItem"
+                    }
                   }
                 }
               }
@@ -10167,6 +10185,25 @@
           }
         }
       },
+      "MediaItem": {
+        "type": "object",
+        "required": [
+          "type",
+          "mediaId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video"
+            ]
+          },
+          "mediaId": {
+            "type": "string"
+          }
+        }
+      },
       "ItemPayment": {
         "type": "object",
         "required": [
@@ -10248,11 +10285,11 @@
               "null"
             ]
           },
-          "imageId": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaItem"
+            }
           },
           "price": {
             "oneOf": [
@@ -10692,7 +10729,8 @@
             "required": [
               "type",
               "title",
-              "description"
+              "description",
+              "media"
             ],
             "properties": {
               "type": {
@@ -10707,11 +10745,11 @@
               "description": {
                 "type": "string"
               },
-              "imageId": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+              "media": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MediaItem"
+                }
               }
             }
           },
@@ -11542,6 +11580,7 @@
         "required": [
           "name",
           "description",
+          "media",
           "status"
         ],
         "properties": {
@@ -11556,6 +11595,12 @@
               "string",
               "null"
             ]
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaItem"
+            }
           },
           "status": {
             "$ref": "#/components/schemas/InfoDraftStatus"
@@ -11681,6 +11726,7 @@
             "required": [
               "name",
               "description",
+              "media",
               "publishedAt"
             ],
             "properties": {
@@ -11695,6 +11741,12 @@
                   "string",
                   "null"
                 ]
+              },
+              "media": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MediaItem"
+                }
               },
               "publishedAt": {
                 "type": "string",

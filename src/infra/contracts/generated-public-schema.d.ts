@@ -424,7 +424,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/media/upload-request': {
+  '/media/image/upload-request': {
     parameters: {
       query?: never;
       header?: never;
@@ -2026,6 +2026,11 @@ export interface components {
       childCount: number;
       itemCount: number;
     };
+    MediaItem: {
+      /** @enum {string} */
+      type: 'image' | 'video';
+      mediaId: string;
+    };
     ItemPayment: {
       /** @enum {string} */
       strategy: 'free' | 'one-time' | 'subscription';
@@ -2044,7 +2049,7 @@ export interface components {
       typeId: string;
       title: string;
       description?: string | null;
-      imageId?: string | null;
+      media?: components['schemas']['MediaItem'][];
       price?: components['schemas']['ItemPayment'] | null;
       rating?: number | null;
       reviewCount: number;
@@ -2150,7 +2155,7 @@ export interface components {
           type: 'base-info';
           title: string;
           description: string;
-          imageId?: string | null;
+          media: components['schemas']['MediaItem'][];
         }
       | {
           /** @enum {string} */
@@ -2359,6 +2364,7 @@ export interface components {
       name: string;
       description: string;
       avatarId?: string | null;
+      media: components['schemas']['MediaItem'][];
       status: components['schemas']['InfoDraftStatus'];
     };
     Employee: {
@@ -2398,6 +2404,7 @@ export interface components {
         name: string;
         description: string;
         avatarId?: string | null;
+        media: components['schemas']['MediaItem'][];
         /** Format: date-time */
         publishedAt: string;
       } | null;
@@ -5694,6 +5701,7 @@ export interface operations {
           name: string;
           description?: string;
           avatarId?: string | null;
+          media?: components['schemas']['MediaItem'][];
         };
       };
     };
@@ -5858,6 +5866,7 @@ export interface operations {
           name: string;
           description: string;
           avatarId?: string | null;
+          media?: components['schemas']['MediaItem'][];
         };
       };
     };
@@ -6015,6 +6024,7 @@ export interface operations {
           name: string;
           description: string;
           avatarId?: string | null;
+          media?: components['schemas']['MediaItem'][];
         };
       };
     };

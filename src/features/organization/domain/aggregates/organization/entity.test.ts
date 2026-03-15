@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ADMIN_ROLE_NAME, ALL_PERMISSIONS, SUBSCRIPTION_PLANS } from './config.js';
 import { OrganizationEntity } from './entity.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
-import { EmployeeRoleId, FileId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import { EmployeeRoleId, MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ const USER_3 = UserId.raw('user-3');
 const ADMIN_ROLE_ID = EmployeeRoleId.raw('role-admin');
 const ROLE_2_ID = EmployeeRoleId.raw('role-2');
 const ROLE_3_ID = EmployeeRoleId.raw('role-3');
-const AVATAR_ID = FileId.raw('avatar-1');
+const AVATAR_ID = MediaId.raw('avatar-1');
 const NOW = new Date('2024-06-01T12:00:00.000Z');
 const LATER = new Date('2024-06-02T12:00:00.000Z');
 
@@ -26,6 +26,7 @@ function createOrg() {
     name: 'Test Org',
     description: 'A test organization',
     avatarId: null,
+    media: [],
     adminRoleId: ADMIN_ROLE_ID,
     now: NOW,
   });
@@ -91,6 +92,7 @@ describe('OrganizationEntity', () => {
         name: 'Test Org',
         description: 'Desc',
         avatarId: AVATAR_ID,
+        media: [],
         adminRoleId: ADMIN_ROLE_ID,
         now: NOW,
       });
@@ -127,6 +129,7 @@ describe('OrganizationEntity', () => {
         name: 'New Name',
         description: 'New Desc',
         avatarId: AVATAR_ID,
+        media: [],
         now: LATER,
       });
 

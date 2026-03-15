@@ -48,6 +48,7 @@ export class ApproveInfoModerationInteractor {
         organizationId: state.id,
         name: domainEvent.name,
         avatarId: domainEvent.avatarId,
+        media: domainEvent.media,
         republished,
         publishedAt: domainEvent.publishedAt,
       });

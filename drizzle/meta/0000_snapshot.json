@@ -1,5 +1,5 @@
 {
-  "id": "989cf955-df85-43ff-953a-8562b2604277",
+  "id": "ac5b28e3-e39d-4260-b190-b35181d9e777",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -582,11 +582,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "image_id": {
-          "name": "image_id",
-          "type": "text",
+        "media": {
+          "name": "media",
+          "type": "jsonb",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
         "age_group": {
           "name": "age_group",
@@ -1428,14 +1429,20 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.files": {
-      "name": "files",
+    "public.media": {
+      "name": "media",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true
         },
         "name": {

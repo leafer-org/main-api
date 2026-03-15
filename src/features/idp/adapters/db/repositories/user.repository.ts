@@ -10,7 +10,7 @@ import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import { OutboxService } from '@/infra/lib/nest-outbox/outbox.service.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import { FileId, UserId } from '@/kernel/domain/ids.js';
+import { MediaId, UserId } from '@/kernel/domain/ids.js';
 import { Role } from '@/kernel/domain/vo/role.js';
 
 @Injectable()
@@ -64,7 +64,7 @@ export class DrizzleUserRepository extends UserRepository {
       .from(users)
       .where(eq(users.id, state.id))
       .limit(1);
-    const oldAvatarId = oldRows[0]?.avatarFileId ? FileId.raw(oldRows[0].avatarFileId) : undefined;
+    const oldAvatarId = oldRows[0]?.avatarFileId ? MediaId.raw(oldRows[0].avatarFileId) : undefined;
 
     await db
       .insert(users)
@@ -131,7 +131,7 @@ export class DrizzleUserRepository extends UserRepository {
       id: UserId.raw(row.id),
       phoneNumber: PhoneNumber.raw(row.phoneNumber),
       fullName: row.fullName as UserState['fullName'],
-      avatarId: row.avatarFileId ? FileId.raw(row.avatarFileId) : undefined,
+      avatarId: row.avatarFileId ? MediaId.raw(row.avatarFileId) : undefined,
       role: Role.raw(row.role),
       cityId: row.cityId,
       lat: row.lat ?? undefined,

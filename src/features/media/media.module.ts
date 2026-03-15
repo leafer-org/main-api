@@ -1,8 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 
-import { DrizzleFileRepository } from './adapters/db/repositories/file.repository.js';
+import { DrizzleMediaRepository } from './adapters/db/repositories/file.repository.js';
 import { MediaController } from './adapters/http/media.controller.js';
-import { UuidFileIdGenerator } from './adapters/id/file-id-generator.service.js';
+import { UuidMediaIdGenerator } from './adapters/id/file-id-generator.service.js';
 import { ImgproxyUrlSigner } from './adapters/media/image-proxy-url-signer.js';
 import { MediaServiceAdapter } from './adapters/media/media.service.js';
 import {
@@ -11,7 +11,7 @@ import {
 } from './adapters/media/media-url.service.js';
 import { S3FileStorageService } from './adapters/s3/file-storage.service.js';
 import { S3ClientService } from './adapters/s3/s3-client.service.js';
-import { FileIdGenerator, FileRepository, FileStorageService, MediaConfig } from './application/ports.js';
+import { FileStorageService, MediaConfig, MediaIdGenerator, MediaRepository } from './application/ports.js';
 import { FreeFileInteractor } from './application/use-cases/free-file.interactor.js';
 import { FreeFilesInteractor } from './application/use-cases/free-files.interactor.js';
 import { GetDownloadUrlInteractor } from './application/use-cases/get-download-url.interactor.js';
@@ -32,9 +32,9 @@ import { MediaService } from '@/kernel/application/ports/media.js';
     // infrastructure
     S3ClientService,
     CachedMediaUrlService,
-    { provide: FileRepository, useClass: DrizzleFileRepository },
+    { provide: MediaRepository, useClass: DrizzleMediaRepository },
     { provide: FileStorageService, useClass: S3FileStorageService },
-    { provide: FileIdGenerator, useClass: UuidFileIdGenerator },
+    { provide: MediaIdGenerator, useClass: UuidMediaIdGenerator },
     { provide: Clock, useClass: SystemClock },
     {
       provide: MediaConfig,

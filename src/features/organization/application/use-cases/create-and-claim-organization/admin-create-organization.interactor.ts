@@ -6,7 +6,8 @@ import { isLeft, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { EmployeeRoleId, FileId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { EmployeeRoleId, MediaId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 import { Permissions } from '@/kernel/domain/permissions.js';
 
 @Injectable()
@@ -22,7 +23,8 @@ export class AdminCreateOrganizationInteractor {
     id: OrganizationId;
     name: string;
     description: string;
-    avatarId: FileId | null;
+    avatarId: MediaId | null;
+    media: MediaItem[];
     adminRoleId: EmployeeRoleId;
     claimToken: string;
   }) {
@@ -38,6 +40,7 @@ export class AdminCreateOrganizationInteractor {
         name: command.name,
         description: command.description,
         avatarId: command.avatarId,
+        media: command.media,
         adminRoleId: command.adminRoleId,
         claimToken: command.claimToken,
         now,

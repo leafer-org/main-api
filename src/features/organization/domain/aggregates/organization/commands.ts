@@ -1,5 +1,6 @@
 import type { OrganizationPermission, SubscriptionPlanId } from './config.js';
-import type { EmployeeRoleId, FileId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import type { EmployeeRoleId, MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 
 // --- Lifecycle ---
 
@@ -9,7 +10,8 @@ export type CreateOrganizationCommand = {
   creatorUserId: UserId;
   name: string;
   description: string;
-  avatarId: FileId | null;
+  avatarId: MediaId | null;
+  media: MediaItem[];
   adminRoleId: EmployeeRoleId;
   now: Date;
 };
@@ -20,7 +22,8 @@ export type UpdateInfoDraftCommand = {
   type: 'UpdateInfoDraft';
   name: string;
   description: string;
-  avatarId: FileId | null;
+  avatarId: MediaId | null;
+  media: MediaItem[];
   now: Date;
 };
 
@@ -101,7 +104,8 @@ export type AdminCreateOrganizationCommand = {
   id: OrganizationId;
   name: string;
   description: string;
-  avatarId: FileId | null;
+  avatarId: MediaId | null;
+  media: MediaItem[];
   adminRoleId: EmployeeRoleId;
   claimToken: string;
   now: Date;

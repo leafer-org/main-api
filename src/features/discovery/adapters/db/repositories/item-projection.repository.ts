@@ -11,7 +11,7 @@ import {
   discoveryItemSchedules,
   discoveryItems,
 } from '../schema.js';
-import type { FileId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { MediaId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleItemProjectionRepository implements ItemProjectionPort {
@@ -27,7 +27,7 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
         typeId: item.typeId as string,
         title: item.baseInfo?.title ?? null,
         description: item.baseInfo?.description ?? null,
-        imageId: item.baseInfo?.imageId as string | null,
+        media: item.baseInfo?.media.map((m) => ({ type: m.type, mediaId: m.mediaId as string })) ?? [],
         ageGroup: item.ageGroup ?? null,
         cityId: item.location?.cityId ?? null,
         lat: item.location?.coordinates.lat ?? null,
@@ -60,7 +60,7 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
           typeId: item.typeId as string,
           title: item.baseInfo?.title ?? null,
           description: item.baseInfo?.description ?? null,
-          imageId: item.baseInfo?.imageId as string | null,
+          media: item.baseInfo?.media.map((m) => ({ type: m.type, mediaId: m.mediaId as string })) ?? [],
           ageGroup: item.ageGroup ?? null,
           cityId: item.location?.cityId ?? null,
           lat: item.location?.coordinates.lat ?? null,
@@ -113,7 +113,7 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
 
   public async updateOwnerData(
     organizationId: OrganizationId,
-    data: { name: string; avatarId: FileId | null },
+    data: { name: string; avatarId: MediaId | null },
   ): Promise<ItemId[]> {
     const rows = await this.dbClient.db
       .update(discoveryItems)

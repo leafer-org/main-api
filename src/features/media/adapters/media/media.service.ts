@@ -8,7 +8,7 @@ import { isLeft, unwrap } from '@/infra/lib/box.js';
 import type { GetDownloadUrlOptions } from '@/kernel/application/ports/media.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { FileId } from '@/kernel/domain/ids.js';
+import type { MediaId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class MediaServiceAdapter extends MediaService {
@@ -22,7 +22,7 @@ export class MediaServiceAdapter extends MediaService {
   }
 
   public async getDownloadUrl(
-    fileId: FileId,
+    fileId: MediaId,
     options: GetDownloadUrlOptions,
   ): Promise<string | null> {
     const result = await this.downloadUrlQuery.execute({ fileId, options });
@@ -30,23 +30,23 @@ export class MediaServiceAdapter extends MediaService {
   }
 
   public async getDownloadUrls(
-    requests: { fileId: FileId; options: GetDownloadUrlOptions }[],
+    requests: { fileId: MediaId; options: GetDownloadUrlOptions }[],
   ): Promise<(string | null)[]> {
     const result = await this.downloadUrlQuery.executeBatch({ requests });
     return unwrap(result);
   }
 
-  public async getPreviewDownloadUrl(fileId: FileId): Promise<string | null> {
+  public async getPreviewDownloadUrl(fileId: MediaId): Promise<string | null> {
     const result = await this.previewUrlQuery.execute({ fileId });
     return unwrap(result);
   }
 
-  public async useFiles(tx: Transaction, fileIds: FileId[]): Promise<void> {
+  public async useFiles(tx: Transaction, fileIds: MediaId[]): Promise<void> {
     const result = await this.useFilesUseCase.execute({ tx, fileIds });
     if (isLeft(result)) throw result.error;
   }
 
-  public async freeFiles(tx: Transaction, fileIds: FileId[]): Promise<void> {
+  public async freeFiles(tx: Transaction, fileIds: MediaId[]): Promise<void> {
     const result = await this.freeFilesUseCase.execute({ tx, fileIds });
     if (isLeft(result)) throw result.error;
   }

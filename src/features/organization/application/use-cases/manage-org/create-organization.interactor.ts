@@ -5,7 +5,8 @@ import { OrganizationRepository } from '../../ports.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { EmployeeRoleId, FileId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import type { EmployeeRoleId, MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 
 @Injectable()
 export class CreateOrganizationInteractor {
@@ -20,7 +21,8 @@ export class CreateOrganizationInteractor {
     creatorUserId: UserId;
     name: string;
     description: string;
-    avatarId: FileId | null;
+    avatarId: MediaId | null;
+    media: MediaItem[];
     adminRoleId: EmployeeRoleId;
   }) {
     const now = this.clock.now();
@@ -33,6 +35,7 @@ export class CreateOrganizationInteractor {
         name: command.name,
         description: command.description,
         avatarId: command.avatarId,
+        media: command.media,
         adminRoleId: command.adminRoleId,
         now,
       });

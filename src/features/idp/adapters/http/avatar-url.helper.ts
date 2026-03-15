@@ -1,6 +1,6 @@
 import type { PublicSchemas } from '@/infra/contracts/types.js';
 import type { MediaService } from '@/kernel/application/ports/media.js';
-import type { FileId } from '@/kernel/domain/ids.js';
+import type { MediaId } from '@/kernel/domain/ids.js';
 
 const AVATAR_SIZES = {
   largeUrl: { width: 512, height: 512 },
@@ -11,7 +11,7 @@ const AVATAR_SIZES = {
 
 export async function resolveAvatarUrls(
   mediaService: MediaService,
-  avatarId: FileId | undefined,
+  avatarId: MediaId | undefined,
 ): Promise<PublicSchemas['Avatar'] | undefined> {
   if (!avatarId) return;
 

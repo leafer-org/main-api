@@ -6,7 +6,7 @@ const BaseInfoWidgetSchema = Type.Object({
   type: Type.Literal('base-info'),
   title: Type.String(),
   description: Type.String(),
-  imageId: Type.Union([Type.String(), Type.Null()]),
+  media: Type.Array(Type.Object({ type: Type.String(), mediaId: Type.String() })),
 });
 
 const AgeGroupWidgetSchema = Type.Object({

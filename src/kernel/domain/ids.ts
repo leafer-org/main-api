@@ -8,7 +8,7 @@ function createEntityId<T extends EntityId<string>>() {
   };
 }
 
-export type FileId = EntityId<'File'>;
+export type MediaId = EntityId<'Media'>;
 export type UserId = EntityId<'User'>;
 export type SessionId = EntityId<'Session'>;
 export type RoleId = EntityId<'Role'>;
@@ -26,7 +26,7 @@ export type BoardSubscriptionId = EntityId<'BoardSubscription'>;
 export type BoardAutomationId = EntityId<'BoardAutomation'>;
 export type ReviewId = EntityId<'Review'>;
 
-export const FileId = createEntityId<FileId>();
+export const MediaId = createEntityId<MediaId>();
 export const UserId = createEntityId<UserId>();
 export const SessionId = createEntityId<SessionId>();
 export const RoleId = createEntityId<RoleId>();

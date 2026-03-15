@@ -6,7 +6,7 @@ import type { CategoryEntity, CategoryStatus } from '../../../domain/aggregates/
 import { cmsCategories } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import { CategoryId, type FileId, type TypeId } from '@/kernel/domain/ids.js';
+import { CategoryId, type MediaId, type TypeId } from '@/kernel/domain/ids.js';
 import { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import type { CategoryAttribute } from '@/kernel/domain/vo/category-attribute.js';
 
@@ -87,7 +87,7 @@ export class DrizzleCategoryRepository implements CategoryRepository {
       id: CategoryId.raw(row.id),
       parentCategoryId: row.parentCategoryId ? CategoryId.raw(row.parentCategoryId) : null,
       name: row.name,
-      iconId: row.iconId as FileId,
+      iconId: row.iconId as MediaId,
       allowedTypeIds: (row.allowedTypeIds as string[]).map((id) => id as TypeId),
       ageGroups: (row.ageGroups as string[]).map(AgeGroup.restore),
       attributes: row.attributes as CategoryAttribute[],
@@ -103,7 +103,7 @@ export class DrizzleCategoryRepository implements CategoryRepository {
       id: CategoryId.raw(row.id),
       parentCategoryId: row.parent_category_id ? CategoryId.raw(row.parent_category_id) : null,
       name: row.name,
-      iconId: row.icon_id as FileId,
+      iconId: row.icon_id as MediaId,
       allowedTypeIds: (
         (typeof row.allowed_type_ids === 'string'
           ? JSON.parse(row.allowed_type_ids)

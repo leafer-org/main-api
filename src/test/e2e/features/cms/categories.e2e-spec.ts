@@ -71,7 +71,7 @@ describe('CMS Categories (e2e)', () => {
 
   async function uploadIcon(): Promise<string> {
     const res = await e2e.agent
-      .post('/media/upload-request')
+      .post('/media/image/upload-request')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: 'icon.png', mimeType: 'image/png' })
       .expect(200);

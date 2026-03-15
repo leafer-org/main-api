@@ -6,7 +6,7 @@ import type { ItemListView } from '../../domain/read-models/item-list-view.read-
 import type { SearchFacets } from '../../domain/read-models/search-result.read-model.js';
 import { DISCOVERY_ITEMS_INDEX, DiscoveryItemsSearchClient } from './discovery-items.index.js';
 import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
-import { CategoryId, FileId, ItemId, TypeId } from '@/kernel/domain/ids.js';
+import { CategoryId, MediaId, ItemId, TypeId } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { PaymentStrategy } from '@/kernel/domain/vo/widget.js';
 
@@ -15,7 +15,7 @@ type DiscoveryItemHit = {
   typeId: string;
   title: string;
   description: string;
-  imageId: string | null;
+  media: { type: string; mediaId: string }[];
   price: number | null;
   paymentStrategy: string | null;
   rating: number | null;
@@ -106,7 +106,7 @@ export class MeiliSearchQuery implements SearchPort {
       typeId: TypeId.raw(hit.typeId),
       title: hit.title,
       description: hit.description || null,
-      imageId: hit.imageId ? FileId.raw(hit.imageId) : null,
+      media: (hit.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })) as import('@/kernel/domain/vo/media-item.js').MediaItem[],
       price:
         hit.paymentStrategy !== null
           ? { strategy: hit.paymentStrategy as PaymentStrategy, price: hit.price }
@@ -116,7 +116,7 @@ export class MeiliSearchQuery implements SearchPort {
       owner: hit.ownerName
         ? {
             name: hit.ownerName,
-            avatarId: hit.ownerAvatarId ? FileId.raw(hit.ownerAvatarId) : null,
+            avatarId: hit.ownerAvatarId ? MediaId.raw(hit.ownerAvatarId) : null,
           }
         : null,
       location: hit.cityId ? { cityId: hit.cityId, address: hit.address || null } : null,

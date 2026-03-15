@@ -22,7 +22,7 @@ import { createEventId } from '@/infra/ddd/event.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import { FileId } from '@/kernel/domain/ids.js';
+import { MediaId } from '@/kernel/domain/ids.js';
 import { Role } from '@/kernel/domain/vo/role.js';
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -75,7 +75,7 @@ export class RegisterInteractor {
         newUserId: this.idGenerator.generateUserId(),
         role: Role.default(),
         fullName,
-        avatarId: command.avatarId ? FileId.raw(command.avatarId) : undefined,
+        avatarId: command.avatarId ? MediaId.raw(command.avatarId) : undefined,
         cityId: command.cityId,
         lat: command.lat,
         lng: command.lng,

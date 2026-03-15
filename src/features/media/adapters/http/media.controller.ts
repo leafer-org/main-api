@@ -6,7 +6,7 @@ import { Public } from '@/infra/auth/authn/public.decorator.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
-import { FileId } from '@/kernel/domain/ids.js';
+import { MediaId } from '@/kernel/domain/ids.js';
 
 @Public()
 @Controller('media')
@@ -16,7 +16,7 @@ export class MediaController {
     private readonly getPreviewDownloadUrl: GetPreviewDownloadUrlInteractor,
   ) {}
 
-  @Post('upload-request')
+  @Post('image/upload-request')
   @Public()
   @HttpCode(200)
   public async uploadRequest(
@@ -37,7 +37,7 @@ export class MediaController {
 @Get('preview/:mediaId')
   public async preview(@Param('mediaId') mediaId: string): Promise<PublicResponse['mediaPreview']> {
     const result = await this.getPreviewDownloadUrl.execute({
-      fileId: FileId.raw(mediaId),
+      fileId: MediaId.raw(mediaId),
     });
 
     const url = result.value;

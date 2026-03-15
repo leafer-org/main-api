@@ -347,7 +347,7 @@ describe('Admin Organizations (e2e)', () => {
         .send({
           typeId: itemType.id,
           widgets: [
-            { type: 'base-info', data: { title: 'Admin Item', description: 'Created by admin', imageId: null } },
+            { type: 'base-info', data: { title: 'Admin Item', description: 'Created by admin', media: [] } },
             { type: 'schedule', data: { entries: [{ dayOfWeek: 1, startTime: '09:00', endTime: '18:00' }] } },
           ],
         })
@@ -382,7 +382,7 @@ describe('Admin Organizations (e2e)', () => {
         .set('Authorization', `Bearer ${userToken}`)
         .send({
           typeId: itemType.id,
-          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', imageId: null } }],
+          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', media: [] } }],
         })
         .expect(403);
     });
@@ -396,7 +396,7 @@ describe('Admin Organizations (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           typeId: itemType.id,
-          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', imageId: null } }],
+          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', media: [] } }],
         })
         .expect(404);
     });
@@ -415,7 +415,7 @@ describe('Admin Organizations (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           typeId: '00000000-0000-0000-0000-000000000000',
-          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', imageId: null } }],
+          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', media: [] } }],
         })
         .expect(404);
     });

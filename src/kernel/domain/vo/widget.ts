@@ -1,5 +1,6 @@
-import type { AttributeId, CategoryId, FileId, OrganizationId } from '../ids.js';
+import type { AttributeId, CategoryId, MediaId, OrganizationId } from '../ids.js';
 import type { AgeGroupOption } from './age-group.js';
+import type { MediaItem } from './media-item.js';
 
 // --- Related VOs ---
 
@@ -17,7 +18,7 @@ export type BaseInfoWidget = {
   type: 'base-info';
   title: string;
   description: string;
-  imageId: FileId | null;
+  media: MediaItem[];
 };
 export type AgeGroupWidget = { type: 'age-group'; value: AgeGroupOption };
 export type LocationWidget = {
@@ -37,7 +38,7 @@ export type OwnerWidget = {
   type: 'owner';
   organizationId: OrganizationId;
   name: string;
-  avatarId: FileId | null;
+  avatarId: MediaId | null;
 };
 export type ItemReviewWidget = { type: 'item-review'; rating: number | null; reviewCount: number };
 export type OwnerReviewWidget = {

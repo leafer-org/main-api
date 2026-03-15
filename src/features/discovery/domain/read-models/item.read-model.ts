@@ -3,18 +3,19 @@ import type { ItemPublishedEvent } from '@/kernel/domain/events/item.events.js';
 import type {
   AttributeId,
   CategoryId,
-  FileId,
+  MediaId,
   ItemId,
   OrganizationId,
   TypeId,
 } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
+import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 
 export type ItemBaseInfo = {
   title: string;
   description: string;
-  imageId: FileId | null;
+  media: MediaItem[];
 };
 
 export type ItemLocation = {
@@ -36,7 +37,7 @@ export type ItemCategory = {
 export type ItemOwner = {
   organizationId: OrganizationId;
   name: string;
-  avatarId: FileId | null;
+  avatarId: MediaId | null;
 };
 
 export type ItemReview = {
@@ -148,7 +149,7 @@ export function projectItemFromEvent(event: ItemPublishedEvent): ItemReadModel {
         model.baseInfo = {
           title: widget.title,
           description: widget.description,
-          imageId: widget.imageId,
+          media: widget.media,
         };
         break;
       case 'age-group':

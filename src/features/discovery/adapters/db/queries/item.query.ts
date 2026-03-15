@@ -20,12 +20,13 @@ import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
 import {
   AttributeId,
   CategoryId,
-  FileId,
+  MediaId,
   ItemId,
   OrganizationId,
   TypeId,
 } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
+import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 
 @Injectable()
@@ -303,7 +304,7 @@ export class DrizzleItemQuery implements ItemQueryPort {
       model.baseInfo = {
         title: row.title,
         description: row.description ?? '',
-        imageId: row.imageId ? FileId.raw(row.imageId) : null,
+        media: (row.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })) as MediaItem[],
       };
     }
 
@@ -340,7 +341,7 @@ export class DrizzleItemQuery implements ItemQueryPort {
       model.owner = {
         organizationId: OrganizationId.raw(row.organizationId),
         name: row.ownerName ?? '',
-        avatarId: row.ownerAvatarId ? FileId.raw(row.ownerAvatarId) : null,
+        avatarId: row.ownerAvatarId ? MediaId.raw(row.ownerAvatarId) : null,
       };
     }
 

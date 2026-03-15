@@ -163,7 +163,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       }, WAIT_OPTIONS);
 
       await publishItem(itemId, typeId, orgId, [
-        { type: 'base-info', title: 'Test Item', description: 'Desc', imageId: null },
+        { type: 'base-info', title: 'Test Item', description: 'Desc', media: [] },
         { type: 'owner', organizationId: orgId, name: 'Original Name', avatarId: null },
       ]);
 
@@ -219,7 +219,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       }, WAIT_OPTIONS);
 
       await publishItem(itemId, typeId, orgId, [
-        { type: 'base-info', title: 'Item To Delete', description: 'Desc', imageId: null },
+        { type: 'base-info', title: 'Item To Delete', description: 'Desc', media: [] },
         { type: 'owner', organizationId: orgId, name: 'To Delete', avatarId: null },
       ]);
 
@@ -421,7 +421,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
           type: 'base-info',
           title: 'My Service',
           description: 'A great service',
-          imageId: 'img-1',
+          media: [{ type: 'image', mediaId: 'img-1' }],
         },
         { type: 'location', cityId: 'city-1', lat: 55.75, lng: 37.62, address: 'Moscow' },
         { type: 'payment', strategy: 'one-time', price: 1500 },
@@ -433,7 +433,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
         expectDefined(row);
         expect(row.title).toBe('My Service');
         expect(row.description).toBe('A great service');
-        expect(row.imageId).toBe('img-1');
+        expect(row.media).toEqual([{ type: 'image', mediaId: 'img-1' }]);
         expect(row.cityId).toBe('city-1');
         expect(Number(row.lat)).toBeCloseTo(55.75);
         expect(Number(row.lng)).toBeCloseTo(37.62);
@@ -450,7 +450,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       const typeId = randomUUID();
 
       await publishItem(itemId, typeId, randomUUID(), [
-        { type: 'base-info', title: 'To Delete', description: '', imageId: null },
+        { type: 'base-info', title: 'To Delete', description: '', media: [] },
       ]);
 
       await vi.waitFor(async () => {
@@ -480,7 +480,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       const typeId = randomUUID();
 
       await publishItem(itemId, typeId, randomUUID(), [
-        { type: 'base-info', title: 'Reviewed Item', description: '', imageId: null },
+        { type: 'base-info', title: 'Reviewed Item', description: '', media: [] },
       ]);
 
       await vi.waitFor(async () => {
@@ -527,7 +527,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       }, WAIT_OPTIONS);
 
       await publishItem(itemId, typeId, orgId, [
-        { type: 'base-info', title: 'Org Item', description: '', imageId: null },
+        { type: 'base-info', title: 'Org Item', description: '', media: [] },
         { type: 'owner', organizationId: orgId, name: 'Reviewed Org', avatarId: null },
       ]);
 

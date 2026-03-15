@@ -9,6 +9,7 @@ const OrganizationModerationMessage = Type.Object({
   name: Type.String(),
   description: Type.String(),
   avatarId: Type.Union([Type.String(), Type.Null()]),
+  media: Type.Array(Type.Object({ type: Type.String(), mediaId: Type.String() })),
   submittedAt: Type.String(),
 });
 

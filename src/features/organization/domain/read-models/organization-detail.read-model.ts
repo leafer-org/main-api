@@ -1,5 +1,6 @@
 import type { SubscriptionPlanId } from '../aggregates/organization/config.js';
-import type { FileId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { MediaId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 import type { WidgetType } from '@/kernel/domain/vo/widget.js';
 
 export type OrganizationDetailReadModel = {
@@ -7,13 +8,15 @@ export type OrganizationDetailReadModel = {
   infoDraft: {
     name: string;
     description: string;
-    avatarId: FileId | null;
+    avatarId: MediaId | null;
+    media: MediaItem[];
     status: 'draft' | 'moderation-request' | 'rejected';
   };
   infoPublication: {
     name: string;
     description: string;
-    avatarId: FileId | null;
+    avatarId: MediaId | null;
+    media: MediaItem[];
     publishedAt: Date;
   } | null;
   subscription: {

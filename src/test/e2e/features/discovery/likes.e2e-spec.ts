@@ -58,7 +58,7 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
       typeId,
       organizationId: orgId,
       widgets: [
-        { type: 'base-info', title, description: 'Desc', imageId: null },
+        { type: 'base-info', title, description: 'Desc', media: [] },
         { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
         { type: 'category', categoryIds: [], attributes: [] },
       ],

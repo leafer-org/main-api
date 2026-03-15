@@ -2,7 +2,7 @@ import type {
   CategoryAttribute,
   CategoryPublishedEvent,
 } from '@/kernel/domain/events/category.events.js';
-import type { CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import type { CategoryId, MediaId, TypeId } from '@/kernel/domain/ids.js';
 
 /**
  * Узел дерева категорий (неограниченная вложенность).
@@ -15,7 +15,7 @@ export type CategoryReadModel = {
   categoryId: CategoryId;
   parentCategoryId: CategoryId | null;
   name: string;
-  iconId: FileId;
+  iconId: MediaId;
   allowedTypeIds: TypeId[];
   ancestorIds: CategoryId[];
   attributes: CategoryAttribute[];

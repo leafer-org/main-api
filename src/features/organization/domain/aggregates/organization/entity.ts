@@ -102,13 +102,14 @@ export const OrganizationEntity = {
       name: cmd.name,
       description: cmd.description,
       avatarId: cmd.avatarId,
+      media: cmd.media,
       adminRoleId: cmd.adminRoleId,
       createdAt: cmd.now,
     };
 
     const state: OrganizationEntity = {
       id: event.id,
-      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId),
+      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId, event.media),
       infoPublication: null,
       employees: [
         EmployeeEntity.createOwner(event.creatorUserId, event.adminRoleId, event.createdAt),
@@ -134,6 +135,7 @@ export const OrganizationEntity = {
       name: cmd.name,
       description: cmd.description,
       avatarId: cmd.avatarId,
+      media: cmd.media,
       adminRoleId: cmd.adminRoleId,
       claimToken: cmd.claimToken,
       createdAt: cmd.now,
@@ -141,7 +143,7 @@ export const OrganizationEntity = {
 
     const state: OrganizationEntity = {
       id: event.id,
-      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId),
+      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId, event.media),
       infoPublication: null,
       employees: [],
       roles: [
@@ -221,6 +223,7 @@ export const OrganizationEntity = {
       cmd.name,
       cmd.description,
       cmd.avatarId,
+      cmd.media,
     );
 
     const event: InfoDraftUpdatedEvent = {
@@ -228,6 +231,7 @@ export const OrganizationEntity = {
       name: cmd.name,
       description: cmd.description,
       avatarId: cmd.avatarId,
+      media: cmd.media,
       updatedAt: cmd.now,
     };
 
@@ -250,6 +254,7 @@ export const OrganizationEntity = {
       name: state.infoDraft.name,
       description: state.infoDraft.description,
       avatarId: state.infoDraft.avatarId,
+      media: state.infoDraft.media,
       submittedAt: cmd.now,
     };
 
@@ -275,6 +280,7 @@ export const OrganizationEntity = {
       name: state.infoDraft.name,
       description: state.infoDraft.description,
       avatarId: state.infoDraft.avatarId,
+      media: state.infoDraft.media,
       publishedAt: cmd.now,
     };
 
