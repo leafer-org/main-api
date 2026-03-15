@@ -3,6 +3,8 @@ export type AdminUsersListReadModel = {
   phoneNumber: string;
   fullName: string;
   role: string;
+  blockedAt: string | null;
+  blockReason: string | null;
   createdAt: string;
   updatedAt: string;
 };

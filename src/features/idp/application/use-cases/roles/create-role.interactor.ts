@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { RoleEntity } from '../../../domain/aggregates/role/entity.js';
 import { IdGenerator, RoleRepository } from '../../ports.js';
+import { validatePermissions } from './validate-permissions.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
@@ -21,6 +22,9 @@ export class CreateRoleInteractor {
   public async execute(command: { name: string; permissions: Record<string, unknown> }) {
     const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
     if (isLeft(auth)) return auth;
+
+    const validated = validatePermissions(command.permissions);
+    if (isLeft(validated)) return validated;
 
     return this.txHost.startTransaction(async (tx) => {
       const existing = await this.roleRepository.findByName(tx, command.name);

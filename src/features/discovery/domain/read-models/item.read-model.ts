@@ -8,7 +8,7 @@ import type {
   OrganizationId,
   TypeId,
 } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 
 export type ItemBaseInfo = {
@@ -54,7 +54,7 @@ export type ItemReadModel = {
   typeId: TypeId;
 
   baseInfo?: ItemBaseInfo;
-  ageGroup?: AgeGroup;
+  ageGroup?: AgeGroupOption;
   location?: ItemLocation;
   payment?: ItemPayment;
   category?: ItemCategory;

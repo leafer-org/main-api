@@ -1,7 +1,7 @@
-import type { CreateUserCommand, UpdateProfileCommand, UpdateUserRoleCommand } from './commands.js';
-import type { UserCreatedEvent, UserProfileUpdatedEvent, UserRoleUpdatedEvent } from './events.js';
+import type { BlockUserCommand, CreateUserCommand, UnblockUserCommand, UpdateProfileCommand, UpdateUserRoleCommand } from './commands.js';
+import type { UserBlockedEvent, UserCreatedEvent, UserProfileUpdatedEvent, UserRoleUpdatedEvent, UserUnblockedEvent } from './events.js';
 import type { UserState } from './state.js';
-import { UserAlreadyExistsError, UserNotFoundError } from './user.errors.js';
+import { UserAlreadyBlockedError, UserAlreadyExistsError, UserNotBlockedError, UserNotFoundError } from './user.errors.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 
 export type { UserState } from './state.js';
@@ -35,6 +35,8 @@ export const UserEntity = {
       cityId: cmd.cityId,
       lat: cmd.lat,
       lng: cmd.lng,
+      blockedAt: undefined,
+      blockReason: undefined,
       createdAt: cmd.now,
       updatedAt: cmd.now,
     };
@@ -89,6 +91,55 @@ export const UserEntity = {
       state: {
         ...state,
         role: cmd.role,
+        updatedAt: cmd.now,
+      },
+      event,
+    });
+  },
+
+  block(
+    state: UserState | null,
+    cmd: BlockUserCommand,
+  ): Either<UserNotFoundError | UserAlreadyBlockedError, { state: UserState; event: UserBlockedEvent }> {
+    if (!state) return Left(new UserNotFoundError());
+    if (state.blockedAt) return Left(new UserAlreadyBlockedError());
+
+    const event: UserBlockedEvent = {
+      type: 'user.blocked',
+      userId: state.id,
+      reason: cmd.reason,
+      blockedAt: cmd.now,
+    };
+
+    return Right({
+      state: {
+        ...state,
+        blockedAt: cmd.now,
+        blockReason: cmd.reason,
+        updatedAt: cmd.now,
+      },
+      event,
+    });
+  },
+
+  unblock(
+    state: UserState | null,
+    cmd: UnblockUserCommand,
+  ): Either<UserNotFoundError | UserNotBlockedError, { state: UserState; event: UserUnblockedEvent }> {
+    if (!state) return Left(new UserNotFoundError());
+    if (!state.blockedAt) return Left(new UserNotBlockedError());
+
+    const event: UserUnblockedEvent = {
+      type: 'user.unblocked',
+      userId: state.id,
+      unblockedAt: cmd.now,
+    };
+
+    return Right({
+      state: {
+        ...state,
+        blockedAt: undefined,
+        blockReason: undefined,
         updatedAt: cmd.now,
       },
       event,

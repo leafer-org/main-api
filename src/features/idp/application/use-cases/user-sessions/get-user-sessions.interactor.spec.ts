@@ -19,6 +19,10 @@ const READ_MODEL: UserSessionsReadModel = {
       id: SessionId.raw('session-1'),
       createdAt: NOW,
       expiresAt: new Date(NOW.getTime() + 30 * 24 * 60 * 60 * 1000),
+      ip: null,
+      city: null,
+      country: null,
+      deviceName: null,
     },
   ],
 };

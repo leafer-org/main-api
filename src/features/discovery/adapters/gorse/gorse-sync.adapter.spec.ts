@@ -1,3 +1,4 @@
+import { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import { describe, expect, it } from 'vitest';
 
 import type { CategoryAncestorLookupPort } from '../../application/ports.js';
@@ -46,7 +47,7 @@ describe('GorseSyncAdapter', () => {
     const adapter = makeAdapter(deps);
     await adapter.upsertItem(
       makeItem({
-        ageGroup: 'adults',
+        ageGroup: AgeGroupOption.restore('adults'),
         location: { cityId: 'city-1', coordinates: { lat: 55.75, lng: 37.62 }, address: null },
         category: { categoryIds: [CategoryId.raw('cat-1')], attributeValues: [] },
       }),
@@ -66,7 +67,7 @@ describe('GorseSyncAdapter', () => {
     const adapter = makeAdapter(deps);
     await adapter.upsertItem(
       makeItem({
-        ageGroup: 'adults',
+        ageGroup: AgeGroupOption.restore('adults'),
         location: { cityId: 'city-1', coordinates: { lat: 0, lng: 0 }, address: null },
       }),
     );
@@ -83,7 +84,7 @@ describe('GorseSyncAdapter', () => {
     const adapter = makeAdapter(deps);
     await adapter.upsertItem(
       makeItem({
-        ageGroup: 'adults',
+        ageGroup: AgeGroupOption.restore('adults'),
         // No coordinates field in location at all — simulate by not providing location
       }),
     );
@@ -96,7 +97,7 @@ describe('GorseSyncAdapter', () => {
     const deps = makeDeps();
 
     const adapter = makeAdapter(deps);
-    await adapter.upsertItem(makeItem({ ageGroup: 'children' }));
+    await adapter.upsertItem(makeItem({ ageGroup: AgeGroupOption.restore('children') }));
 
     const payload = deps.client.upsertItem.mock.calls[0]![1]!;
     expect(payload.Categories).toEqual(['children:global']);
@@ -106,7 +107,7 @@ describe('GorseSyncAdapter', () => {
     const deps = makeDeps();
 
     const adapter = makeAdapter(deps);
-    await adapter.upsertItem(makeItem({ ageGroup: 'all' }));
+    await adapter.upsertItem(makeItem({ ageGroup: AgeGroupOption.restore('all') }));
 
     const payload = deps.client.upsertItem.mock.calls[0]![1]!;
     expect(payload.Categories).toContain('children:global');
@@ -129,7 +130,7 @@ describe('GorseSyncAdapter', () => {
     const adapter = makeAdapter(deps);
     await adapter.upsertItem(
       makeItem({
-        ageGroup: 'adults',
+        ageGroup: AgeGroupOption.restore('adults'),
         location: { cityId: 'city-1', coordinates: { lat: 55.75, lng: 37.62 }, address: null },
       }),
     );
@@ -146,7 +147,7 @@ describe('GorseSyncAdapter', () => {
     const adapter = makeAdapter(deps);
     await adapter.upsertItem(
       makeItem({
-        ageGroup: 'adults',
+        ageGroup: AgeGroupOption.restore('adults'),
         location: { cityId: 'city-1', coordinates: { lat: 55.75, lng: 37.62 }, address: null },
         category: {
           categoryIds: [CategoryId.raw('cat-1')],

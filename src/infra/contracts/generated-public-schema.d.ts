@@ -320,6 +320,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/users/{userId}/block': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Блокировка пользователя
+     * @description Блокирует пользователя. Все сессии будут удалены, вход запрещён.
+     */
+    post: operations['blockUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/users/{userId}/unblock': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Разблокировка пользователя
+     * @description Снимает блокировку с пользователя.
+     */
+    post: operations['unblockUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/users/{userId}/sessions': {
     parameters: {
       query?: never;
@@ -1786,6 +1826,14 @@ export interface components {
        * @description Дата истечения сессии
        */
       expiresAt: string;
+      /** @description IP-адрес при создании сессии */
+      ip?: string | null;
+      /** @description Город по IP-адресу */
+      city?: string | null;
+      /** @description Страна по IP-адресу */
+      country?: string | null;
+      /** @description Устройство (например "Chrome on macOS") */
+      deviceName?: string | null;
     };
     Role: {
       /** Format: uuid */
@@ -1866,7 +1914,7 @@ export interface components {
     CategoryListItem: {
       categoryId: string;
       name: string;
-      iconId?: string | null;
+      iconId: string;
       childCount: number;
       itemCount: number;
     };
@@ -2115,6 +2163,10 @@ export interface components {
       id: string;
       parentCategoryId?: string | null;
       name: string;
+      iconId: string;
+      iconUrl: string;
+      ageGroups: ('children' | 'adults')[];
+      allowedTypeIds: string[];
       /** @enum {string} */
       status: 'draft' | 'published' | 'unpublished';
       attributes: components['schemas']['CategoryAttribute'][];
@@ -2123,7 +2175,9 @@ export interface components {
       id: string;
       parentCategoryId?: string | null;
       name: string;
-      iconId?: string | null;
+      iconId: string;
+      iconUrl: string;
+      ageGroups: ('children' | 'adults')[];
       allowedTypeIds: string[];
       attributes: components['schemas']['CategoryAttribute'][];
       /** @enum {string} */
@@ -2551,20 +2605,32 @@ export interface operations {
             | components['schemas']['DomainErrorResponse'];
         };
       };
-      /** @description Превышено количество попыток */
+      /** @description Превышено количество попыток / Пользователь заблокирован */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': {
-            /** @enum {string} */
-            type: 'login_blocked';
-            message?: string;
-            /** @enum {boolean} */
-            isDomain: true;
-            retryAfterSec?: number;
-          };
+          'application/json':
+            | {
+                /** @enum {string} */
+                type: 'login_blocked';
+                message?: string;
+                /** @enum {boolean} */
+                isDomain: true;
+                retryAfterSec?: number;
+              }
+            | {
+                /** @enum {string} */
+                type: 'user_blocked';
+                message?: string;
+                /** @enum {boolean} */
+                isDomain: true;
+                data: {
+                  /** @description Причина блокировки */
+                  reason: string;
+                };
+              };
         };
       };
       /** @description Слишком много запросов */
@@ -2801,6 +2867,8 @@ export interface operations {
           lat?: number;
           /** @description Долгота */
           lng?: number;
+          /** @description Идентификатор загруженного файла аватарки */
+          avatarId?: string;
         };
       };
     };
@@ -3086,7 +3154,7 @@ export interface operations {
           'application/json': components['schemas']['Role'];
         };
       };
-      /** @description Ошибка валидации или роль уже существует */
+      /** @description Ошибка валидации, роль уже существует или невалидные разрешения */
       400: {
         headers: {
           [name: string]: unknown;
@@ -3096,10 +3164,13 @@ export interface operations {
             | components['schemas']['OpenApiValidationError']
             | {
                 /** @enum {string} */
-                type: 'role_already_exists';
+                type: 'role_already_exists' | 'invalid_permissions';
                 message?: string;
                 /** @enum {boolean} */
                 isDomain: true;
+                data?: {
+                  [key: string]: unknown;
+                };
               };
         };
       };
@@ -3154,6 +3225,7 @@ export interface operations {
             type: 'boolean' | 'enum';
             values?: string[];
             default: unknown;
+            description?: string;
           }[];
         };
       };
@@ -3480,6 +3552,9 @@ export interface operations {
               /** Format: date-time */
               createdAt: string;
               /** Format: date-time */
+              blockedAt?: string | null;
+              blockReason?: string | null;
+              /** Format: date-time */
               updatedAt: string;
             }[];
             total: number;
@@ -3493,6 +3568,129 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  blockUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description Причина блокировки */
+          reason: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Пользователь заблокирован */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': Record<string, never>;
+        };
+      };
+      /** @description Пользователь уже заблокирован */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Нет доступа */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Внутренняя ошибка сервера */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  unblockUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Пользователь разблокирован */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': Record<string, never>;
+        };
+      };
+      /** @description Пользователь не заблокирован */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Нет доступа */
@@ -4836,8 +5034,9 @@ export interface operations {
           id: string;
           parentCategoryId?: string | null;
           name: string;
-          iconId?: string | null;
+          iconId: string;
           allowedTypeIds: string[];
+          ageGroups: ('children' | 'adults')[];
         };
       };
     };
@@ -4935,9 +5134,10 @@ export interface operations {
       content: {
         'application/json': {
           name: string;
-          iconId?: string | null;
+          iconId: string;
           parentCategoryId?: string | null;
           allowedTypeIds: string[];
+          ageGroups: ('children' | 'adults')[];
         };
       };
     };

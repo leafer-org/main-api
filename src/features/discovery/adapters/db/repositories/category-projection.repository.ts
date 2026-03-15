@@ -24,7 +24,7 @@ export class DrizzleCategoryProjectionRepository implements CategoryProjectionPo
         id: category.categoryId as string,
         parentCategoryId: category.parentCategoryId as string | null,
         name: category.name,
-        iconId: category.iconId as string | null,
+        iconId: category.iconId as string,
         allowedTypeIds: category.allowedTypeIds as string[],
         ancestorIds: category.ancestorIds as string[],
         attributes: category.attributes.map((a) => ({
@@ -41,7 +41,7 @@ export class DrizzleCategoryProjectionRepository implements CategoryProjectionPo
         set: {
           parentCategoryId: category.parentCategoryId as string | null,
           name: category.name,
-          iconId: category.iconId as string | null,
+          iconId: category.iconId as string,
           allowedTypeIds: category.allowedTypeIds as string[],
           ancestorIds: category.ancestorIds as string[],
           attributes: category.attributes.map((a) => ({

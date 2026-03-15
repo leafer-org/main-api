@@ -10,6 +10,9 @@ import {
   AttributeAlreadyAssignedError,
   AttributeNotAssignedError,
   CategoryNotPublishedError,
+  EmptyAgeGroupsError,
+  EmptyAllowedTypeIdsError,
+  InvalidAgeGroupsError,
   InvalidAllowedTypeIdsError,
 } from './errors.js';
 import type {
@@ -23,6 +26,7 @@ import type {
 import type { EntityState } from '@/infra/ddd/entity-state.js';
 import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
 import type { CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import type { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import { CategoryAttribute } from '@/kernel/domain/vo/category-attribute.js';
 
 export type CategoryStatus = 'draft' | 'published' | 'unpublished';
@@ -31,8 +35,9 @@ export type CategoryEntity = EntityState<{
   id: CategoryId;
   parentCategoryId: CategoryId | null;
   name: string;
-  iconId: FileId | null;
+  iconId: FileId;
   allowedTypeIds: TypeId[];
+  ageGroups: AgeGroup[];
   attributes: CategoryAttribute[];
   status: CategoryStatus;
   publishedAt: Date | null;
@@ -56,15 +61,43 @@ function validateAllowedTypeIds(
   return Right(undefined);
 }
 
+function validateAgeGroups(
+  ageGroups: string[],
+  parentAgeGroups: string[] | null,
+): Either<InvalidAgeGroupsError, void> {
+  if (!parentAgeGroups) return Right(undefined);
+
+  const parentSet = new Set(parentAgeGroups);
+  const invalid = ageGroups.filter((g) => !parentSet.has(g));
+
+  if (invalid.length > 0) {
+    return Left(new InvalidAgeGroupsError({ invalidAgeGroups: invalid }));
+  }
+
+  return Right(undefined);
+}
+
 export const CategoryEntity = {
   create(
     cmd: CreateCategoryCommand,
-  ): Either<InvalidAllowedTypeIdsError, { state: CategoryEntity; event: CategoryCreatedEvent }> {
+  ): Either<
+    InvalidAllowedTypeIdsError | InvalidAgeGroupsError | EmptyAllowedTypeIdsError | EmptyAgeGroupsError,
+    { state: CategoryEntity; event: CategoryCreatedEvent }
+  > {
+    if (cmd.allowedTypeIds.length === 0) return Left(new EmptyAllowedTypeIdsError());
+    if (cmd.ageGroups.length === 0) return Left(new EmptyAgeGroupsError());
+
     const typeValidation = validateAllowedTypeIds(
       cmd.allowedTypeIds as string[],
       cmd.parentAllowedTypeIds as string[] | null,
     );
     if (isLeft(typeValidation)) return typeValidation;
+
+    const ageValidation = validateAgeGroups(
+      cmd.ageGroups as string[],
+      cmd.parentAgeGroups as string[] | null,
+    );
+    if (isLeft(ageValidation)) return ageValidation;
 
     const event: CategoryCreatedEvent = {
       type: 'category.created',
@@ -73,6 +106,7 @@ export const CategoryEntity = {
       name: cmd.name,
       iconId: cmd.iconId,
       allowedTypeIds: cmd.allowedTypeIds,
+      ageGroups: cmd.ageGroups,
       createdAt: cmd.now,
     };
 
@@ -82,6 +116,7 @@ export const CategoryEntity = {
       name: event.name,
       iconId: event.iconId,
       allowedTypeIds: event.allowedTypeIds,
+      ageGroups: event.ageGroups,
       attributes: [],
       status: 'draft',
       publishedAt: null,
@@ -95,12 +130,24 @@ export const CategoryEntity = {
   update(
     state: CategoryEntity,
     cmd: UpdateCategoryCommand,
-  ): Either<InvalidAllowedTypeIdsError, { state: CategoryEntity; event: CategoryUpdatedEvent }> {
+  ): Either<
+    InvalidAllowedTypeIdsError | InvalidAgeGroupsError | EmptyAllowedTypeIdsError | EmptyAgeGroupsError,
+    { state: CategoryEntity; event: CategoryUpdatedEvent }
+  > {
+    if (cmd.allowedTypeIds.length === 0) return Left(new EmptyAllowedTypeIdsError());
+    if (cmd.ageGroups.length === 0) return Left(new EmptyAgeGroupsError());
+
     const typeValidation = validateAllowedTypeIds(
       cmd.allowedTypeIds as string[],
       cmd.parentAllowedTypeIds as string[] | null,
     );
     if (isLeft(typeValidation)) return typeValidation;
+
+    const ageValidation = validateAgeGroups(
+      cmd.ageGroups as string[],
+      cmd.parentAgeGroups as string[] | null,
+    );
+    if (isLeft(ageValidation)) return ageValidation;
 
     const event: CategoryUpdatedEvent = {
       type: 'category.updated',
@@ -108,6 +155,7 @@ export const CategoryEntity = {
       iconId: cmd.iconId,
       parentCategoryId: cmd.parentCategoryId,
       allowedTypeIds: cmd.allowedTypeIds,
+      ageGroups: cmd.ageGroups,
       updatedAt: cmd.now,
     };
 
@@ -117,6 +165,7 @@ export const CategoryEntity = {
       iconId: event.iconId,
       parentCategoryId: event.parentCategoryId,
       allowedTypeIds: event.allowedTypeIds,
+      ageGroups: event.ageGroups,
       updatedAt: event.updatedAt,
     };
 
@@ -140,6 +189,7 @@ export const CategoryEntity = {
       name: state.name,
       iconId: state.iconId,
       allowedTypeIds: state.allowedTypeIds,
+      ageGroups: state.ageGroups,
       ancestorIds: cmd.ancestorIds,
       attributes: mergedAttributes.map((a) => ({
         attributeId: a.attributeId,

@@ -5,9 +5,11 @@ import { CategoryNotFoundError } from '../../../domain/aggregates/category/error
 import { CategoryRepository } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
+import { MediaService } from '@/kernel/application/ports/media.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import type { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import { Permissions } from '@/kernel/domain/permissions.js';
 
 @Injectable()
@@ -17,14 +19,16 @@ export class CreateCategoryInteractor {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
+    @Inject(MediaService) private readonly mediaService: MediaService,
   ) {}
 
   public async execute(command: {
     id: CategoryId;
     parentCategoryId: CategoryId | null;
     name: string;
-    iconId: FileId | null;
+    iconId: FileId;
     allowedTypeIds: TypeId[];
+    ageGroups: AgeGroup[];
   }) {
     const auth = await this.permissionCheck.mustCan(Permissions.manageCms);
     if (isLeft(auth)) return auth;
@@ -33,10 +37,12 @@ export class CreateCategoryInteractor {
 
     return this.txHost.startTransaction(async (tx) => {
       let parentAllowedTypeIds: TypeId[] | null = null;
+      let parentAgeGroups: AgeGroup[] | null = null;
       if (command.parentCategoryId) {
         const parent = await this.categoryRepository.findById(tx, command.parentCategoryId);
         if (!parent) return Left(new CategoryNotFoundError());
         parentAllowedTypeIds = parent.allowedTypeIds;
+        parentAgeGroups = parent.ageGroups;
       }
 
       const result = CategoryEntity.create({
@@ -46,7 +52,9 @@ export class CreateCategoryInteractor {
         name: command.name,
         iconId: command.iconId,
         allowedTypeIds: command.allowedTypeIds,
+        ageGroups: command.ageGroups,
         parentAllowedTypeIds,
+        parentAgeGroups,
         now,
       });
 
@@ -54,6 +62,8 @@ export class CreateCategoryInteractor {
 
       const { state } = result.value;
       await this.categoryRepository.save(tx, state);
+
+      await this.mediaService.useFiles(tx, [command.iconId]);
 
       return Right(state);
     });

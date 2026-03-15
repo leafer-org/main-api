@@ -33,7 +33,7 @@ export class DrizzleCategoryListQuery implements CategoryListQueryPort {
     return categories.map((cat) => ({
       categoryId: CategoryId.raw(cat.categoryId),
       name: cat.name,
-      iconId: cat.iconId ? FileId.raw(cat.iconId) : null,
+      iconId: FileId.raw(cat.iconId),
       childCount: cat.childCount,
       itemCount: cat.itemCount,
     }));

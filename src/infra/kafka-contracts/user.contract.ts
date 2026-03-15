@@ -10,6 +10,8 @@ const UserSnapshotMessage = Type.Object({
   cityId: Type.String(),
   lat: Type.Optional(Type.Number()),
   lng: Type.Optional(Type.Number()),
+  blockedAt: Type.Optional(Type.String()),
+  blockReason: Type.Optional(Type.String()),
   createdAt: Type.String(),
   updatedAt: Type.String(),
 });

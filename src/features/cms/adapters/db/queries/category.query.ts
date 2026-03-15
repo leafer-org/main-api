@@ -6,6 +6,7 @@ import type { CategoryEntity, CategoryStatus } from '../../../domain/aggregates/
 import { cmsCategories } from '../schema.js';
 import { ConnectionPool } from '@/infra/lib/nest-drizzle/index.js';
 import { CategoryId, type FileId, type TypeId } from '@/kernel/domain/ids.js';
+import { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import type { CategoryAttribute } from '@/kernel/domain/vo/category-attribute.js';
 
 @Injectable()
@@ -18,6 +19,9 @@ export class DrizzleCategoryQuery implements CategoryQueryPort {
         id: cmsCategories.id,
         parentCategoryId: cmsCategories.parentCategoryId,
         name: cmsCategories.name,
+        iconId: cmsCategories.iconId,
+        allowedTypeIds: cmsCategories.allowedTypeIds,
+        ageGroups: cmsCategories.ageGroups,
         status: cmsCategories.status,
         attributes: cmsCategories.attributes,
       })
@@ -28,6 +32,9 @@ export class DrizzleCategoryQuery implements CategoryQueryPort {
       id: CategoryId.raw(row.id),
       parentCategoryId: row.parentCategoryId ? CategoryId.raw(row.parentCategoryId) : null,
       name: row.name,
+      iconId: row.iconId as FileId,
+      allowedTypeIds: (row.allowedTypeIds as string[]).map((v) => v as TypeId),
+      ageGroups: (row.ageGroups as string[]).map(AgeGroup.restore),
       status: row.status as CategoryEntity['status'],
       attributes: row.attributes as CategoryAttribute[],
     }));
@@ -47,8 +54,9 @@ export class DrizzleCategoryQuery implements CategoryQueryPort {
       id: CategoryId.raw(row.id),
       parentCategoryId: row.parentCategoryId ? CategoryId.raw(row.parentCategoryId) : null,
       name: row.name,
-      iconId: row.iconId ? (row.iconId as FileId) : null,
+      iconId: row.iconId as FileId,
       allowedTypeIds: (row.allowedTypeIds as string[]).map((id) => id as TypeId),
+      ageGroups: (row.ageGroups as string[]).map(AgeGroup.restore),
       attributes: row.attributes as CategoryAttribute[],
       status: row.status as CategoryStatus,
       publishedAt: row.publishedAt,

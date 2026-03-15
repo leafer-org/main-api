@@ -8,7 +8,7 @@ import type { DynamicSearchFilters } from './use-cases/search/types.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type { AttributeId, CategoryId, ItemId, TypeId, UserId } from '@/kernel/domain/ids.js';
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 // --- Query Ports ---
 
@@ -23,7 +23,7 @@ export abstract class ItemQueryPort {
   public abstract findCategoryItemsSorted(params: {
     categoryId: CategoryId;
     cityId: string;
-    ageGroup: AgeGroup;
+    ageGroup: AgeGroupOption;
     filters: CategoryItemFilters;
     sort: Exclude<SortOption, 'personal'>;
     includeIds?: ItemId[];
@@ -111,7 +111,7 @@ export abstract class SearchPort {
   public abstract search(params: {
     query: string;
     cityId: string;
-    ageGroup: AgeGroup;
+    ageGroup: AgeGroupOption;
     filters?: DynamicSearchFilters;
     cursor?: string;
     limit: number;

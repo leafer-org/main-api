@@ -33,4 +33,22 @@ export type UserRoleUpdatedEvent = {
   updatedAt: Date;
 };
 
-export type UserEvent = UserCreatedEvent | UserProfileUpdatedEvent | UserRoleUpdatedEvent;
+export type UserBlockedEvent = {
+  type: 'user.blocked';
+  userId: UserId;
+  reason: string;
+  blockedAt: Date;
+};
+
+export type UserUnblockedEvent = {
+  type: 'user.unblocked';
+  userId: UserId;
+  unblockedAt: Date;
+};
+
+export type UserEvent =
+  | UserCreatedEvent
+  | UserProfileUpdatedEvent
+  | UserRoleUpdatedEvent
+  | UserBlockedEvent
+  | UserUnblockedEvent;

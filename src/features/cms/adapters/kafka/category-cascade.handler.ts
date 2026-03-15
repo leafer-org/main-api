@@ -14,6 +14,7 @@ import type {
   CategoryUnpublishedEvent,
 } from '@/kernel/domain/events/category.events.js';
 import { AttributeId, CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 
 @KafkaConsumerHandlers(CMS_CONSUMER_ID)
@@ -39,7 +40,7 @@ export class CategoryCascadeKafkaHandler {
           ? CategoryId.raw(payload.parentCategoryId)
           : null,
         name: payload.name!,
-        iconId: payload.iconId ? FileId.raw(payload.iconId) : null,
+        iconId: FileId.raw(payload.iconId!),
         allowedTypeIds: (payload.allowedTypeIds ?? []).map((id) => TypeId.raw(id)),
         ancestorIds: (payload.ancestorIds ?? []).map((id) => CategoryId.raw(id)),
         attributes: (payload.attributes ?? []).map((a) => ({
@@ -48,6 +49,7 @@ export class CategoryCascadeKafkaHandler {
           required: a.required,
           schema: a.schema as AttributeSchema,
         })),
+        ageGroups: (payload.ageGroups ?? []).map(AgeGroup.restore),
         republished: payload.republished ?? false,
         publishedAt: new Date(payload.publishedAt!),
       };

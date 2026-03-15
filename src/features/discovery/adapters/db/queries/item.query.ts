@@ -25,7 +25,7 @@ import {
   OrganizationId,
   TypeId,
 } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 
 @Injectable()
@@ -58,7 +58,7 @@ export class DrizzleItemQuery implements ItemQueryPort {
   public async findCategoryItemsSorted(params: {
     categoryId: CategoryId;
     cityId: string;
-    ageGroup: AgeGroup;
+    ageGroup: AgeGroupOption;
     filters: CategoryItemFilters;
     sort: Exclude<SortOption, 'personal'>;
     includeIds?: ItemId[];
@@ -308,7 +308,7 @@ export class DrizzleItemQuery implements ItemQueryPort {
     }
 
     if (row.ageGroup !== null) {
-      model.ageGroup = row.ageGroup as AgeGroup;
+      model.ageGroup = row.ageGroup as AgeGroupOption;
     }
 
     if (row.cityId !== null) {

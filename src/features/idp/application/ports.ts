@@ -46,7 +46,7 @@ export abstract class UserRepository {
   public abstract findByPhoneNumber(
     tx: Transaction,
     phoneNumber: PhoneNumber,
-  ): Promise<{ id: UserId; role: Role } | null>;
+  ): Promise<{ id: UserId; role: Role; blockedAt: Date | undefined; blockReason: string | undefined } | null>;
   public abstract findByRoleName(tx: Transaction, roleName: string): Promise<UserState[]>;
   public abstract save(tx: Transaction, state: UserState): Promise<void>;
 }
@@ -119,6 +119,12 @@ export abstract class IdGenerator {
   public abstract generateUserId(): UserId;
   public abstract generateSessionId(): SessionId;
   public abstract generateRoleId(): RoleId;
+}
+
+// --- Geo IP port ---
+
+export abstract class GeoIpService {
+  public abstract lookup(ip: string): Promise<{ city: string | null; country: string | null }>;
 }
 
 // --- Search read-model ports (Meilisearch, no transactions) ---

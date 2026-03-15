@@ -1,11 +1,13 @@
 import type { RegistrationCompletedEvent } from '../aggregates/login-process/events.js';
 import type { CreateSessionCommand } from '../aggregates/session/commands.js';
+import type { SessionMeta } from '../vo/session-meta.js';
 import type { SessionId } from '@/kernel/domain/ids.js';
 
 type Deps = {
   sessionId: SessionId;
   now: Date;
   ttlMs: number;
+  meta: SessionMeta;
 };
 
 export function whenRegistrationCompletedCreateSession(
@@ -18,5 +20,6 @@ export function whenRegistrationCompletedCreateSession(
     userId: event.userId,
     now: deps.now,
     ttlMs: deps.ttlMs,
+    meta: deps.meta,
   };
 }

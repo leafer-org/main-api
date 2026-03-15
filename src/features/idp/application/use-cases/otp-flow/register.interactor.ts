@@ -6,8 +6,11 @@ import { SessionEntity } from '../../../domain/aggregates/session/entity.js';
 import { UserEntity } from '../../../domain/aggregates/user/entity.js';
 import { whenRegistrationCompletedCreateSession } from '../../../domain/policies/when-registration-completed-create-session.policy.js';
 import { whenRegistrationCompletedCreateUser } from '../../../domain/policies/when-registration-completed-create-user.policy.js';
+import { parseDeviceName } from '../../../domain/vo/device-parser.js';
 import { FullName } from '../../../domain/vo/full-name.js';
+import type { SessionMeta } from '../../../domain/vo/session-meta.js';
 import {
+  GeoIpService,
   IdGenerator,
   JwtAccessService,
   LoginProcessRepository,
@@ -35,6 +38,8 @@ export class RegisterInteractor {
     private readonly jwtAccess: JwtAccessService,
     private readonly refreshTokens: RefreshTokenService,
     private readonly idGenerator: IdGenerator,
+    @Inject(GeoIpService)
+    private readonly geoIp: GeoIpService,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
   ) {}
@@ -46,6 +51,8 @@ export class RegisterInteractor {
     cityId: string;
     lat?: number;
     lng?: number;
+    ip?: string;
+    userAgent?: string;
   }) {
     const fullNameEither = FullName.create(command.fullName);
     if (isLeft(fullNameEither)) return fullNameEither;
@@ -90,11 +97,20 @@ export class RegisterInteractor {
       await this.userRepository.save(tx, userResult.value.state);
 
       // Policy: create session
+      const geo = await this.geoIp.lookup(command.ip ?? '');
+      const meta: SessionMeta = {
+        ip: command.ip ?? '',
+        city: geo.city,
+        country: geo.country,
+        deviceName: parseDeviceName(command.userAgent ?? ''),
+      };
+
       const sessionId = this.idGenerator.generateSessionId();
       const createSessionCmd = whenRegistrationCompletedCreateSession(event, {
         sessionId,
         now,
         ttlMs: SESSION_TTL_MS,
+        meta,
       });
       const sessionResult = SessionEntity.create(null, createSessionCmd);
       if (isLeft(sessionResult)) throw new Error('Unexpected session creation failure');

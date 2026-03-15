@@ -261,7 +261,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
         categoryId,
         parentCategoryId: null,
         name: 'Test Category',
-        iconId: null,
+        iconId: randomUUID(),
         allowedTypeIds: [randomUUID()],
         ancestorIds: [],
         attributes: [
@@ -302,7 +302,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
         categoryId,
         parentCategoryId: null,
         name: 'To Delete',
-        iconId: null,
+        iconId: randomUUID(),
         allowedTypeIds: [],
         ancestorIds: [],
         attributes: [

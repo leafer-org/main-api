@@ -35,10 +35,10 @@ export class DrizzleUserRepository extends UserRepository {
   public async findByPhoneNumber(
     tx: Transaction,
     phoneNumber: PhoneNumber,
-  ): Promise<{ id: UserId; role: Role } | null> {
+  ): Promise<{ id: UserId; role: Role; blockedAt: Date | undefined; blockReason: string | undefined } | null> {
     const db = this.txHost.get(tx);
     const rows = await db
-      .select({ id: users.id, role: users.role })
+      .select({ id: users.id, role: users.role, blockedAt: users.blockedAt, blockReason: users.blockReason })
       .from(users)
       .where(eq(users.phoneNumber, phoneNumber as string))
       .limit(1);
@@ -46,7 +46,7 @@ export class DrizzleUserRepository extends UserRepository {
     const row = rows[0];
     if (!row) return null;
 
-    return { id: UserId.raw(row.id), role: Role.raw(row.role) };
+    return { id: UserId.raw(row.id), role: Role.raw(row.role), blockedAt: row.blockedAt ?? undefined, blockReason: row.blockReason ?? undefined };
   }
 
   public async findByRoleName(tx: Transaction, roleName: string): Promise<UserState[]> {
@@ -77,6 +77,8 @@ export class DrizzleUserRepository extends UserRepository {
         cityId: state.cityId,
         lat: state.lat ?? null,
         lng: state.lng ?? null,
+        blockedAt: state.blockedAt ?? null,
+        blockReason: state.blockReason ?? null,
         createdAt: state.createdAt,
         updatedAt: state.updatedAt,
       })
@@ -90,6 +92,8 @@ export class DrizzleUserRepository extends UserRepository {
           cityId: state.cityId,
           lat: state.lat ?? null,
           lng: state.lng ?? null,
+          blockedAt: state.blockedAt ?? null,
+          blockReason: state.blockReason ?? null,
           updatedAt: state.updatedAt,
         },
       });
@@ -113,6 +117,8 @@ export class DrizzleUserRepository extends UserRepository {
         cityId: state.cityId,
         lat: state.lat,
         lng: state.lng,
+        blockedAt: state.blockedAt?.toISOString(),
+        blockReason: state.blockReason,
         createdAt: state.createdAt.toISOString(),
         updatedAt: state.updatedAt.toISOString(),
       },
@@ -130,6 +136,8 @@ export class DrizzleUserRepository extends UserRepository {
       cityId: row.cityId,
       lat: row.lat ?? undefined,
       lng: row.lng ?? undefined,
+      blockedAt: row.blockedAt ?? undefined,
+      blockReason: row.blockReason ?? undefined,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

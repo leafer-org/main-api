@@ -1,7 +1,5 @@
 import type { ValueObject } from '@/infra/ddd/value-object.js';
 
-export type AgeGroup = 'children' | 'adults' | 'all';
-
 export type Role = ValueObject<string, 'Role'>;
 
 export const Role = {

@@ -70,6 +70,7 @@ export class AuthController {
       phoneNumber: body.phoneNumber,
       code: body.code,
       ip,
+      userAgent: req.get('user-agent'),
     });
 
     if (isLeft(result)) {
@@ -95,6 +96,7 @@ export class AuthController {
   @Get('refresh')
   public async refresh(
     @Headers('x-refresh-token') refreshToken: string,
+    @Req() req: Request,
   ): Promise<PublicResponse['refresh']> {
     if (!refreshToken) {
       throw domainToHttpError<'refresh'>({
@@ -103,7 +105,11 @@ export class AuthController {
     }
 
     try {
-      const result = await this.rotateSession.execute({ refreshToken });
+      const result = await this.rotateSession.execute({
+        refreshToken,
+        ip: req.ip,
+        userAgent: req.get('user-agent'),
+      });
 
       if (isLeft(result)) {
         throw domainToHttpError<'refresh'>(result.error.toResponse());
@@ -124,6 +130,7 @@ export class AuthController {
   @HttpCode(200)
   public async completeProfile(
     @Body() body: PublicBody['completeProfile'],
+    @Req() req: Request,
   ): Promise<PublicResponse['completeProfile']> {
     const result = await this.register.execute({
       registrationSessionId: body.registrationSessionId,
@@ -132,6 +139,8 @@ export class AuthController {
       cityId: body.cityId,
       lat: body.lat,
       lng: body.lng,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
     });
 
     if (isLeft(result)) {

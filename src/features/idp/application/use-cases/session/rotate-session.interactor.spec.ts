@@ -10,12 +10,13 @@ import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.j
 import { FullName } from '../../../domain/vo/full-name.js';
 import { PhoneNumber } from '../../../domain/vo/phone-number.js';
 import { AccessToken, RefreshToken } from '../../../domain/vo/tokens.js';
-import type {
-  IdGenerator,
-  JwtAccessService,
-  RefreshTokenService,
-  SessionRepository,
-  UserRepository,
+import {
+  GeoIpService,
+  type IdGenerator,
+  type JwtAccessService,
+  type RefreshTokenService,
+  type SessionRepository,
+  type UserRepository,
 } from '../../ports.js';
 import { RotateSessionInteractor } from './rotate-session.interactor.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
@@ -39,6 +40,7 @@ const makeSession = (): SessionState => ({
   userId: USER_ID,
   createdAt: NOW,
   expiresAt: new Date(NOW.getTime() + SESSION_TTL_MS),
+  meta: { ip: '127.0.0.1', city: null, country: null, deviceName: null },
 });
 
 const makeUser = (): UserState => ({
@@ -48,6 +50,8 @@ const makeUser = (): UserState => ({
   avatarId: undefined,
   role: Role.raw('USER'),
   cityId: 'city-1',
+  blockedAt: undefined,
+  blockReason: undefined,
   createdAt: NOW,
   updatedAt: NOW,
 });
@@ -84,6 +88,9 @@ const makeDeps = () => {
   return { sessionRepo, userRepo, refreshTokens, jwtAccess, idGenerator };
 };
 
+const makeGeoIp = () =>
+  ({ lookup: async () => ({ city: null, country: null }) }) as unknown as GeoIpService;
+
 const makeInteractor = (deps: ReturnType<typeof makeDeps>) => {
   const txHost = new MockTransactionHost();
   return {
@@ -94,6 +101,7 @@ const makeInteractor = (deps: ReturnType<typeof makeDeps>) => {
       deps.refreshTokens,
       deps.jwtAccess,
       deps.idGenerator,
+      makeGeoIp(),
       txHost,
     ),
     txHost,

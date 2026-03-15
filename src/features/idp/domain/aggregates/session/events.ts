@@ -1,3 +1,4 @@
+import type { SessionMeta } from '../../vo/session-meta.js';
 import type { SessionId, UserId } from '@/kernel/domain/ids.js';
 
 export type SessionCreatedEvent = {
@@ -6,6 +7,7 @@ export type SessionCreatedEvent = {
   userId: UserId;
   createdAt: Date;
   expiresAt: Date;
+  meta: SessionMeta;
 };
 
 export type SessionRotatedEvent = {
@@ -14,6 +16,7 @@ export type SessionRotatedEvent = {
   userId: UserId;
   createdAt: Date;
   expiresAt: Date;
+  meta: SessionMeta;
 };
 
 export type SessionDeletedEvent = {

@@ -23,6 +23,7 @@ export const SessionEntity = {
       userId: cmd.userId,
       createdAt: cmd.now,
       expiresAt: new Date(cmd.now.getTime() + cmd.ttlMs),
+      meta: cmd.meta,
     };
 
     const newState: SessionState = {
@@ -30,6 +31,7 @@ export const SessionEntity = {
       userId: cmd.userId,
       createdAt: cmd.now,
       expiresAt: new Date(cmd.now.getTime() + cmd.ttlMs),
+      meta: cmd.meta,
     };
 
     return Right({ state: newState, event });
@@ -47,6 +49,7 @@ export const SessionEntity = {
       userId: cmd.userId,
       createdAt: cmd.now,
       expiresAt: new Date(cmd.now.getTime() + cmd.ttlMs),
+      meta: cmd.meta,
     };
 
     const newState: SessionState = {
@@ -54,6 +57,7 @@ export const SessionEntity = {
       userId: cmd.userId,
       createdAt: cmd.now,
       expiresAt: new Date(cmd.now.getTime() + cmd.ttlMs),
+      meta: cmd.meta,
     };
 
     return Right({ state: newState, event });

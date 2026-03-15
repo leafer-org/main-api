@@ -22,6 +22,10 @@ export class ItemDetailController {
       throw domainToHttpError(result.error.toResponse());
     }
 
-    return { ...result.value, publishedAt: result.value.publishedAt.toISOString() };
+    return {
+      ...result.value,
+      widgets: result.value.widgets as PublicResponse['getDiscoveryItemDetail']['widgets'],
+      publishedAt: result.value.publishedAt.toISOString(),
+    };
   }
 }

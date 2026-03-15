@@ -32,8 +32,9 @@ export class OutboxCategoryEventPublisher implements CategoryEventPublisher {
         categoryId: event.categoryId as string,
         parentCategoryId: event.parentCategoryId as string | null,
         name: event.name,
-        iconId: event.iconId as string | null,
+        iconId: event.iconId as string,
         allowedTypeIds: event.allowedTypeIds as string[],
+        ageGroups: event.ageGroups as string[],
         ancestorIds: event.ancestorIds as string[],
         attributes: event.attributes.map((a) => ({
           attributeId: a.attributeId as string,

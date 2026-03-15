@@ -8,3 +8,8 @@ export class StaticRoleModificationError extends CreateDomainError(
   'static_role_modification',
   403,
 ) {}
+
+export class InvalidPermissionsError extends CreateDomainError(
+  'invalid_permissions',
+  400,
+).withData<{ errors: string[] }>() {}

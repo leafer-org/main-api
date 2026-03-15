@@ -12,6 +12,8 @@ export type UserState = {
   cityId: string;
   lat?: number;
   lng?: number;
+  blockedAt: Date | undefined;
+  blockReason: string | undefined;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -22,6 +22,8 @@ export class OnUserEventHandler {
       phoneNumber: e.phoneNumber,
       fullName: e.fullName,
       role: e.role,
+      blockedAt: e.blockedAt ?? null,
+      blockReason: e.blockReason ?? null,
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,
     }));

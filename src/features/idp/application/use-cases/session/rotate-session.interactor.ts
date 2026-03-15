@@ -6,7 +6,10 @@ import {
   SessionNotFoundError,
 } from '../../../domain/aggregates/session/errors.js';
 import { UserNotFoundError } from '../../../domain/aggregates/user/user.errors.js';
+import { parseDeviceName } from '../../../domain/vo/device-parser.js';
+import type { SessionMeta } from '../../../domain/vo/session-meta.js';
 import {
+  GeoIpService,
   IdGenerator,
   JwtAccessService,
   RefreshTokenService,
@@ -30,13 +33,23 @@ export class RotateSessionInteractor {
     private readonly refreshTokens: RefreshTokenService,
     private readonly jwtAccess: JwtAccessService,
     private readonly idGenerator: IdGenerator,
+    @Inject(GeoIpService)
+    private readonly geoIp: GeoIpService,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
   ) {}
 
-  public async execute(command: { refreshToken: string }) {
+  public async execute(command: { refreshToken: string; ip?: string; userAgent?: string }) {
     const payload = this.refreshTokens.verify(command.refreshToken);
     const now = this.clock.now();
+
+    const geo = await this.geoIp.lookup(command.ip ?? '');
+    const meta: SessionMeta = {
+      ip: command.ip ?? '',
+      city: geo.city,
+      country: geo.country,
+      deviceName: parseDeviceName(command.userAgent ?? ''),
+    };
 
     return this.txHost.startTransaction(async (tx) => {
       const state = await this.sessionRepository.findById(tx, SessionId.raw(payload.sessionId));
@@ -57,6 +70,7 @@ export class RotateSessionInteractor {
         userId: state.userId,
         now,
         ttlMs: SESSION_TTL_MS,
+        meta,
       });
 
       if (isLeft(result)) return result;

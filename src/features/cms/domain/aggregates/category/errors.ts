@@ -17,3 +17,12 @@ export class InvalidAllowedTypeIdsError extends CreateDomainError(
   'invalid_allowed_type_ids',
   400,
 ).withData<{ invalidTypeIds: string[] }>() {}
+
+export class EmptyAllowedTypeIdsError extends CreateDomainError('empty_allowed_type_ids', 400) {}
+
+export class EmptyAgeGroupsError extends CreateDomainError('empty_age_groups', 400) {}
+
+export class InvalidAgeGroupsError extends CreateDomainError(
+  'invalid_age_groups',
+  400,
+).withData<{ invalidAgeGroups: string[] }>() {}

@@ -33,6 +33,10 @@ export class AdminSessionsController {
         id: s.id as string,
         createdAt: s.createdAt.toISOString(),
         expiresAt: s.expiresAt.toISOString(),
+        ip: s.ip ?? undefined,
+        city: s.city ?? undefined,
+        country: s.country ?? undefined,
+        deviceName: s.deviceName ?? undefined,
       })),
     };
   }

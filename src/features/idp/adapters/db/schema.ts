@@ -32,6 +32,8 @@ export const users = pgTable('users', {
   cityId: text('city_id').notNull().default(''),
   lat: doublePrecision('lat'),
   lng: doublePrecision('lng'),
+  blockedAt: timestamp('blocked_at', { withTimezone: true }),
+  blockReason: text('block_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
@@ -79,6 +81,10 @@ export const sessions = pgTable(
       .references(() => users.id),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    ip: text('ip'),
+    city: text('city'),
+    country: text('country'),
+    deviceName: text('device_name'),
   },
   (table) => [index('sessions_user_created_idx').on(table.userId, table.createdAt)],
 );

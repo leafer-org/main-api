@@ -66,7 +66,7 @@ export class MeController {
     const result = await this.updateProfile.execute({
       userId: user.userId,
       fullName: body.fullName,
-      avatarId: (body as Record<string, unknown>).avatarId as string | undefined,
+      avatarId: body.avatarId,
       cityId: body.cityId,
       lat: body.lat,
       lng: body.lng,
@@ -112,6 +112,10 @@ export class MeController {
         id: s.id as string,
         createdAt: s.createdAt.toISOString(),
         expiresAt: s.expiresAt.toISOString(),
+        ip: s.ip ?? undefined,
+        city: s.city ?? undefined,
+        country: s.country ?? undefined,
+        deviceName: s.deviceName ?? undefined,
       })),
     };
   }

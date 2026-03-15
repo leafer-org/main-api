@@ -12,13 +12,14 @@ import { isRight } from '@/infra/lib/box.js';
 import { ServiceMock } from '@/infra/test/mock.js';
 import type { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 import { CategoryId, ItemId, TypeId, UserId } from '@/kernel/domain/ids.js';
+import { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 // ─── Хелперы ────────────────────────────────────────────────────────────────
 
 const USER_ID = UserId.raw('user-1');
 const CATEGORY_ID = CategoryId.raw('cat-1');
 const CITY_ID = 'city-1';
-const AGE_GROUP = 'adults' as const;
+const AGE_GROUP = AgeGroupOption.restore('adults');
 
 function makeItem(id: string, overrides?: Partial<ItemReadModel>): ItemReadModel {
   return {
@@ -298,8 +299,8 @@ describe('GetCategoryItemsInteractor', () => {
 
       const interactor = makeInteractor(deps);
 
-      await interactor.execute({ ...baseQuery, ageGroup: 'adults' });
-      await interactor.execute({ ...baseQuery, ageGroup: 'children' });
+      await interactor.execute({ ...baseQuery, ageGroup: AgeGroupOption.restore('adults') });
+      await interactor.execute({ ...baseQuery, ageGroup: AgeGroupOption.restore('children') });
 
       const calls = deps.rankedListCache.get.mock.calls;
       expect(calls[0]![0]).not.toBe(calls[1]![0]);

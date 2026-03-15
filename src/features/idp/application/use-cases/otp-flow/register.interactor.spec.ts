@@ -8,13 +8,14 @@ import type {
 import { FingerPrint } from '../../../domain/vo/finger-print.js';
 import { PhoneNumber } from '../../../domain/vo/phone-number.js';
 import { AccessToken, RefreshToken } from '../../../domain/vo/tokens.js';
-import type {
-  IdGenerator,
-  JwtAccessService,
-  LoginProcessRepository,
-  RefreshTokenService,
-  SessionRepository,
-  UserRepository,
+import {
+  GeoIpService,
+  type IdGenerator,
+  type JwtAccessService,
+  type LoginProcessRepository,
+  type RefreshTokenService,
+  type SessionRepository,
+  type UserRepository,
 } from '../../ports.js';
 import { RegisterInteractor } from './register.interactor.js';
 import { isLeft, isRight } from '@/infra/lib/box.js';
@@ -77,6 +78,9 @@ const makeDeps = () => {
   };
 };
 
+const makeGeoIp = () =>
+  ({ lookup: async () => ({ city: null, country: null }) }) as unknown as GeoIpService;
+
 const makeInteractor = (deps: ReturnType<typeof makeDeps>) => {
   const txHost = new MockTransactionHost();
   return {
@@ -88,6 +92,7 @@ const makeInteractor = (deps: ReturnType<typeof makeDeps>) => {
       deps.jwtAccess,
       deps.refreshTokens,
       deps.idGenerator,
+      makeGeoIp(),
       txHost,
     ),
     txHost,

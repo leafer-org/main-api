@@ -17,7 +17,7 @@ import {
 import { nextOffsetCursor, parseOffsetCursor } from '@/infra/lib/pagination/index.js';
 import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 import type { CategoryId, ItemId, UserId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 const RECOMMEND_CAP = 500;
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -45,7 +45,7 @@ export class GetCategoryItemsInteractor {
     categoryId: CategoryId;
     cityId: string;
     coordinates?: { lat: number; lng: number };
-    ageGroup: AgeGroup;
+    ageGroup: AgeGroupOption;
     filters: CategoryItemFilters;
     sort: SortOption;
     cursor?: string;
@@ -75,7 +75,7 @@ export class GetCategoryItemsInteractor {
     categoryId: CategoryId;
     cityId: string;
     coordinates?: { lat: number; lng: number };
-    ageGroup: AgeGroup;
+    ageGroup: AgeGroupOption;
     filters: CategoryItemFilters;
     cursor?: string;
     limit: number;
@@ -140,7 +140,7 @@ export class GetCategoryItemsInteractor {
     categoryId: CategoryId;
     cityId: string;
     coordinates?: { lat: number; lng: number };
-    ageGroup: AgeGroup;
+    ageGroup: AgeGroupOption;
     filters: CategoryItemFilters;
   }): Promise<ItemId[]> {
     const category = await this.resolveGeoCategoryWithCatalog(
@@ -183,7 +183,7 @@ export class GetCategoryItemsInteractor {
     query: {
       categoryId: CategoryId;
       cityId: string;
-      ageGroup: AgeGroup;
+      ageGroup: AgeGroupOption;
       filters: CategoryItemFilters;
       cursor?: string;
       limit: number;
@@ -209,7 +209,7 @@ export class GetCategoryItemsInteractor {
   private buildCacheKey(query: {
     userId?: UserId;
     categoryId: CategoryId;
-    ageGroup: AgeGroup;
+    ageGroup: AgeGroupOption;
     filters: CategoryItemFilters;
   }): string {
     const raw = JSON.stringify({
@@ -224,7 +224,7 @@ export class GetCategoryItemsInteractor {
   private async resolveGeoCategoryWithCatalog(
     cityId: string,
     categoryId: CategoryId,
-    ageGroup: AgeGroup,
+    ageGroup: AgeGroupOption,
     coordinates?: { lat: number; lng: number },
   ): Promise<string> {
     const rootCatIds = await this.ancestorLookup.findRootCategoryIds([categoryId]);

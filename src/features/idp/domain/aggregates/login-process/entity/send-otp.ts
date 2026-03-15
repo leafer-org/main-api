@@ -58,7 +58,7 @@ export function sendOtp(
 
     const event: LoginProcessStartedEvent = {
       type: 'login_process.started',
-      id: state.id,
+      id: cmd.newLoginProcessId,
       phoneNumber: cmd.phoneNumber,
       fingerPrint: cmd.fingerPrint,
       accuredAt: cmd.now,
@@ -68,7 +68,7 @@ export function sendOtp(
 
     const newState: LoginProcessState = {
       type: 'OtpRequested',
-      id: state.id,
+      id: cmd.newLoginProcessId,
       phoneNumber: cmd.phoneNumber,
       fingerPrint: cmd.fingerPrint,
       codeHash: OtpCodeHash.create(cmd.otpCode),

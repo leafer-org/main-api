@@ -84,6 +84,8 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
           });
         }
 
+        await this.producer.flush();
+
         const ids = rows.map((r) => r.id);
         await tx.delete(outboxTable).where(inArray(outboxTable.id, ids));
       });

@@ -23,6 +23,8 @@ const makeUser = (): UserState => ({
   avatarId: undefined,
   role: ROLE,
   cityId: 'city-1',
+  blockedAt: undefined,
+  blockReason: undefined,
   createdAt: NOW,
   updatedAt: NOW,
 });

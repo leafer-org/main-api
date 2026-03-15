@@ -1631,6 +1631,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@maxmind/geoip2-node@npm:^6.3.4":
+  version: 6.3.4
+  resolution: "@maxmind/geoip2-node@npm:6.3.4"
+  dependencies:
+    maxmind: "npm:^5.0.0"
+  checksum: 10c0/91f88632e702085e6b28b26f3fff604119114ee53c122db5dc287fe986e2024267620946dbc79768d57c5c458c9c60ee23016ed3f99bfc36a01892cfa8cea309
+  languageName: node
+  linkType: hard
+
 "@napi-rs/nice-android-arm-eabi@npm:1.1.1":
   version: 1.1.1
   resolution: "@napi-rs/nice-android-arm-eabi@npm:1.1.1"
@@ -4358,7 +4367,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bowser@npm:^2.11.0":
+"bowser@npm:^2.11.0, bowser@npm:^2.14.1":
   version: 2.14.1
   resolution: "bowser@npm:2.14.1"
   checksum: 10c0/bb69b55ba7f0456e3dc07d0cfd9467f985581f640ba8fd426b08754a6737ee0d6cf3b50607941e5255f04c83075b952ece0599f978dd4d20f1e95461104c5ffd
@@ -6700,6 +6709,7 @@ __metadata:
     "@biomejs/biome": "npm:2.3.11"
     "@confluentinc/kafka-javascript": "npm:^1.8.2"
     "@dotenvx/dotenvx": "npm:^1.52.0"
+    "@maxmind/geoip2-node": "npm:^6.3.4"
     "@nestjs/common": "npm:^11.0.1"
     "@nestjs/core": "npm:^11.0.1"
     "@nestjs/jwt": "npm:^11.0.0"
@@ -6719,6 +6729,7 @@ __metadata:
     "@types/pg": "npm:^8.16.0"
     "@types/supertest": "npm:^6.0.2"
     argon2: "npm:^0.43.0"
+    bowser: "npm:^2.14.1"
     chokidar: "npm:^4"
     concurrently: "npm:^9.2.1"
     cookie: "npm:^1.0.2"
@@ -6728,6 +6739,7 @@ __metadata:
     globals: "npm:^16.0.0"
     h3-js: "npm:^4.4.0"
     ioredis: "npm:^5.10.0"
+    maxmind: "npm:^5.0.5"
     meilisearch: "npm:^0.55.0"
     nestjs-cls: "npm:^6.2.0"
     openapi-typescript: "npm:^7.10.1"
@@ -6784,6 +6796,16 @@ __metadata:
   version: 1.1.0
   resolution: "math-intrinsics@npm:1.1.0"
   checksum: 10c0/7579ff94e899e2f76ab64491d76cf606274c874d8f2af4a442c016bd85688927fcfca157ba6bf74b08e9439dc010b248ce05b96cc7c126a354c3bae7fcb48b7f
+  languageName: node
+  linkType: hard
+
+"maxmind@npm:^5.0.0, maxmind@npm:^5.0.5":
+  version: 5.0.5
+  resolution: "maxmind@npm:5.0.5"
+  dependencies:
+    mmdb-lib: "npm:3.0.2"
+    tiny-lru: "npm:11.4.7"
+  checksum: 10c0/00ed2bd9382e3847fec0e46ffb0578b08fde02e7fc41ef6fa1dfe1de5b6d59bdbf658d3c0945295bd8a0574a66b09a49ead2a923fbce6b302bd9bfc9af3fc2ea
   languageName: node
   linkType: hard
 
@@ -7034,6 +7056,13 @@ __metadata:
   bin:
     mkdirp: dist/cjs/src/bin.js
   checksum: 10c0/9f2b975e9246351f5e3a40dcfac99fcd0baa31fbfab615fe059fb11e51f10e4803c63de1f384c54d656e4db31d000e4767e9ef076a22e12a641357602e31d57d
+  languageName: node
+  linkType: hard
+
+"mmdb-lib@npm:3.0.2":
+  version: 3.0.2
+  resolution: "mmdb-lib@npm:3.0.2"
+  checksum: 10c0/147d56b8fba214b1446dff41c2ed84296a95a28fc5b86bdad26d98f4be687e460344bf2434b26ccd35193f26495a99aca63895d6e4e28b06d79c430f2e1ee4d2
   languageName: node
   linkType: hard
 
@@ -8988,6 +9017,13 @@ __metadata:
   version: 2.3.8
   resolution: "through@npm:2.3.8"
   checksum: 10c0/4b09f3774099de0d4df26d95c5821a62faee32c7e96fb1f4ebd54a2d7c11c57fe88b0a0d49cf375de5fee5ae6bf4eb56dbbf29d07366864e2ee805349970d3cc
+  languageName: node
+  linkType: hard
+
+"tiny-lru@npm:11.4.7":
+  version: 11.4.7
+  resolution: "tiny-lru@npm:11.4.7"
+  checksum: 10c0/2cd65b987396e331ddcef57133b3f0cb30c832641a215a2e627af04941c839ca6772f216b238e96500b4747f39b434d129cec4c0a25db3beb08c8f3d448a2705
   languageName: node
   linkType: hard
 

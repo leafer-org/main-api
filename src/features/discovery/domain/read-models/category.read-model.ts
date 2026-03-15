@@ -15,7 +15,7 @@ export type CategoryReadModel = {
   categoryId: CategoryId;
   parentCategoryId: CategoryId | null;
   name: string;
-  iconId: FileId | null;
+  iconId: FileId;
   allowedTypeIds: TypeId[];
   ancestorIds: CategoryId[];
   attributes: CategoryAttribute[];

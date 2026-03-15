@@ -22,10 +22,12 @@ import { UserEventsProjectionHandler } from './adapters/kafka/user-events-projec
 import { CryptoOtpGenerator } from './adapters/otp/otp-generator.service.js';
 import { MockOtpSender } from './adapters/otp/otp-sender.service.js';
 import { MeiliAdminUsersListQuery } from './adapters/search/admin-users-list.query.js';
+import { MaxMindGeoIpService } from './adapters/geoip/maxmind-geoip.service.js';
 import { MeiliAdminUsersListRepository } from './adapters/search/admin-users-list.repository.js';
 import {
   AdminUsersListQueryPort,
   AdminUsersListRepository,
+  GeoIpService,
   IdGenerator,
   JwtAccessService,
   LoginProcessRepository,
@@ -57,6 +59,8 @@ import { GetPermissionsSchemaInteractor } from './application/use-cases/roles/ge
 import { GetRoleInteractor } from './application/use-cases/roles/get-role.interactor.js';
 import { GetRolesListInteractor } from './application/use-cases/roles/get-roles-list.interactor.js';
 import { UpdateRoleInteractor } from './application/use-cases/roles/update-role.interactor.js';
+import { BlockUserInteractor } from './application/use-cases/block-user/block-user.interactor.js';
+import { UnblockUserInteractor } from './application/use-cases/block-user/unblock-user.interactor.js';
 import { UpdateUserRoleInteractor } from './application/use-cases/roles/update-user-role.interactor.js';
 import { DeleteAllSessionsInteractor } from './application/use-cases/session/delete-all-sessions.interactor.js';
 import { DeleteSessionInteractor } from './application/use-cases/session/delete-session.interactor.js';
@@ -97,6 +101,7 @@ import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
     { provide: OtpGeneratorService, useClass: CryptoOtpGenerator },
     { provide: OtpSenderService, useClass: MockOtpSender },
     { provide: IdGenerator, useClass: UuidIdGenerator },
+    { provide: GeoIpService, useClass: MaxMindGeoIpService },
     { provide: Clock, useClass: SystemClock },
     // Event handlers
     OnUserEventHandler,
@@ -123,6 +128,8 @@ import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
     GetAdminUserSessionsInteractor,
     DeleteAdminSessionInteractor,
     DeleteAllAdminSessionsInteractor,
+    BlockUserInteractor,
+    UnblockUserInteractor,
   ],
   exports: [SessionValidationPort, UserLookupPort],
 })

@@ -7,7 +7,7 @@ import { userGeoCategory, userGlobalCategory } from '@/infra/lib/geo/h3-geo.js';
 import { nextOffsetCursor, parseOffsetCursor } from '@/infra/lib/pagination/index.js';
 import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 import type { ItemId, UserId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 /**
  * Персонализированная лента рекомендаций по всему каталогу.
@@ -27,7 +27,7 @@ export class GetFeedInteractor {
     userId?: UserId;
     cityId: string;
     coordinates?: { lat: number; lng: number };
-    ageGroup: AgeGroup;
+    ageGroup: AgeGroupOption;
     cursor?: string;
     limit: number;
   }) {
@@ -63,7 +63,7 @@ export class GetFeedInteractor {
 
   private async resolveGeoCategory(
     cityId: string,
-    ageGroup: AgeGroup,
+    ageGroup: AgeGroupOption,
     coordinates?: { lat: number; lng: number },
   ): Promise<string> {
     if (coordinates !== undefined) {

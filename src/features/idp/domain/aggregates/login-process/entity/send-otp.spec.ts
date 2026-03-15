@@ -120,6 +120,11 @@ describe('LoginProcessEntity.sendOtp', () => {
       if (!isLeft(result)) {
         expect(result.value.event.type).toBe('login_process.started');
         expect(result.value.state.type).toBe('OtpRequested');
+        expect(result.value.state.id).toBe(NEW_PROCESS_ID);
+        expect(result.value.event.id).toBe(NEW_PROCESS_ID);
+        expect(result.value.event.lastProcessId).toBe(PROCESS_ID);
+        // new id must differ from lastProcessId so persist() won't delete the just-saved process
+        expect(result.value.state.id).not.toBe(result.value.event.lastProcessId);
       }
     });
   });

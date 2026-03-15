@@ -22,6 +22,10 @@ export class DrizzleUserSessionsQuery extends UserSessionsQueryPort {
         id: SessionId.raw(row.id),
         createdAt: row.createdAt,
         expiresAt: row.expiresAt,
+        ip: row.ip ?? null,
+        city: row.city ?? null,
+        country: row.country ?? null,
+        deviceName: row.deviceName ?? null,
       })),
     };
   }

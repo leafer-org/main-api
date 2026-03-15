@@ -19,8 +19,8 @@ export class GetMyPermissionsInteractor {
 
     const resolved: Record<string, unknown> = {};
 
-    for (const [key, perm] of Object.entries(Permissions)) {
-      resolved[key] = rolePermissions[perm.action] ?? perm.def;
+    for (const [, perm] of Object.entries(Permissions)) {
+      resolved[perm.action] = rolePermissions[perm.action] ?? perm.def;
     }
 
     return Right({ permissions: resolved });

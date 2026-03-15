@@ -3,6 +3,7 @@ import type {
   CategoryUnpublishedEvent,
 } from '@/kernel/domain/events/category.events.js';
 import type { AttributeId, CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import type { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 
 export type {
@@ -15,17 +16,19 @@ export type CategoryCreatedEvent = {
   id: CategoryId;
   parentCategoryId: CategoryId | null;
   name: string;
-  iconId: FileId | null;
+  iconId: FileId;
   allowedTypeIds: TypeId[];
+  ageGroups: AgeGroup[];
   createdAt: Date;
 };
 
 export type CategoryUpdatedEvent = {
   type: 'category.updated';
   name: string;
-  iconId: FileId | null;
+  iconId: FileId;
   parentCategoryId: CategoryId | null;
   allowedTypeIds: TypeId[];
+  ageGroups: AgeGroup[];
   updatedAt: Date;
 };
 

@@ -58,7 +58,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
     categoryId: string;
     parentCategoryId: string | null;
     name: string;
-    iconId?: string | null;
+    iconId?: string;
     allowedTypeIds?: string[];
     ancestorIds?: string[];
     attributes?: { attributeId: string; name: string; required: boolean; schema: object }[];
@@ -69,7 +69,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       categoryId: params.categoryId,
       parentCategoryId: params.parentCategoryId,
       name: params.name,
-      iconId: params.iconId ?? null,
+      iconId: params.iconId ?? randomUUID(),
       allowedTypeIds: params.allowedTypeIds ?? [],
       ancestorIds: params.ancestorIds ?? [],
       attributes: params.attributes ?? [],

@@ -1,5 +1,5 @@
 import type { AttributeId, CategoryId, FileId, OrganizationId } from '../ids.js';
-import type { AgeGroup } from './role.js';
+import type { AgeGroupOption } from './age-group.js';
 
 // --- Related VOs ---
 
@@ -19,7 +19,7 @@ export type BaseInfoWidget = {
   description: string;
   imageId: FileId | null;
 };
-export type AgeGroupWidget = { type: 'age-group'; value: AgeGroup };
+export type AgeGroupWidget = { type: 'age-group'; value: AgeGroupOption };
 export type LocationWidget = {
   type: 'location';
   cityId: string;

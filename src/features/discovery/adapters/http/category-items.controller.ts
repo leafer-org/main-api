@@ -9,7 +9,7 @@ import type {
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';
 import { AttributeId, CategoryId, TypeId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 type RawFilterParams = {
   typeIds?: string;
@@ -136,7 +136,7 @@ export class CategoryItemsController {
       sort: (sort ?? 'personal') as SortOption,
       cityId: cityId ?? '',
       coordinates,
-      ageGroup: (ageGroup ?? 'adults') as AgeGroup,
+      ageGroup: (ageGroup ?? 'adults') as AgeGroupOption,
       filters,
       cursor: cursor ?? undefined,
       limit: Number(limit ?? 20),

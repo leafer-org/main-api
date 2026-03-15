@@ -26,7 +26,7 @@ import { itemStreamingContract } from '@/infra/kafka-contracts/item.contract.js'
 import type { Contract, ContractMessage } from '@/infra/lib/nest-kafka/contract/contract.js';
 import { KafkaProducerService } from '@/infra/lib/nest-kafka/producer/kafka-producer.service.js';
 import type { CategoryId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
 
 const FIXED_OTP = '123456';
@@ -65,7 +65,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
       categoryId,
       parentCategoryId: params.parentCategoryId ?? null,
       name: params.name ?? 'Test Category',
-      iconId: null,
+      iconId: randomUUID(),
       allowedTypeIds: [],
       ancestorIds: [],
       attributes: [],
@@ -105,7 +105,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
       },
       { type: 'category', categoryIds: params.categoryIds as CategoryId[], attributes: [] },
       { type: 'location', cityId: params.cityId ?? CITY_ID, lat: 55.75, lng: 37.62, address: null },
-      { type: 'age-group', value: (params.ageGroup as AgeGroup) ?? AGE_GROUP },
+      { type: 'age-group', value: AgeGroupOption.restore(params.ageGroup ?? AGE_GROUP) },
     ];
 
     if (params.price !== undefined) {

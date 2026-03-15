@@ -32,4 +32,20 @@ export type UpdateUserRoleCommand = {
   now: Date;
 };
 
-export type UserCommand = CreateUserCommand | UpdateProfileCommand | UpdateUserRoleCommand;
+export type BlockUserCommand = {
+  type: 'BlockUser';
+  reason: string;
+  now: Date;
+};
+
+export type UnblockUserCommand = {
+  type: 'UnblockUser';
+  now: Date;
+};
+
+export type UserCommand =
+  | CreateUserCommand
+  | UpdateProfileCommand
+  | UpdateUserRoleCommand
+  | BlockUserCommand
+  | UnblockUserCommand;

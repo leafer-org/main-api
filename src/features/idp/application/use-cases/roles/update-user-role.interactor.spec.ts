@@ -45,6 +45,8 @@ const makeUser = (): UserState => ({
   avatarId: undefined,
   role: Role.raw('USER'),
   cityId: 'city-1',
+  blockedAt: undefined,
+  blockReason: undefined,
   createdAt: NOW,
   updatedAt: NOW,
 });
@@ -54,6 +56,7 @@ const makeSession = (): SessionState => ({
   userId: USER_ID,
   createdAt: NOW,
   expiresAt: new Date(NOW.getTime() + 30 * 24 * 60 * 60 * 1000),
+  meta: { ip: '127.0.0.1', city: null, country: null, deviceName: null },
 });
 
 const makeDeps = () => {

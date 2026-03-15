@@ -1,4 +1,5 @@
 import type { AttributeId, CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import type { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 
 export type CreateCategoryCommand = {
@@ -6,19 +7,23 @@ export type CreateCategoryCommand = {
   id: CategoryId;
   parentCategoryId: CategoryId | null;
   name: string;
-  iconId: FileId | null;
+  iconId: FileId;
   allowedTypeIds: TypeId[];
+  ageGroups: AgeGroup[];
   parentAllowedTypeIds: TypeId[] | null;
+  parentAgeGroups: AgeGroup[] | null;
   now: Date;
 };
 
 export type UpdateCategoryCommand = {
   type: 'UpdateCategory';
   name: string;
-  iconId: FileId | null;
+  iconId: FileId;
   parentCategoryId: CategoryId | null;
   allowedTypeIds: TypeId[];
+  ageGroups: AgeGroup[];
   parentAllowedTypeIds: TypeId[] | null;
+  parentAgeGroups: AgeGroup[] | null;
   now: Date;
 };
 

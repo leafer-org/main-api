@@ -10,6 +10,24 @@ export type PermissionSchemaItem = {
   type: 'boolean' | 'enum';
   values?: string[];
   default: unknown;
+  description: string;
+};
+
+const descriptions: Record<string, string> = {
+  manageSession:
+    'Управление сессиями. «self» — только свои, «all» — просмотр и завершение сессий любого пользователя',
+  manageRole: 'Создание, редактирование и удаление ролей, назначение ролей пользователям',
+  manageUser: 'Просмотр и поиск пользователей в админ-панели',
+  manageCms:
+    'Управление контентом: категории, типы услуг, атрибуты, публикация и снятие с публикации',
+  moderateReview: 'Модерация отзывов пользователей',
+  moderateOrganization:
+    'Модерация организаций и их услуг: одобрение и отклонение заявок на публикацию',
+  manageTicketBoard:
+    'Управление досками тикетов: создание, настройка, участники, автоматизации и подписки',
+  manageTicket:
+    'Работа с тикетами: создание, назначение, смена статуса, перемещение между досками, комментарии',
+  reassignTicket: 'Переназначение тикетов между исполнителями',
 };
 
 export function buildPermissionsSchema(): PermissionSchemaItem[] {
@@ -20,6 +38,7 @@ export function buildPermissionsSchema(): PermissionSchemaItem[] {
     values:
       perm.context.type === 'enum' ? (perm.context as { values: string[] }).values : undefined,
     default: perm.def,
+    description: descriptions[key] ?? '',
   }));
 }
 

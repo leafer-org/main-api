@@ -5,7 +5,7 @@ import type {
   OrganizationId,
   ServiceComponentId,
 } from '../ids.js';
-import type { AgeGroup } from './role.js';
+import type { AgeGroupOption } from './age-group.js';
 
 export type BaseInfoComponent = {
   type: 'base-info';
@@ -18,7 +18,7 @@ export type BaseInfoComponent = {
 export type AgeGroupComponent = {
   type: 'age-group';
   id: ServiceComponentId;
-  value: AgeGroup;
+  value: AgeGroupOption;
 };
 
 export type CategoryComponent = {

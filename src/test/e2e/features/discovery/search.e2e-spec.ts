@@ -24,7 +24,7 @@ import { itemStreamingContract } from '@/infra/kafka-contracts/item.contract.js'
 import type { Contract, ContractMessage } from '@/infra/lib/nest-kafka/contract/contract.js';
 import { KafkaProducerService } from '@/infra/lib/nest-kafka/producer/kafka-producer.service.js';
 import type { CategoryId, OrganizationId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { ItemWidget, PaymentStrategy } from '@/kernel/domain/vo/widget.js';
 
 const FIXED_OTP = '123456';
@@ -56,7 +56,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       title?: string;
       description?: string;
       cityId?: string;
-      ageGroup?: AgeGroup;
+      ageGroup?: string;
       typeId?: string;
       categoryIds?: CategoryId[];
       price?: number | null;
@@ -96,7 +96,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       },
       {
         type: 'age-group',
-        value: opts.ageGroup ?? 'adults',
+        value: AgeGroupOption.restore(opts.ageGroup ?? 'adults'),
       },
     ];
 

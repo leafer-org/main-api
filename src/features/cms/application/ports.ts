@@ -9,7 +9,8 @@ import type {
   ItemTypeCreatedEvent,
   ItemTypeUpdatedEvent,
 } from '@/kernel/domain/events/item-type.events.js';
-import type { CategoryId, TypeId } from '@/kernel/domain/ids.js';
+import type { CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import type { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import type { CategoryAttribute } from '@/kernel/domain/vo/category-attribute.js';
 
 // --- Category repository ---
@@ -58,6 +59,9 @@ export type CategoryListItem = {
   id: CategoryId;
   parentCategoryId: CategoryId | null;
   name: string;
+  iconId: FileId;
+  allowedTypeIds: TypeId[];
+  ageGroups: AgeGroup[];
   status: CategoryEntity['status'];
   attributes: CategoryAttribute[];
 };

@@ -4,7 +4,7 @@ import { SearchItemsInteractor } from '../../application/use-cases/search/search
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';
 import { CategoryId, TypeId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 @Public()
 @Controller('search')
@@ -26,7 +26,7 @@ export class SearchController {
     const result = await this.searchItems.execute({
       query,
       cityId,
-      ageGroup: (ageGroup ?? 'adults') as AgeGroup,
+      ageGroup: (ageGroup ?? 'adults') as AgeGroupOption,
       filters: {
         categoryIds: categoryIds
           ? categoryIds.split(',').map((s) => CategoryId.raw(s.trim()))

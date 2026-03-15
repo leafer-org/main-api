@@ -1,10 +1,17 @@
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
-import type { Meilisearch, SearchResponse } from 'meilisearch';
+import type { Meilisearch, SearchResponse, Task } from 'meilisearch';
 
 import type { IndexDefinition } from './index-definition.js';
 import { SearchConnectionPool } from './search-connection-pool.js';
 
 const logger = new Logger('SearchClient');
+
+function assertTaskSucceeded(task: Task): void {
+  if (task.status === 'failed') {
+    const detail = task.error?.message ?? 'unknown error';
+    throw new Error(`MeiliSearch task ${task.uid} failed: ${detail}`);
+  }
+}
 
 async function ensureIndex(meili: Meilisearch, def: IndexDefinition) {
   try {
@@ -64,8 +71,9 @@ export function CreateSearchClient(indices: IndexDefinition[]) {
       document: T,
     ) {
       const idx = this.client.index(indexName);
-      const task = await idx.addDocuments([document]);
-      await this.client.tasks.waitForTask(task.taskUid);
+      const enqueued = await idx.addDocuments([document]);
+      const task = await this.client.tasks.waitForTask(enqueued.taskUid);
+      assertTaskSucceeded(task);
     }
 
     public async bulkIndex<T extends Record<string, unknown>>(
@@ -74,14 +82,16 @@ export function CreateSearchClient(indices: IndexDefinition[]) {
     ) {
       const idx = this.client.index(indexName);
       const documents = docs.map(({ document }) => document);
-      const task = await idx.addDocuments(documents);
-      await this.client.tasks.waitForTask(task.taskUid);
+      const enqueued = await idx.addDocuments(documents);
+      const task = await this.client.tasks.waitForTask(enqueued.taskUid);
+      assertTaskSucceeded(task);
     }
 
     public async deleteDoc(indexName: string, id: string) {
       const idx = this.client.index(indexName);
-      const task = await idx.deleteDocument(id);
-      await this.client.tasks.waitForTask(task.taskUid);
+      const enqueued = await idx.deleteDocument(id);
+      const task = await this.client.tasks.waitForTask(enqueued.taskUid);
+      assertTaskSucceeded(task);
     }
 
     public async search<T extends Record<string, unknown>>(

@@ -1,3 +1,4 @@
+import type { SessionMeta } from '../../vo/session-meta.js';
 import type { SessionId, UserId } from '@/kernel/domain/ids.js';
 
 export type CreateSessionCommand = {
@@ -6,6 +7,7 @@ export type CreateSessionCommand = {
   userId: UserId;
   now: Date;
   ttlMs: number;
+  meta: SessionMeta;
 };
 
 export type RotateSessionCommand = {
@@ -14,6 +16,7 @@ export type RotateSessionCommand = {
   userId: UserId;
   now: Date;
   ttlMs: number;
+  meta: SessionMeta;
 };
 
 export type DeleteSessionCommand = {

@@ -6,6 +6,7 @@ import {
   LoginBlockedError,
   OtpExpiredError,
 } from '../../../domain/aggregates/login-process/errors.js';
+import { UserBlockedError } from '../../../domain/aggregates/user/user.errors.js';
 import type {
   LoginCompletedEvent,
   NewRegistrationStartedEvent,
@@ -14,9 +15,12 @@ import { SessionEntity } from '../../../domain/aggregates/session/entity.js';
 import type { TokenPair } from '../../../domain/aggregates/session/token.types.js';
 import { whenLoginCompletedCreateSession } from '../../../domain/policies/when-login-completed-create-session.policy.js';
 import { FingerPrint } from '../../../domain/vo/finger-print.js';
+import { parseDeviceName } from '../../../domain/vo/device-parser.js';
+import type { SessionMeta } from '../../../domain/vo/session-meta.js';
 import { OtpCode } from '../../../domain/vo/otp.js';
 import { PhoneNumber } from '../../../domain/vo/phone-number.js';
 import {
+  GeoIpService,
   IdGenerator,
   JwtAccessService,
   LoginProcessRepository,
@@ -48,16 +52,26 @@ export class VerifyOtpInteractor {
     private readonly jwtAccess: JwtAccessService,
     private readonly refreshTokens: RefreshTokenService,
     private readonly idGenerator: IdGenerator,
+    @Inject(GeoIpService)
+    private readonly geoIp: GeoIpService,
     @Inject(TransactionHost)
     private readonly txHost: TransactionHost,
   ) {}
 
-  public async execute(command: { phoneNumber: string; code: string; ip?: string }) {
+  public async execute(command: { phoneNumber: string; code: string; ip?: string; userAgent?: string }) {
     const parsed = this.parseCommand(command);
     if (parsed.type === 'left') return parsed;
 
     const { phoneNumber, otpCode, fingerPrint } = parsed.value;
     const now = this.clock.now();
+
+    const geo = await this.geoIp.lookup(command.ip ?? '');
+    const meta: SessionMeta = {
+      ip: command.ip ?? '',
+      city: geo.city,
+      country: geo.country,
+      deviceName: parseDeviceName(command.userAgent ?? ''),
+    };
 
     return this.txHost.startTransaction(async (tx) => {
       const state = await this.loginProcessRepository.findLatestBy(tx, phoneNumber, fingerPrint);
@@ -79,7 +93,11 @@ export class VerifyOtpInteractor {
 
       await this.loginProcessRepository.save(tx, lpResult.value.state);
 
-      return this.mapResult(tx, lpResult.value.event, now, registrationSessionId);
+      if (user?.blockedAt) {
+        return Left(new UserBlockedError({ reason: user.blockReason ?? '' }));
+      }
+
+      return this.mapResult(tx, lpResult.value.event, now, registrationSessionId, meta);
     });
   }
 
@@ -107,6 +125,7 @@ export class VerifyOtpInteractor {
       | LoginCompletedEvent,
     now: Date,
     registrationSessionId: string,
+    meta: SessionMeta,
   ): Promise<Either<OtpExpiredError | InvalidOtpError | LoginBlockedError, VerifyOtpResult>> {
     switch (event.type) {
       case 'login_process.otp_expired':
@@ -118,7 +137,7 @@ export class VerifyOtpInteractor {
       case 'login_process.new_registration':
         return Right({ type: 'new_registration', registrationSessionId });
       case 'login_process.completed': {
-        const tokenPair = await this.createSession(tx, event, now);
+        const tokenPair = await this.createSession(tx, event, now, meta);
         return Right({ type: 'success', ...tokenPair });
       }
       default:
@@ -130,6 +149,7 @@ export class VerifyOtpInteractor {
     tx: Parameters<Parameters<TransactionHost['startTransaction']>[0]>[0],
     event: LoginCompletedEvent,
     now: Date,
+    meta: SessionMeta,
   ): Promise<TokenPair> {
     const sessionId = this.idGenerator.generateSessionId();
 
@@ -137,6 +157,7 @@ export class VerifyOtpInteractor {
       sessionId,
       now,
       ttlMs: SESSION_TTL_MS,
+      meta,
     });
 
     const sessionResult = SessionEntity.create(null, createSessionCmd);

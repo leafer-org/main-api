@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { SearchPort } from '../../ports.js';
 import type { DynamicSearchFilters } from './types.js';
 import { Right } from '@/infra/lib/box.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 /** Полнотекстовый поиск через Meilisearch с динамическими фасетными фильтрами. */
 @Injectable()
@@ -13,7 +13,7 @@ export class SearchItemsInteractor {
   public async execute(query: {
     query: string;
     cityId: string;
-    ageGroup: AgeGroup;
+    ageGroup: AgeGroupOption;
     filters?: DynamicSearchFilters;
     cursor?: string;
     limit: number;

@@ -14,11 +14,14 @@ const NOW = new Date('2024-06-01T12:00:00.000Z');
 const TTL_MS = 24 * 60 * 60 * 1000; // 1 день
 const EXPIRES = new Date(NOW.getTime() + TTL_MS);
 
+const dummyMeta = { ip: '127.0.0.1', city: null, country: null, deviceName: null };
+
 const makeSession = (): SessionState => ({
   id: SESSION_ID,
   userId: USER_ID,
   createdAt: NOW,
   expiresAt: EXPIRES,
+  meta: dummyMeta,
 });
 
 // ─── Тесты ──────────────────────────────────────────────────────────────────
@@ -32,6 +35,7 @@ describe('SessionEntity', () => {
         userId: USER_ID,
         now: NOW,
         ttlMs: TTL_MS,
+        meta: dummyMeta,
       });
 
       expect(result).toEqual(
@@ -41,6 +45,7 @@ describe('SessionEntity', () => {
             userId: USER_ID,
             createdAt: NOW,
             expiresAt: EXPIRES,
+            meta: dummyMeta,
           },
           event: {
             type: 'session.created',
@@ -48,6 +53,7 @@ describe('SessionEntity', () => {
             userId: USER_ID,
             createdAt: NOW,
             expiresAt: EXPIRES,
+            meta: dummyMeta,
           },
         }),
       );
@@ -61,6 +67,7 @@ describe('SessionEntity', () => {
         userId: USER_ID,
         now: NOW,
         ttlMs: TTL_MS,
+        meta: dummyMeta,
       });
 
       expect(isLeft(result)).toBe(true);
@@ -81,6 +88,7 @@ describe('SessionEntity', () => {
         userId: USER_ID,
         now: later,
         ttlMs: TTL_MS,
+        meta: dummyMeta,
       });
 
       expect(result).toEqual(
@@ -90,6 +98,7 @@ describe('SessionEntity', () => {
             userId: USER_ID,
             createdAt: later,
             expiresAt: new Date(later.getTime() + TTL_MS),
+            meta: dummyMeta,
           },
           event: {
             type: 'session.rotated',
@@ -97,6 +106,7 @@ describe('SessionEntity', () => {
             userId: USER_ID,
             createdAt: later,
             expiresAt: new Date(later.getTime() + TTL_MS),
+            meta: dummyMeta,
           },
         }),
       );
@@ -109,6 +119,7 @@ describe('SessionEntity', () => {
         userId: USER_ID,
         now: NOW,
         ttlMs: TTL_MS,
+        meta: dummyMeta,
       });
 
       expect(isLeft(result)).toBe(true);

@@ -10,7 +10,8 @@ import { FingerPrint } from '../../../domain/vo/finger-print.js';
 import { OtpCode, OtpCodeHash } from '../../../domain/vo/otp.js';
 import { PhoneNumber } from '../../../domain/vo/phone-number.js';
 import { AccessToken, RefreshToken } from '../../../domain/vo/tokens.js';
-import type {
+import {
+  GeoIpService,
   IdGenerator,
   JwtAccessService,
   LoginProcessRepository,
@@ -75,6 +76,9 @@ const makeDeps = () => {
   return { loginProcessRepo, userRepo, sessionRepo, jwtAccess, refreshTokens, idGenerator };
 };
 
+const makeGeoIp = () =>
+  ({ lookup: async () => ({ city: null, country: null }) }) as unknown as GeoIpService;
+
 const makeInteractor = (deps: ReturnType<typeof makeDeps>) =>
   new VerifyOtpInteractor(
     makeClock(),
@@ -84,6 +88,7 @@ const makeInteractor = (deps: ReturnType<typeof makeDeps>) =>
     deps.jwtAccess,
     deps.refreshTokens,
     deps.idGenerator,
+    makeGeoIp(),
     new MockTransactionHost(),
   );
 
@@ -92,7 +97,7 @@ const makeInteractor = (deps: ReturnType<typeof makeDeps>) =>
 describe('VerifyOtpInteractor', () => {
   it('логинит существующего пользователя и возвращает токены', async () => {
     const deps = makeDeps();
-    deps.userRepo.findByPhoneNumber.mockResolvedValue({ id: USER_ID, role: Role.raw('USER') });
+    deps.userRepo.findByPhoneNumber.mockResolvedValue({ id: USER_ID, role: Role.raw('USER'), blockedAt: undefined, blockReason: undefined });
 
     const interactor = makeInteractor(deps);
     const result = await interactor.execute({ phoneNumber: PHONE, code: '123456', ip: IP });
@@ -127,7 +132,7 @@ describe('VerifyOtpInteractor', () => {
 
   it('при логине подписывает токены с правильными данными', async () => {
     const deps = makeDeps();
-    deps.userRepo.findByPhoneNumber.mockResolvedValue({ id: USER_ID, role: Role.raw('USER') });
+    deps.userRepo.findByPhoneNumber.mockResolvedValue({ id: USER_ID, role: Role.raw('USER'), blockedAt: undefined, blockReason: undefined });
 
     const interactor = makeInteractor(deps);
     await interactor.execute({ phoneNumber: PHONE, code: '123456', ip: IP });

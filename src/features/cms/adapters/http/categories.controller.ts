@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post } from '@nestjs/common';
 
 import { AddAttributeInteractor } from '../../application/use-cases/category/add-attribute.interactor.js';
 import { CreateCategoryInteractor } from '../../application/use-cases/category/create-category.interactor.js';
@@ -12,14 +12,21 @@ import type { CategoryEntity } from '../../domain/aggregates/category/entity.js'
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse, PublicSchemas } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
+import { MediaService } from '@/kernel/application/ports/media.js';
 import { AttributeId, CategoryId, FileId, TypeId } from '@/kernel/domain/ids.js';
+import { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 
-function toCategoryDetailDto(state: Readonly<CategoryEntity>): PublicSchemas['CmsCategoryDetail'] {
+function toCategoryDetailDto(
+  state: Readonly<CategoryEntity>,
+  iconUrl: string,
+): PublicSchemas['CmsCategoryDetail'] {
   return {
     id: state.id,
     parentCategoryId: state.parentCategoryId,
     name: state.name,
     iconId: state.iconId,
+    iconUrl,
+    ageGroups: state.ageGroups as string[] as PublicSchemas['CmsCategoryDetail']['ageGroups'],
     allowedTypeIds: state.allowedTypeIds,
     attributes: state.attributes.map((a) => ({
       attributeId: a.attributeId,
@@ -45,20 +52,35 @@ export class CategoriesController {
     private readonly removeAttribute: RemoveAttributeInteractor,
     private readonly getCategoryList: GetCategoryListInteractor,
     private readonly getCategoryDetail: GetCategoryDetailInteractor,
+    @Inject(MediaService) private readonly mediaService: MediaService,
   ) {}
 
   @Get()
   public async list(): Promise<PublicResponse['getCmsCategories']> {
     const result = await this.getCategoryList.execute();
     if (isLeft(result)) throw domainToHttpError<'getCmsCategories'>(result.error.toResponse());
-    return result.value;
+
+    const categories = result.value;
+    const loader = this.mediaService.createDownloadUrlsLoader({ visibility: 'PUBLIC' });
+
+    return Promise.all(
+      categories.map(async (c) => ({
+        ...c,
+        ageGroups: c.ageGroups as string[] as PublicSchemas['CmsCategoryListItem']['ageGroups'],
+        iconUrl: await loader.get(c.iconId),
+      })),
+    );
   }
 
   @Get(':id')
   public async getById(@Param('id') id: string): Promise<PublicResponse['getCmsCategoryDetail']> {
     const result = await this.getCategoryDetail.execute({ id: CategoryId.raw(id) });
     if (isLeft(result)) throw domainToHttpError<'getCmsCategoryDetail'>(result.error.toResponse());
-    return toCategoryDetailDto(result.value);
+
+    const loader = this.mediaService.createDownloadUrlsLoader({ visibility: 'PUBLIC' });
+    const iconUrl = await loader.get(result.value.iconId);
+
+    return toCategoryDetailDto(result.value, iconUrl);
   }
 
   @Post()
@@ -69,12 +91,17 @@ export class CategoriesController {
       id: CategoryId.raw(body.id),
       parentCategoryId: body.parentCategoryId ? CategoryId.raw(body.parentCategoryId) : null,
       name: body.name,
-      iconId: body.iconId ? FileId.raw(body.iconId) : null,
+      iconId: FileId.raw(body.iconId),
       allowedTypeIds: body.allowedTypeIds.map((typeId) => TypeId.raw(typeId)),
+      ageGroups: body.ageGroups.map((v) => AgeGroup.restore(v)),
     });
 
     if (isLeft(result)) throw domainToHttpError<'createCmsCategory'>(result.error.toResponse());
-    return toCategoryDetailDto(result.value);
+
+    const loader = this.mediaService.createDownloadUrlsLoader({ visibility: 'PUBLIC' });
+    const iconUrl = await loader.get(result.value.iconId);
+
+    return toCategoryDetailDto(result.value, iconUrl);
   }
 
   @Patch(':id')
@@ -85,13 +112,18 @@ export class CategoriesController {
     const result = await this.updateCategory.execute({
       id: CategoryId.raw(id),
       name: body.name,
-      iconId: body.iconId ? FileId.raw(body.iconId) : null,
+      iconId: FileId.raw(body.iconId),
       parentCategoryId: body.parentCategoryId ? CategoryId.raw(body.parentCategoryId) : null,
       allowedTypeIds: body.allowedTypeIds.map((typeId) => TypeId.raw(typeId)),
+      ageGroups: body.ageGroups.map((v) => AgeGroup.restore(v)),
     });
 
     if (isLeft(result)) throw domainToHttpError<'updateCmsCategory'>(result.error.toResponse());
-    return toCategoryDetailDto(result.value);
+
+    const loader = this.mediaService.createDownloadUrlsLoader({ visibility: 'PUBLIC' });
+    const iconUrl = await loader.get(result.value.iconId);
+
+    return toCategoryDetailDto(result.value, iconUrl);
   }
 
   @Post(':id/publish')

@@ -25,6 +25,12 @@ export class DrizzleSessionRepository extends SessionRepository {
       userId: UserId.raw(row.userId),
       createdAt: row.createdAt,
       expiresAt: row.expiresAt,
+      meta: {
+        ip: row.ip ?? '',
+        city: row.city ?? null,
+        country: row.country ?? null,
+        deviceName: row.deviceName ?? null,
+      },
     };
   }
 
@@ -36,6 +42,12 @@ export class DrizzleSessionRepository extends SessionRepository {
       userId: UserId.raw(row.userId),
       createdAt: row.createdAt,
       expiresAt: row.expiresAt,
+      meta: {
+        ip: row.ip ?? '',
+        city: row.city ?? null,
+        country: row.country ?? null,
+        deviceName: row.deviceName ?? null,
+      },
     }));
   }
 
@@ -48,12 +60,20 @@ export class DrizzleSessionRepository extends SessionRepository {
         userId: state.userId,
         createdAt: state.createdAt,
         expiresAt: state.expiresAt,
+        ip: state.meta.ip,
+        city: state.meta.city,
+        country: state.meta.country,
+        deviceName: state.meta.deviceName,
       })
       .onConflictDoUpdate({
         target: sessions.id,
         set: {
           userId: state.userId,
           expiresAt: state.expiresAt,
+          ip: state.meta.ip,
+          city: state.meta.city,
+          country: state.meta.country,
+          deviceName: state.meta.deviceName,
         },
       });
   }

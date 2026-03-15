@@ -7,7 +7,7 @@ import type { SearchFacets } from '../../domain/read-models/search-result.read-m
 import { DISCOVERY_ITEMS_INDEX, DiscoveryItemsSearchClient } from './discovery-items.index.js';
 import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
 import { CategoryId, FileId, ItemId, TypeId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { PaymentStrategy } from '@/kernel/domain/vo/widget.js';
 
 type DiscoveryItemHit = {
@@ -37,7 +37,7 @@ export class MeiliSearchQuery implements SearchPort {
   public async search(params: {
     query: string;
     cityId: string;
-    ageGroup: AgeGroup;
+    ageGroup: AgeGroupOption;
     filters?: DynamicSearchFilters;
     cursor?: string;
     limit: number;

@@ -2,8 +2,9 @@ CREATE TABLE "cms_categories" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"parent_category_id" uuid,
 	"name" text NOT NULL,
-	"icon_id" uuid,
+	"icon_id" uuid NOT NULL,
 	"allowed_type_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"age_groups" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"attributes" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"status" text DEFAULT 'draft' NOT NULL,
 	"published_at" timestamp with time zone,
@@ -31,7 +32,7 @@ CREATE TABLE "discovery_categories" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"parent_category_id" text,
 	"name" text NOT NULL,
-	"icon_id" text,
+	"icon_id" text NOT NULL,
 	"allowed_type_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"ancestor_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"attributes" jsonb DEFAULT '[]'::jsonb NOT NULL,
@@ -152,7 +153,11 @@ CREATE TABLE "sessions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"expires_at" timestamp with time zone NOT NULL
+	"expires_at" timestamp with time zone NOT NULL,
+	"ip" text,
+	"city" text,
+	"country" text,
+	"device_name" text
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -164,6 +169,8 @@ CREATE TABLE "users" (
 	"city_id" text DEFAULT '' NOT NULL,
 	"lat" double precision,
 	"lng" double precision,
+	"blocked_at" timestamp with time zone,
+	"block_reason" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "users_phone_number_unique" UNIQUE("phone_number")

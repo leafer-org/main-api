@@ -2,10 +2,10 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { registerUser } from '../../actors/auth.js';
+import { loginAsAdmin, registerUser } from '../../actors/auth.js';
 import { startContainers, stopContainers } from '../../helpers/containers.js';
 import { type E2eApp } from '../../helpers/create-app.js';
-import { runMigrations, truncateAll } from '../../helpers/db.js';
+import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
 import { configureApp } from '@/apps/configure-app.js';
@@ -351,6 +351,107 @@ describe('Auth Controller (e2e)', () => {
         .expect(200);
 
       expect(res.body.sessions).toHaveLength(1);
+    });
+  });
+
+  // ─── GET /me/permissions ──────────────────────────────────────────
+
+  describe('GET /me/permissions', () => {
+    it('should return default permissions for regular user', async () => {
+      const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
+
+      const res = await e2e.agent
+        .get('/me/permissions')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('permissions');
+      const p = res.body.permissions;
+
+      // Regular USER role has empty permissions → all defaults
+      expect(p['SESSION.MANAGE']).toBe('self');
+      expect(p['ROLE.MANAGE']).toBe(false);
+      expect(p['USER.MANAGE']).toBe(false);
+      expect(p['CMS.MANAGE']).toBe(false);
+      expect(p['REVIEW.MODERATE']).toBe(false);
+      expect(p['ORGANIZATION.MODERATE']).toBe(false);
+      expect(p['TICKET_BOARD.MANAGE']).toBe(false);
+      expect(p['TICKET.MANAGE']).toBe(false);
+      expect(p['TICKET.REASSIGN']).toBe(false);
+    });
+
+    it('should return admin permissions for admin user', async () => {
+      if (!process.env.DB_URL) throw new Error('DB_URL not set');
+      await seedStaticRoles(process.env.DB_URL);
+      await seedAdminUser(process.env.DB_URL);
+
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+
+      const res = await e2e.agent
+        .get('/me/permissions')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('permissions');
+      const p = res.body.permissions;
+
+      expect(p['SESSION.MANAGE']).toBe('all');
+      expect(p['ROLE.MANAGE']).toBe(true);
+      expect(p['USER.MANAGE']).toBe(true);
+      expect(p['CMS.MANAGE']).toBe(true);
+      expect(p['TICKET_BOARD.MANAGE']).toBe(true);
+      expect(p['TICKET.MANAGE']).toBe(true);
+      expect(p['TICKET.REASSIGN']).toBe(true);
+    });
+
+    it('should return 401 without auth token', async () => {
+      await e2e.agent.get('/me/permissions').expect(401);
+    });
+
+    it('should reflect updated permissions after role change', async () => {
+      if (!process.env.DB_URL) throw new Error('DB_URL not set');
+      await seedStaticRoles(process.env.DB_URL);
+      await seedAdminUser(process.env.DB_URL);
+
+      const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+      const { userId } = await registerUser(e2e.agent, FIXED_OTP);
+
+      // Get ADMIN role ID
+      const rolesRes = await e2e.agent
+        .get('/roles')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const adminRole = rolesRes.body.roles.find((r: { name: string }) => r.name === 'ADMIN');
+
+      // Assign ADMIN role to user
+      await e2e.agent
+        .patch(`/users/${userId}/role`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ roleId: adminRole.id })
+        .expect(200);
+
+      // Re-login as the promoted user (old session was invalidated by role change)
+      await e2e.agent
+        .post('/auth/request-otp')
+        .send({ phoneNumber: '+79990000002' })
+        .expect(200);
+
+      const verifyRes = await e2e.agent
+        .post('/auth/verify-otp')
+        .send({ phoneNumber: '+79990000002', code: FIXED_OTP })
+        .expect(200);
+
+      const promotedToken = verifyRes.body.accessToken as string;
+
+      const res = await e2e.agent
+        .get('/me/permissions')
+        .set('Authorization', `Bearer ${promotedToken}`)
+        .expect(200);
+
+      // After role change to ADMIN, should have admin permissions
+      expect(res.body.permissions['ROLE.MANAGE']).toBe(true);
+      expect(res.body.permissions['USER.MANAGE']).toBe(true);
     });
   });
 

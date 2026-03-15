@@ -1,10 +1,10 @@
 import type { CategoryId, FileId, ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
-import type { AgeGroup } from '@/kernel/domain/vo/role.js';
+import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 
 export type ItemWidgetView =
   | { type: 'base-info'; title: string; description: string; imageId: FileId | null }
-  | { type: 'age-group'; value: AgeGroup }
+  | { type: 'age-group'; value: AgeGroupOption }
   | { type: 'location'; cityId: string; lat: number; lng: number; address: string | null }
   | { type: 'payment'; strategy: PaymentStrategy; price: number | null }
   | { type: 'category'; categoryIds: CategoryId[] }

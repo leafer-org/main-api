@@ -7,6 +7,7 @@ import { cmsCategories } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { CategoryId, type FileId, type TypeId } from '@/kernel/domain/ids.js';
+import { AgeGroup } from '@/kernel/domain/vo/age-group.js';
 import type { CategoryAttribute } from '@/kernel/domain/vo/category-attribute.js';
 
 @Injectable()
@@ -56,8 +57,9 @@ export class DrizzleCategoryRepository implements CategoryRepository {
         id: state.id as string,
         parentCategoryId: state.parentCategoryId as string | null,
         name: state.name,
-        iconId: state.iconId as string | null,
+        iconId: state.iconId as string,
         allowedTypeIds: state.allowedTypeIds as string[],
+        ageGroups: state.ageGroups as string[],
         attributes: state.attributes as any,
         status: state.status,
         publishedAt: state.publishedAt,
@@ -69,8 +71,9 @@ export class DrizzleCategoryRepository implements CategoryRepository {
         set: {
           parentCategoryId: state.parentCategoryId as string | null,
           name: state.name,
-          iconId: state.iconId as string | null,
+          iconId: state.iconId as string,
           allowedTypeIds: state.allowedTypeIds as string[],
+          ageGroups: state.ageGroups as string[],
           attributes: state.attributes as any,
           status: state.status,
           publishedAt: state.publishedAt,
@@ -84,8 +87,9 @@ export class DrizzleCategoryRepository implements CategoryRepository {
       id: CategoryId.raw(row.id),
       parentCategoryId: row.parentCategoryId ? CategoryId.raw(row.parentCategoryId) : null,
       name: row.name,
-      iconId: row.iconId ? (row.iconId as FileId) : null,
+      iconId: row.iconId as FileId,
       allowedTypeIds: (row.allowedTypeIds as string[]).map((id) => id as TypeId),
+      ageGroups: (row.ageGroups as string[]).map(AgeGroup.restore),
       attributes: row.attributes as CategoryAttribute[],
       status: row.status as CategoryStatus,
       publishedAt: row.publishedAt,
@@ -99,12 +103,17 @@ export class DrizzleCategoryRepository implements CategoryRepository {
       id: CategoryId.raw(row.id),
       parentCategoryId: row.parent_category_id ? CategoryId.raw(row.parent_category_id) : null,
       name: row.name,
-      iconId: row.icon_id ? (row.icon_id as FileId) : null,
+      iconId: row.icon_id as FileId,
       allowedTypeIds: (
         (typeof row.allowed_type_ids === 'string'
           ? JSON.parse(row.allowed_type_ids)
           : row.allowed_type_ids) as string[]
       ).map((id) => id as TypeId),
+      ageGroups: (
+        (typeof row.age_groups === 'string'
+          ? JSON.parse(row.age_groups)
+          : row.age_groups ?? []) as string[]
+      ).map(AgeGroup.restore),
       attributes:
         typeof row.attributes === 'string'
           ? JSON.parse(row.attributes)

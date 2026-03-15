@@ -23,6 +23,7 @@ export class MainConfigService extends CreateConfigService({
   OTP_TTL_SEC: Type.Decode(Type.String({ default: '300' }), toInt),
   OTP_THROTTLE_SEC: Type.Decode(Type.String({ default: '60' }), toInt),
   OTP_MAX_ATTEMPTS: Type.Decode(Type.String({ default: '5' }), toInt),
+  TEST_OTP_CODE: Type.Optional(Type.String()),
   // IDP — SMS
   SMS_PROVIDER: Type.Union([Type.Literal('mock'), Type.Literal('twilio'), Type.Literal('vonage')], {
     default: 'mock',
@@ -52,4 +53,6 @@ export class MainConfigService extends CreateConfigService({
   GORSE_API_KEY: Type.String({ default: '' }),
   // Redis
   REDIS_URL: Type.String({ default: 'redis://localhost:6379' }),
+  // GeoIP
+  MAXMIND_DB_PATH: Type.Optional(Type.String()),
 }) {}
