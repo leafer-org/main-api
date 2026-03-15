@@ -131,6 +131,10 @@ export function toGorseLabels(item: ItemReadModel): string[] {
     if (tier) labels.push(tier);
   }
 
+  if (item.baseInfo?.media?.some((m) => m.type === 'video')) {
+    labels.push('media:video');
+  }
+
   return labels;
 }
 

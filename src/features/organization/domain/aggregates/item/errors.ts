@@ -36,3 +36,8 @@ export class PublishedItemLimitReachedError extends CreateDomainError(
   'published_item_limit_reached',
   400,
 ) {}
+
+export class VideoNotReadyForModerationError extends CreateDomainError(
+  'video_not_ready_for_moderation',
+  400,
+) {}

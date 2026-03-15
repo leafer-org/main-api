@@ -10564,6 +10564,7 @@
           "itemId",
           "typeId",
           "title",
+          "hasVideo",
           "reviewCount",
           "categoryIds"
         ],
@@ -10588,6 +10589,9 @@
             "items": {
               "$ref": "#/components/schemas/MediaItem"
             }
+          },
+          "hasVideo": {
+            "type": "boolean"
           },
           "price": {
             "oneOf": [
@@ -11286,6 +11290,7 @@
           "itemId",
           "typeId",
           "widgets",
+          "hasVideo",
           "publishedAt"
         ],
         "properties": {
@@ -11300,6 +11305,9 @@
             "items": {
               "$ref": "#/components/schemas/ItemWidgetView"
             }
+          },
+          "hasVideo": {
+            "type": "boolean"
           },
           "publishedAt": {
             "type": "string",

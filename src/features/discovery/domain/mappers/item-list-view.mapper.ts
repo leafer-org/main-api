@@ -3,12 +3,14 @@ import type { ItemListView } from '../read-models/item-list-view.read-model.js';
 
 /** ItemReadModel → ItemListView. Переиспользуется всеми interactors, возвращающими списки товаров. */
 export function toListView(item: ItemReadModel): ItemListView {
+  const media = item.baseInfo?.media ?? [];
   return {
     itemId: item.itemId,
     typeId: item.typeId,
     title: item.baseInfo?.title ?? '',
     description: item.baseInfo?.description ?? null,
-    media: item.baseInfo?.media ?? [],
+    media,
+    hasVideo: media.some((m) => m.type === 'video'),
     price: item.payment ?? null,
     rating: item.itemReview?.rating ?? null,
     reviewCount: item.itemReview?.reviewCount ?? 0,

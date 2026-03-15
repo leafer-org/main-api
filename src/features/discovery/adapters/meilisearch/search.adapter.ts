@@ -107,6 +107,7 @@ export class MeiliSearchQuery implements SearchPort {
       title: hit.title,
       description: hit.description || null,
       media: (hit.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })) as import('@/kernel/domain/vo/media-item.js').MediaItem[],
+      hasVideo: (hit.media ?? []).some((m) => m.type === 'video'),
       price:
         hit.paymentStrategy !== null
           ? { strategy: hit.paymentStrategy as PaymentStrategy, price: hit.price }

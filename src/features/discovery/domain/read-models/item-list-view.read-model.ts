@@ -9,6 +9,7 @@ export type ItemListView = {
   title: string;
   description: string | null;
   media: MediaItem[];
+  hasVideo: boolean;
   price: ItemPayment | null;
   rating: number | null;
   reviewCount: number;

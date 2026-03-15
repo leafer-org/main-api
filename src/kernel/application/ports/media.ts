@@ -15,6 +15,15 @@ export type GetDownloadUrlOptions = {
   imageProxy?: ImageProxyOptions;
 };
 
+export type ProcessingStatus = 'pending' | 'processing' | 'ready' | 'failed';
+
+export type VideoStreamInfo = {
+  hlsUrl: string;
+  thumbnailUrl: string | null;
+  status: ProcessingStatus;
+  duration: number | null;
+};
+
 export abstract class MediaService {
   public abstract getDownloadUrl(
     fileId: MediaId,
@@ -30,6 +39,10 @@ export abstract class MediaService {
   public abstract useFiles(tx: Transaction, fileIds: MediaId[]): Promise<void>;
 
   public abstract freeFiles(tx: Transaction, fileIds: MediaId[]): Promise<void>;
+
+  public abstract getVideoStreamInfo(mediaId: MediaId): Promise<VideoStreamInfo | null>;
+
+  public abstract getVideoStatus(mediaId: MediaId): Promise<ProcessingStatus | null>;
 
   public createDownloadUrlsLoader(options: GetDownloadUrlOptions): DownloadUrlLoader {
     return new DownloadUrlLoader(this, options);

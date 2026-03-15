@@ -19,5 +19,6 @@ export type ItemDetailView = {
   itemId: ItemId;
   typeId: TypeId;
   widgets: ItemWidgetView[];
+  hasVideo: boolean;
   publishedAt: Date;
 };

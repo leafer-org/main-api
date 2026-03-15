@@ -1,24 +1,35 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
+import { VideoDetailsRepository } from '../../application/ports.js';
 import { FreeFilesInteractor } from '../../application/use-cases/free-files.interactor.js';
 import { GetDownloadUrlInteractor } from '../../application/use-cases/get-download-url.interactor.js';
 import { GetPreviewDownloadUrlInteractor } from '../../application/use-cases/get-preview-download-url.interactor.js';
 import { UseFilesInteractor } from '../../application/use-cases/use-files.interactor.js';
+import { CachedMediaUrlService } from './media-url.service.js';
 import { isLeft, unwrap } from '@/infra/lib/box.js';
-import type { GetDownloadUrlOptions } from '@/kernel/application/ports/media.js';
+import { MainConfigService } from '@/infra/config/service.js';
+import type { GetDownloadUrlOptions, ProcessingStatus, VideoStreamInfo } from '@/kernel/application/ports/media.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
+import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
 import type { MediaId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class MediaServiceAdapter extends MediaService {
+  private readonly cdnUrl: string | undefined;
+
   public constructor(
     private readonly downloadUrlQuery: GetDownloadUrlInteractor,
     private readonly previewUrlQuery: GetPreviewDownloadUrlInteractor,
     private readonly useFilesUseCase: UseFilesInteractor,
     private readonly freeFilesUseCase: FreeFilesInteractor,
+    @Inject(VideoDetailsRepository)
+    private readonly videoDetailsRepository: VideoDetailsRepository,
+    private readonly mediaUrlService: CachedMediaUrlService,
+    config: MainConfigService,
   ) {
     super();
+    this.cdnUrl = config.get('MEDIA_PUBLIC_CDN_URL');
   }
 
   public async getDownloadUrl(
@@ -49,5 +60,39 @@ export class MediaServiceAdapter extends MediaService {
   public async freeFiles(tx: Transaction, fileIds: MediaId[]): Promise<void> {
     const result = await this.freeFilesUseCase.execute({ tx, fileIds });
     if (isLeft(result)) throw result.error;
+  }
+
+  public async getVideoStreamInfo(mediaId: MediaId): Promise<VideoStreamInfo | null> {
+    const noTx = NO_TRANSACTION as Transaction;
+    const details = await this.videoDetailsRepository.findByMediaId(noTx, mediaId);
+    if (!details) return null;
+
+    const hlsUrl = this.buildHlsUrl(mediaId);
+
+    let thumbnailUrl: string | null = null;
+    if (details.thumbnailMediaId) {
+      thumbnailUrl = await this.mediaUrlService.getDownloadUrl(details.thumbnailMediaId, {
+        visibility: 'PUBLIC',
+      });
+    }
+
+    return {
+      hlsUrl,
+      thumbnailUrl,
+      status: details.processingStatus as ProcessingStatus,
+      duration: details.duration,
+    };
+  }
+
+  public async getVideoStatus(mediaId: MediaId): Promise<ProcessingStatus | null> {
+    const noTx = NO_TRANSACTION as Transaction;
+    const details = await this.videoDetailsRepository.findByMediaId(noTx, mediaId);
+    if (!details) return null;
+    return details.processingStatus as ProcessingStatus;
+  }
+
+  private buildHlsUrl(mediaId: MediaId): string {
+    const base = this.cdnUrl ?? '';
+    return `${base}/video/${String(mediaId)}/master.m3u8`;
   }
 }

@@ -116,6 +116,7 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
       title: row.title ?? '',
       description: row.description,
       media: (row.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })) as import('@/kernel/domain/vo/media-item.js').MediaItem[],
+      hasVideo: (row.media ?? []).some((m) => m.type === 'video'),
       price:
         row.paymentStrategy !== null
           ? {

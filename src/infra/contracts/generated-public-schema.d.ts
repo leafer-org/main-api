@@ -2137,6 +2137,7 @@ export interface components {
       title: string;
       description?: string | null;
       media?: components['schemas']['MediaItem'][];
+      hasVideo: boolean;
       price?: components['schemas']['ItemPayment'] | null;
       rating?: number | null;
       reviewCount: number;
@@ -2303,6 +2304,7 @@ export interface components {
       itemId: string;
       typeId: string;
       widgets: components['schemas']['ItemWidgetView'][];
+      hasVideo: boolean;
       /** Format: date-time */
       publishedAt: string;
     };
