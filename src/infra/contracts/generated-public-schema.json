@@ -5123,6 +5123,145 @@
       }
     },
     "/admin/organizations": {
+      "get": {
+        "operationId": "searchAdminOrganizations",
+        "tags": [
+          "admin-organizations"
+        ],
+        "summary": "Поиск организаций (admin)",
+        "description": "Поиск организаций с фильтрацией по статусу и текстовому запросу.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Текстовый поисковый запрос"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "moderation-request",
+                "rejected"
+              ]
+            },
+            "description": "Фильтр по статусу черновика"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "description": "Смещение для пагинации"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Размер страницы"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Результаты поиска",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "organizations",
+                    "total"
+                  ],
+                  "properties": {
+                    "organizations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "organizationId",
+                          "name",
+                          "description",
+                          "infoDraftStatus",
+                          "hasPublication",
+                          "employeeCount",
+                          "planId",
+                          "isClaimed",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "properties": {
+                          "organizationId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "infoDraftStatus": {
+                            "type": "string"
+                          },
+                          "hasPublication": {
+                            "type": "boolean"
+                          },
+                          "employeeCount": {
+                            "type": "integer"
+                          },
+                          "planId": {
+                            "type": "string"
+                          },
+                          "isClaimed": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа (требуется ORGANIZATION.MODERATE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "operationId": "adminCreateOrganization",
         "tags": [
@@ -5203,6 +5342,108 @@
           },
           "403": {
             "description": "Нет доступа (требуется ORGANIZATION.MANAGE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/organizations/{orgId}/items": {
+      "post": {
+        "operationId": "adminCreateItem",
+        "tags": [
+          "admin-organizations"
+        ],
+        "summary": "Создание товара админом",
+        "description": "Создаёт товар в организации, обходя ограничения тарифного плана. Требуется ORGANIZATION.MANAGE.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "typeId",
+                  "widgets"
+                ],
+                "properties": {
+                  "typeId": {
+                    "type": "string"
+                  },
+                  "widgets": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ItemWidget"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Товар создан",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации или доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Нет доступа (требуется ORGANIZATION.MANAGE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Организация или тип товара не найдены",
             "content": {
               "application/json": {
                 "schema": {
@@ -11187,6 +11428,107 @@
           }
         }
       },
+      "ItemWidget": {
+        "type": "object",
+        "required": [
+          "type",
+          "data"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/WidgetType"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "ItemDraftStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "moderation-request",
+          "rejected"
+        ]
+      },
+      "ItemDetail": {
+        "type": "object",
+        "required": [
+          "itemId",
+          "organizationId",
+          "typeId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "typeId": {
+            "type": "string"
+          },
+          "draft": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "widgets",
+              "status",
+              "updatedAt"
+            ],
+            "properties": {
+              "widgets": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ItemWidget"
+                }
+              },
+              "status": {
+                "$ref": "#/components/schemas/ItemDraftStatus"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "publication": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "widgets",
+              "publishedAt"
+            ],
+            "properties": {
+              "widgets": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ItemWidget"
+                }
+              },
+              "publishedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "InfoDraftStatus": {
         "type": "string",
         "enum": [
@@ -11415,107 +11757,6 @@
           },
           "hasPublication": {
             "type": "boolean"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "ItemWidget": {
-        "type": "object",
-        "required": [
-          "type",
-          "data"
-        ],
-        "properties": {
-          "type": {
-            "$ref": "#/components/schemas/WidgetType"
-          },
-          "data": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        }
-      },
-      "ItemDraftStatus": {
-        "type": "string",
-        "enum": [
-          "draft",
-          "moderation-request",
-          "rejected"
-        ]
-      },
-      "ItemDetail": {
-        "type": "object",
-        "required": [
-          "itemId",
-          "organizationId",
-          "typeId",
-          "createdAt",
-          "updatedAt"
-        ],
-        "properties": {
-          "itemId": {
-            "type": "string"
-          },
-          "organizationId": {
-            "type": "string"
-          },
-          "typeId": {
-            "type": "string"
-          },
-          "draft": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "required": [
-              "widgets",
-              "status",
-              "updatedAt"
-            ],
-            "properties": {
-              "widgets": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/ItemWidget"
-                }
-              },
-              "status": {
-                "$ref": "#/components/schemas/ItemDraftStatus"
-              },
-              "updatedAt": {
-                "type": "string",
-                "format": "date-time"
-              }
-            }
-          },
-          "publication": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "required": [
-              "widgets",
-              "publishedAt"
-            ],
-            "properties": {
-              "widgets": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/ItemWidget"
-                }
-              },
-              "publishedAt": {
-                "type": "string",
-                "format": "date-time"
-              }
-            }
           },
           "createdAt": {
             "type": "string",

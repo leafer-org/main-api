@@ -1,5 +1,6 @@
 import type { ItemEntity } from '../domain/aggregates/item/entity.js';
 import type { OrganizationEntity } from '../domain/aggregates/organization/entity.js';
+import type { AdminOrganizationsListReadModel } from '../domain/read-models/admin-organizations-list.read-model.js';
 import type { EmployeeListReadModel } from '../domain/read-models/employee-list.read-model.js';
 import type { EmployeeRoleListReadModel } from '../domain/read-models/employee-role-list.read-model.js';
 import type { ItemDetailReadModel } from '../domain/read-models/item-detail.read-model.js';
@@ -103,4 +104,19 @@ export abstract class OrganizationQueryPort {
 export abstract class ItemQueryPort {
   public abstract findByOrganizationId(orgId: OrganizationId): Promise<ItemListReadModel>;
   public abstract findDetail(itemId: ItemId): Promise<ItemDetailReadModel | null>;
+}
+
+// --- Search read-model ports (Meilisearch, no transactions) ---
+
+export abstract class AdminOrganizationsListRepository {
+  public abstract saveBatch(models: AdminOrganizationsListReadModel[]): Promise<void>;
+}
+
+export abstract class AdminOrganizationsListQueryPort {
+  public abstract search(params: {
+    query?: string;
+    status?: string;
+    from?: number;
+    size?: number;
+  }): Promise<{ organizations: AdminOrganizationsListReadModel[]; total: number }>;
 }

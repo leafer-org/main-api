@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
 import { OrganizationRepository } from '../../../application/ports.js';
 import type { OrganizationEntity } from '../../../domain/aggregates/organization/entity.js';
+import { AdminOrganizationsSyncService } from '../../search/admin-organizations-sync.service.js';
+import type { OrganizationJsonState } from '../json-state.js';
 import { organizations } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
@@ -10,7 +12,11 @@ import type { OrganizationId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleOrganizationRepository extends OrganizationRepository {
-  public constructor(private readonly txHost: TransactionHostPg) {
+  public constructor(
+    private readonly txHost: TransactionHostPg,
+    @Inject(AdminOrganizationsSyncService)
+    private readonly searchSync: AdminOrganizationsSyncService,
+  ) {
     super();
   }
 
@@ -25,12 +31,13 @@ export class DrizzleOrganizationRepository extends OrganizationRepository {
 
   public async save(tx: Transaction, state: OrganizationEntity): Promise<void> {
     const db = this.txHost.get(tx);
+    const json = this.toJson(state);
 
     await db
       .insert(organizations)
       .values({
         id: state.id,
-        state: this.toJson(state),
+        state: json,
         claimToken: state.claimToken,
         createdAt: state.createdAt,
         updatedAt: state.updatedAt,
@@ -38,11 +45,15 @@ export class DrizzleOrganizationRepository extends OrganizationRepository {
       .onConflictDoUpdate({
         target: organizations.id,
         set: {
-          state: this.toJson(state),
+          state: json,
           claimToken: state.claimToken,
           updatedAt: state.updatedAt,
         },
       });
+
+    this.searchSync
+      .syncFromState(state.id as string, json as OrganizationJsonState)
+      .catch(() => {});
   }
 
   public async delete(tx: Transaction, id: OrganizationId): Promise<void> {

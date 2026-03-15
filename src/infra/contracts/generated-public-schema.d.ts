@@ -1060,13 +1060,37 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /**
+     * Поиск организаций (admin)
+     * @description Поиск организаций с фильтрацией по статусу и текстовому запросу.
+     */
+    get: operations['searchAdminOrganizations'];
     put?: never;
     /**
      * Создание организации админом
      * @description Создаёт организацию без владельца. Возвращает claim token для привязки владельца. Требуется ORGANIZATION.MANAGE.
      */
     post: operations['adminCreateOrganization'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/organizations/{orgId}/items': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Создание товара админом
+     * @description Создаёт товар в организации, обходя ограничения тарифного плана. Требуется ORGANIZATION.MANAGE.
+     */
+    post: operations['adminCreateItem'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2301,6 +2325,34 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
+    ItemWidget: {
+      type: components['schemas']['WidgetType'];
+      data: {
+        [key: string]: unknown;
+      };
+    };
+    /** @enum {string} */
+    ItemDraftStatus: 'draft' | 'moderation-request' | 'rejected';
+    ItemDetail: {
+      itemId: string;
+      organizationId: string;
+      typeId: string;
+      draft?: {
+        widgets: components['schemas']['ItemWidget'][];
+        status: components['schemas']['ItemDraftStatus'];
+        /** Format: date-time */
+        updatedAt: string;
+      } | null;
+      publication?: {
+        widgets: components['schemas']['ItemWidget'][];
+        /** Format: date-time */
+        publishedAt: string;
+      } | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
     /** @enum {string} */
     InfoDraftStatus: 'draft' | 'moderation-request' | 'rejected';
     InfoDraft: {
@@ -2364,34 +2416,6 @@ export interface components {
       hasDraft?: boolean;
       draftStatus?: string | null;
       hasPublication?: boolean;
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-    };
-    ItemWidget: {
-      type: components['schemas']['WidgetType'];
-      data: {
-        [key: string]: unknown;
-      };
-    };
-    /** @enum {string} */
-    ItemDraftStatus: 'draft' | 'moderation-request' | 'rejected';
-    ItemDetail: {
-      itemId: string;
-      organizationId: string;
-      typeId: string;
-      draft?: {
-        widgets: components['schemas']['ItemWidget'][];
-        status: components['schemas']['ItemDraftStatus'];
-        /** Format: date-time */
-        updatedAt: string;
-      } | null;
-      publication?: {
-        widgets: components['schemas']['ItemWidget'][];
-        /** Format: date-time */
-        publishedAt: string;
-      } | null;
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -5602,6 +5626,61 @@ export interface operations {
       };
     };
   };
+  searchAdminOrganizations: {
+    parameters: {
+      query?: {
+        /** @description Текстовый поисковый запрос */
+        query?: string;
+        /** @description Фильтр по статусу черновика */
+        status?: 'draft' | 'moderation-request' | 'rejected';
+        /** @description Смещение для пагинации */
+        from?: number;
+        /** @description Размер страницы */
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Результаты поиска */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            organizations: {
+              /** Format: uuid */
+              organizationId: string;
+              name: string;
+              description: string;
+              infoDraftStatus: string;
+              hasPublication: boolean;
+              employeeCount: number;
+              planId: string;
+              isClaimed: boolean;
+              /** Format: date-time */
+              createdAt: string;
+              /** Format: date-time */
+              updatedAt: string;
+            }[];
+            total: number;
+          };
+        };
+      };
+      /** @description Нет доступа (требуется ORGANIZATION.MODERATE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
   adminCreateOrganization: {
     parameters: {
       query?: never;
@@ -5645,6 +5724,65 @@ export interface operations {
       401: components['responses']['UnauthorizedError'];
       /** @description Нет доступа (требуется ORGANIZATION.MANAGE) */
       403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  adminCreateItem: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          typeId: string;
+          widgets: components['schemas']['ItemWidget'][];
+        };
+      };
+    };
+    responses: {
+      /** @description Товар создан */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ItemDetail'];
+        };
+      };
+      /** @description Ошибка валидации или доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется ORGANIZATION.MANAGE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация или тип товара не найдены */
+      404: {
         headers: {
           [name: string]: unknown;
         };

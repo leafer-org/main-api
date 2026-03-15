@@ -3,7 +3,7 @@ import request from 'supertest';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { loginAsAdmin, registerUser } from '../../actors/auth.js';
-import { createOrganization } from '../../actors/organization.js';
+import { createItemType, createOrganization } from '../../actors/organization.js';
 import { startContainers, stopContainers } from '../../helpers/containers.js';
 import { type E2eApp } from '../../helpers/create-app.js';
 import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
@@ -319,6 +319,105 @@ describe('Admin Organizations (e2e)', () => {
         .post(`/organizations/${org.id}/approve-moderation`)
         .set('Authorization', `Bearer ${other.accessToken}`)
         .expect(403);
+    });
+  });
+
+  // ─── POST /admin/organizations/:orgId/items ────────────────────────
+
+  describe('POST /admin/organizations/:orgId/items', () => {
+    it('should create item bypassing plan limits', async () => {
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+
+      const createRes = await e2e.agent
+        .post('/admin/organizations')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ name: 'Org for items', description: 'desc' })
+        .expect(201);
+
+      const orgId = createRes.body.id;
+
+      const itemType = await createItemType(e2e.agent, accessToken, {
+        availableWidgetTypes: ['base-info', 'schedule', 'event-date-time'],
+        requiredWidgetTypes: ['base-info'],
+      });
+
+      const res = await e2e.agent
+        .post(`/admin/organizations/${orgId}/items`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          typeId: itemType.id,
+          widgets: [
+            { type: 'base-info', data: { title: 'Admin Item', description: 'Created by admin', imageId: null } },
+            { type: 'schedule', data: { entries: [{ dayOfWeek: 1, startTime: '09:00', endTime: '18:00' }] } },
+          ],
+        })
+        .expect(201);
+
+      expect(res.body.itemId).toBeDefined();
+      expect(res.body.organizationId).toBe(orgId);
+      expect(res.body.typeId).toBe(itemType.id);
+      expect(res.body.draft).toBeDefined();
+      expect(res.body.draft.status).toBe('draft');
+      expect(res.body.draft.widgets).toHaveLength(2);
+      expect(res.body.draft.widgets[0].type).toBe('base-info');
+      expect(res.body.draft.widgets[1].type).toBe('schedule');
+      expect(res.body.publication).toBeNull();
+    });
+
+    it('should return 403 for regular user', async () => {
+      const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+
+      const createRes = await e2e.agent
+        .post('/admin/organizations')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Org', description: 'desc' })
+        .expect(201);
+
+      const itemType = await createItemType(e2e.agent, adminToken);
+
+      const { accessToken: userToken } = await registerUser(e2e.agent, FIXED_OTP);
+
+      await e2e.agent
+        .post(`/admin/organizations/${createRes.body.id}/items`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          typeId: itemType.id,
+          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', imageId: null } }],
+        })
+        .expect(403);
+    });
+
+    it('should return 404 for non-existent organization', async () => {
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+      const itemType = await createItemType(e2e.agent, accessToken);
+
+      await e2e.agent
+        .post('/admin/organizations/00000000-0000-0000-0000-000000000000/items')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          typeId: itemType.id,
+          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', imageId: null } }],
+        })
+        .expect(404);
+    });
+
+    it('should return 404 for non-existent item type', async () => {
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+
+      const createRes = await e2e.agent
+        .post('/admin/organizations')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ name: 'Org', description: 'desc' })
+        .expect(201);
+
+      await e2e.agent
+        .post(`/admin/organizations/${createRes.body.id}/items`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          typeId: '00000000-0000-0000-0000-000000000000',
+          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', imageId: null } }],
+        })
+        .expect(404);
     });
   });
 

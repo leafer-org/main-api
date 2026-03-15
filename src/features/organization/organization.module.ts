@@ -14,8 +14,13 @@ import { OrganizationRolesController } from './adapters/http/organization-roles.
 import { OrganizationsController } from './adapters/http/organizations.controller.js';
 import { OutboxItemEventPublisher } from './adapters/kafka/publishers/item-event.publisher.js';
 import { OutboxOrganizationEventPublisher } from './adapters/kafka/publishers/organization-event.publisher.js';
+import { MeiliAdminOrganizationsListQuery } from './adapters/search/admin-organizations-list.query.js';
+import { MeiliAdminOrganizationsListRepository } from './adapters/search/admin-organizations-list.repository.js';
+import { AdminOrganizationsSyncService } from './adapters/search/admin-organizations-sync.service.js';
 import { OrganizationPermissionCheckService } from './application/organization-permission.js';
 import {
+  AdminOrganizationsListQueryPort,
+  AdminOrganizationsListRepository,
   ClaimTokenQueryPort,
   ItemEventPublisher,
   ItemQueryPort,
@@ -24,12 +29,14 @@ import {
   OrganizationQueryPort,
   OrganizationRepository,
 } from './application/ports.js';
+import { SearchAdminOrganizationsInteractor } from './application/use-cases/admin-organizations-list/search-admin-organizations.interactor.js';
 import { ChangeEmployeeRoleInteractor } from './application/use-cases/manage-employees/change-employee-role.interactor.js';
 import { GetOrganizationEmployeesInteractor } from './application/use-cases/manage-employees/get-organization-employees.interactor.js';
 import { InviteEmployeeInteractor } from './application/use-cases/manage-employees/invite-employee.interactor.js';
 import { RemoveEmployeeInteractor } from './application/use-cases/manage-employees/remove-employee.interactor.js';
 import { TransferOwnershipInteractor } from './application/use-cases/manage-employees/transfer-ownership.interactor.js';
 import { ApproveItemModerationInteractor } from './application/use-cases/moderation/approve-item-moderation.interactor.js';
+import { AdminCreateItemInteractor } from './application/use-cases/manage-items/admin-create-item.interactor.js';
 import { CreateItemInteractor } from './application/use-cases/manage-items/create-item.interactor.js';
 import { DeleteItemDraftInteractor } from './application/use-cases/manage-items/delete-item-draft.interactor.js';
 import { GetItemDetailInteractor } from './application/use-cases/manage-items/get-item-detail.interactor.js';
@@ -81,8 +88,12 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
       provide: OrganizationPermissionCheckService,
       useClass: DrizzleOrganizationPermissionCheckService,
     },
+    { provide: AdminOrganizationsListRepository, useClass: MeiliAdminOrganizationsListRepository },
+    { provide: AdminOrganizationsListQueryPort, useClass: MeiliAdminOrganizationsListQuery },
+    AdminOrganizationsSyncService,
 
     // Use cases — Organization
+    SearchAdminOrganizationsInteractor,
     CreateOrganizationInteractor,
     AdminCreateOrganizationInteractor,
     ClaimOrganizationInteractor,
@@ -106,6 +117,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     GetOrganizationRolesInteractor,
 
     // Use cases — Items
+    AdminCreateItemInteractor,
     CreateItemInteractor,
     UpdateItemDraftInteractor,
     DeleteItemDraftInteractor,
