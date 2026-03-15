@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 
 import { AddAttributeInteractor } from '../../application/use-cases/category/add-attribute.interactor.js';
 import { CreateCategoryInteractor } from '../../application/use-cases/category/create-category.interactor.js';
@@ -61,7 +71,10 @@ export class CategoriesController {
     if (isLeft(result)) throw domainToHttpError<'getCmsCategories'>(result.error.toResponse());
 
     const categories = result.value;
-    const loader = this.mediaService.createDownloadUrlsLoader({ visibility: 'PUBLIC' });
+    const loader = this.mediaService.createDownloadUrlsLoader({ 
+      visibility: 'PUBLIC',
+      imageProxy: { height: 64, width: 64, format: 'webp' },
+     });
 
     return Promise.all(
       categories.map(async (c) => ({
@@ -77,7 +90,10 @@ export class CategoriesController {
     const result = await this.getCategoryDetail.execute({ id: CategoryId.raw(id) });
     if (isLeft(result)) throw domainToHttpError<'getCmsCategoryDetail'>(result.error.toResponse());
 
-    const loader = this.mediaService.createDownloadUrlsLoader({ visibility: 'PUBLIC' });
+    const loader = this.mediaService.createDownloadUrlsLoader({
+      visibility: 'PUBLIC',
+      imageProxy: { height: 128, width: 128, format: 'webp' },
+    });
     const iconUrl = await loader.get(result.value.iconId);
 
     return toCategoryDetailDto(result.value, iconUrl);

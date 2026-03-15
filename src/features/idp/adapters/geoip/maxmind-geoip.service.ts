@@ -36,7 +36,6 @@ export class MaxMindGeoIpService implements GeoIpService, OnModuleInit {
 
     try {
       const response = this.reader.city(ip);
-      console.log(response)
       return {
         city: response.city?.names?.ru ?? response.city?.names?.en ?? null,
         country: response.country?.names?.ru ?? response.country?.names?.en ?? null,

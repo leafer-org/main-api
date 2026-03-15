@@ -20,7 +20,6 @@ export function whenLoginCompletedCreateSession(
     userId: event.userId,
     now: deps.now,
     ttlMs: deps.ttlMs,
-    meta: {...deps.meta, ip: "5.45.115.61"
-    },
+    meta: { ...deps.meta },
   };
 }

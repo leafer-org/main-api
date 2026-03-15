@@ -180,6 +180,7 @@ export class CachedMediaUrlService {
   ): string {
     if (!this.imageProxyUrl || !proxyOptions) return sourceUrl;
     if (!MimeType.isImage(MimeType.raw(mimeType))) return sourceUrl;
+    if (mimeType === 'image/svg+xml') return sourceUrl;
 
     const parts: string[] = [];
     if (proxyOptions.width || proxyOptions.height) {
