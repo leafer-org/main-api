@@ -37,22 +37,30 @@ kernel/
 ```ts
 import type { EntityId } from '@/infra/ddd/entity.js';
 
+function createEntityId<T extends EntityId<string>>() {
+  return { raw(id: string): T { return id as T; } };
+}
+
+export type MediaId = EntityId<'Media'>;
 export type UserId = EntityId<'User'>;
 export type SessionId = EntityId<'Session'>;
 export type RoleId = EntityId<'Role'>;
-export type FileId = EntityId<'File'>;
 export type ServiceId = EntityId<'Service'>;
+export type ItemId = EntityId<'Item'>;
 export type CategoryId = EntityId<'Category'>;
 export type AttributeId = EntityId<'Attribute'>;
 export type OrganizationId = EntityId<'Organization'>;
+export type TypeId = EntityId<'Type'>;
+export type EmployeeRoleId = EntityId<'EmployeeRole'>;
+export type TicketId = EntityId<'Ticket'>;
+export type BoardId = EntityId<'Board'>;
+export type ReviewId = EntityId<'Review'>;
 
-// Companion object для каждого ID
-export const UserId = {
-  raw(id: string): UserId { return id as UserId; },
-};
+export const MediaId = createEntityId<MediaId>();
+// ... аналогично для всех остальных
 ```
 
-Новый агрегат → добавляем его ID сюда.
+Новый агрегат → добавляем его ID сюда. Используем `createEntityId<T>()` — хелпер, генерирующий companion object с методом `raw()`.
 
 ---
 
@@ -166,22 +174,73 @@ export abstract class TransactionHost {
 ### MediaService
 
 ```ts
+export type MediaVisibility = 'PUBLIC' | 'PRIVATE';
+
+export type ImageProxyOptions = {
+  width?: number; height?: number; quality?: number;
+  format?: 'webp' | 'avif' | 'jpeg' | 'png';
+};
+
+export type GetDownloadUrlOptions = {
+  visibility: MediaVisibility;
+  imageProxy?: ImageProxyOptions;
+};
+
+export type ProcessingStatus = 'pending' | 'processing' | 'ready' | 'failed';
+
+export type VideoStreamInfo = {
+  hlsUrl: string | null;
+  thumbnailUrl: string | null;
+  status: ProcessingStatus;
+  duration: number | null;
+};
+
 export abstract class MediaService {
-  public abstract getDownloadUrl(fileId: FileId, options: GetDownloadUrlOptions): Promise<string | null>;
-  public abstract useFiles(tx: Transaction, fileIds: FileId[]): Promise<void>;
-  public abstract freeFiles(tx: Transaction, fileIds: FileId[]): Promise<void>;
+  // --- Файлы (изображения и видео) ---
+  public abstract getDownloadUrl(fileId: MediaId, options: GetDownloadUrlOptions): Promise<string | null>;
+  public abstract getDownloadUrls(requests: { fileId: MediaId; options: GetDownloadUrlOptions }[]): Promise<(string | null)[]>;
+  public abstract getPreviewDownloadUrl(fileId: MediaId): Promise<string | null>;
+  public abstract useFiles(tx: Transaction, fileIds: MediaId[]): Promise<void>;
+  public abstract freeFiles(tx: Transaction, fileIds: MediaId[]): Promise<void>;
+
+  // --- Видео ---
+  public abstract getVideoStreamInfo(mediaId: MediaId): Promise<VideoStreamInfo | null>;
+  public abstract getVideoStatus(mediaId: MediaId): Promise<ProcessingStatus | null>;
+
+  // --- Batch-загрузчик URL ---
+  public createDownloadUrlsLoader(options: GetDownloadUrlOptions): DownloadUrlLoader;
 }
 ```
 
-Реализуется в media feature, используется в других feature. `MediaModule` — `@Global()`, поэтому порт доступен без явного импорта модуля.
+`DownloadUrlLoader` — батч-загрузчик URL через `queueMicrotask`. Собирает запросы в текущем тике, отправляет одним батчем `getDownloadUrls`. Используется в query-резолверах для N+1-оптимизации.
+
+```ts
+const loader = mediaService.createDownloadUrlsLoader({ visibility: 'PUBLIC' });
+const url = await loader.get(mediaId); // батчится автоматически
+```
+
+Реализуется в media feature (`MediaServiceAdapter`), используется в других feature. `MediaModule` — `@Global()`, поэтому порт доступен без явного импорта модуля.
+
+#### Методы
+
+| Метод | Назначение |
+|-------|-----------|
+| `getDownloadUrl` | Presigned URL для одного файла (с опциональным imgproxy) |
+| `getDownloadUrls` | Batch-версия для нескольких файлов |
+| `getPreviewDownloadUrl` | URL для временного файла (из temp-бакета) |
+| `useFiles` | Перемещает файлы из temp → permanent бакет |
+| `freeFiles` | Удаляет файлы из хранилища |
+| `getVideoStreamInfo` | HLS URL + thumbnail URL + статус + длительность |
+| `getVideoStatus` | Только статус обработки видео |
+| `createDownloadUrlsLoader` | Batch-загрузчик URL (для query-резолверов) |
 
 #### Интеграция модулей с MediaService
 
-Когда feature хранит ссылку на файл (аватар, фото и т.д.), она должна управлять жизненным циклом файла через `MediaService`:
+Когда feature хранит ссылку на медиа (аватар, фото, видео), она должна управлять жизненным циклом через `MediaService`:
 
-- **`useFiles(tx, fileIds)`** — перемещает файл из temp-хранилища в постоянное. Вызывать при привязке файла к агрегату.
-- **`freeFiles(tx, fileIds)`** — удаляет файл из хранилища. Вызывать при отвязке/замене файла.
-- **`getDownloadUrl(fileId, options)`** / **`getDownloadUrls(...)`** — получение URL для клиента. Вызывать в контроллерах.
+- **`useFiles(tx, mediaIds)`** — перемещает файл из temp-хранилища в постоянное. Вызывать при привязке файла к агрегату.
+- **`freeFiles(tx, mediaIds)`** — удаляет файл из хранилища. Вызывать при отвязке/замене файла.
+- **`getDownloadUrl(mediaId, options)`** / **`getDownloadUrls(...)`** — получение URL для клиента.
 
 **Рекомендация**: вызывать `useFiles`/`freeFiles` в **репозитории** (в методе `save()`), а не в interactor'е — так жизненный цикл файла гарантированно обрабатывается при любом сохранении агрегата.
 
@@ -201,7 +260,7 @@ export class DrizzleUserRepository implements UserRepository {
     const oldRows = await db.select({ avatarFileId: users.avatarFileId })
       .from(users).where(eq(users.id, state.id)).limit(1);
     const oldAvatarId = oldRows[0]?.avatarFileId
-      ? FileId.raw(oldRows[0].avatarFileId) : undefined;
+      ? MediaId.raw(oldRows[0].avatarFileId) : undefined;
 
     // 2. Upsert с новым avatarFileId
     await db.insert(users).values({ ..., avatarFileId: state.avatarId ?? null })
@@ -224,7 +283,17 @@ export class DrizzleUserRepository implements UserRepository {
 import { MediaService } from '@/kernel/application/ports/media.js';  // value import!
 ```
 
-**Домен** работает только с `FileId` — не знает про URL, хранилище или MediaService.
+**Домен** работает только с `MediaId` — не знает про URL, хранилище или MediaService.
+
+#### Видео в других feature
+
+Для отображения видео-контента (HLS-стримы) в другой feature используется `getVideoStreamInfo`:
+
+```ts
+// В query/projection другой feature
+const info = await this.mediaService.getVideoStreamInfo(mediaId);
+// info: { hlsUrl, thumbnailUrl, status: 'ready', duration: 120 }
+```
 
 ### PermissionCheckService
 

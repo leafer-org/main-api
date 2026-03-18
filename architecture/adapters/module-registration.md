@@ -31,6 +31,46 @@
 export class IdpModule {}
 ```
 
+## Разделение модулей (основной + процессор)
+
+Если feature содержит фоновую обработку (BullMQ worker, FFmpeg и т.д.), разделяй на два модуля:
+
+```ts
+// media.module.ts — основной модуль (HTTP, DB, URLs)
+@Global()
+@Module({
+  controllers: [MediaController],
+  providers: [
+    { provide: MediaRepository, useClass: DrizzleMediaRepository },
+    { provide: VideoDetailsRepository, useClass: DrizzleVideoDetailsRepository },
+    { provide: FileStorageService, useClass: S3FileStorageService },
+    { provide: VideoProcessingQueue, useClass: BullMQVideoProcessingQueue },
+    { provide: VideoProcessingProgress, useClass: RedisVideoProcessingProgress },
+    { provide: MediaIdGenerator, useClass: UuidMediaIdGenerator },
+    { provide: MediaService, useClass: MediaServiceAdapter },  // kernel port
+    CachedMediaUrlService,
+    // ...interactors
+  ],
+  exports: [MediaService],  // экспорт kernel-порта для других feature
+})
+export class MediaModule {}
+
+// media-processor.module.ts — фоновый процессор (Worker + FFmpeg)
+@Global()
+@Module({
+  providers: [
+    VideoProcessingWorker,  // BullMQ worker (OnModuleInit/OnModuleDestroy)
+    { provide: VideoTranscoder, useClass: FFmpegVideoTranscoder },
+    // ...shared repos, storage, config
+  ],
+})
+export class MediaProcessorModule {}
+```
+
+**Зачем**: Worker зависит от FFmpeg, BullMQ Worker и тяжёлых зависимостей. Разделение позволяет запускать процессор отдельно (как микросервис) или отключать при тестировании.
+
+---
+
 ## Чек-лист нового адаптера
 
 1. `@Injectable()` декоратор

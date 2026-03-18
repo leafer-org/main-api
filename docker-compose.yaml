@@ -185,6 +185,29 @@ services:
     profiles:
       - gorse
 
+  file-processor:
+    build:
+      context: .
+      dockerfile: docker/file-processor.Dockerfile
+    env_file: .env.development
+    environment:
+      DB_URL: postgres://devuser:devpassword@postgres:5432/devdb
+      KAFKA_BROKER: redpanda:29092
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+    volumes:
+      - ./:/app
+      - file_processor_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   redis_data:
@@ -192,3 +215,4 @@ volumes:
   meili_data:
   minio_data:
   gorse_postgres_data:
+  file_processor_node_modules:
