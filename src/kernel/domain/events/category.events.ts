@@ -11,6 +11,7 @@ export type CategoryPublishedEvent = {
   parentCategoryId: CategoryId | null;
   name: string;
   iconId: MediaId;
+  order: number;
   allowedTypeIds: TypeId[];
   ancestorIds: CategoryId[];
   attributes: CategoryAttribute[];

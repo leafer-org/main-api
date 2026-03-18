@@ -60,6 +60,7 @@ export type CategoryListItem = {
   parentCategoryId: CategoryId | null;
   name: string;
   iconId: MediaId;
+  order: number;
   allowedTypeIds: TypeId[];
   ageGroups: AgeGroup[];
   status: CategoryEntity['status'];

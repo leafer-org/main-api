@@ -9,6 +9,7 @@ const CategoryStreamingMessage = Type.Object({
   parentCategoryId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   name: Type.Optional(Type.String()),
   iconId: Type.Optional(Type.String()),
+  order: Type.Optional(Type.Number()),
   allowedTypeIds: Type.Optional(Type.Array(Type.String())),
   ageGroups: Type.Optional(Type.Array(Type.String())),
   ancestorIds: Type.Optional(Type.Array(Type.String())),

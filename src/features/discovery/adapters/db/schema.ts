@@ -112,6 +112,7 @@ export const discoveryCategories = pgTable('discovery_categories', {
   parentCategoryId: text('parent_category_id'),
   name: text('name').notNull(),
   iconId: text('icon_id').notNull(),
+  order: integer('order').notNull().default(0),
   allowedTypeIds: jsonb('allowed_type_ids').$type<string[]>().notNull().default([]),
   ancestorIds: jsonb('ancestor_ids').$type<string[]>().notNull().default([]),
   attributes: jsonb('attributes')

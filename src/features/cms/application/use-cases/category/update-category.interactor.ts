@@ -26,6 +26,7 @@ export class UpdateCategoryInteractor {
     id: CategoryId;
     name: string;
     iconId: MediaId;
+    order: number;
     parentCategoryId: CategoryId | null;
     allowedTypeIds: TypeId[];
     ageGroups: AgeGroup[];
@@ -54,6 +55,7 @@ export class UpdateCategoryInteractor {
         type: 'UpdateCategory',
         name: command.name,
         iconId: command.iconId,
+        order: command.order,
         parentCategoryId: command.parentCategoryId,
         allowedTypeIds: command.allowedTypeIds,
         ageGroups: command.ageGroups,

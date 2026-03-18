@@ -3,6 +3,7 @@ CREATE TABLE "cms_categories" (
 	"parent_category_id" uuid,
 	"name" text NOT NULL,
 	"icon_id" uuid NOT NULL,
+	"order" integer DEFAULT 0 NOT NULL,
 	"allowed_type_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"age_groups" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"attributes" jsonb DEFAULT '[]'::jsonb NOT NULL,
@@ -33,6 +34,7 @@ CREATE TABLE "discovery_categories" (
 	"parent_category_id" text,
 	"name" text NOT NULL,
 	"icon_id" text NOT NULL,
+	"order" integer DEFAULT 0 NOT NULL,
 	"allowed_type_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"ancestor_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"attributes" jsonb DEFAULT '[]'::jsonb NOT NULL,
@@ -194,6 +196,14 @@ CREATE TABLE "media" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "video_details" (
+	"media_id" uuid PRIMARY KEY NOT NULL,
+	"processing_status" text DEFAULT 'pending' NOT NULL,
+	"thumbnail_media_id" uuid,
+	"hls_manifest_key" text,
+	"duration" integer
+);
+--> statement-breakpoint
 CREATE TABLE "items" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
@@ -252,6 +262,7 @@ CREATE TABLE "outbox" (
 );
 --> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "video_details" ADD CONSTRAINT "video_details_media_id_media_id_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "discovery_item_attributes_attr_value_idx" ON "discovery_item_attributes" USING btree ("attribute_id","value");--> statement-breakpoint
 CREATE INDEX "discovery_item_categories_category_idx" ON "discovery_item_categories" USING btree ("category_id");--> statement-breakpoint
 CREATE INDEX "discovery_item_event_dates_date_idx" ON "discovery_item_event_dates" USING btree ("event_date");--> statement-breakpoint

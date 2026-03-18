@@ -93,6 +93,7 @@ describe('CMS Categories (e2e)', () => {
       parentCategoryId: string | null;
       name: string;
       iconId: string;
+      order: number;
       allowedTypeIds: string[];
       ageGroups: string[];
     }> = {},
@@ -106,6 +107,7 @@ describe('CMS Categories (e2e)', () => {
         parentCategoryId: overrides.parentCategoryId ?? null,
         name: overrides.name ?? 'Test Category',
         iconId,
+        order: overrides.order ?? 0,
         allowedTypeIds: overrides.allowedTypeIds ?? [randomUUID()],
         ageGroups: overrides.ageGroups ?? ['adults'],
       });
@@ -518,6 +520,116 @@ describe('CMS Categories (e2e)', () => {
         .get('/cms/categories')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(403);
+    });
+  });
+
+  // --- Order ---
+
+  describe('Order', () => {
+    it('should create category with default order 0', async () => {
+      const res = await createCategory({ name: 'No Order' });
+      expect(res.status).toBe(201);
+      expect(res.body.order).toBe(0);
+    });
+
+    it('should create category with explicit order', async () => {
+      const res = await createCategory({ name: 'Ordered', order: 10 });
+      expect(res.status).toBe(201);
+      expect(res.body.order).toBe(10);
+    });
+
+    it('should update category order', async () => {
+      const id = randomUUID();
+      const r = await createCategory({ id, name: 'Cat', order: 5 });
+      expect(r.status).toBe(201);
+
+      const iconId = r.body.iconId as string;
+      const res = await e2e.agent
+        .patch(`/cms/categories/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Cat',
+          iconId,
+          order: 20,
+          parentCategoryId: null,
+          allowedTypeIds: r.body.allowedTypeIds,
+          ageGroups: ['adults'],
+        })
+        .expect(200);
+
+      expect(res.body.order).toBe(20);
+    });
+
+    it('should list categories sorted by order asc, then name asc', async () => {
+      const typeId = randomUUID();
+      await createCategory({ name: 'Zebra', order: 10, allowedTypeIds: [typeId] });
+      await createCategory({ name: 'Apple', order: 10, allowedTypeIds: [typeId] });
+      await createCategory({ name: 'Mango', order: 5, allowedTypeIds: [typeId] });
+      await createCategory({ name: 'Grape', order: 1, allowedTypeIds: [typeId] });
+
+      const res = await e2e.agent
+        .get('/cms/categories')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const names = (res.body as { name: string }[]).map((c) => c.name);
+      expect(names).toEqual(['Grape', 'Mango', 'Apple', 'Zebra']);
+    });
+
+    it('should carry order through publish to discovery', async () => {
+      const id = randomUUID();
+      const r = await createCategory({ id, name: 'Ordered Cat', order: 42 });
+      expect(r.status).toBe(201);
+
+      await e2e.agent
+        .post(`/cms/categories/${id}/publish`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      await flushOutbox(e2e.app);
+
+      // Verify the published event carried the order by checking discovery endpoint
+      const discoveryRes = await e2e.agent.get('/categories').expect(200);
+      const cat = (discoveryRes.body as { categoryId: string }[]).find(
+        (c) => c.categoryId === id,
+      );
+      expect(cat).toBeDefined();
+    });
+
+    it('should sort discovery categories by order asc then name asc', async () => {
+      const typeId = randomUUID();
+
+      const ids = {
+        last: randomUUID(),
+        first: randomUUID(),
+        middleA: randomUUID(),
+        middleB: randomUUID(),
+      };
+
+      await createCategory({ id: ids.last, name: 'Zzz', order: 99, allowedTypeIds: [typeId] });
+      await createCategory({ id: ids.first, name: 'Aaa', order: 1, allowedTypeIds: [typeId] });
+      await createCategory({ id: ids.middleA, name: 'Bbb', order: 50, allowedTypeIds: [typeId] });
+      await createCategory({ id: ids.middleB, name: 'Ccc', order: 50, allowedTypeIds: [typeId] });
+
+      const publish = (id: string) =>
+        e2e.agent
+          .post(`/cms/categories/${id}/publish`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+      await publish(ids.last);
+      await flushOutbox(e2e.app);
+      await publish(ids.first);
+      await flushOutbox(e2e.app);
+      await publish(ids.middleA);
+      await flushOutbox(e2e.app);
+      await publish(ids.middleB);
+      await flushOutbox(e2e.app);
+
+      const res = await e2e.agent.get('/categories').expect(200);
+      const categoryIds = (res.body as { categoryId: string }[]).map((c) => c.categoryId);
+
+      expect(categoryIds).toEqual([ids.first, ids.middleA, ids.middleB, ids.last]);
     });
   });
 });

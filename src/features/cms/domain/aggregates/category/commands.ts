@@ -8,6 +8,7 @@ export type CreateCategoryCommand = {
   parentCategoryId: CategoryId | null;
   name: string;
   iconId: MediaId;
+  order: number;
   allowedTypeIds: TypeId[];
   ageGroups: AgeGroup[];
   parentAllowedTypeIds: TypeId[] | null;
@@ -19,6 +20,7 @@ export type UpdateCategoryCommand = {
   type: 'UpdateCategory';
   name: string;
   iconId: MediaId;
+  order: number;
   parentCategoryId: CategoryId | null;
   allowedTypeIds: TypeId[];
   ageGroups: AgeGroup[];

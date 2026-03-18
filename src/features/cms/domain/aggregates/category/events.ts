@@ -17,6 +17,7 @@ export type CategoryCreatedEvent = {
   parentCategoryId: CategoryId | null;
   name: string;
   iconId: MediaId;
+  order: number;
   allowedTypeIds: TypeId[];
   ageGroups: AgeGroup[];
   createdAt: Date;
@@ -26,6 +27,7 @@ export type CategoryUpdatedEvent = {
   type: 'category.updated';
   name: string;
   iconId: MediaId;
+  order: number;
   parentCategoryId: CategoryId | null;
   allowedTypeIds: TypeId[];
   ageGroups: AgeGroup[];

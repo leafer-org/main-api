@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eq, isNull } from 'drizzle-orm';
+import { asc, eq, isNull } from 'drizzle-orm';
 
 import { CategoryListQueryPort } from '../../../application/ports.js';
 import type { CategoryListReadModel } from '../../../domain/read-models/category-list.read-model.js';
@@ -28,7 +28,8 @@ export class DrizzleCategoryListQuery implements CategoryListQueryPort {
         itemCount: discoveryCategories.itemCount,
       })
       .from(discoveryCategories)
-      .where(condition);
+      .where(condition)
+      .orderBy(asc(discoveryCategories.order), asc(discoveryCategories.name));
 
     return categories.map((cat) => ({
       categoryId: CategoryId.raw(cat.categoryId),

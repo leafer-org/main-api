@@ -27,6 +27,7 @@ export class CreateCategoryInteractor {
     parentCategoryId: CategoryId | null;
     name: string;
     iconId: MediaId;
+    order: number;
     allowedTypeIds: TypeId[];
     ageGroups: AgeGroup[];
   }) {
@@ -51,6 +52,7 @@ export class CreateCategoryInteractor {
         parentCategoryId: command.parentCategoryId,
         name: command.name,
         iconId: command.iconId,
+        order: command.order,
         allowedTypeIds: command.allowedTypeIds,
         ageGroups: command.ageGroups,
         parentAllowedTypeIds,

@@ -16,6 +16,7 @@ export type CategoryReadModel = {
   parentCategoryId: CategoryId | null;
   name: string;
   iconId: MediaId;
+  order: number;
   allowedTypeIds: TypeId[];
   ancestorIds: CategoryId[];
   attributes: CategoryAttribute[];
@@ -29,6 +30,7 @@ export function projectCategory(event: CategoryPublishedEvent): CategoryReadMode
     parentCategoryId: event.parentCategoryId,
     name: event.name,
     iconId: event.iconId,
+    order: event.order,
     allowedTypeIds: event.allowedTypeIds,
     ancestorIds: event.ancestorIds,
     attributes: event.attributes,

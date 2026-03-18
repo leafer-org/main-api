@@ -46,6 +46,7 @@ export class CategoryProjectionKafkaHandler {
           schema: a.schema as AttributeSchema,
         })),
         ageGroups: (payload.ageGroups ?? []).map(AgeGroup.restore),
+        order: payload.order ?? 0,
         republished: payload.republished ?? false,
         publishedAt: new Date(payload.publishedAt!),
       } satisfies CategoryPublishedEvent);

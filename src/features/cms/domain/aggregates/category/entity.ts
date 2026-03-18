@@ -36,6 +36,7 @@ export type CategoryEntity = EntityState<{
   parentCategoryId: CategoryId | null;
   name: string;
   iconId: MediaId;
+  order: number;
   allowedTypeIds: TypeId[];
   ageGroups: AgeGroup[];
   attributes: CategoryAttribute[];
@@ -105,6 +106,7 @@ export const CategoryEntity = {
       parentCategoryId: cmd.parentCategoryId,
       name: cmd.name,
       iconId: cmd.iconId,
+      order: cmd.order,
       allowedTypeIds: cmd.allowedTypeIds,
       ageGroups: cmd.ageGroups,
       createdAt: cmd.now,
@@ -115,6 +117,7 @@ export const CategoryEntity = {
       parentCategoryId: event.parentCategoryId,
       name: event.name,
       iconId: event.iconId,
+      order: event.order,
       allowedTypeIds: event.allowedTypeIds,
       ageGroups: event.ageGroups,
       attributes: [],
@@ -153,6 +156,7 @@ export const CategoryEntity = {
       type: 'category.updated',
       name: cmd.name,
       iconId: cmd.iconId,
+      order: cmd.order,
       parentCategoryId: cmd.parentCategoryId,
       allowedTypeIds: cmd.allowedTypeIds,
       ageGroups: cmd.ageGroups,
@@ -163,6 +167,7 @@ export const CategoryEntity = {
       ...state,
       name: event.name,
       iconId: event.iconId,
+      order: event.order,
       parentCategoryId: event.parentCategoryId,
       allowedTypeIds: event.allowedTypeIds,
       ageGroups: event.ageGroups,
@@ -188,6 +193,7 @@ export const CategoryEntity = {
       parentCategoryId: state.parentCategoryId,
       name: state.name,
       iconId: state.iconId,
+      order: state.order,
       allowedTypeIds: state.allowedTypeIds,
       ageGroups: state.ageGroups,
       ancestorIds: cmd.ancestorIds,

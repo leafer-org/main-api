@@ -1,10 +1,11 @@
-import { doublePrecision, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { doublePrecision, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const cmsCategories = pgTable('cms_categories', {
   id: uuid('id').primaryKey(),
   parentCategoryId: uuid('parent_category_id'),
   name: text('name').notNull(),
   iconId: uuid('icon_id').notNull(),
+  order: integer('order').notNull().default(0),
   allowedTypeIds: jsonb('allowed_type_ids').notNull().default([]),
   ageGroups: jsonb('age_groups').notNull().default([]),
   attributes: jsonb('attributes').notNull().default([]),

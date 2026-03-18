@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 
 import { type CategoryListItem, CategoryQueryPort } from '../../../application/ports.js';
 import type { CategoryEntity, CategoryStatus } from '../../../domain/aggregates/category/entity.js';
@@ -20,19 +20,21 @@ export class DrizzleCategoryQuery implements CategoryQueryPort {
         parentCategoryId: cmsCategories.parentCategoryId,
         name: cmsCategories.name,
         iconId: cmsCategories.iconId,
+        order: cmsCategories.order,
         allowedTypeIds: cmsCategories.allowedTypeIds,
         ageGroups: cmsCategories.ageGroups,
         status: cmsCategories.status,
         attributes: cmsCategories.attributes,
       })
       .from(cmsCategories)
-      .orderBy(cmsCategories.name);
+      .orderBy(asc(cmsCategories.order), asc(cmsCategories.name));
 
     return rows.map((row) => ({
       id: CategoryId.raw(row.id),
       parentCategoryId: row.parentCategoryId ? CategoryId.raw(row.parentCategoryId) : null,
       name: row.name,
       iconId: row.iconId as MediaId,
+      order: row.order,
       allowedTypeIds: (row.allowedTypeIds as string[]).map((v) => v as TypeId),
       ageGroups: (row.ageGroups as string[]).map(AgeGroup.restore),
       status: row.status as CategoryEntity['status'],
@@ -55,6 +57,7 @@ export class DrizzleCategoryQuery implements CategoryQueryPort {
       parentCategoryId: row.parentCategoryId ? CategoryId.raw(row.parentCategoryId) : null,
       name: row.name,
       iconId: row.iconId as MediaId,
+      order: row.order,
       allowedTypeIds: (row.allowedTypeIds as string[]).map((id) => id as TypeId),
       ageGroups: (row.ageGroups as string[]).map(AgeGroup.restore),
       attributes: row.attributes as CategoryAttribute[],

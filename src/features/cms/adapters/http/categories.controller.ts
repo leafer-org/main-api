@@ -35,6 +35,7 @@ function toCategoryDetailDto(
     parentCategoryId: state.parentCategoryId,
     name: state.name,
     iconId: state.iconId,
+    order: state.order,
     iconUrl,
     ageGroups: state.ageGroups as string[] as PublicSchemas['CmsCategoryDetail']['ageGroups'],
     allowedTypeIds: state.allowedTypeIds,
@@ -108,6 +109,7 @@ export class CategoriesController {
       parentCategoryId: body.parentCategoryId ? CategoryId.raw(body.parentCategoryId) : null,
       name: body.name,
       iconId: MediaId.raw(body.iconId),
+      order: body.order ?? 0,
       allowedTypeIds: body.allowedTypeIds.map((typeId) => TypeId.raw(typeId)),
       ageGroups: body.ageGroups.map((v) => AgeGroup.restore(v)),
     });
@@ -129,6 +131,7 @@ export class CategoriesController {
       id: CategoryId.raw(id),
       name: body.name,
       iconId: MediaId.raw(body.iconId),
+      order: body.order ?? 0,
       parentCategoryId: body.parentCategoryId ? CategoryId.raw(body.parentCategoryId) : null,
       allowedTypeIds: body.allowedTypeIds.map((typeId) => TypeId.raw(typeId)),
       ageGroups: body.ageGroups.map((v) => AgeGroup.restore(v)),

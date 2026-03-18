@@ -58,6 +58,7 @@ export class DrizzleCategoryRepository implements CategoryRepository {
         parentCategoryId: state.parentCategoryId as string | null,
         name: state.name,
         iconId: state.iconId as string,
+        order: state.order,
         allowedTypeIds: state.allowedTypeIds as string[],
         ageGroups: state.ageGroups as string[],
         attributes: state.attributes as any,
@@ -72,6 +73,7 @@ export class DrizzleCategoryRepository implements CategoryRepository {
           parentCategoryId: state.parentCategoryId as string | null,
           name: state.name,
           iconId: state.iconId as string,
+          order: state.order,
           allowedTypeIds: state.allowedTypeIds as string[],
           ageGroups: state.ageGroups as string[],
           attributes: state.attributes as any,
@@ -88,6 +90,7 @@ export class DrizzleCategoryRepository implements CategoryRepository {
       parentCategoryId: row.parentCategoryId ? CategoryId.raw(row.parentCategoryId) : null,
       name: row.name,
       iconId: row.iconId as MediaId,
+      order: row.order,
       allowedTypeIds: (row.allowedTypeIds as string[]).map((id) => id as TypeId),
       ageGroups: (row.ageGroups as string[]).map(AgeGroup.restore),
       attributes: row.attributes as CategoryAttribute[],
@@ -104,6 +107,7 @@ export class DrizzleCategoryRepository implements CategoryRepository {
       parentCategoryId: row.parent_category_id ? CategoryId.raw(row.parent_category_id) : null,
       name: row.name,
       iconId: row.icon_id as MediaId,
+      order: row.order ?? 0,
       allowedTypeIds: (
         (typeof row.allowed_type_ids === 'string'
           ? JSON.parse(row.allowed_type_ids)
