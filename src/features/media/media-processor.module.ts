@@ -6,12 +6,14 @@ import { UuidMediaIdGenerator } from './adapters/id/file-id-generator.service.js
 import { VideoProcessingWorker } from './adapters/queue/video-processing.worker.js';
 import { S3FileStorageService } from './adapters/s3/file-storage.service.js';
 import { S3ClientService } from './adapters/s3/s3-client.service.js';
+import { RedisVideoProcessingProgress } from './adapters/redis/video-processing-progress.adapter.js';
 import { FFmpegVideoTranscoder } from './adapters/transcoder/ffmpeg-video-transcoder.js';
 import {
   FileStorageService,
   MediaIdGenerator,
   MediaRepository,
   VideoDetailsRepository,
+  VideoProcessingProgress,
   VideoTranscoder,
 } from './application/ports.js';
 import { mediaConfigFactory } from './media.module.js';
@@ -30,6 +32,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     { provide: Clock, useClass: SystemClock },
     mediaConfigFactory,
     { provide: VideoTranscoder, useClass: FFmpegVideoTranscoder },
+    { provide: VideoProcessingProgress, useClass: RedisVideoProcessingProgress },
     VideoProcessingWorker,
   ],
 })

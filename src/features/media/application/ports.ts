@@ -1,5 +1,5 @@
-import type { MediaState } from '../domain/aggregates/media/state.js';
-import type { VideoDetails } from '../domain/aggregates/media/video-details.js';
+import type { MediaEntity } from '../domain/aggregates/media/entity.js';
+import type { VideoDetailsEntity } from '../domain/aggregates/media/entities/video-details.entity.js';
 import type { ImageProxyOptions, MediaVisibility } from '@/kernel/application/ports/media.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type { MediaId } from '@/kernel/domain/ids.js';
@@ -7,16 +7,16 @@ import type { MediaId } from '@/kernel/domain/ids.js';
 // --- Repository ports ---
 
 export abstract class MediaRepository {
-  public abstract findById(tx: Transaction, id: MediaId): Promise<MediaState | null>;
-  public abstract findByIds(tx: Transaction, ids: MediaId[]): Promise<Map<MediaId, MediaState>>;
-  public abstract save(tx: Transaction, state: MediaState): Promise<void>;
+  public abstract findById(tx: Transaction, id: MediaId): Promise<MediaEntity | null>;
+  public abstract findByIds(tx: Transaction, ids: MediaId[]): Promise<Map<MediaId, MediaEntity>>;
+  public abstract save(tx: Transaction, state: MediaEntity): Promise<void>;
   public abstract deleteById(tx: Transaction, id: MediaId): Promise<void>;
   public abstract deleteByIds(tx: Transaction, ids: MediaId[]): Promise<void>;
 }
 
 export abstract class VideoDetailsRepository {
-  public abstract findByMediaId(tx: Transaction, mediaId: MediaId): Promise<VideoDetails | null>;
-  public abstract save(tx: Transaction, details: VideoDetails): Promise<void>;
+  public abstract findByMediaId(tx: Transaction, mediaId: MediaId): Promise<VideoDetailsEntity | null>;
+  public abstract save(tx: Transaction, details: VideoDetailsEntity): Promise<void>;
 }
 
 // --- Service ports ---
@@ -83,7 +83,11 @@ export abstract class VideoProcessingQueue {
 
 // --- Transcoder port ---
 
-export type TranscodeInput = { localPath: string; outputDir: string };
+export type TranscodeInput = {
+  localPath: string;
+  outputDir: string;
+  onProgress?: (percent: number) => void;
+};
 export type TranscodeOutput = {
   hlsManifestPath: string;
   thumbnailPath: string;
@@ -93,6 +97,14 @@ export type TranscodeOutput = {
 
 export abstract class VideoTranscoder {
   public abstract transcode(input: TranscodeInput): Promise<TranscodeOutput>;
+}
+
+// --- Processing progress port ---
+
+export abstract class VideoProcessingProgress {
+  public abstract set(mediaId: MediaId, percent: number): Promise<void>;
+  public abstract get(mediaId: MediaId): Promise<number | null>;
+  public abstract delete(mediaId: MediaId): Promise<void>;
 }
 
 // --- Config port ---

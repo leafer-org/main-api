@@ -11,6 +11,7 @@ import {
   IMAGE_PROXY_URL_SIGNER,
 } from './adapters/media/media-url.service.js';
 import { BullMQVideoProcessingQueue } from './adapters/queue/bullmq-video-processing-queue.js';
+import { RedisVideoProcessingProgress } from './adapters/redis/video-processing-progress.adapter.js';
 import { S3FileStorageService } from './adapters/s3/file-storage.service.js';
 import { S3ClientService } from './adapters/s3/s3-client.service.js';
 import {
@@ -19,13 +20,14 @@ import {
   MediaIdGenerator,
   MediaRepository,
   VideoDetailsRepository,
+  VideoProcessingProgress,
   VideoProcessingQueue,
 } from './application/ports.js';
 import { FreeFileInteractor } from './application/use-cases/free-file.interactor.js';
 import { FreeFilesInteractor } from './application/use-cases/free-files.interactor.js';
 import { GetDownloadUrlInteractor } from './application/use-cases/get-download-url.interactor.js';
 import { GetPreviewDownloadUrlInteractor } from './application/use-cases/get-preview-download-url.interactor.js';
-import { GetVideoStatusInteractor } from './application/use-cases/get-video-status.interactor.js';
+import { GetVideoPreviewInteractor } from './application/use-cases/get-video-preview.interactor.js';
 import { CompleteVideoUploadInteractor } from './application/use-cases/upload/complete-video-upload.interactor.js';
 import { InitVideoUploadInteractor } from './application/use-cases/upload/init-video-upload.interactor.js';
 import { RequestUploadInteractor } from './application/use-cases/upload/request-upload.interactor.js';
@@ -61,6 +63,7 @@ export const mediaConfigFactory = {
     { provide: FileStorageService, useClass: S3FileStorageService },
     { provide: MediaIdGenerator, useClass: UuidMediaIdGenerator },
     { provide: VideoProcessingQueue, useClass: BullMQVideoProcessingQueue },
+    { provide: VideoProcessingProgress, useClass: RedisVideoProcessingProgress },
     { provide: Clock, useClass: SystemClock },
     mediaConfigFactory,
     {
@@ -84,7 +87,7 @@ export const mediaConfigFactory = {
     FreeFilesInteractor,
     GetDownloadUrlInteractor,
     GetPreviewDownloadUrlInteractor,
-    GetVideoStatusInteractor,
+    GetVideoPreviewInteractor,
   ],
   exports: [MediaService],
 })

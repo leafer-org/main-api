@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -40,7 +40,7 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
   private readonly logger = new Logger(FFmpegVideoTranscoder.name);
 
   public async transcode(input: TranscodeInput): Promise<TranscodeOutput> {
-    const { localPath, outputDir } = input;
+    const { localPath, outputDir, onProgress } = input;
 
     const probe = await this.probe(localPath);
     this.logger.log(`Probed: ${probe.width}x${probe.height}, duration=${probe.duration}s`);
@@ -57,7 +57,7 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
     await this.extractThumbnail(localPath, thumbnailPath);
 
     const hlsManifestPath = join(outputDir, 'master.m3u8');
-    await this.transcodeToHls(localPath, outputDir, selectedVariants);
+    await this.transcodeToHls(localPath, outputDir, selectedVariants, probe.duration, onProgress);
 
     return {
       hlsManifestPath,
@@ -113,6 +113,8 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
     inputPath: string,
     outputDir: string,
     variants: HlsVariant[],
+    totalDuration: number,
+    onProgress?: (percent: number) => void,
   ): Promise<void> {
     const args: string[] = ['-i', inputPath];
 
@@ -181,6 +183,48 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
     );
 
     this.logger.log(`Running FFmpeg with ${variants.length} variants`);
-    await exec('ffmpeg', args, { timeout: 10 * 60 * 1000 });
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn('ffmpeg', args, { stdio: ['pipe', 'pipe', 'pipe'] });
+      const timeout = setTimeout(() => {
+        proc.kill('SIGKILL');
+        reject(new Error('FFmpeg timed out after 10 minutes'));
+      }, 10 * 60 * 1000);
+
+      let stderrBuf = '';
+
+      proc.stderr?.on('data', (chunk: Buffer) => {
+        stderrBuf += chunk.toString();
+
+        if (!onProgress || totalDuration <= 0) return;
+
+        const timeMatch = /time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})/.exec(stderrBuf);
+        if (timeMatch) {
+          const hours = Number(timeMatch[1]);
+          const minutes = Number(timeMatch[2]);
+          const seconds = Number(timeMatch[3]);
+          const centis = Number(timeMatch[4]);
+          const currentTime = hours * 3600 + minutes * 60 + seconds + centis / 100;
+          const percent = Math.min(Math.round((currentTime / totalDuration) * 100), 100);
+          onProgress(percent);
+          // Keep only the last chunk to avoid memory buildup
+          stderrBuf = stderrBuf.slice(-512);
+        }
+      });
+
+      proc.on('close', (code) => {
+        clearTimeout(timeout);
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`FFmpeg exited with code ${code}`));
+        }
+      });
+
+      proc.on('error', (err) => {
+        clearTimeout(timeout);
+        reject(err);
+      });
+    });
   }
 }

@@ -484,7 +484,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/media/video/status/{mediaId}': {
+  '/media/video/preview/{mediaId}': {
     parameters: {
       query?: never;
       header?: never;
@@ -492,10 +492,10 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * Статус обработки видео
-     * @description Возвращает текущий статус обработки видео.
+     * Получение информации для воспроизведения видео
+     * @description Возвращает HLS URL и превью для видео.
      */
-    get: operations['mediaVideoStatus'];
+    get: operations['mediaVideoPreview'];
     put?: never;
     post?: never;
     delete?: never;
@@ -2049,10 +2049,16 @@ export interface components {
     VideoUploadCompleteResult: {
       mediaId: string;
     };
-    VideoStatusResult: {
+    VideoPreviewResult: {
       mediaId: string;
       /** @enum {string} */
       processingStatus: 'pending' | 'processing' | 'ready' | 'failed';
+      /** @description Прогресс обработки в процентах (0-100). Доступен только при статусе processing. */
+      progress?: number | null;
+      /** Format: uri */
+      hlsUrl?: string | null;
+      /** Format: uri */
+      thumbnailUrl?: string | null;
       duration?: number | null;
     };
     PreviewDownloadUrlResult: {
@@ -2366,6 +2372,8 @@ export interface components {
       parentCategoryId?: string | null;
       name: string;
       iconId: string;
+      /** @default 0 */
+      order: number;
       iconUrl: string;
       ageGroups: ('children' | 'adults')[];
       allowedTypeIds: string[];
@@ -2378,6 +2386,8 @@ export interface components {
       parentCategoryId?: string | null;
       name: string;
       iconId: string;
+      /** @default 0 */
+      order: number;
       iconUrl: string;
       ageGroups: ('children' | 'adults')[];
       allowedTypeIds: string[];
@@ -4213,7 +4223,7 @@ export interface operations {
       };
     };
   };
-  mediaVideoStatus: {
+  mediaVideoPreview: {
     parameters: {
       query?: never;
       header?: never;
@@ -4224,13 +4234,22 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Статус обработки */
+      /** @description Информация для воспроизведения */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['VideoStatusResult'];
+          'application/json': components['schemas']['VideoPreviewResult'];
+        };
+      };
+      /** @description Файл уже используется, превью недоступно */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
       /** @description Медиа не найдено */
@@ -5367,6 +5386,8 @@ export interface operations {
           parentCategoryId?: string | null;
           name: string;
           iconId: string;
+          /** @default 0 */
+          order?: number;
           allowedTypeIds: string[];
           ageGroups: ('children' | 'adults')[];
         };
@@ -5467,6 +5488,8 @@ export interface operations {
         'application/json': {
           name: string;
           iconId: string;
+          /** @default 0 */
+          order?: number;
           parentCategoryId?: string | null;
           allowedTypeIds: string[];
           ageGroups: ('children' | 'adults')[];

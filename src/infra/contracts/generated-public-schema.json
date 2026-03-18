@@ -2397,14 +2397,14 @@
         }
       }
     },
-    "/media/video/status/{mediaId}": {
+    "/media/video/preview/{mediaId}": {
       "get": {
-        "operationId": "mediaVideoStatus",
+        "operationId": "mediaVideoPreview",
         "tags": [
           "media"
         ],
-        "summary": "Статус обработки видео",
-        "description": "Возвращает текущий статус обработки видео.",
+        "summary": "Получение информации для воспроизведения видео",
+        "description": "Возвращает HLS URL и превью для видео.",
         "security": [],
         "parameters": [
           {
@@ -2412,17 +2412,28 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Статус обработки",
+            "description": "Информация для воспроизведения",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/VideoStatusResult"
+                  "$ref": "#/components/schemas/VideoPreviewResult"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Файл уже используется, превью недоступно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
                 }
               }
             }
@@ -4507,6 +4518,10 @@
                   "iconId": {
                     "type": "string"
                   },
+                  "order": {
+                    "type": "integer",
+                    "default": 0
+                  },
                   "allowedTypeIds": {
                     "type": "array",
                     "items": {
@@ -4676,6 +4691,10 @@
                   },
                   "iconId": {
                     "type": "string"
+                  },
+                  "order": {
+                    "type": "integer",
+                    "default": 0
                   },
                   "parentCategoryId": {
                     "type": [
@@ -10251,7 +10270,7 @@
           }
         }
       },
-      "VideoStatusResult": {
+      "VideoPreviewResult": {
         "type": "object",
         "required": [
           "mediaId",
@@ -10269,6 +10288,29 @@
               "ready",
               "failed"
             ]
+          },
+          "progress": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Прогресс обработки в процентах (0-100). Доступен только при статусе processing."
+          },
+          "hlsUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "thumbnailUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
           },
           "duration": {
             "type": [
@@ -11552,6 +11594,7 @@
           "id",
           "name",
           "iconId",
+          "order",
           "status",
           "attributes",
           "iconUrl",
@@ -11573,6 +11616,10 @@
           },
           "iconId": {
             "type": "string"
+          },
+          "order": {
+            "type": "integer",
+            "default": 0
           },
           "iconUrl": {
             "type": "string"
@@ -11615,6 +11662,7 @@
           "id",
           "name",
           "iconId",
+          "order",
           "allowedTypeIds",
           "attributes",
           "status",
@@ -11638,6 +11686,10 @@
           },
           "iconId": {
             "type": "string"
+          },
+          "order": {
+            "type": "integer",
+            "default": 0
           },
           "iconUrl": {
             "type": "string"

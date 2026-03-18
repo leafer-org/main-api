@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { mediaApply } from '../../../domain/aggregates/media/apply.js';
-import { mediaDecide } from '../../../domain/aggregates/media/decide.js';
+import { MediaEntity } from '../../../domain/aggregates/media/entity.js';
 import {
   type FileName,
   FileName as FileNameVO,
@@ -48,8 +47,7 @@ export class RequestUploadInteractor {
     const tempBucket = `${this.bucket}-temp`;
 
     return this.txHost.startTransaction(async (tx) => {
-      const eventEither = mediaDecide(null, {
-        type: 'UploadMedia',
+      const result = MediaEntity.upload({
         id: mediaId,
         mediaType: 'image',
         name: name as string,
@@ -58,12 +56,9 @@ export class RequestUploadInteractor {
         now,
       });
 
-      if (isLeft(eventEither)) return eventEither;
+      if (isLeft(result)) return result;
 
-      const newState = mediaApply(null, eventEither.value);
-      if (!newState) throw new Error('Unexpected null state after media.uploaded');
-
-      await this.mediaRepository.save(tx, newState);
+      await this.mediaRepository.save(tx, result.value.state);
 
       const { url: uploadUrl, fields: uploadFields } = await this.fileStorage.generateUploadPost(
         tempBucket,

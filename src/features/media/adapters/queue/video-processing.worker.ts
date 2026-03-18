@@ -15,10 +15,10 @@ import {
   MediaIdGenerator,
   MediaRepository,
   VideoDetailsRepository,
+  VideoProcessingProgress,
   VideoTranscoder,
 } from '../../application/ports.js';
-import { mediaApply, videoDetailsApply } from '../../domain/aggregates/media/apply.js';
-import { mediaDecide } from '../../domain/aggregates/media/decide.js';
+import { MediaEntity } from '../../domain/aggregates/media/entity.js';
 import { VIDEO_PROCESSING_QUEUE_NAME } from './bullmq-video-processing-queue.js';
 import { MainConfigService } from '@/infra/config/service.js';
 import { isLeft } from '@/infra/lib/box.js';
@@ -46,6 +46,7 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
     @Inject(MediaIdGenerator) private readonly idGen: MediaIdGenerator,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
+    @Inject(VideoProcessingProgress) private readonly progress: VideoProcessingProgress,
   ) {
     this.redisUrl = config.get('REDIS_URL');
   }
@@ -80,11 +81,13 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
 
       // 1. Initiate processing in domain
       await this.initiateProcessing(mediaId);
+      await this.progress.set(mediaId, 0);
 
       // 2. Download original from S3 temp bucket
       const tempBucket = `${bucket}-temp`;
       const originalPath = join(workDir, 'original');
       await this.fileStorage.downloadToFile(tempBucket, mediaId, originalPath);
+      await this.progress.set(mediaId, 5);
       await job.updateProgress(10);
 
       // 3. Transcode
@@ -92,12 +95,19 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
       const result = await this.transcoder.transcode({
         localPath: originalPath,
         outputDir,
+        onProgress: (percent) => {
+          // Map transcoder 0-100% to overall 5-80%
+          const overall = Math.round(5 + (percent / 100) * 75);
+          void this.progress.set(mediaId, overall);
+        },
       });
+      await this.progress.set(mediaId, 80);
       await job.updateProgress(70);
 
       // 4. Upload HLS output to S3
       const hlsPrefix = `video/${mediaId}`;
       await this.fileStorage.uploadDirectory(bucket, hlsPrefix, outputDir);
+      await this.progress.set(mediaId, 90);
       await job.updateProgress(85);
 
       // 5. Create thumbnail media record and upload
@@ -110,8 +120,7 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
       );
 
       await this.txHost.startTransaction(async (tx) => {
-        const thumbEvent = mediaDecide(null, {
-          type: 'UploadMedia',
+        const uploadResult = MediaEntity.upload({
           id: thumbnailMediaId,
           mediaType: 'image',
           name: `thumbnail-${mediaId}.jpg`,
@@ -119,18 +128,12 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
           mimeType: 'image/jpeg',
           now: this.clock.now(),
         });
-        if (isLeft(thumbEvent)) throw new Error(`Thumbnail decide failed: ${thumbEvent.error}`);
+        if (isLeft(uploadResult)) throw new Error(`Thumbnail upload failed: ${uploadResult.error}`);
 
-        const thumbState = mediaApply(null, thumbEvent.value);
-        if (!thumbState) throw new Error('Thumbnail apply returned null');
-
-        const useResult = mediaDecide(thumbState, { type: 'UseMedia', now: this.clock.now() });
+        const useResult = MediaEntity.use(uploadResult.value.state, { now: this.clock.now() });
         if (isLeft(useResult)) throw new Error(`Thumbnail use failed: ${useResult.error}`);
 
-        const finalThumbState = mediaApply(thumbState, useResult.value);
-        if (!finalThumbState) throw new Error('Thumbnail use apply returned null');
-
-        await this.mediaRepo.save(tx, finalThumbState);
+        await this.mediaRepo.save(tx, useResult.value.state);
       });
       await job.updateProgress(90);
 
@@ -140,15 +143,18 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
 
       // 7. Move original from temp to permanent bucket
       await this.fileStorage.moveToPermanent(`${bucket}-temp`, bucket, mediaId);
+      await this.progress.set(mediaId, 100);
       await job.updateProgress(100);
 
       this.logger.log(`Video ${mediaId} processed successfully`);
+      await this.progress.delete(mediaId);
     } catch (error) {
       this.logger.error(
         `Video processing failed for ${mediaId}`,
         error instanceof Error ? error.stack : String(error),
       );
       await this.failProcessing(mediaId, error instanceof Error ? error.message : 'Unknown error');
+      await this.progress.delete(mediaId);
       throw error;
     } finally {
       await rm(workDir, { recursive: true, force: true }).catch(() => {});
@@ -158,13 +164,14 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
   private async initiateProcessing(mediaId: MediaId): Promise<void> {
     await this.txHost.startTransaction(async (tx) => {
       const state = await this.mediaRepo.findById(tx, mediaId);
+      if (!state) throw new Error(`Media ${mediaId} not found`);
+
       const details = await this.videoDetailsRepo.findByMediaId(tx, mediaId);
 
-      const result = mediaDecide(state, { type: 'InitiateVideoProcessing', mediaId }, details);
+      const result = MediaEntity.initiateProcessing(state, details);
       if (isLeft(result)) throw new Error(`InitiateVideoProcessing failed: ${result.error}`);
 
-      const newDetails = videoDetailsApply(details, result.value);
-      if (newDetails) await this.videoDetailsRepo.save(tx, newDetails);
+      await this.videoDetailsRepo.save(tx, result.value.videoDetails);
     });
   }
 
@@ -176,17 +183,18 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
   ): Promise<void> {
     await this.txHost.startTransaction(async (tx) => {
       const state = await this.mediaRepo.findById(tx, mediaId);
+      if (!state) throw new Error(`Media ${mediaId} not found`);
+
       const details = await this.videoDetailsRepo.findByMediaId(tx, mediaId);
 
-      const result = mediaDecide(
-        state,
-        { type: 'CompleteVideoProcessing', mediaId, thumbnailMediaId, hlsManifestKey, duration },
-        details,
-      );
+      const result = MediaEntity.completeProcessing(state, details, {
+        thumbnailMediaId,
+        hlsManifestKey,
+        duration,
+      });
       if (isLeft(result)) throw new Error(`CompleteVideoProcessing failed: ${result.error}`);
 
-      const newDetails = videoDetailsApply(details, result.value);
-      if (newDetails) await this.videoDetailsRepo.save(tx, newDetails);
+      await this.videoDetailsRepo.save(tx, result.value.videoDetails);
     });
   }
 
@@ -194,17 +202,14 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
     try {
       await this.txHost.startTransaction(async (tx) => {
         const state = await this.mediaRepo.findById(tx, mediaId);
+        if (!state) return;
+
         const details = await this.videoDetailsRepo.findByMediaId(tx, mediaId);
 
-        const result = mediaDecide(
-          state,
-          { type: 'FailVideoProcessing', mediaId, reason },
-          details,
-        );
+        const result = MediaEntity.failProcessing(state, details, { reason });
         if (isLeft(result)) return;
 
-        const newDetails = videoDetailsApply(details, result.value);
-        if (newDetails) await this.videoDetailsRepo.save(tx, newDetails);
+        await this.videoDetailsRepo.save(tx, result.value.videoDetails);
       });
     } catch (err) {
       this.logger.error(

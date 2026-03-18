@@ -156,7 +156,6 @@ export class CachedMediaUrlService {
 
     const bucket = file.isTemporary ? `${file.bucket}-temp` : file.bucket;
 
-    // For public files with CDN configured, use direct CDN URL
     if (options.visibility === 'PUBLIC' && this.cdnUrl && !file.isTemporary) {
       const baseUrl = `${this.cdnUrl}/${file.id}`;
       return this.wrapWithImageProxy(baseUrl, file.mimeType, options.imageProxy);

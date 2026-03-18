@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { mediaApply } from '../../domain/aggregates/media/apply.js';
-import { mediaDecide } from '../../domain/aggregates/media/decide.js';
+import { MediaEntity } from '../../domain/aggregates/media/entity.js';
 import { MediaNotFoundError } from '../../domain/aggregates/media/errors.js';
 import { FileStorageService, MediaRepository } from '../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
@@ -29,17 +28,10 @@ export class UseFileInteractor {
       const state = await this.mediaRepository.findById(tx, command.fileId);
       if (!state) return Left(new MediaNotFoundError());
 
-      const eventEither = mediaDecide(state, {
-        type: 'UseMedia',
-        now,
-      });
+      const result = MediaEntity.use(state, { now });
+      if (isLeft(result)) return result;
 
-      if (isLeft(eventEither)) return eventEither;
-
-      const newState = mediaApply(state, eventEither.value);
-      if (!newState) throw new Error('Unexpected null state after media.used');
-
-      await this.mediaRepository.save(tx, newState);
+      await this.mediaRepository.save(tx, result.value.state);
 
       const tempBucket = `${state.bucket}-temp`;
       await this.fileStorage.moveToPermanent(tempBucket, state.bucket, state.id);

@@ -1,5 +1,5 @@
 import type { MediaId } from '@/kernel/domain/ids.js';
-import type { MediaType } from './state.js';
+import type { MediaType } from './entity.js';
 
 export type MediaUploadedEvent = {
   type: 'media.uploaded';

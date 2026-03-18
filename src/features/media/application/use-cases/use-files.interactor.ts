@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { mediaApply } from '../../domain/aggregates/media/apply.js';
-import { mediaDecide } from '../../domain/aggregates/media/decide.js';
+import { MediaEntity } from '../../domain/aggregates/media/entity.js';
 import { MediaNotFoundError } from '../../domain/aggregates/media/errors.js';
 import { FileStorageService, MediaRepository } from '../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
@@ -33,14 +32,12 @@ export class UseFilesInteractor {
     for (const fileId of fileIds) {
       const state = states.get(fileId);
       if (!state) return Left(new MediaNotFoundError());
-      const eventEither = mediaDecide(state, { type: 'UseMedia', now });
-      if (isLeft(eventEither)) return eventEither;
 
-      const newState = mediaApply(state, eventEither.value);
-      if (!newState) throw new Error('Unexpected null state after media.used');
+      const result = MediaEntity.use(state, { now });
+      if (isLeft(result)) return result;
 
       // biome-ignore lint/performance/noAwaitInLoops: sequential execution is intentional for storage side effects
-      await this.mediaRepository.save(tx, newState);
+      await this.mediaRepository.save(tx, result.value.state);
 
       const tempBucket = `${state.bucket}-temp`;
       await this.fileStorage.moveToPermanent(tempBucket, state.bucket, state.id);

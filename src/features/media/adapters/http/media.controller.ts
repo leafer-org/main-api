@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 
 import { GetPreviewDownloadUrlInteractor } from '../../application/use-cases/get-preview-download-url.interactor.js';
-import { GetVideoStatusInteractor } from '../../application/use-cases/get-video-status.interactor.js';
+import { GetVideoPreviewInteractor } from '../../application/use-cases/get-video-preview.interactor.js';
 import { CompleteVideoUploadInteractor } from '../../application/use-cases/upload/complete-video-upload.interactor.js';
 import { InitVideoUploadInteractor } from '../../application/use-cases/upload/init-video-upload.interactor.js';
 import { RequestUploadInteractor } from '../../application/use-cases/upload/request-upload.interactor.js';
@@ -19,7 +19,7 @@ export class MediaController {
     private readonly initVideoUpload: InitVideoUploadInteractor,
     private readonly completeVideoUpload: CompleteVideoUploadInteractor,
     private readonly getPreviewDownloadUrl: GetPreviewDownloadUrlInteractor,
-    private readonly getVideoStatus: GetVideoStatusInteractor,
+    private readonly getVideoPreview: GetVideoPreviewInteractor,
   ) {}
 
   @Post('image/upload-request')
@@ -75,17 +75,21 @@ export class MediaController {
     return result.value;
   }
 
-  @Get('video/status/:mediaId')
-  public async videoStatus(
+  @Get('video/preview/:mediaId')
+  public async videoPreview(
     @Param('mediaId') mediaId: string,
-  ): Promise<PublicResponse['mediaVideoStatus']> {
-    const result = await this.getVideoStatus.execute({
+  ): Promise<PublicResponse['mediaVideoPreview']> {
+    const result = await this.getVideoPreview.execute({
       mediaId: MediaId.raw(mediaId),
     });
 
+    if (isLeft(result)) {
+      throw domainToHttpError<'mediaVideoPreview'>(result.error.toResponse());
+    }
+
     const data = result.value;
     if (!data) {
-      throw domainToHttpError<'mediaVideoStatus'>({ 404: { type: 'media_not_found', isDomain: true } });
+      throw domainToHttpError<'mediaVideoPreview'>({ 404: { type: 'media_not_found', isDomain: true } });
     }
 
     return data;

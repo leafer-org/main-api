@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { eq, inArray } from 'drizzle-orm';
 
 import { MediaRepository } from '../../../application/ports.js';
-import type { MediaState } from '../../../domain/aggregates/media/state.js';
+import type { MediaEntity } from '../../../domain/aggregates/media/entity.js';
 import { media } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
@@ -12,7 +12,7 @@ import { MediaId } from '@/kernel/domain/ids.js';
 export class DrizzleMediaRepository implements MediaRepository {
   public constructor(private readonly txHost: TransactionHostPg) {}
 
-  public async findById(tx: Transaction, id: MediaId): Promise<MediaState | null> {
+  public async findById(tx: Transaction, id: MediaId): Promise<MediaEntity | null> {
     const db = this.txHost.get(tx);
     const rows = await db.select().from(media).where(eq(media.id, id)).limit(1);
     const row = rows[0];
@@ -20,7 +20,7 @@ export class DrizzleMediaRepository implements MediaRepository {
 
     return {
       id: MediaId.raw(row.id),
-      type: row.type as MediaState['type'],
+      type: row.type as MediaEntity['type'],
       name: row.name,
       bucket: row.bucket,
       mimeType: row.mimeType,
@@ -29,17 +29,17 @@ export class DrizzleMediaRepository implements MediaRepository {
     };
   }
 
-  public async findByIds(tx: Transaction, ids: MediaId[]): Promise<Map<MediaId, MediaState>> {
+  public async findByIds(tx: Transaction, ids: MediaId[]): Promise<Map<MediaId, MediaEntity>> {
     if (ids.length === 0) return new Map();
 
     const db = this.txHost.get(tx);
     const rows = await db.select().from(media).where(inArray(media.id, ids));
-    const map = new Map<MediaId, MediaState>();
+    const map = new Map<MediaId, MediaEntity>();
 
     for (const row of rows) {
       map.set(MediaId.raw(row.id), {
         id: MediaId.raw(row.id),
-        type: row.type as MediaState['type'],
+        type: row.type as MediaEntity['type'],
         name: row.name,
         bucket: row.bucket,
         mimeType: row.mimeType,
@@ -51,7 +51,7 @@ export class DrizzleMediaRepository implements MediaRepository {
     return map;
   }
 
-  public async save(tx: Transaction, state: MediaState): Promise<void> {
+  public async save(tx: Transaction, state: MediaEntity): Promise<void> {
     const db = this.txHost.get(tx);
     await db
       .insert(media)

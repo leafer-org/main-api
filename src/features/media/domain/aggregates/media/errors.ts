@@ -13,3 +13,5 @@ export class VideoAlreadyProcessingError extends CreateDomainError('video_alread
 export class VideoNotPendingError extends CreateDomainError('video_not_pending', 400) {}
 
 export class VideoNotReadyError extends CreateDomainError('video_not_ready', 400) {}
+
+export class MediaPreviewForbiddenError extends CreateDomainError('media_preview_forbidden', 403) {}

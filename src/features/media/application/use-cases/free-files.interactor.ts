@@ -1,10 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { mediaApply } from '../../domain/aggregates/media/apply.js';
-import { mediaDecide } from '../../domain/aggregates/media/decide.js';
+import { MediaEntity } from '../../domain/aggregates/media/entity.js';
 import { MediaNotFoundError } from '../../domain/aggregates/media/errors.js';
 import { FileStorageService, MediaRepository } from '../ports.js';
-import { isLeft, Left, Right } from '@/infra/lib/box.js';
+import { Left, Right } from '@/infra/lib/box.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type { MediaId } from '@/kernel/domain/ids.js';
 
@@ -29,10 +28,7 @@ export class FreeFilesInteractor {
     for (const fileId of fileIds) {
       const state = states.get(fileId);
       if (!state) return Left(new MediaNotFoundError());
-      const eventEither = mediaDecide(state, { type: 'FreeMedia' });
-      if (isLeft(eventEither)) return eventEither;
-
-      mediaApply(state, eventEither.value);
+      MediaEntity.free(state);
     }
 
     await this.mediaRepository.deleteByIds(tx, fileIds);

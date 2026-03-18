@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { mediaApply } from '../../../domain/aggregates/media/apply.js';
-import { mediaDecide } from '../../../domain/aggregates/media/decide.js';
+import { MediaEntity } from '../../../domain/aggregates/media/entity.js';
+import { VideoDetailsEntity } from '../../../domain/aggregates/media/entities/video-details.entity.js';
 import {
   type FileName,
   FileName as FileNameVO,
@@ -72,8 +72,7 @@ export class InitVideoUploadInteractor {
     const partCount = Math.ceil(command.fileSize / PART_SIZE);
 
     return this.txHost.startTransaction(async (tx) => {
-      const eventEither = mediaDecide(null, {
-        type: 'UploadMedia',
+      const result = MediaEntity.upload({
         id: mediaId,
         mediaType: 'video',
         name: name as string,
@@ -82,19 +81,10 @@ export class InitVideoUploadInteractor {
         now,
       });
 
-      if (isLeft(eventEither)) return eventEither;
+      if (isLeft(result)) return result;
 
-      const newState = mediaApply(null, eventEither.value);
-      if (!newState) throw new Error('Unexpected null state after media.uploaded');
-
-      await this.mediaRepository.save(tx, newState);
-      await this.videoDetailsRepository.save(tx, {
-        mediaId,
-        processingStatus: 'pending',
-        thumbnailMediaId: null,
-        hlsManifestKey: null,
-        duration: null,
-      });
+      await this.mediaRepository.save(tx, result.value.state);
+      await this.videoDetailsRepository.save(tx, VideoDetailsEntity.create(mediaId));
 
       const { uploadId } = await this.fileStorage.createMultipartUpload(
         tempBucket,

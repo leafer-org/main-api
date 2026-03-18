@@ -16,7 +16,8 @@ import type { MediaId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class MediaServiceAdapter extends MediaService {
-  private readonly cdnUrl: string | undefined;
+  private readonly s3PublicUrl: string | undefined;
+  private readonly publicBucket: string;
 
   public constructor(
     private readonly downloadUrlQuery: GetDownloadUrlInteractor,
@@ -29,7 +30,8 @@ export class MediaServiceAdapter extends MediaService {
     config: MainConfigService,
   ) {
     super();
-    this.cdnUrl = config.get('MEDIA_PUBLIC_CDN_URL');
+    this.s3PublicUrl = config.get('S3_ENDPOINT');
+    this.publicBucket = config.get('MEDIA_BUCKET_PUBLIC') ?? 'media-public';
   }
 
   public async getDownloadUrl(
@@ -91,8 +93,8 @@ export class MediaServiceAdapter extends MediaService {
     return details.processingStatus as ProcessingStatus;
   }
 
-  private buildHlsUrl(mediaId: MediaId): string {
-    const base = this.cdnUrl ?? '';
-    return `${base}/video/${String(mediaId)}/master.m3u8`;
+  private buildHlsUrl(mediaId: MediaId): string | null {
+    if (!this.s3PublicUrl) return null;
+    return `${this.s3PublicUrl}/${this.publicBucket}/video/${String(mediaId)}/master.m3u8`;
   }
 }
