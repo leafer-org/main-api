@@ -1,6 +1,6 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, NotFoundException, Param, Post, Query } from '@nestjs/common';
 
-import { ItemQueryPort } from '../../application/ports.js';
+import { ItemQueryPort, OrganizationQueryPort } from '../../application/ports.js';
 import { SearchAdminOrganizationsInteractor } from '../../application/use-cases/admin-organizations-list/search-admin-organizations.interactor.js';
 import { AdminCreateOrganizationInteractor } from '../../application/use-cases/create-and-claim-organization/admin-create-organization.interactor.js';
 import { RegenerateClaimTokenInteractor } from '../../application/use-cases/create-and-claim-organization/regenerate-claim-token.interactor.js';
@@ -8,7 +8,9 @@ import { AdminCreateItemInteractor } from '../../application/use-cases/manage-it
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
+import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { EmployeeRoleId, MediaId, ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
+import { Permissions } from '@/kernel/domain/permissions.js';
 import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
 
 @Controller('admin/organizations')
@@ -19,6 +21,8 @@ export class AdminOrganizationsController {
     private readonly adminCreateItem: AdminCreateItemInteractor,
     private readonly regenerateClaimToken: RegenerateClaimTokenInteractor,
     @Inject(ItemQueryPort) private readonly itemQuery: ItemQueryPort,
+    @Inject(OrganizationQueryPort) private readonly organizationQuery: OrganizationQueryPort,
+    @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
   @Get()
@@ -88,6 +92,17 @@ export class AdminOrganizationsController {
     const detail = await this.itemQuery.findDetail(itemId);
     // biome-ignore lint/style/noNonNullAssertion: item was just created
     return this.toItemDetailResponse(detail!);
+  }
+
+  @Get(':id/claim-token')
+  public async getClaimToken(@Param('id') id: string): Promise<{ claimToken: string | null }> {
+    const auth = await this.permissionCheck.mustCan(Permissions.manageOrganization);
+    if (isLeft(auth)) {
+      throw domainToHttpError<'getClaimToken'>(auth.error.toResponse());
+    }
+
+    const claimToken = await this.organizationQuery.findClaimToken(OrganizationId.raw(id));
+    return { claimToken };
   }
 
   @Post(':id/regenerate-token')

@@ -73,6 +73,15 @@ export class DrizzleOrganizationQuery implements OrganizationQueryPort {
     };
   }
 
+  public async findClaimToken(id: OrganizationId): Promise<string | null> {
+    const rows = await this.db
+      .select({ claimToken: organizations.claimToken })
+      .from(organizations)
+      .where(eq(organizations.id, id))
+      .limit(1);
+    return rows[0]?.claimToken ?? null;
+  }
+
   public async findRoles(id: OrganizationId): Promise<EmployeeRoleListReadModel> {
     const rows = await this.db
       .select()

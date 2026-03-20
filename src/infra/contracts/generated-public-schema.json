@@ -5653,6 +5653,67 @@
         }
       }
     },
+    "/admin/organizations/{id}/claim-token": {
+      "get": {
+        "operationId": "getClaimToken",
+        "tags": [
+          "admin-organizations"
+        ],
+        "summary": "Получение текущего claim token",
+        "description": "Возвращает текущий claim token организации (null если привязана).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Текущий claim token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "claimToken"
+                  ],
+                  "properties": {
+                    "claimToken": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Нет доступа (требуется ORGANIZATION.MANAGE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/organizations/{id}/regenerate-token": {
       "post": {
         "operationId": "regenerateClaimToken",
@@ -11932,6 +11993,96 @@
           }
         }
       },
+      "ImagePreview": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "VideoPreview": {
+        "type": "object",
+        "required": [
+          "thumbnailUrl",
+          "hlsUrl",
+          "mp4PreviewUrl",
+          "processingStatus"
+        ],
+        "properties": {
+          "thumbnailUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "hlsUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "mp4PreviewUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "processingStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "ready",
+              "failed"
+            ]
+          },
+          "progress": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      },
+      "ResolvedMediaItem": {
+        "type": "object",
+        "required": [
+          "type",
+          "mediaId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "video"
+            ]
+          },
+          "mediaId": {
+            "type": "string"
+          },
+          "preview": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ImagePreview"
+              },
+              {
+                "$ref": "#/components/schemas/VideoPreview"
+              }
+            ]
+          }
+        }
+      },
       "InfoDraftStatus": {
         "type": "string",
         "enum": [
@@ -11964,7 +12115,7 @@
           "media": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MediaItem"
+              "$ref": "#/components/schemas/ResolvedMediaItem"
             }
           },
           "status": {
@@ -12110,7 +12261,7 @@
               "media": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/MediaItem"
+                  "$ref": "#/components/schemas/ResolvedMediaItem"
                 }
               },
               "publishedAt": {

@@ -1157,6 +1157,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/organizations/{id}/claim-token': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Получение текущего claim token
+     * @description Возвращает текущий claim token организации (null если привязана).
+     */
+    get: operations['getClaimToken'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/organizations/{id}/regenerate-token': {
     parameters: {
       query?: never;
@@ -2459,13 +2479,34 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
+    ImagePreview: {
+      /** Format: uri */
+      url: string;
+    };
+    VideoPreview: {
+      /** Format: uri */
+      thumbnailUrl: string | null;
+      /** Format: uri */
+      hlsUrl: string | null;
+      /** Format: uri */
+      mp4PreviewUrl: string | null;
+      /** @enum {string} */
+      processingStatus: 'pending' | 'processing' | 'ready' | 'failed';
+      progress?: number | null;
+    };
+    ResolvedMediaItem: {
+      /** @enum {string} */
+      type: 'image' | 'video';
+      mediaId: string;
+      preview?: components['schemas']['ImagePreview'] | components['schemas']['VideoPreview'];
+    };
     /** @enum {string} */
     InfoDraftStatus: 'draft' | 'moderation-request' | 'rejected';
     InfoDraft: {
       name: string;
       description: string;
       avatarId?: string | null;
-      media: components['schemas']['MediaItem'][];
+      media: components['schemas']['ResolvedMediaItem'][];
       status: components['schemas']['InfoDraftStatus'];
     };
     Employee: {
@@ -2505,7 +2546,7 @@ export interface components {
         name: string;
         description: string;
         avatarId?: string | null;
-        media: components['schemas']['MediaItem'][];
+        media: components['schemas']['ResolvedMediaItem'][];
         /** Format: date-time */
         publishedAt: string;
       } | null;
@@ -6033,6 +6074,40 @@ export interface operations {
       };
       /** @description Организация или тип товара не найдены */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getClaimToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Текущий claim token */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            claimToken: string | null;
+          };
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется ORGANIZATION.MANAGE) */
+      403: {
         headers: {
           [name: string]: unknown;
         };

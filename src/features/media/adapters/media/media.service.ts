@@ -8,8 +8,9 @@ import { UseFilesInteractor } from '../../application/use-cases/use-files.intera
 import { CachedMediaUrlService } from './media-url.service.js';
 import { isLeft, unwrap } from '@/infra/lib/box.js';
 import { MainConfigService } from '@/infra/config/service.js';
-import type { GetDownloadUrlOptions, ProcessingStatus, VideoStreamInfo } from '@/kernel/application/ports/media.js';
+import type { GetDownloadUrlOptions, ProcessingStatus, ResolvedMediaItem, VideoStreamInfo } from '@/kernel/application/ports/media.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
+import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
 import type { MediaId } from '@/kernel/domain/ids.js';
@@ -93,6 +94,51 @@ export class MediaServiceAdapter extends MediaService {
     const details = await this.videoDetailsRepository.findByMediaId(noTx, mediaId);
     if (!details) return null;
     return details.processingStatus as ProcessingStatus;
+  }
+
+  public async resolveMediaItems(items: MediaItem[]): Promise<ResolvedMediaItem[]> {
+    const images = items.filter((i): i is MediaItem & { type: 'image' } => i.type === 'image');
+    const videos = items.filter((i): i is MediaItem & { type: 'video' } => i.type === 'video');
+
+    const [imageUrls, videoInfos] = await Promise.all([
+      images.length > 0
+        ? this.getDownloadUrls(
+            images.map((i) => ({ fileId: i.mediaId, options: { visibility: 'PUBLIC' as const } })),
+          )
+        : Promise.resolve([]),
+      Promise.all(videos.map((v) => this.getVideoStreamInfo(v.mediaId))),
+    ]);
+
+    const imageUrlMap = new Map(images.map((img, i) => [String(img.mediaId), imageUrls[i]]));
+    const videoInfoMap = new Map(videos.map((vid, i) => [String(vid.mediaId), videoInfos[i]]));
+
+    return items.map((item): ResolvedMediaItem => {
+      const mediaId = String(item.mediaId);
+      if (item.type === 'image') {
+        const url = imageUrlMap.get(mediaId);
+        return {
+          type: 'image',
+          mediaId,
+          ...(url ? { preview: { url } } : {}),
+        };
+      }
+      const info = videoInfoMap.get(mediaId);
+      return {
+        type: 'video',
+        mediaId,
+        ...(info
+          ? {
+              preview: {
+                thumbnailUrl: info.thumbnailUrl,
+                hlsUrl: info.hlsUrl,
+                mp4PreviewUrl: info.mp4PreviewUrl,
+                processingStatus: info.status,
+                progress: null,
+              },
+            }
+          : {}),
+      };
+    });
   }
 
   private buildHlsUrl(mediaId: MediaId): string | null {

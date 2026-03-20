@@ -1,5 +1,24 @@
 import type { Transaction } from './tx-host.js';
 import type { MediaId } from '@/kernel/domain/ids.js';
+import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
+
+export type ImagePreview = {
+  url: string;
+};
+
+export type VideoPreview = {
+  thumbnailUrl: string | null;
+  hlsUrl: string | null;
+  mp4PreviewUrl: string | null;
+  processingStatus: ProcessingStatus;
+  progress: number | null;
+};
+
+export type ResolvedMediaItem = {
+  type: 'image' | 'video';
+  mediaId: string;
+  preview?: ImagePreview | VideoPreview;
+};
 
 export type MediaVisibility = 'PUBLIC' | 'PRIVATE';
 
@@ -44,6 +63,8 @@ export abstract class MediaService {
   public abstract getVideoStreamInfo(mediaId: MediaId): Promise<VideoStreamInfo | null>;
 
   public abstract getVideoStatus(mediaId: MediaId): Promise<ProcessingStatus | null>;
+
+  public abstract resolveMediaItems(items: MediaItem[]): Promise<ResolvedMediaItem[]>;
 
   public createDownloadUrlsLoader(options: GetDownloadUrlOptions): DownloadUrlLoader {
     return new DownloadUrlLoader(this, options);

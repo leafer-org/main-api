@@ -99,6 +99,7 @@ export abstract class OrganizationQueryPort {
   public abstract findDetail(id: OrganizationId): Promise<OrganizationDetailReadModel | null>;
   public abstract findEmployees(id: OrganizationId): Promise<EmployeeListReadModel>;
   public abstract findRoles(id: OrganizationId): Promise<EmployeeRoleListReadModel>;
+  public abstract findClaimToken(id: OrganizationId): Promise<string | null>;
 }
 
 export abstract class ItemQueryPort {

@@ -15,6 +15,7 @@ import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
+import { MediaService } from '@/kernel/application/ports/media.js';
 import { EmployeeRoleId, MediaId, OrganizationId } from '@/kernel/domain/ids.js';
 
 @Controller('organizations')
@@ -30,6 +31,7 @@ export class OrganizationsController {
     private readonly rejectInfoModeration: RejectInfoModerationInteractor,
     private readonly unpublishOrganization: UnpublishOrganizationInteractor,
     @Inject(OrganizationQueryPort) private readonly organizationQuery: OrganizationQueryPort,
+    @Inject(MediaService) private readonly mediaService: MediaService,
   ) {}
 
   @Post()
@@ -122,7 +124,7 @@ export class OrganizationsController {
     const employees = await this.organizationQuery.findEmployees(orgId);
     const roles = await this.organizationQuery.findRoles(orgId);
 
-    return this.toOrganizationDetailResponse(detail, employees, roles);
+    return await this.toOrganizationDetailResponse(detail, employees, roles);
   }
 
   @Patch(':id')
@@ -209,18 +211,25 @@ export class OrganizationsController {
     }
   }
 
-  private toOrganizationDetailResponse(
+  private async toOrganizationDetailResponse(
     detail: NonNullable<Awaited<ReturnType<OrganizationQueryPort['findDetail']>>>,
     employees: Awaited<ReturnType<OrganizationQueryPort['findEmployees']>>,
     roles: Awaited<ReturnType<OrganizationQueryPort['findRoles']>>,
-  ): PublicResponse['getOrganization'] {
+  ): Promise<PublicResponse['getOrganization']> {
+    const [draftMedia, pubMedia] = await Promise.all([
+      this.mediaService.resolveMediaItems(detail.infoDraft.media),
+      detail.infoPublication
+        ? this.mediaService.resolveMediaItems(detail.infoPublication.media)
+        : Promise.resolve([]),
+    ]);
+
     return {
       id: detail.id,
       infoDraft: {
         name: detail.infoDraft.name,
         description: detail.infoDraft.description,
         avatarId: detail.infoDraft.avatarId ?? null,
-        media: detail.infoDraft.media.map((m) => ({ type: m.type, mediaId: m.mediaId as string })),
+        media: draftMedia,
         status: detail.infoDraft.status,
       },
       infoPublication: detail.infoPublication
@@ -228,7 +237,7 @@ export class OrganizationsController {
             name: detail.infoPublication.name,
             description: detail.infoPublication.description,
             avatarId: detail.infoPublication.avatarId ?? null,
-            media: detail.infoPublication.media.map((m) => ({ type: m.type, mediaId: m.mediaId as string })),
+            media: pubMedia,
             publishedAt: detail.infoPublication.publishedAt.toISOString(),
           }
         : null,

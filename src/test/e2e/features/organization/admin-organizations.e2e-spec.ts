@@ -128,6 +128,102 @@ describe('Admin Organizations (e2e)', () => {
     });
   });
 
+  // ─── GET /admin/organizations/:id/claim-token ─────────────────
+
+  describe('GET /admin/organizations/:id/claim-token', () => {
+    it('should return claim token for unclaimed organization', async () => {
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+
+      const createRes = await e2e.agent
+        .post('/admin/organizations')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ name: 'Org', description: 'desc' })
+        .expect(201);
+
+      const res = await e2e.agent
+        .get(`/admin/organizations/${createRes.body.id}/claim-token`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(res.body.claimToken).toBe(createRes.body.claimToken);
+    });
+
+    it('should return null after organization is claimed', async () => {
+      const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+
+      const createRes = await e2e.agent
+        .post('/admin/organizations')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Org', description: 'desc' })
+        .expect(201);
+
+      const user = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
+
+      await e2e.agent
+        .post('/organizations/claim')
+        .set('Authorization', `Bearer ${user.accessToken}`)
+        .send({ token: createRes.body.claimToken })
+        .expect(200);
+
+      const res = await e2e.agent
+        .get(`/admin/organizations/${createRes.body.id}/claim-token`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.claimToken).toBeNull();
+    });
+
+    it('should return updated token after regeneration', async () => {
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+
+      const createRes = await e2e.agent
+        .post('/admin/organizations')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ name: 'Org', description: 'desc' })
+        .expect(201);
+
+      const regenRes = await e2e.agent
+        .post(`/admin/organizations/${createRes.body.id}/regenerate-token`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      const res = await e2e.agent
+        .get(`/admin/organizations/${createRes.body.id}/claim-token`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(res.body.claimToken).toBe(regenRes.body.claimToken);
+    });
+
+    it('should return 403 for regular user', async () => {
+      const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+
+      const createRes = await e2e.agent
+        .post('/admin/organizations')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'Org', description: 'desc' })
+        .expect(201);
+
+      const { accessToken: userToken } = await registerUser(e2e.agent, FIXED_OTP);
+
+      await e2e.agent
+        .get(`/admin/organizations/${createRes.body.id}/claim-token`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(403);
+    });
+
+    it('should return null for non-existent organization', async () => {
+      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
+
+      const res = await e2e.agent
+        .get('/admin/organizations/00000000-0000-0000-0000-000000000000/claim-token')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(res.body.claimToken).toBeNull();
+    });
+  });
+
   // ─── POST /organizations/claim ──────────────────────────────────
 
   describe('POST /organizations/claim', () => {
