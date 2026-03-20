@@ -59,6 +59,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
     parentCategoryId: string | null;
     name: string;
     iconId?: string;
+    order?: number;
     allowedTypeIds?: string[];
     ancestorIds?: string[];
     attributes?: { attributeId: string; name: string; required: boolean; schema: object }[];
@@ -70,6 +71,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       parentCategoryId: params.parentCategoryId,
       name: params.name,
       iconId: params.iconId ?? randomUUID(),
+      order: params.order ?? 0,
       allowedTypeIds: params.allowedTypeIds ?? [],
       ancestorIds: params.ancestorIds ?? [],
       attributes: params.attributes ?? [],
@@ -275,6 +277,25 @@ describe('Discovery Categories HTTP (e2e)', () => {
       expectDefined(root);
       // 1 direct + 2 from child = 3
       expect(root.itemCount).toBe(3);
+    });
+
+    it('should sort categories by order asc then name asc', async () => {
+      const ids = {
+        last: randomUUID(),
+        first: randomUUID(),
+        middleA: randomUUID(),
+        middleB: randomUUID(),
+      };
+
+      await seedCategory({ categoryId: ids.last, parentCategoryId: null, name: 'Zzz', order: 99 });
+      await seedCategory({ categoryId: ids.first, parentCategoryId: null, name: 'Aaa', order: 1 });
+      await seedCategory({ categoryId: ids.middleA, parentCategoryId: null, name: 'Bbb', order: 50 });
+      await seedCategory({ categoryId: ids.middleB, parentCategoryId: null, name: 'Ccc', order: 50 });
+
+      const res = await agent.get('/categories').expect(200);
+      const categoryIds = (res.body as { categoryId: string }[]).map((c: { categoryId: string }) => c.categoryId);
+
+      expect(categoryIds).toEqual([ids.first, ids.middleA, ids.middleB, ids.last]);
     });
 
     it('should reset counts after category unpublished', async () => {

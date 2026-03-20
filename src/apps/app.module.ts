@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ClsModule } from 'nestjs-cls';
 
+import { TestModule } from './test/test.module.js';
+
 import { CmsModule } from '../features/cms/cms.module.js';
 import { DISCOVERY_CONSUMER_ID } from '../features/discovery/adapters/kafka/consumer-ids.js';
 import { DiscoveryModule } from '../features/discovery/discovery.module.js';
@@ -97,6 +99,7 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
       inject: [MainConfigService],
     }),
     OutboxRelayModule,
+    ...(process.env.NODE_ENV !== 'production' ? [TestModule] : []),
     IdpModule,
     MediaModule,
     DiscoveryModule,

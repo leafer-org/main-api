@@ -9,6 +9,7 @@ const toBool = (p: string) => p === 'true';
 @Injectable()
 export class MainConfigService extends CreateConfigService({
   // Main app
+  NODE_ENV: Type.String({ default: 'development' }),
   DB_URL: Type.String({ format: 'uri' }),
   PORT: Type.Decode(Type.String({ default: '3000' }), toInt),
   KAFKA_BROKER: Type.String(),

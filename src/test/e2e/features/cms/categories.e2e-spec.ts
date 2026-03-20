@@ -596,40 +596,5 @@ describe('CMS Categories (e2e)', () => {
       expect(cat).toBeDefined();
     });
 
-    it('should sort discovery categories by order asc then name asc', async () => {
-      const typeId = randomUUID();
-
-      const ids = {
-        last: randomUUID(),
-        first: randomUUID(),
-        middleA: randomUUID(),
-        middleB: randomUUID(),
-      };
-
-      await createCategory({ id: ids.last, name: 'Zzz', order: 99, allowedTypeIds: [typeId] });
-      await createCategory({ id: ids.first, name: 'Aaa', order: 1, allowedTypeIds: [typeId] });
-      await createCategory({ id: ids.middleA, name: 'Bbb', order: 50, allowedTypeIds: [typeId] });
-      await createCategory({ id: ids.middleB, name: 'Ccc', order: 50, allowedTypeIds: [typeId] });
-
-      const publish = (id: string) =>
-        e2e.agent
-          .post(`/cms/categories/${id}/publish`)
-          .set('Authorization', `Bearer ${adminToken}`)
-          .expect(200);
-
-      await publish(ids.last);
-      await flushOutbox(e2e.app);
-      await publish(ids.first);
-      await flushOutbox(e2e.app);
-      await publish(ids.middleA);
-      await flushOutbox(e2e.app);
-      await publish(ids.middleB);
-      await flushOutbox(e2e.app);
-
-      const res = await e2e.agent.get('/categories').expect(200);
-      const categoryIds = (res.body as { categoryId: string }[]).map((c) => c.categoryId);
-
-      expect(categoryIds).toEqual([ids.first, ids.middleA, ids.middleB, ids.last]);
-    });
   });
 });

@@ -29,6 +29,10 @@
     "docker": {
       "command": "npx",
       "args": ["-y", "@quantgeekdev/docker-mcp"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
     }
   }
 }
