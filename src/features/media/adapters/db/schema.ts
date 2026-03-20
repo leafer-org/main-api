@@ -8,6 +8,9 @@ export const media = pgTable('media', {
   mimeType: text('mime_type').notNull(),
   isTemporary: boolean('is_temporary').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  width: integer('width'),
+  height: integer('height'),
+  verifiedMimeType: text('verified_mime_type'),
 });
 
 export const videoDetails = pgTable('video_details', {
@@ -17,6 +20,8 @@ export const videoDetails = pgTable('video_details', {
   hlsManifestKey: text('hls_manifest_key'),
   mp4PreviewKey: text('mp4_preview_key'),
   duration: integer('duration'),
+  width: integer('width'),
+  height: integer('height'),
 });
 
 export type MediaRow = typeof media.$inferSelect;

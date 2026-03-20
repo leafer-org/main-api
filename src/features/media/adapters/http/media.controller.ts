@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 
 import { GetPreviewDownloadUrlInteractor } from '../../application/use-cases/get-preview-download-url.interactor.js';
 import { GetVideoPreviewInteractor } from '../../application/use-cases/get-video-preview.interactor.js';
+import { CompleteImageUploadInteractor } from '../../application/use-cases/upload/complete-image-upload.interactor.js';
 import { CompleteVideoUploadInteractor } from '../../application/use-cases/upload/complete-video-upload.interactor.js';
 import { InitVideoUploadInteractor } from '../../application/use-cases/upload/init-video-upload.interactor.js';
 import { RequestUploadInteractor } from '../../application/use-cases/upload/request-upload.interactor.js';
@@ -16,6 +17,7 @@ import { MediaId } from '@/kernel/domain/ids.js';
 export class MediaController {
   public constructor(
     private readonly requestUpload: RequestUploadInteractor,
+    private readonly completeImageUpload: CompleteImageUploadInteractor,
     private readonly initVideoUpload: InitVideoUploadInteractor,
     private readonly completeVideoUpload: CompleteVideoUploadInteractor,
     private readonly getPreviewDownloadUrl: GetPreviewDownloadUrlInteractor,
@@ -34,6 +36,22 @@ export class MediaController {
 
     if (isLeft(result)) {
       throw domainToHttpError<'mediaUploadRequest'>(result.error.toResponse());
+    }
+
+    return result.value;
+  }
+
+  @Post('image/upload-complete')
+  @HttpCode(200)
+  public async imageUploadComplete(
+    @Body() body: PublicBody['mediaImageUploadComplete'],
+  ): Promise<PublicResponse['mediaImageUploadComplete']> {
+    const result = await this.completeImageUpload.execute({
+      mediaId: body.mediaId,
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'mediaImageUploadComplete'>(result.error.toResponse());
     }
 
     return result.value;

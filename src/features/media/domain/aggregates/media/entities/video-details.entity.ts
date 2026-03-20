@@ -13,6 +13,8 @@ export type VideoDetailsEntity = EntityState<{
   hlsManifestKey: string | null;
   mp4PreviewKey: string | null;
   duration: number | null;
+  width: number | null;
+  height: number | null;
 }>;
 
 export const VideoDetailsEntity = {
@@ -24,6 +26,8 @@ export const VideoDetailsEntity = {
       hlsManifestKey: null,
       mp4PreviewKey: null,
       duration: null,
+      width: null,
+      height: null,
     };
   },
 
@@ -41,6 +45,8 @@ export const VideoDetailsEntity = {
         hlsManifestKey: state?.hlsManifestKey ?? null,
         mp4PreviewKey: state?.mp4PreviewKey ?? null,
         duration: state?.duration ?? null,
+        width: state?.width ?? null,
+        height: state?.height ?? null,
       },
     });
   },
@@ -60,6 +66,8 @@ export const VideoDetailsEntity = {
         hlsManifestKey: cmd.hlsManifestKey,
         mp4PreviewKey: cmd.mp4PreviewKey,
         duration: cmd.duration,
+        width: cmd.width,
+        height: cmd.height,
       },
     });
   },
@@ -78,6 +86,8 @@ export const VideoDetailsEntity = {
         hlsManifestKey: state.hlsManifestKey,
         mp4PreviewKey: state.mp4PreviewKey,
         duration: state.duration,
+        width: state.width,
+        height: state.height,
       },
     });
   },

@@ -34,3 +34,5 @@ export class OrganizationAlreadyClaimedError extends CreateDomainError(
 export class InvalidClaimTokenError extends CreateDomainError('invalid_claim_token', 400) {}
 
 export class InfoNotPublishedError extends CreateDomainError('info_not_published', 400) {}
+
+export class NoDraftChangesToDiscardError extends CreateDomainError('no_draft_changes_to_discard', 400) {}

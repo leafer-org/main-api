@@ -26,6 +26,9 @@ export class DrizzleMediaRepository implements MediaRepository {
       mimeType: row.mimeType,
       isTemporary: row.isTemporary,
       createdAt: row.createdAt,
+      width: row.width,
+      height: row.height,
+      verifiedMimeType: row.verifiedMimeType,
     };
   }
 
@@ -45,6 +48,9 @@ export class DrizzleMediaRepository implements MediaRepository {
         mimeType: row.mimeType,
         isTemporary: row.isTemporary,
         createdAt: row.createdAt,
+        width: row.width,
+        height: row.height,
+        verifiedMimeType: row.verifiedMimeType,
       });
     }
 
@@ -63,6 +69,9 @@ export class DrizzleMediaRepository implements MediaRepository {
         mimeType: state.mimeType,
         isTemporary: state.isTemporary,
         createdAt: state.createdAt,
+        width: state.width,
+        height: state.height,
+        verifiedMimeType: state.verifiedMimeType,
       })
       .onConflictDoUpdate({
         target: media.id,
@@ -72,6 +81,9 @@ export class DrizzleMediaRepository implements MediaRepository {
           bucket: state.bucket,
           mimeType: state.mimeType,
           isTemporary: state.isTemporary,
+          width: state.width,
+          height: state.height,
+          verifiedMimeType: state.verifiedMimeType,
         },
       });
   }

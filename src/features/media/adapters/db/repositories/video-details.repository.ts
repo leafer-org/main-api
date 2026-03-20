@@ -25,6 +25,8 @@ export class DrizzleVideoDetailsRepository implements VideoDetailsRepository {
       hlsManifestKey: row.hlsManifestKey,
       mp4PreviewKey: row.mp4PreviewKey,
       duration: row.duration,
+      width: row.width,
+      height: row.height,
     };
   }
 
@@ -39,6 +41,8 @@ export class DrizzleVideoDetailsRepository implements VideoDetailsRepository {
         hlsManifestKey: details.hlsManifestKey,
         mp4PreviewKey: details.mp4PreviewKey,
         duration: details.duration,
+        width: details.width,
+        height: details.height,
       })
       .onConflictDoUpdate({
         target: videoDetails.mediaId,
@@ -48,6 +52,8 @@ export class DrizzleVideoDetailsRepository implements VideoDetailsRepository {
           hlsManifestKey: details.hlsManifestKey,
           mp4PreviewKey: details.mp4PreviewKey,
           duration: details.duration,
+          width: details.width,
+          height: details.height,
         },
       });
   }

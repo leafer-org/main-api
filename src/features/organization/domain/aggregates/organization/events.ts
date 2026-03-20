@@ -52,6 +52,11 @@ export type InfoDraftUpdatedEvent = {
   updatedAt: Date;
 };
 
+export type InfoDraftChangesDiscardedEvent = {
+  type: 'organization.info-draft-changes-discarded';
+  discardedAt: Date;
+};
+
 export type InfoSubmittedForModerationEvent = {
   type: 'organization.info-submitted-for-moderation';
   organizationId: OrganizationId;
@@ -163,6 +168,7 @@ export type OrganizationEvent =
   | OrganizationClaimedEvent
   | ClaimTokenRegeneratedEvent
   | InfoDraftUpdatedEvent
+  | InfoDraftChangesDiscardedEvent
   | InfoSubmittedForModerationEvent
   | InfoModerationApprovedEvent
   | InfoModerationRejectedEvent

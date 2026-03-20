@@ -1,5 +1,6 @@
 import { readdir } from 'node:fs/promises';
 import { extname, join, posix } from 'node:path';
+import type { Readable } from 'node:stream';
 import { Injectable } from '@nestjs/common';
 
 import { FileStorageService, type PresignedPost } from '../../application/ports.js';
@@ -73,6 +74,10 @@ export class S3FileStorageService implements FileStorageService {
     parts: { partNumber: number; etag: string }[],
   ): Promise<void> {
     return this.s3.completeMultipartUpload(bucket, key, uploadId, parts);
+  }
+
+  public async getObjectStream(bucket: string, key: string): Promise<Readable> {
+    return this.s3.getObjectStream(bucket, key);
   }
 
   public async downloadToFile(bucket: string, key: string, localPath: string): Promise<void> {

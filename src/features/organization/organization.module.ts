@@ -52,6 +52,7 @@ import { ApproveInfoModerationInteractor } from './application/use-cases/moderat
 import { ClaimOrganizationInteractor } from './application/use-cases/create-and-claim-organization/claim-organization.interactor.js';
 import { CreateOrganizationInteractor } from './application/use-cases/manage-org/create-organization.interactor.js';
 import { DeleteOrganizationInteractor } from './application/use-cases/manage-org/delete-organization.interactor.js';
+import { DiscardInfoDraftChangesInteractor } from './application/use-cases/manage-org/discard-info-draft-changes.interactor.js';
 import { GetOrganizationDetailInteractor } from './application/use-cases/manage-org/get-organization-detail.interactor.js';
 import { RegenerateClaimTokenInteractor } from './application/use-cases/create-and-claim-organization/regenerate-claim-token.interactor.js';
 import { RejectInfoModerationInteractor } from './application/use-cases/moderation/reject-info-moderation.interactor.js';
@@ -100,6 +101,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     DeleteOrganizationInteractor,
     RegenerateClaimTokenInteractor,
     UpdateInfoDraftInteractor,
+    DiscardInfoDraftChangesInteractor,
     GetOrganizationDetailInteractor,
     UnpublishOrganizationInteractor,
 

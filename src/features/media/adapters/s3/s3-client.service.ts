@@ -143,6 +143,13 @@ export class S3ClientService {
     await this.client.send(command);
   }
 
+  public async getObjectStream(bucket: string, key: string): Promise<Readable> {
+    const command = new GetObjectCommand({ Bucket: bucket, Key: key });
+    const response = await this.client.send(command);
+    if (!response.Body) throw new Error(`Empty body for s3://${bucket}/${key}`);
+    return response.Body as Readable;
+  }
+
   public async downloadToFile(bucket: string, key: string, localPath: string): Promise<void> {
     await mkdir(dirname(localPath), { recursive: true });
     const command = new GetObjectCommand({ Bucket: bucket, Key: key });

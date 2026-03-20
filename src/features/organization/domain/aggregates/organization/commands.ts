@@ -97,6 +97,11 @@ export type DeleteEmployeeRoleCommand = {
   now: Date;
 };
 
+export type DiscardInfoDraftChangesCommand = {
+  type: 'DiscardInfoDraftChanges';
+  now: Date;
+};
+
 // --- Admin Lifecycle ---
 
 export type AdminCreateOrganizationCommand = {
@@ -150,6 +155,7 @@ export type OrganizationCommand =
   | ClaimOrganizationCommand
   | RegenerateClaimTokenCommand
   | UpdateInfoDraftCommand
+  | DiscardInfoDraftChangesCommand
   | SubmitInfoForModerationCommand
   | ApproveInfoModerationCommand
   | RejectInfoModerationCommand

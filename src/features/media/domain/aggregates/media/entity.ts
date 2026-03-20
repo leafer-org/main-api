@@ -2,6 +2,7 @@ import type { EntityState } from '@/infra/ddd/entity-state.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 import type { MediaId } from '@/kernel/domain/ids.js';
 import type {
+  CompleteImageUploadCommand,
   CompleteVideoProcessingCommand,
   FailVideoProcessingCommand,
   UploadMediaCommand,
@@ -10,11 +11,13 @@ import type {
 import {
   MediaAlreadyExistsError,
   MediaAlreadyInUseError,
+  MediaNotImageError,
   MediaNotVideoError,
   VideoAlreadyProcessingError,
   VideoNotPendingError,
 } from './errors.js';
 import type {
+  ImageUploadCompletedEvent,
   MediaFreedEvent,
   MediaUploadedEvent,
   MediaUsedEvent,
@@ -34,6 +37,9 @@ export type MediaEntity = EntityState<{
   mimeType: string;
   isTemporary: boolean;
   createdAt: Date;
+  width: number | null;
+  height: number | null;
+  verifiedMimeType: string | null;
 }>;
 
 export const MediaEntity = {
@@ -58,6 +64,9 @@ export const MediaEntity = {
       mimeType: event.mimeType,
       isTemporary: true,
       createdAt: event.createdAt,
+      width: null,
+      height: null,
+      verifiedMimeType: null,
     };
 
     return Right({ state, event });
@@ -71,6 +80,34 @@ export const MediaEntity = {
 
     const event: MediaUsedEvent = { type: 'media.used', usedAt: cmd.now };
     const newState: MediaEntity = { ...state, isTemporary: false };
+
+    return Right({ state: newState, event });
+  },
+
+  completeImageUpload(
+    state: MediaEntity,
+    cmd: CompleteImageUploadCommand,
+  ): Either<
+    MediaNotImageError | MediaAlreadyInUseError,
+    { state: MediaEntity; event: ImageUploadCompletedEvent }
+  > {
+    if (state.type !== 'image') return Left(new MediaNotImageError());
+    if (!state.isTemporary) return Left(new MediaAlreadyInUseError());
+
+    const event: ImageUploadCompletedEvent = {
+      type: 'image.upload-completed',
+      mediaId: state.id,
+      width: cmd.width,
+      height: cmd.height,
+      verifiedMimeType: cmd.verifiedMimeType,
+    };
+
+    const newState: MediaEntity = {
+      ...state,
+      width: cmd.width,
+      height: cmd.height,
+      verifiedMimeType: cmd.verifiedMimeType,
+    };
 
     return Right({ state: newState, event });
   },
@@ -119,6 +156,8 @@ export const MediaEntity = {
       hlsManifestKey: cmd.hlsManifestKey,
       mp4PreviewKey: cmd.mp4PreviewKey,
       duration: cmd.duration,
+      width: cmd.width,
+      height: cmd.height,
     };
 
     return Right({ videoDetails: result.value.state, event });

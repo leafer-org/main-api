@@ -69,6 +69,8 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
       thumbnailPath,
       mp4PreviewPath,
       duration: Math.round(probe.duration),
+      width: probe.width,
+      height: probe.height,
       variants: selectedVariants.map((v) => ({
         resolution: v.resolution,
         bitrate: v.bitrate,

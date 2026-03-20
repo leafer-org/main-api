@@ -5,6 +5,7 @@ import { ApproveInfoModerationInteractor } from '../../application/use-cases/mod
 import { ClaimOrganizationInteractor } from '../../application/use-cases/create-and-claim-organization/claim-organization.interactor.js';
 import { CreateOrganizationInteractor } from '../../application/use-cases/manage-org/create-organization.interactor.js';
 import { DeleteOrganizationInteractor } from '../../application/use-cases/manage-org/delete-organization.interactor.js';
+import { DiscardInfoDraftChangesInteractor } from '../../application/use-cases/manage-org/discard-info-draft-changes.interactor.js';
 import { GetOrganizationDetailInteractor } from '../../application/use-cases/manage-org/get-organization-detail.interactor.js';
 import { RejectInfoModerationInteractor } from '../../application/use-cases/moderation/reject-info-moderation.interactor.js';
 import { SubmitInfoForModerationInteractor } from '../../application/use-cases/moderation/submit-info-for-moderation.interactor.js';
@@ -23,6 +24,7 @@ export class OrganizationsController {
   public constructor(
     private readonly createOrganization: CreateOrganizationInteractor,
     private readonly deleteOrganization: DeleteOrganizationInteractor,
+    private readonly discardInfoDraftChanges: DiscardInfoDraftChangesInteractor,
     private readonly claimOrganization: ClaimOrganizationInteractor,
     private readonly getOrganizationDetail: GetOrganizationDetailInteractor,
     private readonly updateInfoDraft: UpdateInfoDraftInteractor,
@@ -155,6 +157,22 @@ export class OrganizationsController {
     return this.toOrganizationDetailResponse(detail!, employees, roles);
   }
 
+  @Post(':id/discard-draft-changes')
+  @HttpCode(204)
+  public async discardDraftChanges(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtUserPayload,
+  ): Promise<void> {
+    const result = await this.discardInfoDraftChanges.execute({
+      organizationId: OrganizationId.raw(id),
+      userId: user.userId,
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError(result.error.toResponse());
+    }
+  }
+
   @Post(':id/submit-for-moderation')
   @HttpCode(204)
   public async submitForModeration(
@@ -231,6 +249,9 @@ export class OrganizationsController {
         avatarId: detail.infoDraft.avatarId ?? null,
         media: draftMedia,
         status: detail.infoDraft.status,
+        updatedAt: detail.infoDraft.updatedAt.toISOString(),
+        hasDraftChanges: detail.infoDraft.hasDraftChanges,
+        canSubmitForModeration: detail.infoDraft.canSubmitForModeration,
       },
       infoPublication: detail.infoPublication
         ? {

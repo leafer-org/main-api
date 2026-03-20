@@ -1,3 +1,4 @@
+import type { Readable } from 'node:stream';
 import type { MediaEntity } from '../domain/aggregates/media/entity.js';
 import type { VideoDetailsEntity } from '../domain/aggregates/media/entities/video-details.entity.js';
 import type { ImageProxyOptions, MediaVisibility } from '@/kernel/application/ports/media.js';
@@ -69,6 +70,7 @@ export abstract class FileStorageService {
     contentType?: string,
   ): Promise<void>;
   public abstract uploadDirectory(bucket: string, prefix: string, localDir: string): Promise<void>;
+  public abstract getObjectStream(bucket: string, key: string): Promise<Readable>;
 }
 
 export abstract class ImageProxyUrlSigner {
@@ -93,6 +95,8 @@ export type TranscodeOutput = {
   thumbnailPath: string;
   mp4PreviewPath: string;
   duration: number;
+  width: number;
+  height: number;
   variants: { resolution: string; bitrate: number }[];
 };
 
@@ -106,6 +110,18 @@ export abstract class VideoProcessingProgress {
   public abstract set(mediaId: MediaId, percent: number): Promise<void>;
   public abstract get(mediaId: MediaId): Promise<number | null>;
   public abstract delete(mediaId: MediaId): Promise<void>;
+}
+
+// --- Image metadata port ---
+
+export type ImageMetadata = {
+  width: number;
+  height: number;
+  format: string;
+};
+
+export abstract class ImageMetadataExtractor {
+  public abstract extract(stream: Readable): Promise<ImageMetadata>;
 }
 
 // --- Config port ---

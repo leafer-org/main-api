@@ -444,6 +444,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/media/image/upload-complete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Подтверждение загрузки изображения
+     * @description Извлекает метаданные изображения (размеры, формат) из S3 и сохраняет в сущность.
+     */
+    post: operations['mediaImageUploadComplete'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/media/video/upload-init': {
     parameters: {
       query?: never;
@@ -1325,6 +1345,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/organizations/{id}/discard-draft-changes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Отменить изменения черновика
+     * @description Возвращает черновик к состоянию опубликованного профиля. Требуется edit_organization.
+     */
+    post: operations['discardInfoDraftChanges'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/organizations/{id}/unpublish': {
     parameters: {
       query?: never;
@@ -2048,6 +2088,15 @@ export interface components {
         [key: string]: string;
       };
     };
+    ImageUploadCompleteRequest: {
+      mediaId: string;
+    };
+    ImageUploadCompleteResult: {
+      mediaId: string;
+      width: number;
+      height: number;
+      mimeType: string;
+    };
     VideoUploadInitRequest: {
       name: string;
       mimeType: string;
@@ -2508,6 +2557,10 @@ export interface components {
       avatarId?: string | null;
       media: components['schemas']['ResolvedMediaItem'][];
       status: components['schemas']['InfoDraftStatus'];
+      /** Format: date-time */
+      updatedAt: string;
+      hasDraftChanges: boolean;
+      canSubmitForModeration: boolean;
     };
     Employee: {
       userId: string;
@@ -4165,6 +4218,50 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  mediaImageUploadComplete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ImageUploadCompleteRequest'];
+      };
+    };
+    responses: {
+      /** @description Метаданные изображения извлечены и сохранены */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ImageUploadCompleteResult'];
+        };
+      };
+      /** @description Ошибка валидации / Доменная ошибка */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            | components['schemas']['OpenApiValidationError']
+            | components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Медиа не найдено */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
     };
@@ -6512,6 +6609,54 @@ export interface operations {
       };
       401: components['responses']['UnauthorizedError'];
       /** @description Нет доступа (требуется ORGANIZATION.MODERATE) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Организация не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  discardInfoDraftChanges: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Изменения черновика отменены */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Доменная ошибка (нет публикации или нет изменений) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+      /** @description Нет доступа (требуется edit_organization) */
       403: {
         headers: {
           [name: string]: unknown;

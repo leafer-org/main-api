@@ -8,6 +8,8 @@ export class MediaAlreadyInUseError extends CreateDomainError('media_already_in_
 
 export class MediaNotVideoError extends CreateDomainError('media_not_video', 400) {}
 
+export class MediaNotImageError extends CreateDomainError('media_not_image', 400) {}
+
 export class VideoAlreadyProcessingError extends CreateDomainError('video_already_processing', 400) {}
 
 export class VideoNotPendingError extends CreateDomainError('video_not_pending', 400) {}

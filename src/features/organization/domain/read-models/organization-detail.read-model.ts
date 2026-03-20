@@ -11,6 +11,9 @@ export type OrganizationDetailReadModel = {
     avatarId: MediaId | null;
     media: MediaItem[];
     status: 'draft' | 'moderation-request' | 'rejected';
+    updatedAt: Date;
+    hasDraftChanges: boolean;
+    canSubmitForModeration: boolean;
   };
   infoPublication: {
     name: string;

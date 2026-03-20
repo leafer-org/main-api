@@ -5,6 +5,7 @@ import { OrganizationQueryPort } from '../../../application/ports.js';
 import type { EmployeeListReadModel } from '../../../domain/read-models/employee-list.read-model.js';
 import type { EmployeeRoleListReadModel } from '../../../domain/read-models/employee-role-list.read-model.js';
 import type { OrganizationDetailReadModel } from '../../../domain/read-models/organization-detail.read-model.js';
+import { InfoDraftEntity } from '../../../domain/aggregates/organization/entities/info-draft.entity.js';
 import { OrganizationDatabaseClient } from '../client.js';
 import type { OrganizationJsonState } from '../json-state.js';
 import { organizations } from '../schema.js';
@@ -27,9 +28,31 @@ export class DrizzleOrganizationQuery implements OrganizationQueryPort {
 
     const s = row.state as OrganizationJsonState;
 
+    const draftUpdatedAt = new Date(s.infoDraft.updatedAt ?? s.createdAt);
+    const publication = s.infoPublication
+      ? { ...s.infoPublication, publishedAt: new Date(s.infoPublication.publishedAt) }
+      : null;
+
+    const infoDraft = {
+      name: s.infoDraft.name,
+      description: s.infoDraft.description,
+      avatarId: (s.infoDraft.avatarId ?? null) as OrganizationDetailReadModel['infoDraft']['avatarId'],
+      media: (s.infoDraft.media ?? []) as OrganizationDetailReadModel['infoDraft']['media'],
+      status: s.infoDraft.status as OrganizationDetailReadModel['infoDraft']['status'],
+      updatedAt: draftUpdatedAt,
+      hasDraftChanges: InfoDraftEntity.hasDraftChanges(
+        { ...s.infoDraft, updatedAt: draftUpdatedAt } as any,
+        publication as any,
+      ),
+      canSubmitForModeration: InfoDraftEntity.canSubmitForModeration(
+        { ...s.infoDraft, updatedAt: draftUpdatedAt } as any,
+        publication as any,
+      ),
+    };
+
     return {
       id: s.id as OrganizationDetailReadModel['id'],
-      infoDraft: s.infoDraft as OrganizationDetailReadModel['infoDraft'],
+      infoDraft,
       infoPublication: s.infoPublication
         ? {
             name: s.infoPublication.name,

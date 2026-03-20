@@ -20,6 +20,9 @@ const makeTemporaryMedia = (): MediaEntity => ({
   mimeType: 'image/jpeg',
   isTemporary: true,
   createdAt: NOW,
+  width: null,
+  height: null,
+  verifiedMimeType: null,
 });
 
 const makePermanentMedia = (): MediaEntity => ({
@@ -35,6 +38,9 @@ const makeVideoMedia = (): MediaEntity => ({
   mimeType: 'video/mp4',
   isTemporary: true,
   createdAt: NOW,
+  width: null,
+  height: null,
+  verifiedMimeType: null,
 });
 
 const makePendingVideoDetails = (): VideoDetailsEntity => ({
@@ -44,6 +50,8 @@ const makePendingVideoDetails = (): VideoDetailsEntity => ({
   hlsManifestKey: null,
   mp4PreviewKey: null,
   duration: null,
+  width: null,
+  height: null,
 });
 
 const makeProcessingVideoDetails = (): VideoDetailsEntity => ({
@@ -75,6 +83,9 @@ describe('MediaEntity', () => {
           mimeType: 'image/jpeg',
           isTemporary: true,
           createdAt: NOW,
+          width: null,
+          height: null,
+          verifiedMimeType: null,
         });
         expect(result.value.event.type).toBe('media.uploaded');
       }
@@ -157,6 +168,8 @@ describe('MediaEntity', () => {
         hlsManifestKey: 'video/file-1/master.m3u8',
         mp4PreviewKey: 'video/file-1/preview.mp4',
         duration: 120,
+        width: 1920,
+        height: 1080,
       });
 
       expect(isLeft(result)).toBe(false);
@@ -168,6 +181,8 @@ describe('MediaEntity', () => {
           hlsManifestKey: 'video/file-1/master.m3u8',
           mp4PreviewKey: 'video/file-1/preview.mp4',
           duration: 120,
+          width: 1920,
+          height: 1080,
         });
         expect(result.value.event.type).toBe('video.processing-completed');
       }
@@ -181,6 +196,8 @@ describe('MediaEntity', () => {
         hlsManifestKey: 'video/file-1/master.m3u8',
         mp4PreviewKey: 'video/file-1/preview.mp4',
         duration: 120,
+        width: 1920,
+        height: 1080,
       });
 
       expect(isLeft(result)).toBe(true);
@@ -233,6 +250,8 @@ describe('VideoDetailsEntity', () => {
         hlsManifestKey: null,
         mp4PreviewKey: null,
         duration: null,
+        width: null,
+        height: null,
       });
     });
   });
@@ -257,6 +276,8 @@ describe('VideoDetailsEntity', () => {
         hlsManifestKey: 'video/file-1/master.m3u8',
         mp4PreviewKey: 'video/file-1/preview.mp4',
         duration: 120,
+        width: 1920,
+        height: 1080,
       });
 
       expect(isLeft(result)).toBe(false);
@@ -268,6 +289,8 @@ describe('VideoDetailsEntity', () => {
           hlsManifestKey: 'video/file-1/master.m3u8',
           mp4PreviewKey: 'video/file-1/preview.mp4',
           duration: 120,
+          width: 1920,
+          height: 1080,
         });
       }
     });

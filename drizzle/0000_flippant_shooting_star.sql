@@ -193,7 +193,10 @@ CREATE TABLE "media" (
 	"bucket" text NOT NULL,
 	"mime_type" text NOT NULL,
 	"is_temporary" boolean DEFAULT true NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"width" integer,
+	"height" integer,
+	"verified_mime_type" text
 );
 --> statement-breakpoint
 CREATE TABLE "video_details" (
@@ -202,7 +205,9 @@ CREATE TABLE "video_details" (
 	"thumbnail_media_id" uuid,
 	"hls_manifest_key" text,
 	"mp4_preview_key" text,
-	"duration" integer
+	"duration" integer,
+	"width" integer,
+	"height" integer
 );
 --> statement-breakpoint
 CREATE TABLE "items" (

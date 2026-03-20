@@ -10,12 +10,14 @@ import {
   CachedMediaUrlService,
   IMAGE_PROXY_URL_SIGNER,
 } from './adapters/media/media-url.service.js';
+import { SharpImageMetadataExtractor } from './adapters/media/sharp-image-metadata-extractor.js';
 import { BullMQVideoProcessingQueue } from './adapters/queue/bullmq-video-processing-queue.js';
 import { RedisVideoProcessingProgress } from './adapters/redis/video-processing-progress.adapter.js';
 import { S3FileStorageService } from './adapters/s3/file-storage.service.js';
 import { S3ClientService } from './adapters/s3/s3-client.service.js';
 import {
   FileStorageService,
+  ImageMetadataExtractor,
   MediaConfig,
   MediaIdGenerator,
   MediaRepository,
@@ -28,6 +30,7 @@ import { FreeFilesInteractor } from './application/use-cases/free-files.interact
 import { GetDownloadUrlInteractor } from './application/use-cases/get-download-url.interactor.js';
 import { GetPreviewDownloadUrlInteractor } from './application/use-cases/get-preview-download-url.interactor.js';
 import { GetVideoPreviewInteractor } from './application/use-cases/get-video-preview.interactor.js';
+import { CompleteImageUploadInteractor } from './application/use-cases/upload/complete-image-upload.interactor.js';
 import { CompleteVideoUploadInteractor } from './application/use-cases/upload/complete-video-upload.interactor.js';
 import { InitVideoUploadInteractor } from './application/use-cases/upload/init-video-upload.interactor.js';
 import { RequestUploadInteractor } from './application/use-cases/upload/request-upload.interactor.js';
@@ -64,6 +67,7 @@ export const mediaConfigFactory = {
     { provide: MediaIdGenerator, useClass: UuidMediaIdGenerator },
     { provide: VideoProcessingQueue, useClass: BullMQVideoProcessingQueue },
     { provide: VideoProcessingProgress, useClass: RedisVideoProcessingProgress },
+    { provide: ImageMetadataExtractor, useClass: SharpImageMetadataExtractor },
     { provide: Clock, useClass: SystemClock },
     mediaConfigFactory,
     {
@@ -79,6 +83,7 @@ export const mediaConfigFactory = {
     { provide: MediaService, useClass: MediaServiceAdapter },
     // use cases
     RequestUploadInteractor,
+    CompleteImageUploadInteractor,
     InitVideoUploadInteractor,
     CompleteVideoUploadInteractor,
     UseFileInteractor,

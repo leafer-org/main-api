@@ -2267,6 +2267,66 @@
         }
       }
     },
+    "/media/image/upload-complete": {
+      "post": {
+        "operationId": "mediaImageUploadComplete",
+        "tags": [
+          "media"
+        ],
+        "summary": "Подтверждение загрузки изображения",
+        "description": "Извлекает метаданные изображения (размеры, формат) из S3 и сохраняет в сущность.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageUploadCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Метаданные изображения извлечены и сохранены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageUploadCompleteResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации / Доменная ошибка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Медиа не найдено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/media/video/upload-init": {
       "post": {
         "operationId": "mediaVideoUploadInit",
@@ -6337,6 +6397,69 @@
         }
       }
     },
+    "/organizations/{id}/discard-draft-changes": {
+      "post": {
+        "operationId": "discardInfoDraftChanges",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Отменить изменения черновика",
+        "description": "Возвращает черновик к состоянию опубликованного профиля. Требуется edit_organization.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Изменения черновика отменены"
+          },
+          "400": {
+            "description": "Доменная ошибка (нет публикации или нет изменений)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Нет доступа (требуется edit_organization)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Организация не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/organizations/{id}/unpublish": {
       "post": {
         "operationId": "unpublishOrganization",
@@ -10233,6 +10356,42 @@
           }
         }
       },
+      "ImageUploadCompleteRequest": {
+        "type": "object",
+        "required": [
+          "mediaId"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mediaId": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "ImageUploadCompleteResult": {
+        "type": "object",
+        "required": [
+          "mediaId",
+          "width",
+          "height",
+          "mimeType"
+        ],
+        "properties": {
+          "mediaId": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "mimeType": {
+            "type": "string"
+          }
+        }
+      },
       "VideoUploadInitRequest": {
         "type": "object",
         "required": [
@@ -12097,7 +12256,10 @@
           "name",
           "description",
           "media",
-          "status"
+          "status",
+          "updatedAt",
+          "hasDraftChanges",
+          "canSubmitForModeration"
         ],
         "properties": {
           "name": {
@@ -12120,6 +12282,16 @@
           },
           "status": {
             "$ref": "#/components/schemas/InfoDraftStatus"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hasDraftChanges": {
+            "type": "boolean"
+          },
+          "canSubmitForModeration": {
+            "type": "boolean"
           }
         }
       },

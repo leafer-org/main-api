@@ -6,6 +6,7 @@ export type OrganizationJsonState = {
     avatarId: string | null;
     media: { type: string; mediaId: string }[];
     status: string;
+    updatedAt?: string;
   };
   infoPublication: {
     name: string;

@@ -14,11 +14,19 @@ export type UseMediaCommand = {
   now: Date;
 };
 
+export type CompleteImageUploadCommand = {
+  width: number;
+  height: number;
+  verifiedMimeType: string;
+};
+
 export type CompleteVideoProcessingCommand = {
   thumbnailMediaId: MediaId;
   hlsManifestKey: string;
   mp4PreviewKey: string;
   duration: number;
+  width: number;
+  height: number;
 };
 
 export type FailVideoProcessingCommand = {

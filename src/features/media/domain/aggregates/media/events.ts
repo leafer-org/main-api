@@ -25,6 +25,14 @@ export type VideoProcessingInitiatedEvent = {
   mediaId: MediaId;
 };
 
+export type ImageUploadCompletedEvent = {
+  type: 'image.upload-completed';
+  mediaId: MediaId;
+  width: number;
+  height: number;
+  verifiedMimeType: string;
+};
+
 export type VideoProcessingCompletedEvent = {
   type: 'video.processing-completed';
   mediaId: MediaId;
@@ -32,6 +40,8 @@ export type VideoProcessingCompletedEvent = {
   hlsManifestKey: string;
   mp4PreviewKey: string;
   duration: number;
+  width: number;
+  height: number;
 };
 
 export type VideoProcessingFailedEvent = {
@@ -44,6 +54,7 @@ export type MediaEvent =
   | MediaUploadedEvent
   | MediaUsedEvent
   | MediaFreedEvent
+  | ImageUploadCompletedEvent
   | VideoProcessingInitiatedEvent
   | VideoProcessingCompletedEvent
   | VideoProcessingFailedEvent;

@@ -7,6 +7,7 @@ import type {
   CreateEmployeeRoleCommand,
   CreateOrganizationCommand,
   DeleteEmployeeRoleCommand,
+  DiscardInfoDraftChangesCommand,
   DowngradeToFreeCommand,
   InviteEmployeeCommand,
   RegenerateClaimTokenCommand,
@@ -26,6 +27,7 @@ import { InfoPublicationEntity } from './entities/info-publication.entity.js';
 import { SubscriptionEntity } from './entities/subscription.entity.js';
 import {
   InvalidClaimTokenError,
+  NoDraftChangesToDiscardError,
   OrganizationAlreadyClaimedError,
   RoleNotFoundError,
   type CannotDeleteAdminRoleError,
@@ -47,6 +49,7 @@ import type {
   EmployeeRoleCreatedEvent,
   EmployeeRoleDeletedEvent,
   EmployeeRoleUpdatedEvent,
+  InfoDraftChangesDiscardedEvent,
   InfoDraftUpdatedEvent,
   InfoModerationApprovedEvent,
   InfoModerationRejectedEvent,
@@ -109,7 +112,7 @@ export const OrganizationEntity = {
 
     const state: OrganizationEntity = {
       id: event.id,
-      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId, event.media),
+      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId, event.media, event.createdAt),
       infoPublication: null,
       employees: [
         EmployeeEntity.createOwner(event.creatorUserId, event.adminRoleId, event.createdAt),
@@ -143,7 +146,7 @@ export const OrganizationEntity = {
 
     const state: OrganizationEntity = {
       id: event.id,
-      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId, event.media),
+      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId, event.media, event.createdAt),
       infoPublication: null,
       employees: [],
       roles: [
@@ -224,6 +227,7 @@ export const OrganizationEntity = {
       cmd.description,
       cmd.avatarId,
       cmd.media,
+      cmd.now,
     );
 
     const event: InfoDraftUpdatedEvent = {
@@ -233,6 +237,28 @@ export const OrganizationEntity = {
       avatarId: cmd.avatarId,
       media: cmd.media,
       updatedAt: cmd.now,
+    };
+
+    return Right({ state: { ...state, infoDraft: newDraft, updatedAt: cmd.now }, event });
+  },
+
+  discardInfoDraftChanges(
+    state: OrganizationEntity,
+    cmd: DiscardInfoDraftChangesCommand,
+  ): Either<
+    InfoNotPublishedError | NoDraftChangesToDiscardError,
+    { state: OrganizationEntity; event: InfoDraftChangesDiscardedEvent }
+  > {
+    if (!state.infoPublication) return Left(new InfoNotPublishedError());
+    if (!InfoDraftEntity.hasDraftChanges(state.infoDraft, state.infoPublication)) {
+      return Left(new NoDraftChangesToDiscardError());
+    }
+
+    const newDraft = InfoDraftEntity.revertToPublication(state.infoPublication, cmd.now);
+
+    const event: InfoDraftChangesDiscardedEvent = {
+      type: 'organization.info-draft-changes-discarded',
+      discardedAt: cmd.now,
     };
 
     return Right({ state: { ...state, infoDraft: newDraft, updatedAt: cmd.now }, event });

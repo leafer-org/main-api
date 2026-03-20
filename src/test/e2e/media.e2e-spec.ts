@@ -126,6 +126,54 @@ describe('Media Controller (e2e)', () => {
     });
   });
 
+  // ─── POST /media/image/upload-complete ────────────────────────────────
+
+  describe('POST /media/image/upload-complete', () => {
+    it('should extract width, height and mimeType from uploaded image', async () => {
+      const uploadRes = await e2e.agent
+        .post('/media/image/upload-request')
+        .send({ name: 'complete-test.png', mimeType: 'image/png' })
+        .expect(200);
+
+      const { fileId, uploadUrl, uploadFields } = uploadRes.body;
+      await uploadViaPresignedPost(uploadUrl, uploadFields, TINY_PNG, 'image/png');
+
+      const res = await e2e.agent
+        .post('/media/image/upload-complete')
+        .send({ mediaId: fileId })
+        .expect(200);
+
+      expect(res.body).toEqual({
+        mediaId: fileId,
+        width: 1,
+        height: 1,
+        mimeType: 'image/png',
+      });
+    });
+
+    it('should return 404 for non-existent mediaId', async () => {
+      await e2e.agent
+        .post('/media/image/upload-complete')
+        .send({ mediaId: '00000000-0000-0000-0000-000000000000' })
+        .expect(404);
+    });
+
+    it('should return 400 when called on a non-image (video) media', async () => {
+      // Create a video media record via video upload init
+      const initRes = await e2e.agent
+        .post('/media/video/upload-init')
+        .send({ name: 'clip.mp4', mimeType: 'video/mp4', fileSize: 1024 * 1024 })
+        .expect(200);
+
+      const res = await e2e.agent
+        .post('/media/image/upload-complete')
+        .send({ mediaId: initRes.body.mediaId })
+        .expect(400);
+
+      expect(res.body.type).toBe('media_not_image');
+    });
+  });
+
   // ─── GET /media/preview/:mediaId ──────────────────────────────────
 
   describe('GET /media/preview/:mediaId', () => {
