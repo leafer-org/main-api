@@ -91,6 +91,7 @@ export type TranscodeInput = {
 export type TranscodeOutput = {
   hlsManifestPath: string;
   thumbnailPath: string;
+  mp4PreviewPath: string;
   duration: number;
   variants: { resolution: string; bitrate: number }[];
 };

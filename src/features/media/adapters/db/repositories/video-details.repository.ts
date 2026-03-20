@@ -23,6 +23,7 @@ export class DrizzleVideoDetailsRepository implements VideoDetailsRepository {
       processingStatus: row.processingStatus as VideoDetailsEntity['processingStatus'],
       thumbnailMediaId: row.thumbnailMediaId ? MediaId.raw(row.thumbnailMediaId) : null,
       hlsManifestKey: row.hlsManifestKey,
+      mp4PreviewKey: row.mp4PreviewKey,
       duration: row.duration,
     };
   }
@@ -36,6 +37,7 @@ export class DrizzleVideoDetailsRepository implements VideoDetailsRepository {
         processingStatus: details.processingStatus,
         thumbnailMediaId: details.thumbnailMediaId,
         hlsManifestKey: details.hlsManifestKey,
+        mp4PreviewKey: details.mp4PreviewKey,
         duration: details.duration,
       })
       .onConflictDoUpdate({
@@ -44,6 +46,7 @@ export class DrizzleVideoDetailsRepository implements VideoDetailsRepository {
           processingStatus: details.processingStatus,
           thumbnailMediaId: details.thumbnailMediaId,
           hlsManifestKey: details.hlsManifestKey,
+          mp4PreviewKey: details.mp4PreviewKey,
           duration: details.duration,
         },
       });

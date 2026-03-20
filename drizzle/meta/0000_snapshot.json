@@ -1,5 +1,5 @@
 {
-  "id": "81075d33-b4b8-4e4c-b714-f749218b286f",
+  "id": "23c16722-7764-43a2-9714-375430aad908",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1525,6 +1525,12 @@
         },
         "hls_manifest_key": {
           "name": "hls_manifest_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mp4_preview_key": {
+          "name": "mp4_preview_key",
           "type": "text",
           "primaryKey": false,
           "notNull": false

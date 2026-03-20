@@ -6,9 +6,12 @@
 
 ## Изменения
 
-### 1. Domain — VideoDetails state
-**Файл:** `src/features/media/domain/aggregates/media/video-details.ts`
-- Добавить поле `mp4PreviewKey: string | null`
+### 1. Domain — VideoDetailsEntity state
+**Файл:** `src/features/media/domain/aggregates/media/entities/video-details.entity.ts`
+- Добавить поле `mp4PreviewKey: string | null` в тип `VideoDetailsEntity`
+- В `create(mediaId)`: инициализировать `mp4PreviewKey: null`
+- В `completeProcessing(state, cmd)`: записать `mp4PreviewKey: cmd.mp4PreviewKey`
+- В `initiateProcessing(state)` и `failProcessing(state)`: сохранить текущее значение / `null`
 
 ### 2. Domain — Commands
 **Файл:** `src/features/media/domain/aggregates/media/commands.ts`
@@ -18,16 +21,13 @@
 **Файл:** `src/features/media/domain/aggregates/media/events.ts`
 - Добавить `mp4PreviewKey: string` в `VideoProcessingCompletedEvent`
 
-### 4. Domain — Decide
-**Файл:** `src/features/media/domain/aggregates/media/decide.ts`
-- Прокинуть `mp4PreviewKey` из команды в событие в ветке `CompleteVideoProcessing`
+### 4. Domain — MediaEntity
+**Файл:** `src/features/media/domain/aggregates/media/entity.ts`
+- В `completeProcessing(state, details, cmd)`: `mp4PreviewKey` прокидывается через `VideoDetailsEntity.completeProcessing` — убедиться что команда передаётся корректно
 
-### 5. Domain — Apply
-**Файл:** `src/features/media/domain/aggregates/media/apply.ts`
-- В `videoDetailsApply` добавить `mp4PreviewKey` во все ветки обработки video-событий:
-  - `processing-initiated`: `mp4PreviewKey: null`
-  - `processing-completed`: `mp4PreviewKey: event.mp4PreviewKey`
-  - `processing-failed`: сохранить текущее значение
+### 5. Domain — Unit Tests
+**Файл:** `src/features/media/domain/aggregates/media/entity.spec.ts`
+- Обновить тесты `completeProcessing` — добавить `mp4PreviewKey` в команду и проверить что он попадает в результат
 
 ### 6. DB Schema
 **Файл:** `src/features/media/adapters/db/schema.ts`
@@ -36,7 +36,7 @@
 
 ### 7. DB Repository
 **Файл:** `src/features/media/adapters/db/repositories/video-details.repository.ts`
-- Добавить `mp4PreviewKey` в маппинг `findByMediaId` и `save`
+- Добавить `mp4PreviewKey` в маппинг `findByMediaId` и `save` (upsert)
 
 ### 8. Application Ports — TranscodeOutput
 **Файл:** `src/features/media/application/ports.ts`
@@ -54,14 +54,13 @@
   - `-movflags +faststart` — moov atom в начале для мгновенного старта
   - `-crf 28` — приемлемое качество при малом размере
 - Вызвать после `extractThumbnail`, перед HLS-транскодированием
-- Добавить `mp4PreviewPath` в возвращаемый объект
+- Добавить `mp4PreviewPath` в возвращаемый `TranscodeOutput`
 
 ### 10. Worker — прокидывание ключа
 **Файл:** `src/features/media/adapters/queue/video-processing.worker.ts`
-- `uploadDirectory` уже загружает всё из `outputDir` → `preview.mp4` попадает в S3 как `video/{mediaId}/preview.mp4` автоматически
-- Вычислить `mp4PreviewKey = \`${hlsPrefix}/preview.mp4\``
-- Передать `mp4PreviewKey` в `completeProcessing`
-- Обновить сигнатуру `completeProcessing` и команду `CompleteVideoProcessing`
+- `uploadDirectory` уже загружает всё из `outputDir` — `preview.mp4` попадёт в S3 как `video/{mediaId}/preview.mp4` автоматически
+- Вычислить `mp4PreviewKey = \`video/${mediaId}/preview.mp4\``
+- Передать `mp4PreviewKey` в команду `CompleteVideoProcessingCommand` при вызове `completeProcessing`
 
 ### 11. Kernel Port — VideoStreamInfo
 **Файл:** `src/kernel/application/ports/media.ts`
@@ -69,15 +68,15 @@
 
 ### 12. Media Service Adapter
 **Файл:** `src/features/media/adapters/media/media.service.ts`
-- Добавить `buildMp4PreviewUrl(mp4PreviewKey)` — аналогично `buildHlsUrl`, конструирует URL из `s3PublicUrl + bucket + key`
-- В `getVideoStreamInfo`: вызвать `buildMp4PreviewUrl(details.mp4PreviewKey)`, включить в ответ
+- Добавить `buildMp4PreviewUrl(mp4PreviewKey: string | null)` — аналогично `buildHlsUrl`: `{S3_ENDPOINT}/{publicBucket}/${mp4PreviewKey}` (или CDN URL при наличии)
+- В `getVideoStreamInfo`: вычислить `mp4PreviewUrl` из `details.mp4PreviewKey`, включить в ответ `VideoStreamInfo`
 
 ### 13. HTTP Contracts
 **Файл:** `http-contracts/shared/media.yaml`
-- Добавить `mp4PreviewUrl` (type: string | null, format: uri) в `VideoPreviewResult`
-- Запустить `yarn openapi` для регенерации
+- Добавить `mp4PreviewUrl` (type: string, nullable: true, format: uri) в схему `VideoPreviewResult`
+- Запустить `yarn openapi` для регенерации типов
 
-### 14. Preview Interactor
+### 14. GetVideoPreview Interactor
 **Файл:** `src/features/media/application/use-cases/get-video-preview.interactor.ts`
 - Добавить `mp4PreviewUrl: info.status === 'ready' ? info.mp4PreviewUrl : null` в ответ
 
@@ -92,4 +91,4 @@ npx drizzle-kit generate
 1. Запустить `yarn openapi` — убедиться что `generated-public-schema.d.ts` содержит `mp4PreviewUrl`
 2. Запустить `npx drizzle-kit generate` — проверить миграцию
 3. Проверить компиляцию `npx tsc --noEmit`
-4. Загрузить тестовое видео, убедиться что в `/media/video/preview/:mediaId` возвращается `mp4PreviewUrl`
+4. Загрузить тестовое видео, убедиться что `GET /media/video/preview/:mediaId` возвращает `mp4PreviewUrl`

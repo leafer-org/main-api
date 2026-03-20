@@ -17,6 +17,7 @@ export type UseMediaCommand = {
 export type CompleteVideoProcessingCommand = {
   thumbnailMediaId: MediaId;
   hlsManifestKey: string;
+  mp4PreviewKey: string;
   duration: number;
 };
 

@@ -16,6 +16,7 @@ type ProbeResult = {
   duration: number;
   width: number;
   height: number;
+  hasAudio: boolean;
 };
 
 type HlsVariant = {
@@ -56,12 +57,17 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
     const thumbnailPath = join(outputDir, 'thumbnail.jpg');
     await this.extractThumbnail(localPath, thumbnailPath);
 
+    const mp4PreviewPath = join(outputDir, 'preview.mp4');
+    const previewHeight = Math.min(480, probe.height);
+    await this.generateMp4Preview(localPath, mp4PreviewPath, probe.duration, previewHeight);
+
     const hlsManifestPath = join(outputDir, 'master.m3u8');
-    await this.transcodeToHls(localPath, outputDir, selectedVariants, probe.duration, onProgress);
+    await this.transcodeToHls(localPath, outputDir, selectedVariants, probe.duration, probe.hasAudio, onProgress);
 
     return {
       hlsManifestPath,
       thumbnailPath,
+      mp4PreviewPath,
       duration: Math.round(probe.duration),
       variants: selectedVariants.map((v) => ({
         resolution: v.resolution,
@@ -71,42 +77,94 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
   }
 
   private async probe(filePath: string): Promise<ProbeResult> {
-    const { stdout } = await exec('ffprobe', [
-      '-v',
-      'quiet',
-      '-print_format',
-      'json',
-      '-show_format',
-      '-show_streams',
-      filePath,
-    ]);
+    this.logger.log(`Probing ${filePath}`);
+    try {
+      const { stdout } = await exec('ffprobe', [
+        '-v',
+        'quiet',
+        '-print_format',
+        'json',
+        '-show_format',
+        '-show_streams',
+        filePath,
+      ]);
 
-    const data = JSON.parse(stdout);
-    const videoStream = data.streams?.find((s: { codec_type: string }) => s.codec_type === 'video');
-    if (!videoStream) throw new Error('No video stream found');
+      const data = JSON.parse(stdout);
+      const videoStream = data.streams?.find((s: { codec_type: string }) => s.codec_type === 'video');
+      if (!videoStream) throw new Error('No video stream found');
+      const hasAudio = data.streams?.some((s: { codec_type: string }) => s.codec_type === 'audio') ?? false;
 
-    return {
-      duration: Number.parseFloat(data.format?.duration ?? videoStream.duration ?? '0'),
-      width: videoStream.width ?? 0,
-      height: videoStream.height ?? 0,
-    };
+      return {
+        duration: Number.parseFloat(data.format?.duration ?? videoStream.duration ?? '0'),
+        width: videoStream.width ?? 0,
+        height: videoStream.height ?? 0,
+        hasAudio,
+      };
+    } catch (err) {
+      const stderr = (err as { stderr?: string }).stderr ?? '';
+      this.logger.error(`Probe failed: ${stderr}`);
+      throw err;
+    }
   }
 
   private async extractThumbnail(inputPath: string, outputPath: string): Promise<void> {
-    await exec('ffmpeg', [
-      '-i',
-      inputPath,
-      '-ss',
-      THUMBNAIL_TIME,
-      '-vframes',
-      '1',
-      '-vf',
-      'scale=720:-2',
-      '-q:v',
-      '2',
+    this.logger.log(`Extracting thumbnail → ${outputPath}`);
+    try {
+      await exec('ffmpeg', [
+        '-i',
+        inputPath,
+        '-ss',
+        THUMBNAIL_TIME,
+        '-vframes',
+        '1',
+        '-vf',
+        'scale=720:-2',
+        '-q:v',
+        '2',
+        '-y',
+        outputPath,
+      ], { maxBuffer: 10 * 1024 * 1024 });
+    } catch (err) {
+      const stderr = (err as { stderr?: string }).stderr ?? '';
+      this.logger.error(`Thumbnail extraction failed: ${stderr}`);
+      throw err;
+    }
+  }
+
+  private async generateMp4Preview(
+    inputPath: string,
+    outputPath: string,
+    duration: number,
+    height: number,
+  ): Promise<void> {
+    // Ensure even height for libx264
+    const h = height % 2 === 0 ? height : height - 1;
+    const args = ['-i', inputPath];
+
+    if (duration > 30) {
+      args.push('-t', '30');
+    }
+
+    args.push(
+      '-vf', `scale=-2:${h}`,
+      '-c:v', 'libx264',
+      '-preset', 'fast',
+      '-crf', '28',
+      '-an',
+      '-movflags', '+faststart',
       '-y',
       outputPath,
-    ]);
+    );
+
+    this.logger.log(`Generating MP4 preview (${h}p, max 30s) → ${outputPath}`);
+    this.logger.debug(`MP4 preview args: ffmpeg ${args.join(' ')}`);
+    try {
+      await exec('ffmpeg', args, { maxBuffer: 10 * 1024 * 1024 });
+    } catch (err) {
+      const stderr = (err as { stderr?: string }).stderr ?? '';
+      this.logger.error(`MP4 preview generation failed: ${stderr}`);
+      throw err;
+    }
   }
 
   private async transcodeToHls(
@@ -114,6 +172,7 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
     outputDir: string,
     variants: HlsVariant[],
     totalDuration: number,
+    hasAudio: boolean,
     onProgress?: (percent: number) => void,
   ): Promise<void> {
     const args: string[] = ['-i', inputPath];
@@ -141,13 +200,11 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
       );
     }
 
+    if (hasAudio) {
+      args.push('-c:a', 'aac', '-b:a', '128k', '-ac', '2');
+    }
+
     args.push(
-      '-c:a',
-      'aac',
-      '-b:a',
-      '128k',
-      '-ac',
-      '2',
       '-preset',
       'fast',
       '-g',
@@ -166,11 +223,14 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
 
     // Map each variant to its own stream and playlist
     for (let i = 0; i < variants.length; i++) {
-      args.push('-map', '0:v:0', '-map', '0:a:0?');
+      args.push('-map', '0:v:0');
+      if (hasAudio) args.push('-map', '0:a:0');
     }
 
     // Use var_stream_map with named variants (360p, 720p, 1080p)
-    const streamMap = variants.map((v, i) => `v:${i},a:${i},name:${v.height}p`).join(' ');
+    const streamMap = hasAudio
+      ? variants.map((v, i) => `v:${i},a:${i},name:${v.height}p`).join(' ')
+      : variants.map((v, i) => `v:${i},name:${v.height}p`).join(' ');
     args.push(
       '-var_stream_map',
       streamMap,
@@ -182,7 +242,8 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
       join(outputDir, '%v/playlist.m3u8'),
     );
 
-    this.logger.log(`Running FFmpeg with ${variants.length} variants`);
+    this.logger.log(`Running HLS transcode with ${variants.length} variants`);
+    this.logger.debug(`HLS args: ffmpeg ${args.join(' ')}`);
 
     await new Promise<void>((resolve, reject) => {
       const proc = spawn('ffmpeg', args, { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -217,6 +278,7 @@ export class FFmpegVideoTranscoder implements VideoTranscoder {
         if (code === 0) {
           resolve();
         } else {
+          this.logger.error(`HLS transcode failed (code ${code}): ${stderrBuf.slice(-2000)}`);
           reject(new Error(`FFmpeg exited with code ${code}`));
         }
       });

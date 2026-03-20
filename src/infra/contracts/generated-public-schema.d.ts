@@ -2058,6 +2058,8 @@ export interface components {
       /** Format: uri */
       hlsUrl?: string | null;
       /** Format: uri */
+      mp4PreviewUrl?: string | null;
+      /** Format: uri */
       thumbnailUrl?: string | null;
       duration?: number | null;
     };

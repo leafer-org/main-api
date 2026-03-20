@@ -70,6 +70,7 @@ export class MediaServiceAdapter extends MediaService {
     if (!details) return null;
 
     const hlsUrl = this.buildHlsUrl(mediaId);
+    const mp4PreviewUrl = this.buildMp4PreviewUrl(details.mp4PreviewKey);
 
     let thumbnailUrl: string | null = null;
     if (details.thumbnailMediaId) {
@@ -80,6 +81,7 @@ export class MediaServiceAdapter extends MediaService {
 
     return {
       hlsUrl,
+      mp4PreviewUrl,
       thumbnailUrl,
       status: details.processingStatus as ProcessingStatus,
       duration: details.duration,
@@ -96,5 +98,10 @@ export class MediaServiceAdapter extends MediaService {
   private buildHlsUrl(mediaId: MediaId): string | null {
     if (!this.s3PublicUrl) return null;
     return `${this.s3PublicUrl}/${this.publicBucket}/video/${String(mediaId)}/master.m3u8`;
+  }
+
+  private buildMp4PreviewUrl(mp4PreviewKey: string | null): string | null {
+    if (!this.s3PublicUrl || !mp4PreviewKey) return null;
+    return `${this.s3PublicUrl}/${this.publicBucket}/${mp4PreviewKey}`;
   }
 }

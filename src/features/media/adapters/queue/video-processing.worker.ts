@@ -139,7 +139,8 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
 
       // 6. Complete processing in domain
       const hlsManifestKey = `${hlsPrefix}/master.m3u8`;
-      await this.completeProcessing(mediaId, thumbnailMediaId, hlsManifestKey, result.duration);
+      const mp4PreviewKey = `${hlsPrefix}/preview.mp4`;
+      await this.completeProcessing(mediaId, thumbnailMediaId, hlsManifestKey, mp4PreviewKey, result.duration);
 
       // 7. Move original from temp to permanent bucket
       await this.fileStorage.moveToPermanent(`${bucket}-temp`, bucket, mediaId);
@@ -179,6 +180,7 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
     mediaId: MediaId,
     thumbnailMediaId: MediaId,
     hlsManifestKey: string,
+    mp4PreviewKey: string,
     duration: number,
   ): Promise<void> {
     await this.txHost.startTransaction(async (tx) => {
@@ -190,6 +192,7 @@ export class VideoProcessingWorker implements OnModuleInit, OnModuleDestroy {
       const result = MediaEntity.completeProcessing(state, details, {
         thumbnailMediaId,
         hlsManifestKey,
+        mp4PreviewKey,
         duration,
       });
       if (isLeft(result)) throw new Error(`CompleteVideoProcessing failed: ${result.error}`);

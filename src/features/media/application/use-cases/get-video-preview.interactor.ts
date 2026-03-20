@@ -39,6 +39,7 @@ export class GetVideoPreviewInteractor {
       processingStatus: info.status,
       progress: progress ?? null,
       hlsUrl: info.status === 'ready' ? info.hlsUrl : null,
+      mp4PreviewUrl: info.status === 'ready' ? info.mp4PreviewUrl : null,
       thumbnailUrl: info.thumbnailUrl,
       duration: info.duration,
     });

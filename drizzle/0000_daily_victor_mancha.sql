@@ -201,6 +201,7 @@ CREATE TABLE "video_details" (
 	"processing_status" text DEFAULT 'pending' NOT NULL,
 	"thumbnail_media_id" uuid,
 	"hls_manifest_key" text,
+	"mp4_preview_key" text,
 	"duration" integer
 );
 --> statement-breakpoint

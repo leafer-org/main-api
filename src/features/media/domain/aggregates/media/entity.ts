@@ -117,6 +117,7 @@ export const MediaEntity = {
       mediaId: state.id,
       thumbnailMediaId: cmd.thumbnailMediaId,
       hlsManifestKey: cmd.hlsManifestKey,
+      mp4PreviewKey: cmd.mp4PreviewKey,
       duration: cmd.duration,
     };
 

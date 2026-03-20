@@ -30,6 +30,7 @@ export type VideoProcessingCompletedEvent = {
   mediaId: MediaId;
   thumbnailMediaId: MediaId;
   hlsManifestKey: string;
+  mp4PreviewKey: string;
   duration: number;
 };
 

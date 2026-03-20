@@ -15,6 +15,7 @@ export const videoDetails = pgTable('video_details', {
   processingStatus: text('processing_status').notNull().default('pending'),
   thumbnailMediaId: uuid('thumbnail_media_id'),
   hlsManifestKey: text('hls_manifest_key'),
+  mp4PreviewKey: text('mp4_preview_key'),
   duration: integer('duration'),
 });
 

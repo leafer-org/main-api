@@ -42,6 +42,7 @@ const makePendingVideoDetails = (): VideoDetailsEntity => ({
   processingStatus: 'pending',
   thumbnailMediaId: null,
   hlsManifestKey: null,
+  mp4PreviewKey: null,
   duration: null,
 });
 
@@ -154,6 +155,7 @@ describe('MediaEntity', () => {
       const result = Media.completeProcessing(state, details, {
         thumbnailMediaId: THUMBNAIL_ID,
         hlsManifestKey: 'video/file-1/master.m3u8',
+        mp4PreviewKey: 'video/file-1/preview.mp4',
         duration: 120,
       });
 
@@ -164,6 +166,7 @@ describe('MediaEntity', () => {
           processingStatus: 'ready',
           thumbnailMediaId: THUMBNAIL_ID,
           hlsManifestKey: 'video/file-1/master.m3u8',
+          mp4PreviewKey: 'video/file-1/preview.mp4',
           duration: 120,
         });
         expect(result.value.event.type).toBe('video.processing-completed');
@@ -176,6 +179,7 @@ describe('MediaEntity', () => {
       const result = Media.completeProcessing(state, details, {
         thumbnailMediaId: THUMBNAIL_ID,
         hlsManifestKey: 'video/file-1/master.m3u8',
+        mp4PreviewKey: 'video/file-1/preview.mp4',
         duration: 120,
       });
 
@@ -227,6 +231,7 @@ describe('VideoDetailsEntity', () => {
         processingStatus: 'pending',
         thumbnailMediaId: null,
         hlsManifestKey: null,
+        mp4PreviewKey: null,
         duration: null,
       });
     });
@@ -250,6 +255,7 @@ describe('VideoDetailsEntity', () => {
       const result = VideoDetailsEntity.completeProcessing(details, {
         thumbnailMediaId: THUMBNAIL_ID,
         hlsManifestKey: 'video/file-1/master.m3u8',
+        mp4PreviewKey: 'video/file-1/preview.mp4',
         duration: 120,
       });
 
@@ -260,6 +266,7 @@ describe('VideoDetailsEntity', () => {
           processingStatus: 'ready',
           thumbnailMediaId: THUMBNAIL_ID,
           hlsManifestKey: 'video/file-1/master.m3u8',
+          mp4PreviewKey: 'video/file-1/preview.mp4',
           duration: 120,
         });
       }

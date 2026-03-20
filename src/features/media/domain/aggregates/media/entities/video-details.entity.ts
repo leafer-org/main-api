@@ -11,6 +11,7 @@ export type VideoDetailsEntity = EntityState<{
   processingStatus: ProcessingStatus;
   thumbnailMediaId: MediaId | null;
   hlsManifestKey: string | null;
+  mp4PreviewKey: string | null;
   duration: number | null;
 }>;
 
@@ -21,6 +22,7 @@ export const VideoDetailsEntity = {
       processingStatus: 'pending',
       thumbnailMediaId: null,
       hlsManifestKey: null,
+      mp4PreviewKey: null,
       duration: null,
     };
   },
@@ -37,6 +39,7 @@ export const VideoDetailsEntity = {
         processingStatus: 'processing',
         thumbnailMediaId: state?.thumbnailMediaId ?? null,
         hlsManifestKey: state?.hlsManifestKey ?? null,
+        mp4PreviewKey: state?.mp4PreviewKey ?? null,
         duration: state?.duration ?? null,
       },
     });
@@ -55,6 +58,7 @@ export const VideoDetailsEntity = {
         processingStatus: 'ready',
         thumbnailMediaId: cmd.thumbnailMediaId,
         hlsManifestKey: cmd.hlsManifestKey,
+        mp4PreviewKey: cmd.mp4PreviewKey,
         duration: cmd.duration,
       },
     });
@@ -72,6 +76,7 @@ export const VideoDetailsEntity = {
         processingStatus: 'failed',
         thumbnailMediaId: state.thumbnailMediaId,
         hlsManifestKey: state.hlsManifestKey,
+        mp4PreviewKey: state.mp4PreviewKey,
         duration: state.duration,
       },
     });

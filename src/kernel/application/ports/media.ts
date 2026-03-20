@@ -19,6 +19,7 @@ export type ProcessingStatus = 'pending' | 'processing' | 'ready' | 'failed';
 
 export type VideoStreamInfo = {
   hlsUrl: string | null;
+  mp4PreviewUrl: string | null;
   thumbnailUrl: string | null;
   status: ProcessingStatus;
   duration: number | null;
