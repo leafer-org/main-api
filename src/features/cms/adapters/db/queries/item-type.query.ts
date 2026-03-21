@@ -18,6 +18,7 @@ export class DrizzleItemTypeQuery implements ItemTypeQueryPort {
     return rows.map((row) => ({
       id: TypeId.raw(row.id),
       name: row.name,
+      label: row.label,
       widgetSettings: row.widgetSettings as ItemTypeListItem['widgetSettings'],
     }));
   }

@@ -24,6 +24,7 @@ export class UpdateItemTypeInteractor {
   public async execute(command: {
     id: TypeId;
     name: string;
+    label: string;
     widgetSettings: WidgetSettings[];
   }) {
     const auth = await this.permissionCheck.mustCan(Permissions.manageCms);
@@ -38,6 +39,7 @@ export class UpdateItemTypeInteractor {
       const result = ItemTypeEntity.update(state, {
         type: 'UpdateItemType',
         name: command.name,
+        label: command.label,
         widgetSettings: command.widgetSettings,
         now,
       });
@@ -52,6 +54,7 @@ export class UpdateItemTypeInteractor {
         type: 'item-type.updated',
         typeId: newState.id,
         name: newState.name,
+        label: newState.label,
         widgetSettings: newState.widgetSettings,
         updatedAt: now,
       });

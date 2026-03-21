@@ -22,6 +22,7 @@ export class DrizzleItemTypeRepository implements ItemTypeRepository {
     return {
       id: TypeId.raw(row.id),
       name: row.name,
+      label: row.label,
       widgetSettings: row.widgetSettings as WidgetSettings[],
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -35,6 +36,7 @@ export class DrizzleItemTypeRepository implements ItemTypeRepository {
       .values({
         id: state.id as string,
         name: state.name,
+        label: state.label,
         widgetSettings: state.widgetSettings,
         createdAt: state.createdAt,
         updatedAt: state.updatedAt,
@@ -43,6 +45,7 @@ export class DrizzleItemTypeRepository implements ItemTypeRepository {
         target: cmsItemTypes.id,
         set: {
           name: state.name,
+          label: state.label,
           widgetSettings: state.widgetSettings,
           updatedAt: state.updatedAt,
         },

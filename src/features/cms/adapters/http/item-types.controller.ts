@@ -18,6 +18,7 @@ function toItemTypeDetailDto(state: Readonly<ItemTypeEntity>): PublicSchemas['It
   return {
     id: state.id,
     name: state.name,
+    label: state.label,
     widgetSettings: state.widgetSettings,
     createdAt: state.createdAt.toISOString(),
     updatedAt: state.updatedAt.toISOString(),
@@ -46,6 +47,7 @@ export class ItemTypesController {
     const result = await this.createItemType.execute({
       id: TypeId.raw(body.id),
       name: body.name,
+      label: body.label,
       widgetSettings: toWidgetSettings(body.widgetSettings),
     });
 
@@ -61,6 +63,7 @@ export class ItemTypesController {
     const result = await this.updateItemType.execute({
       id: TypeId.raw(id),
       name: body.name,
+      label: body.label,
       widgetSettings: toWidgetSettings(body.widgetSettings),
     });
 

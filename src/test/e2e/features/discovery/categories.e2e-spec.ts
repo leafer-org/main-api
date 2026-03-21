@@ -94,6 +94,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       type: 'item-type.created',
       typeId,
       name,
+      label: name.toLowerCase(),
       widgetSettings: [{ type: 'base-info', required: true }],
       createdAt: new Date().toISOString(),
     });

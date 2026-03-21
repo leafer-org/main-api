@@ -72,6 +72,7 @@ describe('CMS Item Types (e2e)', () => {
     overrides: Partial<{
       id: string;
       name: string;
+      label: string;
       widgetSettings: WidgetSettings[];
     }> = {},
   ) {
@@ -81,6 +82,7 @@ describe('CMS Item Types (e2e)', () => {
       .send({
         id: overrides.id ?? randomUUID(),
         name: overrides.name ?? 'Test Type',
+        label: overrides.label ?? 'тестовый тип',
         widgetSettings: overrides.widgetSettings ?? defaultSettings,
       });
   }
@@ -121,6 +123,7 @@ describe('CMS Item Types (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Updated',
+          label: 'обновлённый',
           widgetSettings: defaultSettings,
         })
         .expect(200);

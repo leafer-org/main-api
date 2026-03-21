@@ -32,6 +32,7 @@ export class ItemTypeProjectionKafkaHandler {
         type: 'item-type.created',
         typeId: TypeId.raw(payload.typeId),
         name: payload.name!,
+        label: payload.label!,
         widgetSettings: (payload.widgetSettings ?? []) as WidgetSettings[],
         createdAt: new Date(payload.createdAt!),
       } satisfies ItemTypeCreatedEvent);
@@ -41,6 +42,7 @@ export class ItemTypeProjectionKafkaHandler {
         type: 'item-type.updated',
         typeId: TypeId.raw(payload.typeId),
         name: payload.name!,
+        label: payload.label!,
         widgetSettings: (payload.widgetSettings ?? []) as WidgetSettings[],
         updatedAt: new Date(payload.updatedAt!),
       } satisfies ItemTypeUpdatedEvent);

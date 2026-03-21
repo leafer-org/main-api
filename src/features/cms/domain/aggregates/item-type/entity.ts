@@ -9,6 +9,7 @@ import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 export type ItemTypeEntity = EntityState<{
   id: TypeId;
   name: string;
+  label: string;
   widgetSettings: WidgetSettings[];
   createdAt: Date;
   updatedAt: Date;
@@ -45,6 +46,7 @@ export const ItemTypeEntity = {
       type: 'item-type.created',
       id: cmd.id,
       name: cmd.name,
+      label: cmd.label,
       widgetSettings: cmd.widgetSettings,
       createdAt: cmd.now,
     };
@@ -52,6 +54,7 @@ export const ItemTypeEntity = {
     const state: ItemTypeEntity = {
       id: event.id,
       name: event.name,
+      label: event.label,
       widgetSettings: event.widgetSettings,
       createdAt: event.createdAt,
       updatedAt: event.createdAt,
@@ -70,6 +73,7 @@ export const ItemTypeEntity = {
     const event: ItemTypeUpdatedEvent = {
       type: 'item-type.updated',
       name: cmd.name,
+      label: cmd.label,
       widgetSettings: cmd.widgetSettings,
       updatedAt: cmd.now,
     };
@@ -77,6 +81,7 @@ export const ItemTypeEntity = {
     const newState: ItemTypeEntity = {
       ...state,
       name: event.name,
+      label: event.label,
       widgetSettings: event.widgetSettings,
       updatedAt: event.updatedAt,
     };

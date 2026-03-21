@@ -5,6 +5,7 @@ export type CreateItemTypeCommand = {
   type: 'CreateItemType';
   id: TypeId;
   name: string;
+  label: string;
   widgetSettings: WidgetSettings[];
   now: Date;
 };
@@ -12,6 +13,7 @@ export type CreateItemTypeCommand = {
 export type UpdateItemTypeCommand = {
   type: 'UpdateItemType';
   name: string;
+  label: string;
   widgetSettings: WidgetSettings[];
   now: Date;
 };

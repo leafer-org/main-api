@@ -41,6 +41,7 @@ const ItemTypeStreamingMessage = Type.Object({
   type: Type.Union([Type.Literal('item-type.created'), Type.Literal('item-type.updated')]),
   typeId: Type.String(),
   name: Type.Optional(Type.String()),
+  label: Type.Optional(Type.String()),
   widgetSettings: Type.Optional(Type.Array(WidgetSettingsSchema)),
   createdAt: Type.Optional(Type.String()),
   updatedAt: Type.Optional(Type.String()),

@@ -78,6 +78,7 @@ const ITEM_TYPES = [
   {
     id: ITEM_TYPE_SERVICE_ID,
     name: 'Услуга',
+    label: 'услугу',
     widgetSettings: [
       { type: 'base-info', required: true },
       { type: 'category', required: true },
@@ -91,6 +92,7 @@ const ITEM_TYPES = [
   {
     id: ITEM_TYPE_EVENT_ID,
     name: 'Мероприятие',
+    label: 'мероприятие',
     widgetSettings: [
       { type: 'base-info', required: true },
       { type: 'category', required: true },

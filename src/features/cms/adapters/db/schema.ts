@@ -20,6 +20,7 @@ export type CmsCategoryRow = typeof cmsCategories.$inferSelect;
 export const cmsItemTypes = pgTable('cms_item_types', {
   id: uuid('id').primaryKey(),
   name: text('name').notNull(),
+  label: text('label').notNull(),
   widgetSettings: jsonb('widget_settings').notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),

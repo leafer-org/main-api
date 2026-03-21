@@ -5,6 +5,7 @@ export type ItemTypeCreatedEvent = {
   type: 'item-type.created';
   id: TypeId;
   name: string;
+  label: string;
   widgetSettings: WidgetSettings[];
   createdAt: Date;
 };
@@ -12,6 +13,7 @@ export type ItemTypeCreatedEvent = {
 export type ItemTypeUpdatedEvent = {
   type: 'item-type.updated';
   name: string;
+  label: string;
   widgetSettings: WidgetSettings[];
   updatedAt: Date;
 };

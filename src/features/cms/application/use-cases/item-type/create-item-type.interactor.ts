@@ -23,6 +23,7 @@ export class CreateItemTypeInteractor {
   public async execute(command: {
     id: TypeId;
     name: string;
+    label: string;
     widgetSettings: WidgetSettings[];
   }) {
     const auth = await this.permissionCheck.mustCan(Permissions.manageCms);
@@ -35,6 +36,7 @@ export class CreateItemTypeInteractor {
         type: 'CreateItemType',
         id: command.id,
         name: command.name,
+        label: command.label,
         widgetSettings: command.widgetSettings,
         now,
       });
@@ -49,6 +51,7 @@ export class CreateItemTypeInteractor {
         type: 'item-type.created',
         typeId: state.id,
         name: state.name,
+        label: state.label,
         widgetSettings: state.widgetSettings,
         createdAt: now,
       });

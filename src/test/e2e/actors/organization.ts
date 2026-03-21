@@ -27,6 +27,7 @@ export async function createItemType(
   overrides: Partial<{
     id: string;
     name: string;
+    label: string;
     widgetSettings: WidgetSettings[];
   }> = {},
 ) {
@@ -36,6 +37,7 @@ export async function createItemType(
     .send({
       id: overrides.id ?? randomUUID(),
       name: overrides.name ?? 'Test Type',
+      label: overrides.label ?? 'тестовый тип',
       widgetSettings: overrides.widgetSettings ?? [
         { type: 'base-info', required: true },
         { type: 'location', required: false },
