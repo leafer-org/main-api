@@ -173,7 +173,7 @@ describe('ItemEntity', () => {
         { type: 'owner', required: true },
         { type: 'payment', required: false, allowedStrategies: ['free'] },
       ];
-      const paymentWidget: ItemWidget = { type: 'payment', strategy: 'subscription', price: 100 };
+      const paymentWidget: ItemWidget = { type: 'payment', options: [{ name: 'Подписка', description: null, strategy: 'subscription', price: 100 }] };
       const result = ItemEntity.create({
         type: 'CreateItem',
         itemId: ITEM_ID,

@@ -2195,10 +2195,15 @@ export interface components {
       type: 'image' | 'video';
       mediaId: string;
     };
-    ItemPayment: {
+    PaymentOption: {
+      name: string;
+      description?: string | null;
       /** @enum {string} */
       strategy: 'free' | 'one-time' | 'subscription';
       price?: number | null;
+    };
+    ItemPayment: {
+      options: components['schemas']['PaymentOption'][];
     };
     ItemOwnerSummary: {
       name: string;
@@ -2339,9 +2344,7 @@ export interface components {
       | {
           /** @enum {string} */
           type: 'payment';
-          /** @enum {string} */
-          strategy: 'free' | 'one-time' | 'subscription';
-          price?: number | null;
+          options: components['schemas']['PaymentOption'][];
         }
       | {
           /** @enum {string} */
@@ -2515,11 +2518,13 @@ export interface components {
     ItemTypeListItem: {
       id: string;
       name: string;
+      label: string;
       widgetSettings: components['schemas']['WidgetSettings'][];
     };
     ItemTypeDetail: {
       id: string;
       name: string;
+      label: string;
       widgetSettings: components['schemas']['WidgetSettings'][];
       /** Format: date-time */
       createdAt: string;
@@ -5955,6 +5960,7 @@ export interface operations {
         'application/json': {
           id: string;
           name: string;
+          label: string;
           widgetSettings: components['schemas']['WidgetSettings'][];
         };
       };
@@ -6004,6 +6010,7 @@ export interface operations {
       content: {
         'application/json': {
           name: string;
+          label: string;
           widgetSettings: components['schemas']['WidgetSettings'][];
         };
       };

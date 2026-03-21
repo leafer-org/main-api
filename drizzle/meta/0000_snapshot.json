@@ -1,5 +1,5 @@
 {
-  "id": "fbed3fdf-09c6-4343-b634-315870822302",
+  "id": "d2339731-17d3-4ac0-9e6d-350c7b42e78e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -143,6 +143,12 @@
         },
         "name": {
           "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -619,14 +625,14 @@
           "primaryKey": false,
           "notNull": false
         },
-        "payment_strategy": {
-          "name": "payment_strategy",
-          "type": "text",
+        "payment_options": {
+          "name": "payment_options",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
-        "price": {
-          "name": "price",
+        "min_price": {
+          "name": "min_price",
           "type": "numeric",
           "primaryKey": false,
           "notNull": false
@@ -729,7 +735,7 @@
           "name": "discovery_items_price_idx",
           "columns": [
             {
-              "expression": "price",
+              "expression": "min_price",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

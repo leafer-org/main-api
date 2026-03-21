@@ -42,8 +42,7 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
         title: discoveryItems.title,
         description: discoveryItems.description,
         media: discoveryItems.media,
-        paymentStrategy: discoveryItems.paymentStrategy,
-        price: discoveryItems.price,
+        paymentOptions: discoveryItems.paymentOptions,
         itemRating: discoveryItems.itemRating,
         itemReviewCount: discoveryItems.itemReviewCount,
         ownerName: discoveryItems.ownerName,
@@ -98,8 +97,7 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
       title: string | null;
       description: string | null;
       media: { type: string; mediaId: string }[];
-      paymentStrategy: string | null;
-      price: string | null;
+      paymentOptions: { name: string; description: string | null; strategy: string; price: number | null }[] | null;
       itemRating: string | null;
       itemReviewCount: number;
       ownerName: string | null;
@@ -118,10 +116,14 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
       media: (row.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })) as import('@/kernel/domain/vo/media-item.js').MediaItem[],
       hasVideo: (row.media ?? []).some((m) => m.type === 'video'),
       price:
-        row.paymentStrategy !== null
+        row.paymentOptions !== null && row.paymentOptions !== undefined
           ? {
-              strategy: row.paymentStrategy as PaymentStrategy,
-              price: row.price !== null ? Number(row.price) : null,
+              options: row.paymentOptions.map((o) => ({
+                name: o.name,
+                description: o.description,
+                strategy: o.strategy as PaymentStrategy,
+                price: o.price,
+              })),
             }
           : null,
       rating: row.itemRating !== null ? Number(row.itemRating) : null,

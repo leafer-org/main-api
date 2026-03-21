@@ -10,8 +10,10 @@ import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { CatalogValidationPort } from '@/kernel/application/ports/catalog-validation.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
+import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
+import { Permissions } from '@/kernel/domain/permissions.js';
 import type { ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
-import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
+import { ALL_WIDGET_TYPES, type ItemWidget } from '@/kernel/domain/vo/widget.js';
 
 export class ItemTypeNotFoundError extends CreateDomainError('item_type_not_found', 404) {}
 
@@ -23,22 +25,30 @@ export class UpdateItemDraftInteractor {
     @Inject(CatalogValidationPort) private readonly catalogValidation: CatalogValidationPort,
     @Inject(OrganizationPermissionCheckService)
     private readonly permissionCheck: OrganizationPermissionCheckService,
+    @Inject(PermissionCheckService) private readonly globalPermissionCheck: PermissionCheckService,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
   ) {}
 
   public async execute(command: {
     organizationId: OrganizationId;
-    userId: UserId;
+    userId?: UserId;
     itemId: ItemId;
     widgets: ItemWidget[];
   }) {
-    const auth = await this.permissionCheck.mustHavePermission(
-      command.organizationId,
-      command.userId,
-      'edit_items',
-    );
-    if (isLeft(auth)) return auth;
+    const isAdmin = await this.globalPermissionCheck.can(Permissions.manageOrganization);
+
+    if (command.userId) {
+      const auth = await this.permissionCheck.mustHavePermission(
+        command.organizationId,
+        command.userId,
+        'edit_items',
+      );
+      if (isLeft(auth)) return auth;
+    } else {
+      const auth = await this.globalPermissionCheck.mustCan(Permissions.manageOrganization);
+      if (isLeft(auth)) return auth;
+    }
 
     const now = this.clock.now();
 
@@ -56,7 +66,7 @@ export class UpdateItemDraftInteractor {
         type: 'UpdateDraft',
         widgets: command.widgets,
         widgetSettings: itemType.widgetSettings,
-        allowedWidgetTypes: org.subscription.availableWidgetTypes,
+        allowedWidgetTypes: isAdmin ? ALL_WIDGET_TYPES : org.subscription.availableWidgetTypes,
         now,
       });
       if (isLeft(result)) return result;

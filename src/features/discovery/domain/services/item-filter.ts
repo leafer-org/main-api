@@ -29,13 +29,14 @@ export function filterItems(items: ItemReadModel[], filters: CategoryItemFilters
   if (filters.priceRange) {
     const { min, max } = filters.priceRange;
     result = result.filter((item) => {
-      const price = item.payment?.price;
-      if (price === null || price === undefined) {
-        return item.payment?.strategy === 'free' && (min === undefined || min === 0);
-      }
-      if (min !== undefined && price < min) return false;
-      if (max !== undefined && price > max) return false;
-      return true;
+      if (!item.payment || item.payment.options.length === 0) return false;
+      return item.payment.options.some((opt) => {
+        if (opt.strategy === 'free') return min === undefined || min === 0;
+        if (opt.price === null || opt.price === undefined) return false;
+        if (min !== undefined && opt.price < min) return false;
+        if (max !== undefined && opt.price > max) return false;
+        return true;
+      });
     });
   }
 

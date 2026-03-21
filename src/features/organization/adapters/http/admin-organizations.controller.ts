@@ -4,7 +4,7 @@ import { ItemQueryPort, OrganizationQueryPort } from '../../application/ports.js
 import { SearchAdminOrganizationsInteractor } from '../../application/use-cases/admin-organizations-list/search-admin-organizations.interactor.js';
 import { AdminCreateOrganizationInteractor } from '../../application/use-cases/create-and-claim-organization/admin-create-organization.interactor.js';
 import { RegenerateClaimTokenInteractor } from '../../application/use-cases/create-and-claim-organization/regenerate-claim-token.interactor.js';
-import { AdminCreateItemInteractor } from '../../application/use-cases/manage-items/admin-create-item.interactor.js';
+import { CreateItemInteractor } from '../../application/use-cases/manage-items/create-item.interactor.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
@@ -18,7 +18,7 @@ export class AdminOrganizationsController {
   public constructor(
     private readonly searchAdminOrganizations: SearchAdminOrganizationsInteractor,
     private readonly adminCreateOrganization: AdminCreateOrganizationInteractor,
-    private readonly adminCreateItem: AdminCreateItemInteractor,
+    private readonly createItemInteractor: CreateItemInteractor,
     private readonly regenerateClaimToken: RegenerateClaimTokenInteractor,
     @Inject(ItemQueryPort) private readonly itemQuery: ItemQueryPort,
     @Inject(OrganizationQueryPort) private readonly organizationQuery: OrganizationQueryPort,
@@ -78,7 +78,7 @@ export class AdminOrganizationsController {
   ): Promise<PublicResponse['adminCreateItem']> {
     const itemId = ItemId.raw(crypto.randomUUID());
 
-    const result = await this.adminCreateItem.execute({
+    const result = await this.createItemInteractor.execute({
       organizationId: OrganizationId.raw(orgId),
       itemId,
       typeId: TypeId.raw(body.typeId),

@@ -354,6 +354,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
         type: 'item-type.created',
         typeId,
         name: 'Service',
+        label: 'услугу',
         widgetSettings: settings,
         createdAt: new Date().toISOString(),
       });
@@ -377,6 +378,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
         type: 'item-type.created',
         typeId,
         name: 'Original',
+        label: 'оригинал',
         widgetSettings: [{ type: 'base-info', required: false }],
         createdAt: new Date().toISOString(),
       });
@@ -399,6 +401,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
         type: 'item-type.updated',
         typeId,
         name: 'Updated Service',
+        label: 'обновлённую услугу',
         widgetSettings: updatedSettings,
         updatedAt: new Date().toISOString(),
       });
@@ -431,7 +434,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
           media: [{ type: 'image', mediaId: 'img-1' }],
         },
         { type: 'location', cityId: 'city-1', lat: 55.75, lng: 37.62, address: 'Moscow' },
-        { type: 'payment', strategy: 'one-time', price: 1500 },
+        { type: 'payment', options: [{ name: 'Разовая', description: null, strategy: 'one-time', price: 1500 }] },
         { type: 'owner', organizationId: orgId, name: 'Org Name', avatarId: null },
       ]);
 
@@ -445,8 +448,8 @@ describe('Discovery Projection Handlers (e2e)', () => {
         expect(Number(row.lat)).toBeCloseTo(55.75);
         expect(Number(row.lng)).toBeCloseTo(37.62);
         expect(row.address).toBe('Moscow');
-        expect(row.paymentStrategy).toBe('one-time');
-        expect(Number(row.price)).toBe(1500);
+        expect(row.paymentOptions).toEqual([{ name: 'Разовая', description: null, strategy: 'one-time', price: 1500 }]);
+        expect(Number(row.minPrice)).toBe(1500);
         expect(row.organizationId).toBe(orgId);
         expect(row.ownerName).toBe('Org Name');
       }, WAIT_OPTIONS);

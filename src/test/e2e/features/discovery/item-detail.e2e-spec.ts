@@ -111,8 +111,12 @@ describe('GET /items/:itemId (Item Detail)', () => {
     if (options?.paymentStrategy) {
       widgets.push({
         type: 'payment',
-        strategy: options.paymentStrategy,
-        price: options.price ?? null,
+        options: [{
+          name: 'Оплата',
+          description: null,
+          strategy: options.paymentStrategy,
+          price: options.price ?? null,
+        }],
       });
     }
 
@@ -308,8 +312,7 @@ describe('GET /items/:itemId (Item Detail)', () => {
     const payment = res.body.widgets.find((w: { type: string }) => w.type === 'payment');
     expect(payment).toMatchObject({
       type: 'payment',
-      strategy: 'one-time',
-      price: 2500,
+      options: [{ name: 'Оплата', description: null, strategy: 'one-time', price: 2500 }],
     });
 
     const itemReview = res.body.widgets.find((w: { type: string }) => w.type === 'item-review');

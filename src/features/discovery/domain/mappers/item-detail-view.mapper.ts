@@ -31,8 +31,7 @@ export function toDetailView(item: ItemReadModel): ItemDetailView {
   if (item.payment) {
     widgets.push({
       type: 'payment',
-      strategy: item.payment.strategy,
-      price: item.payment.price,
+      options: item.payment.options,
     });
   }
 

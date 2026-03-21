@@ -103,8 +103,12 @@ describe('Discovery Search HTTP (e2e)', () => {
     if (opts.paymentStrategy) {
       widgets.push({
         type: 'payment',
-        strategy: opts.paymentStrategy,
-        price: opts.price ?? null,
+        options: [{
+          name: 'Оплата',
+          description: null,
+          strategy: opts.paymentStrategy,
+          price: opts.price ?? null,
+        }],
       });
     }
 

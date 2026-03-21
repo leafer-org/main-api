@@ -36,7 +36,6 @@ import { InviteEmployeeInteractor } from './application/use-cases/manage-employe
 import { RemoveEmployeeInteractor } from './application/use-cases/manage-employees/remove-employee.interactor.js';
 import { TransferOwnershipInteractor } from './application/use-cases/manage-employees/transfer-ownership.interactor.js';
 import { ApproveItemModerationInteractor } from './application/use-cases/moderation/approve-item-moderation.interactor.js';
-import { AdminCreateItemInteractor } from './application/use-cases/manage-items/admin-create-item.interactor.js';
 import { CreateItemInteractor } from './application/use-cases/manage-items/create-item.interactor.js';
 import { DeleteItemDraftInteractor } from './application/use-cases/manage-items/delete-item-draft.interactor.js';
 import { GetItemDetailInteractor } from './application/use-cases/manage-items/get-item-detail.interactor.js';
@@ -119,7 +118,6 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     GetOrganizationRolesInteractor,
 
     // Use cases — Items
-    AdminCreateItemInteractor,
     CreateItemInteractor,
     UpdateItemDraftInteractor,
     DeleteItemDraftInteractor,

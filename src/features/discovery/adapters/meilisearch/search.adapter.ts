@@ -17,7 +17,7 @@ type DiscoveryItemHit = {
   description: string;
   media: { type: string; mediaId: string }[];
   price: number | null;
-  paymentStrategy: string | null;
+  paymentStrategies: string[];
   rating: number | null;
   reviewCount: number;
   ownerName: string;
@@ -109,8 +109,15 @@ export class MeiliSearchQuery implements SearchPort {
       media: (hit.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })) as import('@/kernel/domain/vo/media-item.js').MediaItem[],
       hasVideo: (hit.media ?? []).some((m) => m.type === 'video'),
       price:
-        hit.paymentStrategy !== null
-          ? { strategy: hit.paymentStrategy as PaymentStrategy, price: hit.price }
+        hit.paymentStrategies.length > 0
+          ? {
+              options: hit.paymentStrategies.map((s) => ({
+                name: '',
+                description: null,
+                strategy: s as PaymentStrategy,
+                price: hit.price,
+              })),
+            }
           : null,
       rating: hit.rating,
       reviewCount: hit.reviewCount,

@@ -102,13 +102,17 @@ function validateWidgets(
   for (const widget of widgets) {
     if (widget.type === 'payment') {
       const settings = findWidgetSettings(widgetSettings, 'payment');
-      if (settings && !settings.allowedStrategies.includes(widget.strategy)) {
-        return Left(
-          new InvalidPaymentStrategyError({
-            strategy: widget.strategy,
-            allowed: settings.allowedStrategies,
-          }),
-        );
+      if (settings) {
+        for (const option of widget.options) {
+          if (!settings.allowedStrategies.includes(option.strategy)) {
+            return Left(
+              new InvalidPaymentStrategyError({
+                strategy: option.strategy,
+                allowed: settings.allowedStrategies,
+              }),
+            );
+          }
+        }
       }
     }
 

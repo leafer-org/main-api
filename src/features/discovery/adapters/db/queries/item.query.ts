@@ -113,16 +113,16 @@ export class DrizzleItemQuery implements ItemQueryPort {
 
     switch (sort) {
       case 'price-asc': {
-        const orderBy = [asc(discoveryItems.price), asc(discoveryItems.id)];
+        const orderBy = [asc(discoveryItems.minPrice), asc(discoveryItems.id)];
         const cursorCondition = parsed
-          ? sql`(${discoveryItems.price}, ${discoveryItems.id}) > (${parsed.value}, ${parsed.id})`
+          ? sql`(${discoveryItems.minPrice}, ${discoveryItems.id}) > (${parsed.value}, ${parsed.id})`
           : null;
         return { orderBy, cursorCondition };
       }
       case 'price-desc': {
-        const orderBy = [desc(discoveryItems.price), asc(discoveryItems.id)];
+        const orderBy = [desc(discoveryItems.minPrice), asc(discoveryItems.id)];
         const cursorCondition = parsed
-          ? sql`(${discoveryItems.price}, ${discoveryItems.id}) < (${parsed.value}, ${parsed.id})`
+          ? sql`(${discoveryItems.minPrice}, ${discoveryItems.id}) < (${parsed.value}, ${parsed.id})`
           : null;
         return { orderBy, cursorCondition };
       }
@@ -151,7 +151,7 @@ export class DrizzleItemQuery implements ItemQueryPort {
     switch (sort) {
       case 'price-asc':
       case 'price-desc':
-        value = row.price ?? '0';
+        value = row.minPrice ?? '0';
         break;
       case 'rating-desc':
         value = row.itemRating ?? '0';
@@ -168,10 +168,10 @@ export class DrizzleItemQuery implements ItemQueryPort {
       conditions.push(inArray(discoveryItems.typeId, filters.typeIds as string[]));
     }
     if (filters.priceRange?.min !== undefined && filters.priceRange?.min !== null) {
-      conditions.push(gte(discoveryItems.price, String(filters.priceRange.min)));
+      conditions.push(gte(discoveryItems.minPrice, String(filters.priceRange.min)));
     }
     if (filters.priceRange?.max !== undefined && filters.priceRange?.max !== null) {
-      conditions.push(lte(discoveryItems.price, String(filters.priceRange.max)));
+      conditions.push(lte(discoveryItems.minPrice, String(filters.priceRange.max)));
     }
     if (filters.minRating !== undefined && filters.minRating !== null) {
       conditions.push(gte(discoveryItems.itemRating, String(filters.minRating)));
@@ -320,10 +320,14 @@ export class DrizzleItemQuery implements ItemQueryPort {
       };
     }
 
-    if (row.paymentStrategy !== null) {
+    if (row.paymentOptions !== null && row.paymentOptions !== undefined) {
       model.payment = {
-        strategy: row.paymentStrategy as PaymentStrategy,
-        price: row.price !== null ? Number(row.price) : null,
+        options: (row.paymentOptions as { name: string; description: string | null; strategy: string; price: number | null }[]).map((o) => ({
+          name: o.name,
+          description: o.description,
+          strategy: o.strategy as PaymentStrategy,
+          price: o.price,
+        })),
       };
     }
 

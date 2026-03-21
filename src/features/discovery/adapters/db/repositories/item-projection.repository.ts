@@ -12,6 +12,17 @@ import {
   discoveryItems,
 } from '../schema.js';
 import type { MediaId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { ItemPayment } from '../../../domain/read-models/item.read-model.js';
+
+function computeMinPrice(payment: ItemPayment | undefined): string | null {
+  if (!payment || payment.options.length === 0) return null;
+  let min: number | null = null;
+  for (const opt of payment.options) {
+    if (opt.strategy === 'free') return '0';
+    if (opt.price !== null && (min === null || opt.price < min)) min = opt.price;
+  }
+  return min !== null ? String(min) : null;
+}
 
 @Injectable()
 export class DrizzleItemProjectionRepository implements ItemProjectionPort {
@@ -33,11 +44,8 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
         lat: item.location?.coordinates.lat ?? null,
         lng: item.location?.coordinates.lng ?? null,
         address: item.location?.address ?? null,
-        paymentStrategy: item.payment?.strategy ?? null,
-        price:
-          item.payment?.price !== undefined && item.payment?.price !== null
-            ? String(item.payment.price)
-            : null,
+        paymentOptions: item.payment?.options ?? null,
+        minPrice: computeMinPrice(item.payment),
         organizationId: item.owner?.organizationId as string | null,
         ownerName: item.owner?.name ?? null,
         ownerAvatarId: item.owner?.avatarId as string | null,
@@ -66,11 +74,7 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
           lat: item.location?.coordinates.lat ?? null,
           lng: item.location?.coordinates.lng ?? null,
           address: item.location?.address ?? null,
-          paymentStrategy: item.payment?.strategy ?? null,
-          price:
-            item.payment?.price !== undefined && item.payment?.price !== null
-              ? String(item.payment.price)
-              : null,
+          paymentOptions: item.payment?.options ?? null,
           organizationId: item.owner?.organizationId as string | null,
           ownerName: item.owner?.name ?? null,
           ownerAvatarId: item.owner?.avatarId as string | null,

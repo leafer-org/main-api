@@ -145,7 +145,7 @@ describe('GetCategoryItemsInteractor', () => {
     it('применяет SQL фильтры к рекомендациям через findCategoryItemsSorted', async () => {
       const deps = makeDeps();
       const ids = [ItemId.raw('a'), ItemId.raw('b')];
-      const filteredItem = makeItem('a', { payment: { strategy: 'one-time', price: 500 } });
+      const filteredItem = makeItem('a', { payment: { options: [{ name: 'Оплата', description: null, strategy: 'one-time', price: 500 }] } });
 
       deps.rankedListCache.get.mockResolvedValue(null);
       deps.recommendation.recommend.mockResolvedValue(ids);

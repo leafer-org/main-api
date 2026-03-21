@@ -111,8 +111,12 @@ describe('Discovery Category Items HTTP (e2e)', () => {
     if (params.price !== undefined) {
       widgets.push({
         type: 'payment',
-        strategy: params.price === null ? 'free' : 'one-time',
-        price: params.price,
+        options: [{
+          name: params.price === null ? 'Бесплатно' : 'Оплата',
+          description: null,
+          strategy: params.price === null ? 'free' : 'one-time',
+          price: params.price,
+        }],
       });
     }
 
@@ -231,7 +235,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
       expect(item.itemId).toBe(itemId);
       expect(item.typeId).toBe(typeId);
       expect(item.title).toBe('Test Item');
-      expect(item.price).toMatchObject({ strategy: 'one-time', price: 1000 });
+      expect(item.price).toMatchObject({ options: [{ name: 'Оплата', description: null, strategy: 'one-time', price: 1000 }] });
       expect(item.rating).toBe(4.5);
       expect(item.reviewCount).toBe(10);
       expect(item.owner).toMatchObject({ name: 'Org' });

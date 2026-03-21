@@ -24,9 +24,15 @@ export type ItemLocation = {
   address: string | null;
 };
 
-export type ItemPayment = {
+export type ItemPaymentOption = {
+  name: string;
+  description: string | null;
   strategy: PaymentStrategy;
   price: number | null;
+};
+
+export type ItemPayment = {
+  options: ItemPaymentOption[];
 };
 
 export type ItemCategory = {
@@ -72,17 +78,29 @@ export type ItemReadModel = {
 const PRICE_LOW_THRESHOLD = 1000;
 const PRICE_MEDIUM_THRESHOLD = 5000;
 
+function minPrice(payment: ItemPayment): { strategy: PaymentStrategy; price: number | null } | null {
+  if (payment.options.length === 0) return null;
+  let best = payment.options[0]!;
+  for (const opt of payment.options) {
+    if (opt.strategy === 'free') return opt;
+    if (opt.price !== null && (best.price === null || opt.price < best.price)) best = opt;
+  }
+  return best;
+}
+
 function priceTierLabel(payment: ItemPayment): string {
+  const cheapest = minPrice(payment);
   if (
-    payment.strategy === 'free' ||
-    payment.price === null ||
-    payment.price === undefined ||
-    payment.price === 0
+    !cheapest ||
+    cheapest.strategy === 'free' ||
+    cheapest.price === null ||
+    cheapest.price === undefined ||
+    cheapest.price === 0
   ) {
     return 'price:free';
   }
-  if (payment.price < PRICE_LOW_THRESHOLD) return 'price:low';
-  if (payment.price < PRICE_MEDIUM_THRESHOLD) return 'price:medium';
+  if (cheapest.price < PRICE_LOW_THRESHOLD) return 'price:low';
+  if (cheapest.price < PRICE_MEDIUM_THRESHOLD) return 'price:medium';
   return 'price:high';
 }
 
@@ -111,8 +129,10 @@ export function toGorseLabels(item: ItemReadModel): string[] {
     }
   }
 
-  if (item.payment?.strategy) {
-    labels.push(`payment:${item.payment.strategy}`);
+  if (item.payment?.options) {
+    for (const opt of item.payment.options) {
+      labels.push(`payment:${opt.strategy}`);
+    }
   }
   if (item.payment) {
     labels.push(priceTierLabel(item.payment));
@@ -167,7 +187,7 @@ export function projectItemFromEvent(event: ItemPublishedEvent): ItemReadModel {
         };
         break;
       case 'payment':
-        model.payment = { strategy: widget.strategy, price: widget.price };
+        model.payment = { options: widget.options };
         break;
       case 'category':
         model.category = {

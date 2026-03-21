@@ -18,7 +18,7 @@ type DiscoveryItemDocument = {
   price: number | null;
   attributeValues: string[];
   media: { type: string; mediaId: string }[];
-  paymentStrategy: string | null;
+  paymentStrategies: string[];
   rating: number | null;
   reviewCount: number;
   ownerAvatarId: string | null;
@@ -36,11 +36,15 @@ function toDocument(item: ItemReadModel): DiscoveryItemDocument {
     cityId: item.location?.cityId ?? null,
     ageGroup: item.ageGroup ?? null,
     categoryIds: item.category?.categoryIds.map(String) ?? [],
-    price: item.payment?.price ?? null,
+    price: item.payment?.options.reduce<number | null>((min, o) => {
+      if (o.strategy === 'free') return 0;
+      if (o.price === null) return min;
+      return min === null ? o.price : Math.min(min, o.price);
+    }, null) ?? null,
     attributeValues:
       item.category?.attributeValues.map((av) => `${String(av.attributeId)}:${av.value}`) ?? [],
     media: item.baseInfo?.media.map((m) => ({ type: m.type, mediaId: String(m.mediaId) })) ?? [],
-    paymentStrategy: item.payment?.strategy ?? null,
+    paymentStrategies: item.payment?.options.map((o) => o.strategy) ?? [],
     rating: item.itemReview?.rating ?? null,
     reviewCount: item.itemReview?.reviewCount ?? 0,
     ownerAvatarId: item.owner?.avatarId ? String(item.owner.avatarId) : null,

@@ -28,7 +28,14 @@ export type LocationWidget = {
   lng: number;
   address: string | null;
 };
-export type PaymentWidget = { type: 'payment'; strategy: PaymentStrategy; price: number | null };
+export type PaymentOption = {
+  name: string;
+  description: string | null;
+  strategy: PaymentStrategy;
+  price: number | null;
+};
+
+export type PaymentWidget = { type: 'payment'; options: PaymentOption[] };
 export type CategoryWidget = {
   type: 'category';
   categoryIds: CategoryId[];
@@ -71,3 +78,16 @@ export type ItemWidget =
   | ScheduleWidget;
 
 export type WidgetType = ItemWidget['type'];
+
+export const ALL_WIDGET_TYPES: WidgetType[] = [
+  'base-info',
+  'age-group',
+  'location',
+  'payment',
+  'category',
+  'owner',
+  'item-review',
+  'owner-review',
+  'event-date-time',
+  'schedule',
+];

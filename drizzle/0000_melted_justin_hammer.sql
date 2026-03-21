@@ -23,6 +23,7 @@ CREATE TABLE "cms_cities" (
 CREATE TABLE "cms_item_types" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
+	"label" text NOT NULL,
 	"widget_settings" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"created_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL
@@ -89,8 +90,8 @@ CREATE TABLE "discovery_items" (
 	"lat" double precision,
 	"lng" double precision,
 	"address" text,
-	"payment_strategy" text,
-	"price" numeric,
+	"payment_options" jsonb,
+	"min_price" numeric,
 	"organization_id" text,
 	"owner_name" text,
 	"owner_avatar_id" text,
@@ -274,7 +275,7 @@ CREATE INDEX "discovery_item_schedules_day_idx" ON "discovery_item_schedules" US
 CREATE INDEX "discovery_item_schedules_time_idx" ON "discovery_item_schedules" USING btree ("start_time","end_time");--> statement-breakpoint
 CREATE INDEX "discovery_items_city_age_idx" ON "discovery_items" USING btree ("city_id","age_group");--> statement-breakpoint
 CREATE INDEX "discovery_items_org_idx" ON "discovery_items" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "discovery_items_price_idx" ON "discovery_items" USING btree ("price");--> statement-breakpoint
+CREATE INDEX "discovery_items_price_idx" ON "discovery_items" USING btree ("min_price");--> statement-breakpoint
 CREATE INDEX "discovery_items_rating_idx" ON "discovery_items" USING btree ("item_rating");--> statement-breakpoint
 CREATE INDEX "discovery_items_published_at_idx" ON "discovery_items" USING btree ("published_at");--> statement-breakpoint
 CREATE INDEX "login_processes_phone_ip_requested_idx" ON "login_processes" USING btree ("phone_number","ip","requested_at");--> statement-breakpoint

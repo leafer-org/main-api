@@ -5198,6 +5198,7 @@
                 "required": [
                   "id",
                   "name",
+                  "label",
                   "widgetSettings"
                 ],
                 "properties": {
@@ -5205,6 +5206,10 @@
                     "type": "string"
                   },
                   "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "label": {
                     "type": "string",
                     "minLength": 1
                   },
@@ -5291,10 +5296,15 @@
                 "type": "object",
                 "required": [
                   "name",
+                  "label",
                   "widgetSettings"
                 ],
                 "properties": {
                   "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "label": {
                     "type": "string",
                     "minLength": 1
                   },
@@ -10757,12 +10767,22 @@
           }
         }
       },
-      "ItemPayment": {
+      "PaymentOption": {
         "type": "object",
         "required": [
+          "name",
           "strategy"
         ],
         "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "strategy": {
             "type": "string",
             "enum": [
@@ -10776,6 +10796,20 @@
               "number",
               "null"
             ]
+          }
+        }
+      },
+      "ItemPayment": {
+        "type": "object",
+        "required": [
+          "options"
+        ],
+        "properties": {
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentOption"
+            }
           }
         }
       },
@@ -11369,7 +11403,7 @@
             "type": "object",
             "required": [
               "type",
-              "strategy"
+              "options"
             ],
             "properties": {
               "type": {
@@ -11378,19 +11412,11 @@
                   "payment"
                 ]
               },
-              "strategy": {
-                "type": "string",
-                "enum": [
-                  "free",
-                  "one-time",
-                  "subscription"
-                ]
-              },
-              "price": {
-                "type": [
-                  "number",
-                  "null"
-                ]
+              "options": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PaymentOption"
+                }
               }
             }
           },
@@ -12069,6 +12095,7 @@
         "required": [
           "id",
           "name",
+          "label",
           "widgetSettings"
         ],
         "properties": {
@@ -12076,6 +12103,9 @@
             "type": "string"
           },
           "name": {
+            "type": "string"
+          },
+          "label": {
             "type": "string"
           },
           "widgetSettings": {
@@ -12091,6 +12121,7 @@
         "required": [
           "id",
           "name",
+          "label",
           "widgetSettings",
           "createdAt",
           "updatedAt"
@@ -12100,6 +12131,9 @@
             "type": "string"
           },
           "name": {
+            "type": "string"
+          },
+          "label": {
             "type": "string"
           },
           "widgetSettings": {

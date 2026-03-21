@@ -22,14 +22,20 @@ const LocationWidgetSchema = Type.Object({
   address: Type.Union([Type.String(), Type.Null()]),
 });
 
-const PaymentWidgetSchema = Type.Object({
-  type: Type.Literal('payment'),
+const PaymentOptionSchema = Type.Object({
+  name: Type.String(),
+  description: Type.Union([Type.String(), Type.Null()]),
   strategy: Type.Union([
     Type.Literal('free'),
     Type.Literal('one-time'),
     Type.Literal('subscription'),
   ]),
   price: Type.Union([Type.Number(), Type.Null()]),
+});
+
+const PaymentWidgetSchema = Type.Object({
+  type: Type.Literal('payment'),
+  options: Type.Array(PaymentOptionSchema),
 });
 
 const CategoryWidgetSchema = Type.Object({
