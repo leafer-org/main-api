@@ -1,4 +1,5 @@
 import type { ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 import type { ItemWidget, WidgetType } from '@/kernel/domain/vo/widget.js';
 
 // --- Lifecycle ---
@@ -9,8 +10,7 @@ export type CreateItemCommand = {
   organizationId: OrganizationId;
   typeId: TypeId;
   widgets: ItemWidget[];
-  availableWidgetTypes: WidgetType[];
-  requiredWidgetTypes: WidgetType[];
+  widgetSettings: WidgetSettings[];
   allowedWidgetTypes: WidgetType[];
   now: Date;
 };
@@ -18,8 +18,7 @@ export type CreateItemCommand = {
 export type UpdateDraftCommand = {
   type: 'UpdateDraft';
   widgets: ItemWidget[];
-  availableWidgetTypes: WidgetType[];
-  requiredWidgetTypes: WidgetType[];
+  widgetSettings: WidgetSettings[];
   allowedWidgetTypes: WidgetType[];
   now: Date;
 };

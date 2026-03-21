@@ -55,8 +55,7 @@ export class UpdateItemDraftInteractor {
       const result = ItemEntity.updateDraft(item, {
         type: 'UpdateDraft',
         widgets: command.widgets,
-        availableWidgetTypes: itemType.availableWidgetTypes,
-        requiredWidgetTypes: itemType.requiredWidgetTypes,
+        widgetSettings: itemType.widgetSettings,
         allowedWidgetTypes: org.subscription.availableWidgetTypes,
         now,
       });

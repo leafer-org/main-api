@@ -1,8 +1,7 @@
 import type { TypeId } from '../ids.js';
-import type { WidgetType } from './widget.js';
+import type { WidgetSettings } from './widget-settings.js';
 
 export type ItemTypeInfo = {
   id: TypeId;
-  availableWidgetTypes: WidgetType[];
-  requiredWidgetTypes: WidgetType[];
+  widgetSettings: WidgetSettings[];
 };

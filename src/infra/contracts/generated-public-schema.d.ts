@@ -2473,6 +2473,60 @@ export interface components {
       updatedAt: string;
     };
     /** @enum {string} */
+    PaymentStrategy: 'free' | 'one-time' | 'subscription';
+    PaymentWidgetSettings: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'payment';
+      required: boolean;
+      allowedStrategies: components['schemas']['PaymentStrategy'][];
+    };
+    EventDateTimeWidgetSettings: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'event-date-time';
+      required: boolean;
+      maxDates?: number | null;
+    };
+    BaseWidgetSettings: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type:
+        | 'base-info'
+        | 'age-group'
+        | 'location'
+        | 'category'
+        | 'owner'
+        | 'item-review'
+        | 'owner-review'
+        | 'schedule';
+      required: boolean;
+    };
+    WidgetSettings:
+      | components['schemas']['PaymentWidgetSettings']
+      | components['schemas']['EventDateTimeWidgetSettings']
+      | components['schemas']['BaseWidgetSettings'];
+    ItemTypeListItem: {
+      id: string;
+      name: string;
+      widgetSettings: components['schemas']['WidgetSettings'][];
+    };
+    ItemTypeDetail: {
+      id: string;
+      name: string;
+      widgetSettings: components['schemas']['WidgetSettings'][];
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    /** @enum {string} */
     WidgetType:
       | 'base-info'
       | 'age-group'
@@ -2484,22 +2538,6 @@ export interface components {
       | 'owner-review'
       | 'event-date-time'
       | 'schedule';
-    ItemTypeListItem: {
-      id: string;
-      name: string;
-      availableWidgetTypes: components['schemas']['WidgetType'][];
-      requiredWidgetTypes: components['schemas']['WidgetType'][];
-    };
-    ItemTypeDetail: {
-      id: string;
-      name: string;
-      availableWidgetTypes: components['schemas']['WidgetType'][];
-      requiredWidgetTypes: components['schemas']['WidgetType'][];
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-    };
     ItemWidget: {
       type: components['schemas']['WidgetType'];
       data: {
@@ -5917,8 +5955,7 @@ export interface operations {
         'application/json': {
           id: string;
           name: string;
-          availableWidgetTypes: components['schemas']['WidgetType'][];
-          requiredWidgetTypes: components['schemas']['WidgetType'][];
+          widgetSettings: components['schemas']['WidgetSettings'][];
         };
       };
     };
@@ -5967,8 +6004,7 @@ export interface operations {
       content: {
         'application/json': {
           name: string;
-          availableWidgetTypes: components['schemas']['WidgetType'][];
-          requiredWidgetTypes: components['schemas']['WidgetType'][];
+          widgetSettings: components['schemas']['WidgetSettings'][];
         };
       };
     };

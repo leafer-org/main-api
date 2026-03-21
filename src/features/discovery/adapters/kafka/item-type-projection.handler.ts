@@ -13,7 +13,7 @@ import type {
   ItemTypeUpdatedEvent,
 } from '@/kernel/domain/events/item-type.events.js';
 import { TypeId } from '@/kernel/domain/ids.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 @KafkaConsumerHandlers(DISCOVERY_CONSUMER_ID)
 @Injectable()
@@ -32,8 +32,7 @@ export class ItemTypeProjectionKafkaHandler {
         type: 'item-type.created',
         typeId: TypeId.raw(payload.typeId),
         name: payload.name!,
-        availableWidgetTypes: (payload.availableWidgetTypes ?? []) as WidgetType[],
-        requiredWidgetTypes: (payload.requiredWidgetTypes ?? []) as WidgetType[],
+        widgetSettings: (payload.widgetSettings ?? []) as WidgetSettings[],
         createdAt: new Date(payload.createdAt!),
       } satisfies ItemTypeCreatedEvent);
     } else if (payload.type === 'item-type.updated') {
@@ -42,8 +41,7 @@ export class ItemTypeProjectionKafkaHandler {
         type: 'item-type.updated',
         typeId: TypeId.raw(payload.typeId),
         name: payload.name!,
-        availableWidgetTypes: (payload.availableWidgetTypes ?? []) as WidgetType[],
-        requiredWidgetTypes: (payload.requiredWidgetTypes ?? []) as WidgetType[],
+        widgetSettings: (payload.widgetSettings ?? []) as WidgetSettings[],
         updatedAt: new Date(payload.updatedAt!),
       } satisfies ItemTypeUpdatedEvent);
     }

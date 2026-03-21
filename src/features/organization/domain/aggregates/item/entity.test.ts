@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ItemEntity } from './entity.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 import type { ItemWidget, WidgetType } from '@/kernel/domain/vo/widget.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -29,8 +30,13 @@ const OWNER_WIDGET: ItemWidget = {
 
 const WIDGETS: ItemWidget[] = [BASE_WIDGET, OWNER_WIDGET];
 
-const AVAILABLE: WidgetType[] = ['base-info', 'owner', 'age-group', 'location'];
-const REQUIRED: WidgetType[] = ['base-info', 'owner'];
+const WIDGET_SETTINGS: WidgetSettings[] = [
+  { type: 'base-info', required: true },
+  { type: 'owner', required: true },
+  { type: 'age-group', required: false },
+  { type: 'location', required: false },
+];
+
 const ALLOWED: WidgetType[] = [
   'base-info',
   'owner',
@@ -47,8 +53,7 @@ function createItem() {
     organizationId: ORG_ID,
     typeId: TYPE_ID,
     widgets: WIDGETS,
-    availableWidgetTypes: AVAILABLE,
-    requiredWidgetTypes: REQUIRED,
+    widgetSettings: WIDGET_SETTINGS,
     allowedWidgetTypes: ALLOWED,
     now: NOW,
   });
@@ -74,27 +79,6 @@ function publishedItem() {
   return r.value.state;
 }
 
-function publishedItemWithNewDraft() {
-  let state = publishedItem();
-  // Re-create a draft by updating (after unpublish creates draft, or by creating a new item scenario)
-  // Actually, let's unpublish to get draft back, then submit again
-  const unpub = ItemEntity.unpublish(state, { type: 'UnpublishItem', eventId: 'evt-2', now: NOW });
-  if (isLeft(unpub)) throw new Error('Expected Right');
-  state = unpub.value.state;
-  // Submit again
-  const sub = ItemEntity.submitForModeration(state, { type: 'SubmitItemForModeration', now: NOW });
-  if (isLeft(sub)) throw new Error('Expected Right');
-  state = sub.value.state;
-  // Approve to get published again with draft null
-  const app = ItemEntity.approveModeration(state, {
-    type: 'ApproveItemModeration',
-    eventId: 'evt-3',
-    now: NOW,
-  });
-  if (isLeft(app)) throw new Error('Expected Right');
-  return app.value.state;
-}
-
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
 describe('ItemEntity', () => {
@@ -106,8 +90,7 @@ describe('ItemEntity', () => {
         organizationId: ORG_ID,
         typeId: TYPE_ID,
         widgets: WIDGETS,
-        availableWidgetTypes: AVAILABLE,
-        requiredWidgetTypes: REQUIRED,
+        widgetSettings: WIDGET_SETTINGS,
         allowedWidgetTypes: ALLOWED,
         now: NOW,
       });
@@ -129,8 +112,7 @@ describe('ItemEntity', () => {
         organizationId: ORG_ID,
         typeId: TYPE_ID,
         widgets: [BASE_WIDGET], // missing 'owner'
-        availableWidgetTypes: AVAILABLE,
-        requiredWidgetTypes: REQUIRED,
+        widgetSettings: WIDGET_SETTINGS,
         allowedWidgetTypes: ALLOWED,
         now: NOW,
       });
@@ -149,8 +131,7 @@ describe('ItemEntity', () => {
         organizationId: ORG_ID,
         typeId: TYPE_ID,
         widgets: [...WIDGETS, scheduleWidget],
-        availableWidgetTypes: AVAILABLE, // doesn't include 'schedule'
-        requiredWidgetTypes: REQUIRED,
+        widgetSettings: WIDGET_SETTINGS, // doesn't include 'schedule'
         allowedWidgetTypes: [...ALLOWED, 'schedule'],
         now: NOW,
       });
@@ -175,8 +156,7 @@ describe('ItemEntity', () => {
         organizationId: ORG_ID,
         typeId: TYPE_ID,
         widgets: [...WIDGETS, locationWidget],
-        availableWidgetTypes: AVAILABLE,
-        requiredWidgetTypes: REQUIRED,
+        widgetSettings: WIDGET_SETTINGS,
         allowedWidgetTypes: ['base-info', 'owner'], // 'location' not allowed
         now: NOW,
       });
@@ -184,6 +164,57 @@ describe('ItemEntity', () => {
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
         expect(result.error.type).toBe('widget_not_allowed_by_plan');
+      }
+    });
+
+    it('returns InvalidPaymentStrategyError for disallowed strategy', () => {
+      const paymentSettings: WidgetSettings[] = [
+        { type: 'base-info', required: true },
+        { type: 'owner', required: true },
+        { type: 'payment', required: false, allowedStrategies: ['free'] },
+      ];
+      const paymentWidget: ItemWidget = { type: 'payment', strategy: 'subscription', price: 100 };
+      const result = ItemEntity.create({
+        type: 'CreateItem',
+        itemId: ITEM_ID,
+        organizationId: ORG_ID,
+        typeId: TYPE_ID,
+        widgets: [...WIDGETS, paymentWidget],
+        widgetSettings: paymentSettings,
+        allowedWidgetTypes: [...ALLOWED, 'payment'],
+        now: NOW,
+      });
+
+      expect(isLeft(result)).toBe(true);
+      if (isLeft(result)) {
+        expect(result.error.type).toBe('invalid_payment_strategy');
+      }
+    });
+
+    it('returns EventDateTimeLimitExceededError when maxDates exceeded', () => {
+      const dateSettings: WidgetSettings[] = [
+        { type: 'base-info', required: true },
+        { type: 'owner', required: true },
+        { type: 'event-date-time', required: false, maxDates: 1 },
+      ];
+      const dateWidget: ItemWidget = {
+        type: 'event-date-time',
+        dates: ['2024-07-01', '2024-07-02'],
+      };
+      const result = ItemEntity.create({
+        type: 'CreateItem',
+        itemId: ITEM_ID,
+        organizationId: ORG_ID,
+        typeId: TYPE_ID,
+        widgets: [...WIDGETS, dateWidget],
+        widgetSettings: dateSettings,
+        allowedWidgetTypes: [...ALLOWED, 'event-date-time'],
+        now: NOW,
+      });
+
+      expect(isLeft(result)).toBe(true);
+      if (isLeft(result)) {
+        expect(result.error.type).toBe('event_date_time_limit_exceeded');
       }
     });
   });
@@ -196,8 +227,7 @@ describe('ItemEntity', () => {
       const result = ItemEntity.updateDraft(state, {
         type: 'UpdateDraft',
         widgets: newWidgets,
-        availableWidgetTypes: AVAILABLE,
-        requiredWidgetTypes: REQUIRED,
+        widgetSettings: WIDGET_SETTINGS,
         allowedWidgetTypes: ALLOWED,
         now: LATER,
       });
@@ -212,8 +242,7 @@ describe('ItemEntity', () => {
       const result = ItemEntity.updateDraft(state, {
         type: 'UpdateDraft',
         widgets: WIDGETS,
-        availableWidgetTypes: AVAILABLE,
-        requiredWidgetTypes: REQUIRED,
+        widgetSettings: WIDGET_SETTINGS,
         allowedWidgetTypes: ALLOWED,
         now: LATER,
       });
@@ -228,8 +257,7 @@ describe('ItemEntity', () => {
       const result = ItemEntity.updateDraft(state, {
         type: 'UpdateDraft',
         widgets: WIDGETS,
-        availableWidgetTypes: AVAILABLE,
-        requiredWidgetTypes: REQUIRED,
+        widgetSettings: WIDGET_SETTINGS,
         allowedWidgetTypes: ALLOWED,
         now: LATER,
       });
@@ -248,20 +276,6 @@ describe('ItemEntity', () => {
       expect(isLeft(result)).toBe(false);
       if (isLeft(result)) return;
       expect(result.value.state).toBeNull();
-    });
-
-    it('keeps item with only publication when draft deleted', () => {
-      // published item with a new draft
-      const state = publishedItem();
-      // Unpublish to get draft back, then approve to get publication, then...
-      // Actually, let's just test: unpublish creates draft, so we need published + draft
-      // The simplest: create item, publish it, then unpublish (creates draft), and we now have draft only.
-      // For this test, we need published + draft scenario.
-      // But in our domain, after approve, draft is null. To have both, we need to:
-      // publish → then updateDraft creates a new draft... but we can't updateDraft if draft is null.
-      // Actually per spec, you can only have both if you create a new draft while published. But our current commands don't support creating a new draft on a published item.
-      // So the only scenario where we'd delete draft with publication present doesn't exist in normal flow.
-      // Let's skip this edge case and test the normal path.
     });
 
     it('returns ItemNoDraftError if no draft', () => {
@@ -339,40 +353,6 @@ describe('ItemEntity', () => {
       if (isLeft(result)) return;
       expect(result.value.state.draft).toBeNull();
       expect(result.value.state.publication).not.toBeNull();
-      expect(result.value.event.republished).toBe(false);
-    });
-
-    it('sets republished=true when publication already exists', () => {
-      // Get a published item, then unpublish (creates draft), submit, and approve again
-      let state = publishedItem();
-      const unpub = ItemEntity.unpublish(state, {
-        type: 'UnpublishItem',
-        eventId: 'evt-2',
-        now: NOW,
-      });
-      if (isLeft(unpub)) throw new Error('Expected Right');
-      state = unpub.value.state;
-
-      const sub = ItemEntity.submitForModeration(state, {
-        type: 'SubmitItemForModeration',
-        now: NOW,
-      });
-      if (isLeft(sub)) throw new Error('Expected Right');
-      state = sub.value.state;
-
-      // At this point: draft in moderation, publication is null (we unpublished)
-      // So republished would still be false. To get republished=true, we need both draft and publication.
-      // This happens when an item is published and then a new draft is submitted on top.
-      // But our current flow doesn't support creating drafts on published items without unpublishing first.
-      // Let's test the basic approve path and verify republished is correct.
-      const result = ItemEntity.approveModeration(state, {
-        type: 'ApproveItemModeration',
-        eventId: 'evt-3',
-        now: LATER,
-      });
-
-      expect(isLeft(result)).toBe(false);
-      if (isLeft(result)) return;
       expect(result.value.event.republished).toBe(false);
     });
 

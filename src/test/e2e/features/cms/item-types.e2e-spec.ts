@@ -11,7 +11,7 @@ import { AppModule } from '@/apps/app.module.js';
 import { configureApp } from '@/apps/configure-app.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 const FIXED_OTP = '123456';
 
@@ -62,15 +62,17 @@ describe('CMS Item Types (e2e)', () => {
 
   // --- Helpers ---
 
-  const available: WidgetType[] = ['base-info', 'location', 'payment'];
-  const required: WidgetType[] = ['base-info'];
+  const defaultSettings: WidgetSettings[] = [
+    { type: 'base-info', required: true },
+    { type: 'location', required: false },
+    { type: 'payment', required: false, allowedStrategies: ['free', 'one-time', 'subscription'] },
+  ];
 
   function createItemType(
     overrides: Partial<{
       id: string;
       name: string;
-      availableWidgetTypes: WidgetType[];
-      requiredWidgetTypes: WidgetType[];
+      widgetSettings: WidgetSettings[];
     }> = {},
   ) {
     return e2e.agent
@@ -79,8 +81,7 @@ describe('CMS Item Types (e2e)', () => {
       .send({
         id: overrides.id ?? randomUUID(),
         name: overrides.name ?? 'Test Type',
-        availableWidgetTypes: overrides.availableWidgetTypes ?? available,
-        requiredWidgetTypes: overrides.requiredWidgetTypes ?? required,
+        widgetSettings: overrides.widgetSettings ?? defaultSettings,
       });
   }
 
@@ -95,8 +96,7 @@ describe('CMS Item Types (e2e)', () => {
       expect(res.body).toMatchObject({
         id,
         name: 'Service',
-        availableWidgetTypes: available,
-        requiredWidgetTypes: required,
+        widgetSettings: defaultSettings,
       });
     });
 
@@ -121,8 +121,7 @@ describe('CMS Item Types (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Updated',
-          availableWidgetTypes: available,
-          requiredWidgetTypes: required,
+          widgetSettings: defaultSettings,
         })
         .expect(200);
 
@@ -133,10 +132,12 @@ describe('CMS Item Types (e2e)', () => {
   // --- Validation ---
 
   describe('Validation', () => {
-    it('should reject requiredWidgetTypes not subset of availableWidgetTypes', async () => {
+    it('should reject duplicate widget types in settings', async () => {
       const res = await createItemType({
-        availableWidgetTypes: ['base-info'],
-        requiredWidgetTypes: ['base-info', 'location'],
+        widgetSettings: [
+          { type: 'base-info', required: true },
+          { type: 'base-info', required: false },
+        ],
       });
 
       expect(res.status).toBe(400);

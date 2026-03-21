@@ -1,20 +1,18 @@
 import type { TypeId } from '@/kernel/domain/ids.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 export type CreateItemTypeCommand = {
   type: 'CreateItemType';
   id: TypeId;
   name: string;
-  availableWidgetTypes: WidgetType[];
-  requiredWidgetTypes: WidgetType[];
+  widgetSettings: WidgetSettings[];
   now: Date;
 };
 
 export type UpdateItemTypeCommand = {
   type: 'UpdateItemType';
   name: string;
-  availableWidgetTypes: WidgetType[];
-  requiredWidgetTypes: WidgetType[];
+  widgetSettings: WidgetSettings[];
   now: Date;
 };
 

@@ -55,8 +55,7 @@ export class CreateItemInteractor {
         organizationId: command.organizationId,
         typeId: command.typeId,
         widgets: command.widgets,
-        availableWidgetTypes: itemType.availableWidgetTypes,
-        requiredWidgetTypes: itemType.requiredWidgetTypes,
+        widgetSettings: itemType.widgetSettings,
         allowedWidgetTypes: org.subscription.availableWidgetTypes,
         now,
       });

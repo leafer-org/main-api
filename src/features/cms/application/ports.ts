@@ -75,8 +75,7 @@ export abstract class CategoryQueryPort {
 export type ItemTypeListItem = {
   id: TypeId;
   name: string;
-  availableWidgetTypes: ItemTypeEntity['availableWidgetTypes'];
-  requiredWidgetTypes: ItemTypeEntity['requiredWidgetTypes'];
+  widgetSettings: ItemTypeEntity['widgetSettings'];
 };
 
 export abstract class ItemTypeQueryPort {

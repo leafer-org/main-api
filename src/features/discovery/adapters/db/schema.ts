@@ -130,8 +130,7 @@ export const discoveryCategories = pgTable('discovery_categories', {
 export const discoveryItemTypes = pgTable('discovery_item_types', {
   id: uuid('id').primaryKey(),
   name: text('name').notNull(),
-  availableWidgetTypes: jsonb('available_widget_types').$type<string[]>().notNull().default([]),
-  requiredWidgetTypes: jsonb('required_widget_types').$type<string[]>().notNull().default([]),
+  widgetSettings: jsonb('widget_settings').notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
 });

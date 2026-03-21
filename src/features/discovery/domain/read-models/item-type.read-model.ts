@@ -3,14 +3,13 @@ import type {
   ItemTypeUpdatedEvent,
 } from '@/kernel/domain/events/item-type.events.js';
 import type { TypeId } from '@/kernel/domain/ids.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
-/** Тип товара. Определяет доступные и обязательные виджеты. Создаётся динамически через админку. */
+/** Тип товара. Определяет настройки виджетов. Создаётся динамически через админку. */
 export type ItemTypeReadModel = {
   typeId: TypeId;
   name: string;
-  availableWidgetTypes: WidgetType[];
-  requiredWidgetTypes: WidgetType[];
+  widgetSettings: WidgetSettings[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -22,8 +21,7 @@ export function projectItemType(
   return {
     typeId: event.typeId,
     name: event.name,
-    availableWidgetTypes: event.availableWidgetTypes,
-    requiredWidgetTypes: event.requiredWidgetTypes,
+    widgetSettings: event.widgetSettings,
     createdAt: timestamp,
     updatedAt: timestamp,
   };

@@ -12,16 +12,16 @@ async function main() {
   }
 
   await truncateAll(dbUrl);
-  console.log('Truncated all tables');
+  console.log('✓ Truncated all tables');
 
   await seedStaticRoles(dbUrl);
-  console.log('Seeded static roles');
+  console.log('✓ Seeded static roles');
 
   await seedAdminUser(dbUrl);
-  console.log('Seeded admin user');
+  console.log('✓ Seeded admin user');
 
   await seedCities(dbUrl);
-  console.log('Seeded cities');
+  console.log('✓ Seeded cities');
 }
 
 main().catch((err) => {

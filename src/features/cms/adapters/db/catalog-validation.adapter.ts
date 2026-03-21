@@ -6,7 +6,7 @@ import { ConnectionPool } from '@/infra/lib/nest-drizzle/index.js';
 import { CatalogValidationPort } from '@/kernel/application/ports/catalog-validation.js';
 import { TypeId } from '@/kernel/domain/ids.js';
 import type { ItemTypeInfo } from '@/kernel/domain/vo/item-type-info.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 @Injectable()
 export class DrizzleCatalogValidationAdapter implements CatalogValidationPort {
@@ -24,8 +24,7 @@ export class DrizzleCatalogValidationAdapter implements CatalogValidationPort {
 
     return {
       id: TypeId.raw(row.id),
-      availableWidgetTypes: row.availableWidgetTypes as WidgetType[],
-      requiredWidgetTypes: row.requiredWidgetTypes as WidgetType[],
+      widgetSettings: row.widgetSettings as WidgetSettings[],
     };
   }
 }

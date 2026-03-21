@@ -343,13 +343,18 @@ describe('Discovery Projection Handlers (e2e)', () => {
     it('should project item-type.created into discovery_item_types', async () => {
       const typeId = randomUUID();
 
+      const settings = [
+        { type: 'base-info' as const, required: true },
+        { type: 'location' as const, required: false },
+        { type: 'payment' as const, required: false, allowedStrategies: ['free' as const, 'one-time' as const, 'subscription' as const] },
+      ];
+
       await produce(itemTypeStreamingContract, {
         id: uuidv7(),
         type: 'item-type.created',
         typeId,
         name: 'Service',
-        availableWidgetTypes: ['base-info', 'location', 'payment'],
-        requiredWidgetTypes: ['base-info'],
+        widgetSettings: settings,
         createdAt: new Date().toISOString(),
       });
 
@@ -360,8 +365,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
           .where(eq(discoveryItemTypes.id, typeId));
         expectDefined(row);
         expect(row.name).toBe('Service');
-        expect(row.availableWidgetTypes).toEqual(['base-info', 'location', 'payment']);
-        expect(row.requiredWidgetTypes).toEqual(['base-info']);
+        expect(row.widgetSettings).toEqual(settings);
       }, WAIT_OPTIONS);
     });
 
@@ -373,8 +377,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
         type: 'item-type.created',
         typeId,
         name: 'Original',
-        availableWidgetTypes: ['base-info'],
-        requiredWidgetTypes: [],
+        widgetSettings: [{ type: 'base-info', required: false }],
         createdAt: new Date().toISOString(),
       });
 
@@ -386,13 +389,17 @@ describe('Discovery Projection Handlers (e2e)', () => {
         expectDefined(row);
       }, WAIT_OPTIONS);
 
+      const updatedSettings = [
+        { type: 'base-info' as const, required: true },
+        { type: 'payment' as const, required: false, allowedStrategies: ['free' as const, 'one-time' as const, 'subscription' as const] },
+      ];
+
       await produce(itemTypeStreamingContract, {
         id: uuidv7(),
         type: 'item-type.updated',
         typeId,
         name: 'Updated Service',
-        availableWidgetTypes: ['base-info', 'payment'],
-        requiredWidgetTypes: ['base-info'],
+        widgetSettings: updatedSettings,
         updatedAt: new Date().toISOString(),
       });
 
@@ -403,7 +410,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
           .where(eq(discoveryItemTypes.id, typeId));
         expectDefined(row);
         expect(row.name).toBe('Updated Service');
-        expect(row.availableWidgetTypes).toEqual(['base-info', 'payment']);
+        expect(row.widgetSettings).toEqual(updatedSettings);
       }, WAIT_OPTIONS);
     });
   });

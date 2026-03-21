@@ -8,7 +8,7 @@ import { PermissionCheckService } from '@/kernel/application/ports/permission.js
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { TypeId } from '@/kernel/domain/ids.js';
 import { Permissions } from '@/kernel/domain/permissions.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 @Injectable()
 export class CreateItemTypeInteractor {
@@ -23,8 +23,7 @@ export class CreateItemTypeInteractor {
   public async execute(command: {
     id: TypeId;
     name: string;
-    availableWidgetTypes: WidgetType[];
-    requiredWidgetTypes: WidgetType[];
+    widgetSettings: WidgetSettings[];
   }) {
     const auth = await this.permissionCheck.mustCan(Permissions.manageCms);
     if (isLeft(auth)) return auth;
@@ -36,8 +35,7 @@ export class CreateItemTypeInteractor {
         type: 'CreateItemType',
         id: command.id,
         name: command.name,
-        availableWidgetTypes: command.availableWidgetTypes,
-        requiredWidgetTypes: command.requiredWidgetTypes,
+        widgetSettings: command.widgetSettings,
         now,
       });
 
@@ -51,8 +49,7 @@ export class CreateItemTypeInteractor {
         type: 'item-type.created',
         typeId: state.id,
         name: state.name,
-        availableWidgetTypes: state.availableWidgetTypes,
-        requiredWidgetTypes: state.requiredWidgetTypes,
+        widgetSettings: state.widgetSettings,
         createdAt: now,
       });
 

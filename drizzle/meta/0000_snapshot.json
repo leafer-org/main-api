@@ -1,5 +1,5 @@
 {
-  "id": "49ebab26-9325-4810-928d-b544be8b4d7e",
+  "id": "fbed3fdf-09c6-4343-b634-315870822302",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -147,15 +147,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "available_widget_types": {
-          "name": "available_widget_types",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "required_widget_types": {
-          "name": "required_widget_types",
+        "widget_settings": {
+          "name": "widget_settings",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
@@ -533,15 +526,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "available_widget_types": {
-          "name": "available_widget_types",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "required_widget_types": {
-          "name": "required_widget_types",
+        "widget_settings": {
+          "name": "widget_settings",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true,

@@ -433,8 +433,11 @@ describe('Admin Organizations (e2e)', () => {
       const orgId = createRes.body.id;
 
       const itemType = await createItemType(e2e.agent, accessToken, {
-        availableWidgetTypes: ['base-info', 'schedule', 'event-date-time'],
-        requiredWidgetTypes: ['base-info'],
+        widgetSettings: [
+          { type: 'base-info', required: true },
+          { type: 'schedule', required: false },
+          { type: 'event-date-time', required: false, maxDates: null },
+        ],
       });
 
       const res = await e2e.agent

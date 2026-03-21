@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { type E2eApp } from '../helpers/create-app.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 export async function createOrganization(
   agent: E2eApp['agent'],
@@ -27,8 +27,7 @@ export async function createItemType(
   overrides: Partial<{
     id: string;
     name: string;
-    availableWidgetTypes: WidgetType[];
-    requiredWidgetTypes: WidgetType[];
+    widgetSettings: WidgetSettings[];
   }> = {},
 ) {
   const res = await agent
@@ -37,15 +36,14 @@ export async function createItemType(
     .send({
       id: overrides.id ?? randomUUID(),
       name: overrides.name ?? 'Test Type',
-      availableWidgetTypes: overrides.availableWidgetTypes ?? [
-        'base-info',
-        'location',
-        'payment',
-        'category',
-        'age-group',
-        'owner',
+      widgetSettings: overrides.widgetSettings ?? [
+        { type: 'base-info', required: true },
+        { type: 'location', required: false },
+        { type: 'payment', required: false, allowedStrategies: ['free', 'one-time', 'subscription'] },
+        { type: 'category', required: false },
+        { type: 'age-group', required: false },
+        { type: 'owner', required: false },
       ],
-      requiredWidgetTypes: overrides.requiredWidgetTypes ?? ['base-info'],
     })
     .expect(201);
 

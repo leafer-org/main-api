@@ -63,8 +63,7 @@ export class AdminCreateItemInteractor {
         organizationId: command.organizationId,
         typeId: command.typeId,
         widgets: command.widgets,
-        availableWidgetTypes: itemType.availableWidgetTypes,
-        requiredWidgetTypes: itemType.requiredWidgetTypes,
+        widgetSettings: itemType.widgetSettings,
         allowedWidgetTypes: ALL_WIDGET_TYPES,
         now,
       });

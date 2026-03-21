@@ -1,60 +1,58 @@
 import type { CreateItemTypeCommand, UpdateItemTypeCommand } from './commands.js';
-import { InvalidRequiredWidgetTypesError, ItemTypeAlreadyExistsError } from './errors.js';
+import { DuplicateWidgetSettingsError, ItemTypeAlreadyExistsError } from './errors.js';
 import type { ItemTypeCreatedEvent, ItemTypeUpdatedEvent } from './events.js';
 import type { EntityState } from '@/infra/ddd/entity-state.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 import type { TypeId } from '@/kernel/domain/ids.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 export type ItemTypeEntity = EntityState<{
   id: TypeId;
   name: string;
-  availableWidgetTypes: WidgetType[];
-  requiredWidgetTypes: WidgetType[];
+  widgetSettings: WidgetSettings[];
   createdAt: Date;
   updatedAt: Date;
 }>;
 
-function validateRequiredWidgetTypes(
-  available: string[],
-  required: string[],
-): Either<InvalidRequiredWidgetTypesError, void> {
-  const availableSet = new Set(available);
-  const invalid = required.filter((t) => !availableSet.has(t));
+function validateWidgetSettings(
+  settings: WidgetSettings[],
+): Either<DuplicateWidgetSettingsError, void> {
+  const seen = new Set<string>();
+  const duplicates: string[] = [];
 
-  if (invalid.length > 0) {
-    return Left(new InvalidRequiredWidgetTypesError({ invalidTypes: invalid }));
+  for (const s of settings) {
+    if (seen.has(s.type)) duplicates.push(s.type);
+    seen.add(s.type);
+  }
+
+  if (duplicates.length > 0) {
+    return Left(new DuplicateWidgetSettingsError({ duplicateTypes: duplicates }));
   }
 
   return Right(undefined);
 }
 
-type ItemTypeDecideError = ItemTypeAlreadyExistsError | InvalidRequiredWidgetTypesError;
+type ItemTypeDecideError = ItemTypeAlreadyExistsError | DuplicateWidgetSettingsError;
 
 export const ItemTypeEntity = {
   create(
     cmd: CreateItemTypeCommand,
   ): Either<ItemTypeDecideError, { state: ItemTypeEntity; event: ItemTypeCreatedEvent }> {
-    const validation = validateRequiredWidgetTypes(
-      cmd.availableWidgetTypes,
-      cmd.requiredWidgetTypes,
-    );
+    const validation = validateWidgetSettings(cmd.widgetSettings);
     if (validation.type === 'left') return validation;
 
     const event: ItemTypeCreatedEvent = {
       type: 'item-type.created',
       id: cmd.id,
       name: cmd.name,
-      availableWidgetTypes: cmd.availableWidgetTypes,
-      requiredWidgetTypes: cmd.requiredWidgetTypes,
+      widgetSettings: cmd.widgetSettings,
       createdAt: cmd.now,
     };
 
     const state: ItemTypeEntity = {
       id: event.id,
       name: event.name,
-      availableWidgetTypes: event.availableWidgetTypes,
-      requiredWidgetTypes: event.requiredWidgetTypes,
+      widgetSettings: event.widgetSettings,
       createdAt: event.createdAt,
       updatedAt: event.createdAt,
     };
@@ -66,25 +64,20 @@ export const ItemTypeEntity = {
     state: ItemTypeEntity,
     cmd: UpdateItemTypeCommand,
   ): Either<ItemTypeDecideError, { state: ItemTypeEntity; event: ItemTypeUpdatedEvent }> {
-    const validation = validateRequiredWidgetTypes(
-      cmd.availableWidgetTypes,
-      cmd.requiredWidgetTypes,
-    );
+    const validation = validateWidgetSettings(cmd.widgetSettings);
     if (validation.type === 'left') return validation;
 
     const event: ItemTypeUpdatedEvent = {
       type: 'item-type.updated',
       name: cmd.name,
-      availableWidgetTypes: cmd.availableWidgetTypes,
-      requiredWidgetTypes: cmd.requiredWidgetTypes,
+      widgetSettings: cmd.widgetSettings,
       updatedAt: cmd.now,
     };
 
     const newState: ItemTypeEntity = {
       ...state,
       name: event.name,
-      availableWidgetTypes: event.availableWidgetTypes,
-      requiredWidgetTypes: event.requiredWidgetTypes,
+      widgetSettings: event.widgetSettings,
       updatedAt: event.updatedAt,
     };
 

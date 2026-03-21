@@ -7,7 +7,7 @@ export class ItemTypeAlreadyExistsError extends CreateDomainError(
 
 export class ItemTypeNotFoundError extends CreateDomainError('item_type_not_found', 404) {}
 
-export class InvalidRequiredWidgetTypesError extends CreateDomainError(
-  'invalid_required_widget_types',
+export class DuplicateWidgetSettingsError extends CreateDomainError(
+  'duplicate_widget_settings',
   400,
-).withData<{ invalidTypes: string[] }>() {}
+).withData<{ duplicateTypes: string[] }>() {}

@@ -8,6 +8,8 @@ import type {
   UpdateDraftCommand,
 } from './commands.js';
 import {
+  EventDateTimeLimitExceededError,
+  InvalidPaymentStrategyError,
   InvalidWidgetTypesError,
   ItemDraftInModerationError,
   ItemDraftNotInModerationError,
@@ -28,6 +30,12 @@ import type {
 import type { EntityState } from '@/infra/ddd/entity-state.js';
 import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
 import type { ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
+import {
+  findWidgetSettings,
+  getAvailableWidgetTypes,
+  getRequiredWidgetTypes,
+  type WidgetSettings,
+} from '@/kernel/domain/vo/widget-settings.js';
 import type { ItemWidget, WidgetType } from '@/kernel/domain/vo/widget.js';
 
 // --- Sub-types ---
@@ -58,17 +66,23 @@ export type ItemEntity = EntityState<{
 
 // --- Widget validation ---
 
+type WidgetValidationError =
+  | InvalidWidgetTypesError
+  | MissingRequiredWidgetsError
+  | WidgetNotAllowedByPlanError
+  | InvalidPaymentStrategyError
+  | EventDateTimeLimitExceededError;
+
 function validateWidgets(
   widgets: ItemWidget[],
-  availableWidgetTypes: WidgetType[],
-  requiredWidgetTypes: WidgetType[],
+  widgetSettings: WidgetSettings[],
   allowedWidgetTypes: WidgetType[],
-): Either<
-  InvalidWidgetTypesError | MissingRequiredWidgetsError | WidgetNotAllowedByPlanError,
-  void
-> {
+): Either<WidgetValidationError, void> {
   const widgetTypes = widgets.map((w) => w.type);
   const widgetTypeSet = new Set(widgetTypes);
+
+  const requiredWidgetTypes = getRequiredWidgetTypes(widgetSettings);
+  const availableWidgetTypes = getAvailableWidgetTypes(widgetSettings);
 
   // Check required widgets
   const missing = requiredWidgetTypes.filter((t) => !widgetTypeSet.has(t));
@@ -84,6 +98,35 @@ function validateWidgets(
   const disallowed = widgetTypes.filter((t) => !allowedSet.has(t));
   if (disallowed.length > 0) return Left(new WidgetNotAllowedByPlanError({ disallowed }));
 
+  // Widget-specific validation
+  for (const widget of widgets) {
+    if (widget.type === 'payment') {
+      const settings = findWidgetSettings(widgetSettings, 'payment');
+      if (settings && !settings.allowedStrategies.includes(widget.strategy)) {
+        return Left(
+          new InvalidPaymentStrategyError({
+            strategy: widget.strategy,
+            allowed: settings.allowedStrategies,
+          }),
+        );
+      }
+    }
+
+    if (widget.type === 'event-date-time') {
+      const settings = findWidgetSettings(widgetSettings, 'event-date-time');
+      if (settings?.maxDates !== null && settings?.maxDates !== undefined) {
+        if (widget.dates.length > settings.maxDates) {
+          return Left(
+            new EventDateTimeLimitExceededError({
+              count: widget.dates.length,
+              maxDates: settings.maxDates,
+            }),
+          );
+        }
+      }
+    }
+  }
+
   return Right(undefined);
 }
 
@@ -92,16 +135,8 @@ function validateWidgets(
 export const ItemEntity = {
   create(
     cmd: CreateItemCommand,
-  ): Either<
-    InvalidWidgetTypesError | MissingRequiredWidgetsError | WidgetNotAllowedByPlanError,
-    { state: ItemEntity; event: ItemCreatedEvent }
-  > {
-    const validation = validateWidgets(
-      cmd.widgets,
-      cmd.availableWidgetTypes,
-      cmd.requiredWidgetTypes,
-      cmd.allowedWidgetTypes,
-    );
+  ): Either<WidgetValidationError, { state: ItemEntity; event: ItemCreatedEvent }> {
+    const validation = validateWidgets(cmd.widgets, cmd.widgetSettings, cmd.allowedWidgetTypes);
     if (isLeft(validation)) return validation;
 
     const event: ItemCreatedEvent = {
@@ -136,20 +171,13 @@ export const ItemEntity = {
   ): Either<
     | ItemNoDraftError
     | ItemDraftInModerationError
-    | InvalidWidgetTypesError
-    | MissingRequiredWidgetsError
-    | WidgetNotAllowedByPlanError,
+    | WidgetValidationError,
     { state: ItemEntity; event: ItemDraftUpdatedEvent }
   > {
     if (!state.draft) return Left(new ItemNoDraftError());
     if (state.draft.status === 'moderation-request') return Left(new ItemDraftInModerationError());
 
-    const validation = validateWidgets(
-      cmd.widgets,
-      cmd.availableWidgetTypes,
-      cmd.requiredWidgetTypes,
-      cmd.allowedWidgetTypes,
-    );
+    const validation = validateWidgets(cmd.widgets, cmd.widgetSettings, cmd.allowedWidgetTypes);
     if (isLeft(validation)) return validation;
 
     const event: ItemDraftUpdatedEvent = {

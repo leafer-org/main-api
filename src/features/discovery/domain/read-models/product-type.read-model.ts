@@ -1,22 +1,10 @@
 import type { TypeId } from '@/kernel/domain/ids.js';
-
-export type WidgetType =
-  | 'base-info'
-  | 'age-group'
-  | 'location'
-  | 'payment'
-  | 'category'
-  | 'owner'
-  | 'item-review'
-  | 'owner-review'
-  | 'event-date-time'
-  | 'schedule';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 export type ProductTypeReadModel = {
   typeId: TypeId;
   name: string;
-  availableWidgetTypes: WidgetType[];
-  requiredWidgetTypes: WidgetType[];
+  widgetSettings: WidgetSettings[];
   createdAt: Date;
   updatedAt: Date;
 };

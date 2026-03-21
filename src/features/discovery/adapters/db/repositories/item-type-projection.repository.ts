@@ -15,8 +15,7 @@ export class DrizzleItemTypeProjectionRepository implements ItemTypeProjectionPo
       .values({
         id: itemType.typeId as string,
         name: itemType.name,
-        availableWidgetTypes: itemType.availableWidgetTypes as string[],
-        requiredWidgetTypes: itemType.requiredWidgetTypes as string[],
+        widgetSettings: itemType.widgetSettings,
         createdAt: itemType.createdAt,
         updatedAt: itemType.updatedAt,
       })
@@ -24,8 +23,7 @@ export class DrizzleItemTypeProjectionRepository implements ItemTypeProjectionPo
         target: discoveryItemTypes.id,
         set: {
           name: itemType.name,
-          availableWidgetTypes: itemType.availableWidgetTypes as string[],
-          requiredWidgetTypes: itemType.requiredWidgetTypes as string[],
+          widgetSettings: itemType.widgetSettings,
           updatedAt: itemType.updatedAt,
         },
       });

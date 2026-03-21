@@ -5198,8 +5198,7 @@
                 "required": [
                   "id",
                   "name",
-                  "availableWidgetTypes",
-                  "requiredWidgetTypes"
+                  "widgetSettings"
                 ],
                 "properties": {
                   "id": {
@@ -5209,16 +5208,10 @@
                     "type": "string",
                     "minLength": 1
                   },
-                  "availableWidgetTypes": {
+                  "widgetSettings": {
                     "type": "array",
                     "items": {
-                      "$ref": "#/components/schemas/WidgetType"
-                    }
-                  },
-                  "requiredWidgetTypes": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/WidgetType"
+                      "$ref": "#/components/schemas/WidgetSettings"
                     }
                   }
                 }
@@ -5298,24 +5291,17 @@
                 "type": "object",
                 "required": [
                   "name",
-                  "availableWidgetTypes",
-                  "requiredWidgetTypes"
+                  "widgetSettings"
                 ],
                 "properties": {
                   "name": {
                     "type": "string",
                     "minLength": 1
                   },
-                  "availableWidgetTypes": {
+                  "widgetSettings": {
                     "type": "array",
                     "items": {
-                      "$ref": "#/components/schemas/WidgetType"
-                    }
-                  },
-                  "requiredWidgetTypes": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/WidgetType"
+                      "$ref": "#/components/schemas/WidgetSettings"
                     }
                   }
                 }
@@ -11968,6 +11954,170 @@
           }
         }
       },
+      "PaymentStrategy": {
+        "type": "string",
+        "enum": [
+          "free",
+          "one-time",
+          "subscription"
+        ]
+      },
+      "PaymentWidgetSettings": {
+        "type": "object",
+        "required": [
+          "type",
+          "required",
+          "allowedStrategies"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "payment"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "allowedStrategies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentStrategy"
+            }
+          }
+        }
+      },
+      "EventDateTimeWidgetSettings": {
+        "type": "object",
+        "required": [
+          "type",
+          "required"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "event-date-time"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "maxDates": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      },
+      "BaseWidgetSettings": {
+        "type": "object",
+        "required": [
+          "type",
+          "required"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "base-info",
+              "age-group",
+              "location",
+              "category",
+              "owner",
+              "item-review",
+              "owner-review",
+              "schedule"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WidgetSettings": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/PaymentWidgetSettings"
+          },
+          {
+            "$ref": "#/components/schemas/EventDateTimeWidgetSettings"
+          },
+          {
+            "$ref": "#/components/schemas/BaseWidgetSettings"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "payment": "#/components/schemas/PaymentWidgetSettings",
+            "event-date-time": "#/components/schemas/EventDateTimeWidgetSettings",
+            "base-info": "#/components/schemas/BaseWidgetSettings",
+            "age-group": "#/components/schemas/BaseWidgetSettings",
+            "location": "#/components/schemas/BaseWidgetSettings",
+            "category": "#/components/schemas/BaseWidgetSettings",
+            "owner": "#/components/schemas/BaseWidgetSettings",
+            "item-review": "#/components/schemas/BaseWidgetSettings",
+            "owner-review": "#/components/schemas/BaseWidgetSettings",
+            "schedule": "#/components/schemas/BaseWidgetSettings"
+          }
+        }
+      },
+      "ItemTypeListItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "widgetSettings"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "widgetSettings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WidgetSettings"
+            }
+          }
+        }
+      },
+      "ItemTypeDetail": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "widgetSettings",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "widgetSettings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WidgetSettings"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "WidgetType": {
         "type": "string",
         "enum": [
@@ -11982,74 +12132,6 @@
           "event-date-time",
           "schedule"
         ]
-      },
-      "ItemTypeListItem": {
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "availableWidgetTypes",
-          "requiredWidgetTypes"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "availableWidgetTypes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WidgetType"
-            }
-          },
-          "requiredWidgetTypes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WidgetType"
-            }
-          }
-        }
-      },
-      "ItemTypeDetail": {
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "availableWidgetTypes",
-          "requiredWidgetTypes",
-          "createdAt",
-          "updatedAt"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "availableWidgetTypes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WidgetType"
-            }
-          },
-          "requiredWidgetTypes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WidgetType"
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
       },
       "ItemWidget": {
         "type": "object",

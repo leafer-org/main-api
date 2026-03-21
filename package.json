@@ -23,7 +23,7 @@
     "serve:file-processor": "node dist/apps/file-processor.js",
     "dev:file-processor": "concurrently \"swc src -w -s --copy-files -d dist --strip-leading-paths\" \"node --watch-path dist/apps --watch-path dist/features --watch-path dist/infra --watch-path dist/kernel dist/apps/file-processor.js\"",
     "seed": "npx tsx scripts/seed.ts",
-    "seed:cities": "npx tsx scripts/seed-cities.ts"
+    "db:reset": "bash scripts/db-reset.sh"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1009.0",

@@ -1,5 +1,5 @@
 import { CreateDomainError } from '@/infra/ddd/error.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { PaymentStrategy, WidgetType } from '@/kernel/domain/vo/widget.js';
 
 export class ItemNotFoundError extends CreateDomainError('item_not_found', 404) {}
 
@@ -41,3 +41,13 @@ export class VideoNotReadyForModerationError extends CreateDomainError(
   'video_not_ready_for_moderation',
   400,
 ) {}
+
+export class InvalidPaymentStrategyError extends CreateDomainError(
+  'invalid_payment_strategy',
+  400,
+).withData<{ strategy: PaymentStrategy; allowed: PaymentStrategy[] }>() {}
+
+export class EventDateTimeLimitExceededError extends CreateDomainError(
+  'event_date_time_limit_exceeded',
+  400,
+).withData<{ count: number; maxDates: number }>() {}

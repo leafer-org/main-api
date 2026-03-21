@@ -7,7 +7,7 @@ import { cmsItemTypes } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { TypeId } from '@/kernel/domain/ids.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 @Injectable()
 export class DrizzleItemTypeRepository implements ItemTypeRepository {
@@ -22,8 +22,7 @@ export class DrizzleItemTypeRepository implements ItemTypeRepository {
     return {
       id: TypeId.raw(row.id),
       name: row.name,
-      availableWidgetTypes: row.availableWidgetTypes as WidgetType[],
-      requiredWidgetTypes: row.requiredWidgetTypes as WidgetType[],
+      widgetSettings: row.widgetSettings as WidgetSettings[],
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -36,8 +35,7 @@ export class DrizzleItemTypeRepository implements ItemTypeRepository {
       .values({
         id: state.id as string,
         name: state.name,
-        availableWidgetTypes: state.availableWidgetTypes as string[],
-        requiredWidgetTypes: state.requiredWidgetTypes as string[],
+        widgetSettings: state.widgetSettings,
         createdAt: state.createdAt,
         updatedAt: state.updatedAt,
       })
@@ -45,8 +43,7 @@ export class DrizzleItemTypeRepository implements ItemTypeRepository {
         target: cmsItemTypes.id,
         set: {
           name: state.name,
-          availableWidgetTypes: state.availableWidgetTypes as string[],
-          requiredWidgetTypes: state.requiredWidgetTypes as string[],
+          widgetSettings: state.widgetSettings,
           updatedAt: state.updatedAt,
         },
       });

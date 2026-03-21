@@ -1,13 +1,12 @@
 import type { TypeId } from '../ids.js';
-import type { WidgetType } from '../vo/widget.js';
+import type { WidgetSettings } from '../vo/widget-settings.js';
 
 export type ItemTypeCreatedEvent = {
   id: string;
   type: 'item-type.created';
   typeId: TypeId;
   name: string;
-  availableWidgetTypes: WidgetType[];
-  requiredWidgetTypes: WidgetType[];
+  widgetSettings: WidgetSettings[];
   createdAt: Date;
 };
 
@@ -16,8 +15,7 @@ export type ItemTypeUpdatedEvent = {
   type: 'item-type.updated';
   typeId: TypeId;
   name: string;
-  availableWidgetTypes: WidgetType[];
-  requiredWidgetTypes: WidgetType[];
+  widgetSettings: WidgetSettings[];
   updatedAt: Date;
 };
 

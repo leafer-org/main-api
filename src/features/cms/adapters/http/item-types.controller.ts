@@ -8,13 +8,17 @@ import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse, PublicSchemas } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { TypeId } from '@/kernel/domain/ids.js';
+import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
+
+function toWidgetSettings(raw: PublicBody['createCmsItemType']['widgetSettings']): WidgetSettings[] {
+  return raw as WidgetSettings[];
+}
 
 function toItemTypeDetailDto(state: Readonly<ItemTypeEntity>): PublicSchemas['ItemTypeDetail'] {
   return {
     id: state.id,
     name: state.name,
-    availableWidgetTypes: state.availableWidgetTypes,
-    requiredWidgetTypes: state.requiredWidgetTypes,
+    widgetSettings: state.widgetSettings,
     createdAt: state.createdAt.toISOString(),
     updatedAt: state.updatedAt.toISOString(),
   };
@@ -42,8 +46,7 @@ export class ItemTypesController {
     const result = await this.createItemType.execute({
       id: TypeId.raw(body.id),
       name: body.name,
-      availableWidgetTypes: body.availableWidgetTypes,
-      requiredWidgetTypes: body.requiredWidgetTypes,
+      widgetSettings: toWidgetSettings(body.widgetSettings),
     });
 
     if (isLeft(result)) throw domainToHttpError<'createCmsItemType'>(result.error.toResponse());
@@ -58,8 +61,7 @@ export class ItemTypesController {
     const result = await this.updateItemType.execute({
       id: TypeId.raw(id),
       name: body.name,
-      availableWidgetTypes: body.availableWidgetTypes,
-      requiredWidgetTypes: body.requiredWidgetTypes,
+      widgetSettings: toWidgetSettings(body.widgetSettings),
     });
 
     if (isLeft(result)) throw domainToHttpError<'updateCmsItemType'>(result.error.toResponse());

@@ -23,8 +23,7 @@ CREATE TABLE "cms_cities" (
 CREATE TABLE "cms_item_types" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
-	"available_widget_types" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"required_widget_types" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"widget_settings" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"created_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL
 );
@@ -74,8 +73,7 @@ CREATE TABLE "discovery_item_schedules" (
 CREATE TABLE "discovery_item_types" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
-	"available_widget_types" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"required_widget_types" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"widget_settings" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"created_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL
 );
