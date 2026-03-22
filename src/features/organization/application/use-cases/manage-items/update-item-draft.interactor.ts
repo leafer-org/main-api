@@ -14,6 +14,7 @@ import { PermissionCheckService } from '@/kernel/application/ports/permission.js
 import { Permissions } from '@/kernel/domain/permissions.js';
 import type { ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 import { ALL_WIDGET_TYPES, type ItemWidget } from '@/kernel/domain/vo/widget.js';
+import { fillOwnerWidget } from './create-item.interactor.js';
 
 export class ItemTypeNotFoundError extends CreateDomainError('item_type_not_found', 404) {}
 
@@ -62,9 +63,11 @@ export class UpdateItemDraftInteractor {
       const itemType = await this.catalogValidation.getItemType(item.typeId);
       if (!itemType) return Left(new ItemTypeNotFoundError());
 
+      const widgets = fillOwnerWidget(command.widgets, command.organizationId, org.infoDraft);
+
       const result = ItemEntity.updateDraft(item, {
         type: 'UpdateDraft',
-        widgets: command.widgets,
+        widgets,
         widgetSettings: itemType.widgetSettings,
         allowedWidgetTypes: isAdmin ? ALL_WIDGET_TYPES : org.subscription.availableWidgetTypes,
         now,

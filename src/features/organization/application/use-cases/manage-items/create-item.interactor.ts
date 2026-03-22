@@ -12,9 +12,27 @@ import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { Permissions } from '@/kernel/domain/permissions.js';
 import type { ItemId, OrganizationId, TypeId, UserId } from '@/kernel/domain/ids.js';
-import { ALL_WIDGET_TYPES, type ItemWidget } from '@/kernel/domain/vo/widget.js';
+import { ALL_WIDGET_TYPES, type ItemWidget, type OwnerWidget } from '@/kernel/domain/vo/widget.js';
 
 export class ItemTypeNotFoundError extends CreateDomainError('item_type_not_found', 404) {}
+
+export function fillOwnerWidget(
+  widgets: ItemWidget[],
+  organizationId: OrganizationId,
+  infoDraft: { name: string; avatarId: OwnerWidget['avatarId'] },
+): ItemWidget[] {
+  const ownerWidget: OwnerWidget = {
+    type: 'owner',
+    organizationId,
+    name: infoDraft.name,
+    avatarId: infoDraft.avatarId,
+  };
+
+  const hasOwner = widgets.some((w) => w.type === 'owner');
+  return hasOwner
+    ? widgets.map((w) => (w.type === 'owner' ? ownerWidget : w))
+    : [...widgets, ownerWidget];
+}
 
 @Injectable()
 export class CreateItemInteractor {
@@ -59,12 +77,14 @@ export class CreateItemInteractor {
       const org = await this.organizationRepository.findById(tx, command.organizationId);
       if (!org) return Left(new OrganizationNotFoundError());
 
+      const widgets = fillOwnerWidget(command.widgets, command.organizationId, org.infoDraft);
+
       const result = ItemEntity.create({
         type: 'CreateItem',
         itemId: command.itemId,
         organizationId: command.organizationId,
         typeId: command.typeId,
-        widgets: command.widgets,
+        widgets,
         widgetSettings: itemType.widgetSettings,
         allowedWidgetTypes: isAdmin ? ALL_WIDGET_TYPES : org.subscription.availableWidgetTypes,
         now,
