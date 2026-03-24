@@ -51,4 +51,21 @@ export class InteractionsController {
       type: 'show-contacts',
     });
   }
+
+  @Post('contact-click')
+  @HttpCode(204)
+  public async contactClick(
+    @Body() body: PublicBody['recordContactClick'],
+    @CurrentUser() user: JwtUserPayload,
+  ): Promise<void> {
+    await this.recordInteraction.execute({
+      userId: user.userId,
+      itemId: ItemId.raw(body.itemId),
+      type: 'contact-click',
+      metadata: {
+        ...(body.contactIndex !== undefined && { contactIndex: body.contactIndex }),
+        ...(body.contactType !== undefined && { contactType: body.contactType }),
+      },
+    });
+  }
 }

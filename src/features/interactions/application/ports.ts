@@ -8,6 +8,7 @@ export abstract class InteractionWritePort {
     userId: UserId;
     itemId: ItemId;
     type: InteractionType;
+    metadata?: Record<string, unknown>;
     timestamp: Date;
   }): Promise<void>;
 
@@ -38,6 +39,7 @@ export abstract class InteractionPublisherPort {
     userId: UserId;
     itemId: ItemId;
     interactionType: InteractionType;
+    metadata?: Record<string, unknown>;
     timestamp: Date;
   }): void;
 

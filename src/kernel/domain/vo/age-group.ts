@@ -20,7 +20,7 @@ export const AgeGroup = {
 };
 
 // --- AgeGroupOption (includes 'all') ---
-export type AgeGroupOption = ValueObject<string, 'AgeGroupOption'>;
+export type AgeGroupOption = ValueObject<'children' | 'adults' | 'all', 'AgeGroupOption'>;
 
 const AGE_GROUP_OPTION_VALUES = new Set(['children', 'adults', 'all']);
 

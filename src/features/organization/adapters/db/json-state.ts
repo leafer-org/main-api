@@ -5,6 +5,7 @@ export type OrganizationJsonState = {
     description: string;
     avatarId: string | null;
     media: { type: string; mediaId: string }[];
+    contacts?: { type: string; value: string; label?: string }[];
     status: string;
     updatedAt?: string;
   };
@@ -13,6 +14,7 @@ export type OrganizationJsonState = {
     description: string;
     avatarId: string | null;
     media: { type: string; mediaId: string }[];
+    contacts?: { type: string; value: string; label?: string }[];
     publishedAt: string;
   } | null;
   employees: {

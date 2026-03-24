@@ -88,9 +88,14 @@ export class DrizzleOrganizationRepository extends OrganizationRepository {
       claimToken,
       createdAt: new Date(raw['createdAt'] as string),
       updatedAt: new Date(raw['updatedAt'] as string),
+      infoDraft: {
+        ...state.infoDraft,
+        contacts: state.infoDraft.contacts ?? [],
+      },
       infoPublication: state.infoPublication
         ? {
             ...state.infoPublication,
+            contacts: state.infoPublication.contacts ?? [],
             publishedAt: new Date(state.infoPublication.publishedAt as unknown as string),
           }
         : null,

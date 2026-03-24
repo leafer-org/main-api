@@ -7,6 +7,7 @@ export type InteractionType =
   | 'unlike'
   | 'review'
   | 'show-contacts'
+  | 'contact-click'
   | 'purchase'
   | 'booking';
 
@@ -16,6 +17,7 @@ export type InteractionRecordedEvent = {
   userId: UserId;
   itemId: ItemId;
   interactionType: InteractionType;
+  metadata?: Record<string, unknown>;
   timestamp: Date;
 };
 

@@ -14,11 +14,19 @@ export type VideoPreview = {
   progress: number | null;
 };
 
-export type ResolvedMediaItem = {
-  type: 'image' | 'video';
+export type ResolvedImageMedia = {
+  type: 'image';
   mediaId: string;
-  preview?: ImagePreview | VideoPreview;
+  preview?: ImagePreview;
 };
+
+export type ResolvedVideoMedia = {
+  type: 'video';
+  mediaId: string;
+  preview?: VideoPreview;
+};
+
+export type ResolvedMediaItem = ResolvedImageMedia | ResolvedVideoMedia;
 
 export type MediaVisibility = 'PUBLIC' | 'PRIVATE';
 

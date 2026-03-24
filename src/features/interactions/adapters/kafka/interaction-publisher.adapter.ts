@@ -19,6 +19,7 @@ export class KafkaInteractionPublisher implements InteractionPublisherPort {
     userId: UserId;
     itemId: ItemId;
     interactionType: InteractionType;
+    metadata?: Record<string, unknown>;
     timestamp: Date;
   }): void {
     try {
@@ -30,6 +31,7 @@ export class KafkaInteractionPublisher implements InteractionPublisherPort {
           userId: params.userId as string,
           itemId: params.itemId as string,
           interactionType: params.interactionType,
+          metadata: params.metadata,
           timestamp: params.timestamp.toISOString(),
         },
         { key: params.userId as string },

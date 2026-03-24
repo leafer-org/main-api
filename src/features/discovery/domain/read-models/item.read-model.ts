@@ -10,7 +10,7 @@ import type {
 } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
-import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
+import type { ContactLink, PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 
 export type ItemBaseInfo = {
   title: string;
@@ -70,6 +70,7 @@ export type ItemReadModel = {
   ownerReview?: ItemReview;
   eventDateTime?: { dates: Date[] };
   schedule?: { entries: ScheduleEntry[] };
+  contactInfo?: { contacts: ContactLink[] };
 
   publishedAt: Date;
   updatedAt: Date;
@@ -213,6 +214,9 @@ export function projectItemFromEvent(event: ItemPublishedEvent): ItemReadModel {
         break;
       case 'schedule':
         model.schedule = { entries: widget.entries };
+        break;
+      case 'contact-info':
+        model.contactInfo = { contacts: widget.contacts };
         break;
       default:
         break;

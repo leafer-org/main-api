@@ -106,13 +106,14 @@ export const OrganizationEntity = {
       description: cmd.description,
       avatarId: cmd.avatarId,
       media: cmd.media,
+      contacts: cmd.contacts,
       adminRoleId: cmd.adminRoleId,
       createdAt: cmd.now,
     };
 
     const state: OrganizationEntity = {
       id: event.id,
-      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId, event.media, event.createdAt),
+      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId, event.media, event.contacts, event.createdAt),
       infoPublication: null,
       employees: [
         EmployeeEntity.createOwner(event.creatorUserId, event.adminRoleId, event.createdAt),
@@ -139,6 +140,7 @@ export const OrganizationEntity = {
       description: cmd.description,
       avatarId: cmd.avatarId,
       media: cmd.media,
+      contacts: cmd.contacts,
       adminRoleId: cmd.adminRoleId,
       claimToken: cmd.claimToken,
       createdAt: cmd.now,
@@ -146,7 +148,7 @@ export const OrganizationEntity = {
 
     const state: OrganizationEntity = {
       id: event.id,
-      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId, event.media, event.createdAt),
+      infoDraft: InfoDraftEntity.create(event.name, event.description, event.avatarId, event.media, event.contacts, event.createdAt),
       infoPublication: null,
       employees: [],
       roles: [
@@ -227,6 +229,7 @@ export const OrganizationEntity = {
       cmd.description,
       cmd.avatarId,
       cmd.media,
+      cmd.contacts,
       cmd.now,
     );
 
@@ -236,6 +239,7 @@ export const OrganizationEntity = {
       description: cmd.description,
       avatarId: cmd.avatarId,
       media: cmd.media,
+      contacts: cmd.contacts,
       updatedAt: cmd.now,
     };
 
@@ -281,6 +285,7 @@ export const OrganizationEntity = {
       description: state.infoDraft.description,
       avatarId: state.infoDraft.avatarId,
       media: state.infoDraft.media,
+      contacts: state.infoDraft.contacts,
       submittedAt: cmd.now,
     };
 
@@ -307,6 +312,7 @@ export const OrganizationEntity = {
       description: state.infoDraft.description,
       avatarId: state.infoDraft.avatarId,
       media: state.infoDraft.media,
+      contacts: state.infoDraft.contacts,
       publishedAt: cmd.now,
     };
 

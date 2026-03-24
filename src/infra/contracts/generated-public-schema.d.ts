@@ -749,6 +749,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/interactions/contact-click': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Записать клик по конкретной ссылке контактов */
+    post: operations['recordContactClick'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/reviews': {
     parameters: {
       query?: never;
@@ -2190,11 +2207,23 @@ export interface components {
       childCount: number;
       itemCount: number;
     };
-    MediaItem: {
-      /** @enum {string} */
-      type: 'image' | 'video';
+    ImageMediaItem: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'image';
       mediaId: string;
     };
+    VideoMediaItem: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'video';
+      mediaId: string;
+    };
+    MediaItem: components['schemas']['ImageMediaItem'] | components['schemas']['VideoMediaItem'];
     PaymentOption: {
       name: string;
       description?: string | null;
@@ -2319,6 +2348,12 @@ export interface components {
       startTime: string;
       endTime: string;
     };
+    ContactLink: {
+      /** @enum {string} */
+      type: 'phone' | 'email' | 'link';
+      value: string;
+      label?: string;
+    };
     ItemWidgetView:
       | {
           /** @enum {string} */
@@ -2379,6 +2414,11 @@ export interface components {
           /** @enum {string} */
           type: 'schedule';
           entries: components['schemas']['ScheduleEntry'][];
+        }
+      | {
+          /** @enum {string} */
+          type: 'contact-info';
+          contacts: components['schemas']['ContactLink'][];
         };
     ItemDetailView: {
       itemId: string;
@@ -2508,7 +2548,8 @@ export interface components {
         | 'owner'
         | 'item-review'
         | 'owner-review'
-        | 'schedule';
+        | 'schedule'
+        | 'contact-info';
       required: boolean;
     };
     WidgetSettings:
@@ -2531,24 +2572,127 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
-    /** @enum {string} */
-    WidgetType:
-      | 'base-info'
-      | 'age-group'
-      | 'location'
-      | 'payment'
-      | 'category'
-      | 'owner'
-      | 'item-review'
-      | 'owner-review'
-      | 'event-date-time'
-      | 'schedule';
-    ItemWidget: {
-      type: components['schemas']['WidgetType'];
-      data: {
-        [key: string]: unknown;
-      };
-    };
+    ItemWidgetInput:
+      | {
+          /** @enum {string} */
+          type: 'base-info';
+          title: string;
+          description: string;
+          media: components['schemas']['MediaItem'][];
+        }
+      | {
+          /** @enum {string} */
+          type: 'age-group';
+          /** @enum {string} */
+          value: 'children' | 'adults' | 'all';
+        }
+      | {
+          /** @enum {string} */
+          type: 'location';
+          cityId: string;
+          lat: number;
+          lng: number;
+          address?: string | null;
+        }
+      | {
+          /** @enum {string} */
+          type: 'payment';
+          options: components['schemas']['PaymentOption'][];
+        }
+      | {
+          /** @enum {string} */
+          type: 'category';
+          categoryIds: string[];
+          attributes?: {
+            attributeId: string;
+            value: string;
+          }[];
+        }
+      | {
+          /** @enum {string} */
+          type: 'event-date-time';
+          dates: string[];
+        }
+      | {
+          /** @enum {string} */
+          type: 'schedule';
+          entries: components['schemas']['ScheduleEntry'][];
+        }
+      | {
+          /** @enum {string} */
+          type: 'contact-info';
+          contacts: components['schemas']['ContactLink'][];
+        };
+    ItemWidget:
+      | {
+          /** @enum {string} */
+          type: 'base-info';
+          title: string;
+          description: string;
+          media: components['schemas']['MediaItem'][];
+        }
+      | {
+          /** @enum {string} */
+          type: 'age-group';
+          /** @enum {string} */
+          value: 'children' | 'adults' | 'all';
+        }
+      | {
+          /** @enum {string} */
+          type: 'location';
+          cityId: string;
+          lat: number;
+          lng: number;
+          address?: string | null;
+        }
+      | {
+          /** @enum {string} */
+          type: 'payment';
+          options: components['schemas']['PaymentOption'][];
+        }
+      | {
+          /** @enum {string} */
+          type: 'category';
+          categoryIds: string[];
+          attributes?: {
+            attributeId: string;
+            value: string;
+          }[];
+        }
+      | {
+          /** @enum {string} */
+          type: 'owner';
+          organizationId: string;
+          name: string;
+          avatarId?: string | null;
+        }
+      | {
+          /** @enum {string} */
+          type: 'item-review';
+          rating?: number | null;
+          reviewCount: number;
+        }
+      | {
+          /** @enum {string} */
+          type: 'owner-review';
+          rating?: number | null;
+          reviewCount: number;
+        }
+      | {
+          /** @enum {string} */
+          type: 'event-date-time';
+          dates: string[];
+        }
+      | {
+          /** @enum {string} */
+          type: 'schedule';
+          entries: components['schemas']['ScheduleEntry'][];
+        }
+      | {
+          /** @enum {string} */
+          type: 'contact-info';
+          contacts: components['schemas']['ContactLink'][];
+        };
     /** @enum {string} */
     ItemDraftStatus: 'draft' | 'moderation-request' | 'rejected';
     ItemDetail: {
@@ -2575,6 +2719,15 @@ export interface components {
       /** Format: uri */
       url: string;
     };
+    ResolvedImageMedia: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'image';
+      mediaId: string;
+      preview?: components['schemas']['ImagePreview'];
+    };
     VideoPreview: {
       /** Format: uri */
       thumbnailUrl: string | null;
@@ -2586,12 +2739,18 @@ export interface components {
       processingStatus: 'pending' | 'processing' | 'ready' | 'failed';
       progress?: number | null;
     };
-    ResolvedMediaItem: {
-      /** @enum {string} */
-      type: 'image' | 'video';
+    ResolvedVideoMedia: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'video';
       mediaId: string;
-      preview?: components['schemas']['ImagePreview'] | components['schemas']['VideoPreview'];
+      preview?: components['schemas']['VideoPreview'];
     };
+    ResolvedMediaItem:
+      | components['schemas']['ResolvedImageMedia']
+      | components['schemas']['ResolvedVideoMedia'];
     /** @enum {string} */
     InfoDraftStatus: 'draft' | 'moderation-request' | 'rejected';
     InfoDraft: {
@@ -2599,6 +2758,7 @@ export interface components {
       description: string;
       avatarId?: string | null;
       media: components['schemas']['ResolvedMediaItem'][];
+      contacts?: components['schemas']['ContactLink'][];
       status: components['schemas']['InfoDraftStatus'];
       /** Format: date-time */
       updatedAt: string;
@@ -2629,6 +2789,19 @@ export interface components {
     };
     /** @enum {string} */
     SubscriptionPlanId: 'free' | 'individual' | 'team';
+    /** @enum {string} */
+    WidgetType:
+      | 'base-info'
+      | 'age-group'
+      | 'location'
+      | 'payment'
+      | 'category'
+      | 'owner'
+      | 'item-review'
+      | 'owner-review'
+      | 'event-date-time'
+      | 'schedule'
+      | 'contact-info';
     Subscription: {
       planId: components['schemas']['SubscriptionPlanId'];
       maxEmployees: number;
@@ -2643,6 +2816,7 @@ export interface components {
         description: string;
         avatarId?: string | null;
         media: components['schemas']['ResolvedMediaItem'][];
+        contacts?: components['schemas']['ContactLink'][];
         /** Format: date-time */
         publishedAt: string;
       } | null;
@@ -4942,6 +5116,42 @@ export interface operations {
       401: components['responses']['UnauthorizedError'];
     };
   };
+  recordContactClick: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          /**
+           * Format: uuid
+           * @description ID товара
+           */
+          itemId: string;
+          /** @description Индекс ссылки в массиве contacts */
+          contactIndex?: number;
+          /**
+           * @description Тип ссылки
+           * @enum {string}
+           */
+          contactType?: 'phone' | 'email' | 'link';
+        };
+      };
+    };
+    responses: {
+      /** @description Клик записан */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components['responses']['UnauthorizedError'];
+    };
+  };
   getReviewsByTarget: {
     parameters: {
       query: {
@@ -6125,6 +6335,7 @@ export interface operations {
           description?: string;
           avatarId?: string | null;
           media?: components['schemas']['MediaItem'][];
+          contacts?: components['schemas']['ContactLink'][];
         };
       };
     };
@@ -6177,7 +6388,7 @@ export interface operations {
       content: {
         'application/json': {
           typeId: string;
-          widgets: components['schemas']['ItemWidget'][];
+          widgets: components['schemas']['ItemWidgetInput'][];
         };
       };
     };
@@ -6324,6 +6535,7 @@ export interface operations {
           description: string;
           avatarId?: string | null;
           media?: components['schemas']['MediaItem'][];
+          contacts?: components['schemas']['ContactLink'][];
         };
       };
     };
@@ -6482,6 +6694,7 @@ export interface operations {
           description: string;
           avatarId?: string | null;
           media?: components['schemas']['MediaItem'][];
+          contacts?: components['schemas']['ContactLink'][];
         };
       };
     };
@@ -7298,7 +7511,7 @@ export interface operations {
       content: {
         'application/json': {
           typeId: string;
-          widgets: components['schemas']['ItemWidget'][];
+          widgets: components['schemas']['ItemWidgetInput'][];
         };
       };
     };
@@ -7448,7 +7661,7 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': {
-          widgets: components['schemas']['ItemWidget'][];
+          widgets: components['schemas']['ItemWidgetInput'][];
         };
       };
     };

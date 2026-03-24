@@ -3509,6 +3509,61 @@
         }
       }
     },
+    "/interactions/contact-click": {
+      "post": {
+        "operationId": "recordContactClick",
+        "tags": [
+          "Interactions"
+        ],
+        "description": "Записать клик по конкретной ссылке контактов",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "itemId"
+                ],
+                "properties": {
+                  "itemId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "ID товара"
+                  },
+                  "contactIndex": {
+                    "type": "integer",
+                    "description": "Индекс ссылки в массиве contacts"
+                  },
+                  "contactType": {
+                    "type": "string",
+                    "enum": [
+                      "phone",
+                      "email",
+                      "link"
+                    ],
+                    "description": "Тип ссылки"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Клик записан"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
     "/reviews": {
       "get": {
         "operationId": "getReviewsByTarget",
@@ -5550,6 +5605,12 @@
                     "items": {
                       "$ref": "#/components/schemas/MediaItem"
                     }
+                  },
+                  "contacts": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ContactLink"
+                    }
                   }
                 }
               }
@@ -5647,7 +5708,7 @@
                   "widgets": {
                     "type": "array",
                     "items": {
-                      "$ref": "#/components/schemas/ItemWidget"
+                      "$ref": "#/components/schemas/ItemWidgetInput"
                     }
                   }
                 }
@@ -5891,6 +5952,12 @@
                     "items": {
                       "$ref": "#/components/schemas/MediaItem"
                     }
+                  },
+                  "contacts": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ContactLink"
+                    }
                   }
                 }
               }
@@ -6092,6 +6159,12 @@
                     "type": "array",
                     "items": {
                       "$ref": "#/components/schemas/MediaItem"
+                    }
+                  },
+                  "contacts": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ContactLink"
                     }
                   }
                 }
@@ -7328,7 +7401,7 @@
                   "widgets": {
                     "type": "array",
                     "items": {
-                      "$ref": "#/components/schemas/ItemWidget"
+                      "$ref": "#/components/schemas/ItemWidgetInput"
                     }
                   }
                 }
@@ -7561,7 +7634,7 @@
                   "widgets": {
                     "type": "array",
                     "items": {
-                      "$ref": "#/components/schemas/ItemWidget"
+                      "$ref": "#/components/schemas/ItemWidgetInput"
                     }
                   }
                 }
@@ -10748,7 +10821,7 @@
           }
         }
       },
-      "MediaItem": {
+      "ImageMediaItem": {
         "type": "object",
         "required": [
           "type",
@@ -10758,12 +10831,46 @@
           "type": {
             "type": "string",
             "enum": [
-              "image",
+              "image"
+            ]
+          },
+          "mediaId": {
+            "type": "string"
+          }
+        }
+      },
+      "VideoMediaItem": {
+        "type": "object",
+        "required": [
+          "type",
+          "mediaId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
               "video"
             ]
           },
           "mediaId": {
             "type": "string"
+          }
+        }
+      },
+      "MediaItem": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ImageMediaItem"
+          },
+          {
+            "$ref": "#/components/schemas/VideoMediaItem"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "image": "#/components/schemas/ImageMediaItem",
+            "video": "#/components/schemas/VideoMediaItem"
           }
         }
       },
@@ -11313,6 +11420,29 @@
           }
         }
       },
+      "ContactLink": {
+        "type": "object",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "phone",
+              "email",
+              "link"
+            ]
+          },
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
       "ItemWidgetView": {
         "oneOf": [
           {
@@ -11556,6 +11686,27 @@
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/ScheduleEntry"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "contacts"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "contact-info"
+                ]
+              },
+              "contacts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ContactLink"
                 }
               }
             }
@@ -12054,7 +12205,8 @@
               "owner",
               "item-review",
               "owner-review",
-              "schedule"
+              "schedule",
+              "contact-info"
             ]
           },
           "required": {
@@ -12086,7 +12238,8 @@
             "owner": "#/components/schemas/BaseWidgetSettings",
             "item-review": "#/components/schemas/BaseWidgetSettings",
             "owner-review": "#/components/schemas/BaseWidgetSettings",
-            "schedule": "#/components/schemas/BaseWidgetSettings"
+            "schedule": "#/components/schemas/BaseWidgetSettings",
+            "contact-info": "#/components/schemas/BaseWidgetSettings"
           }
         }
       },
@@ -12152,35 +12305,510 @@
           }
         }
       },
-      "WidgetType": {
-        "type": "string",
-        "enum": [
-          "base-info",
-          "age-group",
-          "location",
-          "payment",
-          "category",
-          "owner",
-          "item-review",
-          "owner-review",
-          "event-date-time",
-          "schedule"
-        ]
+      "ItemWidgetInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "title",
+              "description",
+              "media"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "base-info"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "media": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MediaItem"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "value"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "age-group"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "enum": [
+                  "children",
+                  "adults",
+                  "all"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "cityId",
+              "lat",
+              "lng"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "location"
+                ]
+              },
+              "cityId": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lng": {
+                "type": "number"
+              },
+              "address": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "options"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "payment"
+                ]
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PaymentOption"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "categoryIds"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "category"
+                ]
+              },
+              "categoryIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "attributes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "attributeId",
+                    "value"
+                  ],
+                  "properties": {
+                    "attributeId": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "dates"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "event-date-time"
+                ]
+              },
+              "dates": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "entries"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "schedule"
+                ]
+              },
+              "entries": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ScheduleEntry"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "contacts"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "contact-info"
+                ]
+              },
+              "contacts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ContactLink"
+                }
+              }
+            }
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type"
+        }
       },
       "ItemWidget": {
-        "type": "object",
-        "required": [
-          "type",
-          "data"
-        ],
-        "properties": {
-          "type": {
-            "$ref": "#/components/schemas/WidgetType"
-          },
-          "data": {
+        "oneOf": [
+          {
             "type": "object",
-            "additionalProperties": true
+            "required": [
+              "type",
+              "title",
+              "description",
+              "media"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "base-info"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "media": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MediaItem"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "value"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "age-group"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "enum": [
+                  "children",
+                  "adults",
+                  "all"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "cityId",
+              "lat",
+              "lng"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "location"
+                ]
+              },
+              "cityId": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lng": {
+                "type": "number"
+              },
+              "address": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "options"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "payment"
+                ]
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PaymentOption"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "categoryIds"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "category"
+                ]
+              },
+              "categoryIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "attributes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "attributeId",
+                    "value"
+                  ],
+                  "properties": {
+                    "attributeId": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "organizationId",
+              "name"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "owner"
+                ]
+              },
+              "organizationId": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "avatarId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "reviewCount"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "item-review"
+                ]
+              },
+              "rating": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "reviewCount": {
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "reviewCount"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "owner-review"
+                ]
+              },
+              "rating": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "reviewCount": {
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "dates"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "event-date-time"
+                ]
+              },
+              "dates": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "entries"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "schedule"
+                ]
+              },
+              "entries": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ScheduleEntry"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "contacts"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "contact-info"
+                ]
+              },
+              "contacts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ContactLink"
+                }
+              }
+            }
           }
+        ],
+        "discriminator": {
+          "propertyName": "type"
         }
       },
       "ItemDraftStatus": {
@@ -12280,6 +12908,27 @@
           }
         }
       },
+      "ResolvedImageMedia": {
+        "type": "object",
+        "required": [
+          "type",
+          "mediaId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "image"
+            ]
+          },
+          "mediaId": {
+            "type": "string"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/ImagePreview"
+          }
+        }
+      },
       "VideoPreview": {
         "type": "object",
         "required": [
@@ -12329,7 +12978,7 @@
           }
         }
       },
-      "ResolvedMediaItem": {
+      "ResolvedVideoMedia": {
         "type": "object",
         "required": [
           "type",
@@ -12339,7 +12988,6 @@
           "type": {
             "type": "string",
             "enum": [
-              "image",
               "video"
             ]
           },
@@ -12347,14 +12995,24 @@
             "type": "string"
           },
           "preview": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/ImagePreview"
-              },
-              {
-                "$ref": "#/components/schemas/VideoPreview"
-              }
-            ]
+            "$ref": "#/components/schemas/VideoPreview"
+          }
+        }
+      },
+      "ResolvedMediaItem": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ResolvedImageMedia"
+          },
+          {
+            "$ref": "#/components/schemas/ResolvedVideoMedia"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "image": "#/components/schemas/ResolvedImageMedia",
+            "video": "#/components/schemas/ResolvedVideoMedia"
           }
         }
       },
@@ -12394,6 +13052,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ResolvedMediaItem"
+            }
+          },
+          "contacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactLink"
             }
           },
           "status": {
@@ -12478,6 +13142,22 @@
           "team"
         ]
       },
+      "WidgetType": {
+        "type": "string",
+        "enum": [
+          "base-info",
+          "age-group",
+          "location",
+          "payment",
+          "category",
+          "owner",
+          "item-review",
+          "owner-review",
+          "event-date-time",
+          "schedule",
+          "contact-info"
+        ]
+      },
       "Subscription": {
         "type": "object",
         "required": [
@@ -12550,6 +13230,12 @@
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/ResolvedMediaItem"
+                }
+              },
+              "contacts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ContactLink"
                 }
               },
               "publishedAt": {

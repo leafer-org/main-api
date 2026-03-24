@@ -1,5 +1,5 @@
 {
-  "id": "d2339731-17d3-4ac0-9e6d-350c7b42e78e",
+  "id": "d9c9505a-37df-48b4-8031-0c4b2a26a830",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -681,6 +681,12 @@
           "notNull": true,
           "default": 0
         },
+        "contacts": {
+          "name": "contacts",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "published_at": {
           "name": "published_at",
           "type": "timestamp with time zone",
@@ -1322,6 +1328,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "timestamp": {
           "name": "timestamp",

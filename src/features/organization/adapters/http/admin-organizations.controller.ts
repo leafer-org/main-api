@@ -11,7 +11,7 @@ import { isLeft } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { EmployeeRoleId, MediaId, ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
 import { Permissions } from '@/kernel/domain/permissions.js';
-import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
+import { toItemWidget } from './item-widget.mapper.js';
 
 @Controller('admin/organizations')
 export class AdminOrganizationsController {
@@ -60,6 +60,7 @@ export class AdminOrganizationsController {
       description: body.description ?? '',
       avatarId: body.avatarId ? MediaId.raw(body.avatarId) : null,
       media: (body.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })),
+      contacts: body.contacts ?? [],
       adminRoleId,
       claimToken,
     });
@@ -82,7 +83,7 @@ export class AdminOrganizationsController {
       organizationId: OrganizationId.raw(orgId),
       itemId,
       typeId: TypeId.raw(body.typeId),
-      widgets: body.widgets.map(({ type, data }) => ({ type, ...data })) as unknown as ItemWidget[],
+      widgets: body.widgets.map(toItemWidget),
     });
 
     if (isLeft(result)) {
@@ -130,23 +131,19 @@ export class AdminOrganizationsController {
       typeId: detail.typeId,
       draft: detail.draft
         ? {
-            widgets: detail.draft.widgets.map(this.toSchemaWidget),
+            widgets: detail.draft.widgets,
             status: detail.draft.status,
             updatedAt: detail.draft.updatedAt.toISOString(),
           }
         : null,
       publication: detail.publication
         ? {
-            widgets: detail.publication.widgets.map(this.toSchemaWidget),
+            widgets: detail.publication.widgets,
             publishedAt: detail.publication.publishedAt.toISOString(),
           }
         : null,
       createdAt: detail.createdAt.toISOString(),
       updatedAt: detail.updatedAt.toISOString(),
     };
-  }
-
-  private toSchemaWidget({ type, ...data }: ItemWidget) {
-    return { type, data };
   }
 }

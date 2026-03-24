@@ -84,6 +84,17 @@ const ScheduleWidgetSchema = Type.Object({
   entries: Type.Array(ScheduleEntrySchema),
 });
 
+const ContactLinkSchema = Type.Object({
+  type: Type.Union([Type.Literal('phone'), Type.Literal('email'), Type.Literal('link')]),
+  value: Type.String(),
+  label: Type.Optional(Type.String()),
+});
+
+const ContactInfoWidgetSchema = Type.Object({
+  type: Type.Literal('contact-info'),
+  contacts: Type.Array(ContactLinkSchema),
+});
+
 const WidgetSchema = Type.Union([
   BaseInfoWidgetSchema,
   AgeGroupWidgetSchema,
@@ -95,6 +106,7 @@ const WidgetSchema = Type.Union([
   OwnerReviewWidgetSchema,
   EventDateTimeWidgetSchema,
   ScheduleWidgetSchema,
+  ContactInfoWidgetSchema,
 ]);
 
 const ItemStreamingMessage = Type.Object({

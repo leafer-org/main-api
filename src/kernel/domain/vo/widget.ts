@@ -65,6 +65,10 @@ export const EventDateTimeWidget = {
 };
 export type ScheduleWidget = { type: 'schedule'; entries: ScheduleEntry[] };
 
+export type ContactLinkType = 'phone' | 'email' | 'link';
+export type ContactLink = { type: ContactLinkType; value: string; label?: string };
+export type ContactInfoWidget = { type: 'contact-info'; contacts: ContactLink[] };
+
 export type ItemWidget =
   | BaseInfoWidget
   | AgeGroupWidget
@@ -75,7 +79,8 @@ export type ItemWidget =
   | ItemReviewWidget
   | OwnerReviewWidget
   | EventDateTimeWidget
-  | ScheduleWidget;
+  | ScheduleWidget
+  | ContactInfoWidget;
 
 export type WidgetType = ItemWidget['type'];
 
@@ -90,4 +95,5 @@ export const ALL_WIDGET_TYPES: WidgetType[] = [
   'owner-review',
   'event-date-time',
   'schedule',
+  'contact-info',
 ];

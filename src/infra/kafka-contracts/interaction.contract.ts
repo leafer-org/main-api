@@ -14,9 +14,11 @@ const InteractionStreamingMessage = Type.Object({
     Type.Literal('unlike'),
     Type.Literal('review'),
     Type.Literal('show-contacts'),
+    Type.Literal('contact-click'),
     Type.Literal('purchase'),
     Type.Literal('booking'),
   ]),
+  metadata: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
   timestamp: Type.String(),
 });
 

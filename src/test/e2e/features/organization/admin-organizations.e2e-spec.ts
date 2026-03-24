@@ -435,6 +435,7 @@ describe('Admin Organizations (e2e)', () => {
       const itemType = await createItemType(e2e.agent, accessToken, {
         widgetSettings: [
           { type: 'base-info', required: true },
+          { type: 'owner', required: false },
           { type: 'schedule', required: false },
           { type: 'event-date-time', required: false, maxDates: null },
         ],
@@ -446,8 +447,8 @@ describe('Admin Organizations (e2e)', () => {
         .send({
           typeId: itemType.id,
           widgets: [
-            { type: 'base-info', data: { title: 'Admin Item', description: 'Created by admin', media: [] } },
-            { type: 'schedule', data: { entries: [{ dayOfWeek: 1, startTime: '09:00', endTime: '18:00' }] } },
+            { type: 'base-info', title: 'Admin Item', description: 'Created by admin', media: [] },
+            { type: 'schedule', entries: [{ dayOfWeek: 1, startTime: '09:00', endTime: '18:00' }] },
           ],
         })
         .expect(201);
@@ -457,9 +458,10 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.typeId).toBe(itemType.id);
       expect(res.body.draft).toBeDefined();
       expect(res.body.draft.status).toBe('draft');
-      expect(res.body.draft.widgets).toHaveLength(2);
-      expect(res.body.draft.widgets[0].type).toBe('base-info');
-      expect(res.body.draft.widgets[1].type).toBe('schedule');
+      const widgetTypes = res.body.draft.widgets.map((w: { type: string }) => w.type);
+      expect(widgetTypes).toContain('base-info');
+      expect(widgetTypes).toContain('schedule');
+      expect(widgetTypes).toContain('owner');
       expect(res.body.publication).toBeNull();
     });
 
@@ -481,7 +483,7 @@ describe('Admin Organizations (e2e)', () => {
         .set('Authorization', `Bearer ${userToken}`)
         .send({
           typeId: itemType.id,
-          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', media: [] } }],
+          widgets: [{ type: 'base-info', title: 'T', description: 'D', media: [] }],
         })
         .expect(403);
     });
@@ -495,7 +497,7 @@ describe('Admin Organizations (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           typeId: itemType.id,
-          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', media: [] } }],
+          widgets: [{ type: 'base-info', title: 'T', description: 'D', media: [] }],
         })
         .expect(404);
     });
@@ -514,7 +516,7 @@ describe('Admin Organizations (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           typeId: '00000000-0000-0000-0000-000000000000',
-          widgets: [{ type: 'base-info', data: { title: 'T', description: 'D', media: [] } }],
+          widgets: [{ type: 'base-info', title: 'T', description: 'D', media: [] }],
         })
         .expect(404);
     });

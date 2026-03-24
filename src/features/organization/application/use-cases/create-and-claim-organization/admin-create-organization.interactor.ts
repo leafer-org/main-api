@@ -7,6 +7,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { EmployeeRoleId, MediaId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { ContactLink } from '@/kernel/domain/vo/widget.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 import { Permissions } from '@/kernel/domain/permissions.js';
 
@@ -25,6 +26,7 @@ export class AdminCreateOrganizationInteractor {
     description: string;
     avatarId: MediaId | null;
     media: MediaItem[];
+    contacts: ContactLink[];
     adminRoleId: EmployeeRoleId;
     claimToken: string;
   }) {
@@ -41,6 +43,7 @@ export class AdminCreateOrganizationInteractor {
         description: command.description,
         avatarId: command.avatarId,
         media: command.media,
+        contacts: command.contacts,
         adminRoleId: command.adminRoleId,
         claimToken: command.claimToken,
         now,

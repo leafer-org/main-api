@@ -26,7 +26,7 @@ import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
-import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
+import { toItemWidget } from './item-widget.mapper.js';
 
 @Controller('organizations/:orgId/items')
 export class ItemsController {
@@ -56,7 +56,7 @@ export class ItemsController {
       userId: user.userId,
       itemId,
       typeId: TypeId.raw(body.typeId),
-      widgets: body.widgets.map(({ type, data }) => ({ type, ...data })) as unknown as ItemWidget[],
+      widgets: body.widgets.map(toItemWidget),
     });
 
     if (isLeft(result)) {
@@ -130,7 +130,7 @@ export class ItemsController {
       organizationId: OrganizationId.raw(orgId),
       userId: user.userId,
       itemId: ItemId.raw(itemId),
-      widgets: body.widgets.map(({ type, data }) => ({ type, ...data })) as unknown as ItemWidget[],
+      widgets: body.widgets.map(toItemWidget),
     });
 
     if (isLeft(result)) {
@@ -229,23 +229,19 @@ export class ItemsController {
       typeId: detail.typeId,
       draft: detail.draft
         ? {
-            widgets: detail.draft.widgets.map(this.toSchemaWidget),
+            widgets: detail.draft.widgets,
             status: detail.draft.status,
             updatedAt: detail.draft.updatedAt.toISOString(),
           }
         : null,
       publication: detail.publication
         ? {
-            widgets: detail.publication.widgets.map(this.toSchemaWidget),
+            widgets: detail.publication.widgets,
             publishedAt: detail.publication.publishedAt.toISOString(),
           }
         : null,
       createdAt: detail.createdAt.toISOString(),
       updatedAt: detail.updatedAt.toISOString(),
     };
-  }
-
-  private toSchemaWidget({ type, ...data }: ItemWidget) {
-    return { type, data };
   }
 }

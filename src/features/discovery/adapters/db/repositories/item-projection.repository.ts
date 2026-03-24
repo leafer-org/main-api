@@ -59,6 +59,7 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
             ? String(item.ownerReview.rating)
             : null,
         ownerReviewCount: item.ownerReview?.reviewCount ?? 0,
+        contacts: item.contactInfo?.contacts ?? null,
         publishedAt: item.publishedAt,
         updatedAt: item.updatedAt,
       })
@@ -88,6 +89,7 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
               ? String(item.ownerReview.rating)
               : null,
           ownerReviewCount: item.ownerReview?.reviewCount ?? 0,
+          contacts: item.contactInfo?.contacts ?? null,
           updatedAt: item.updatedAt,
         },
       });

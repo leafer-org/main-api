@@ -7,6 +7,7 @@ export const interactions = pgTable(
     userId: uuid('user_id').notNull(),
     itemId: uuid('item_id').notNull(),
     type: text('type').notNull(),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
     timestamp: timestamp('timestamp', { withTimezone: true }).notNull(),
   },
   (table) => [

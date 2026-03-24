@@ -1,7 +1,7 @@
 import type { OrganizationPermission, SubscriptionPlanId } from './config.js';
 import type { EmployeeRoleId, MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
-import type { WidgetType } from '@/kernel/domain/vo/widget.js';
+import type { ContactLink, WidgetType } from '@/kernel/domain/vo/widget.js';
 
 // --- Lifecycle ---
 
@@ -13,6 +13,7 @@ export type OrganizationCreatedEvent = {
   description: string;
   avatarId: MediaId | null;
   media: MediaItem[];
+  contacts: ContactLink[];
   adminRoleId: EmployeeRoleId;
   createdAt: Date;
 };
@@ -24,6 +25,7 @@ export type OrganizationAdminCreatedEvent = {
   description: string;
   avatarId: MediaId | null;
   media: MediaItem[];
+  contacts: ContactLink[];
   adminRoleId: EmployeeRoleId;
   claimToken: string;
   createdAt: Date;
@@ -49,6 +51,7 @@ export type InfoDraftUpdatedEvent = {
   description: string;
   avatarId: MediaId | null;
   media: MediaItem[];
+  contacts: ContactLink[];
   updatedAt: Date;
 };
 
@@ -64,6 +67,7 @@ export type InfoSubmittedForModerationEvent = {
   description: string;
   avatarId: MediaId | null;
   media: MediaItem[];
+  contacts: ContactLink[];
   submittedAt: Date;
 };
 
@@ -75,6 +79,7 @@ export type InfoModerationApprovedEvent = {
   description: string;
   avatarId: MediaId | null;
   media: MediaItem[];
+  contacts: ContactLink[];
   publishedAt: Date;
 };
 

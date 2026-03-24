@@ -24,10 +24,12 @@ export class ProjectInteractionHandler {
     if (payload.interactionType === 'unlike') {
       await this.gorse.deleteFeedback(payload.userId, payload.itemId, 'like');
     } else {
+      const gorseType =
+        payload.interactionType === 'contact-click' ? 'show-contacts' : payload.interactionType;
       await this.gorse.sendFeedback(
         payload.userId,
         payload.itemId,
-        payload.interactionType,
+        gorseType,
         payload.timestamp,
       );
     }

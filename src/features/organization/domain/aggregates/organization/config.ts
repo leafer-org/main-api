@@ -35,7 +35,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanId, SubscriptionPlanConf
   free: {
     maxEmployees: 1,
     maxPublishedItems: 3,
-    availableWidgetTypes: ['base-info', 'age-group', 'location', 'payment', 'category', 'owner'],
+    availableWidgetTypes: ['base-info', 'age-group', 'location', 'payment', 'category', 'owner', 'contact-info'],
   },
   individual: {
     maxEmployees: 1,
@@ -47,6 +47,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanId, SubscriptionPlanConf
       'payment',
       'category',
       'owner',
+      'contact-info',
       'schedule',
       'item-review',
       'owner-review',
@@ -63,6 +64,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlanId, SubscriptionPlanConf
       'payment',
       'category',
       'owner',
+      'contact-info',
       'schedule',
       'item-review',
       'owner-review',

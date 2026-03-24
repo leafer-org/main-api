@@ -99,6 +99,7 @@ CREATE TABLE "discovery_items" (
 	"item_review_count" integer DEFAULT 0 NOT NULL,
 	"owner_rating" numeric,
 	"owner_review_count" integer DEFAULT 0 NOT NULL,
+	"contacts" jsonb,
 	"published_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL
 );
@@ -182,6 +183,7 @@ CREATE TABLE "interactions" (
 	"user_id" uuid NOT NULL,
 	"item_id" uuid NOT NULL,
 	"type" text NOT NULL,
+	"metadata" jsonb,
 	"timestamp" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint

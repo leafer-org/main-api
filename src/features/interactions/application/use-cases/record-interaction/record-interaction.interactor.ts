@@ -18,6 +18,7 @@ export class RecordInteractionInteractor {
     userId: UserId;
     itemId: ItemId;
     type: InteractionType;
+    metadata?: Record<string, unknown>;
   }): Promise<void> {
     const id = uuidv7();
     const now = this.clock.now();
@@ -27,6 +28,7 @@ export class RecordInteractionInteractor {
       userId: command.userId,
       itemId: command.itemId,
       type: command.type,
+      metadata: command.metadata,
       timestamp: now,
     });
 
@@ -35,6 +37,7 @@ export class RecordInteractionInteractor {
       userId: command.userId,
       itemId: command.itemId,
       interactionType: command.type,
+      metadata: command.metadata,
       timestamp: now,
     });
   }

@@ -27,6 +27,7 @@ function createOrg() {
     description: 'A test organization',
     avatarId: null,
     media: [],
+    contacts: [],
     adminRoleId: ADMIN_ROLE_ID,
     now: NOW,
   });
@@ -93,6 +94,7 @@ describe('OrganizationEntity', () => {
         description: 'Desc',
         avatarId: AVATAR_ID,
         media: [],
+        contacts: [],
         adminRoleId: ADMIN_ROLE_ID,
         now: NOW,
       });
@@ -130,6 +132,7 @@ describe('OrganizationEntity', () => {
         description: 'New Desc',
         avatarId: AVATAR_ID,
         media: [],
+        contacts: [],
         now: LATER,
       });
 

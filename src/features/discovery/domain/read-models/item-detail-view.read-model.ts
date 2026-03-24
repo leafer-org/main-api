@@ -1,7 +1,7 @@
 import type { CategoryId, MediaId, ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
-import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
+import type { ContactLink, PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 
 export type ItemWidgetView =
   | { type: 'base-info'; title: string; description: string; media: MediaItem[] }
@@ -13,7 +13,8 @@ export type ItemWidgetView =
   | { type: 'item-review'; rating: number | null; reviewCount: number }
   | { type: 'owner-review'; rating: number | null; reviewCount: number }
   | { type: 'event-date-time'; dates: string[] }
-  | { type: 'schedule'; entries: ScheduleEntry[] };
+  | { type: 'schedule'; entries: ScheduleEntry[] }
+  | { type: 'contact-info'; contacts: ContactLink[] };
 
 export type ItemDetailView = {
   itemId: ItemId;

@@ -60,10 +60,7 @@ export async function createItem(
   overrides: Partial<{ widgets: unknown[] }> = {},
 ) {
   const widgets = overrides.widgets ?? [
-    {
-      type: 'base-info',
-      data: { title: 'Test Item', description: 'Test item description', media: [] },
-    },
+    { type: 'base-info', title: 'Test Item', description: 'Test item description', media: [] },
   ];
 
   const res = await agent

@@ -16,6 +16,7 @@ export class DrizzleInteractionWriteRepository implements InteractionWritePort {
     userId: UserId;
     itemId: ItemId;
     type: InteractionType;
+    metadata?: Record<string, unknown>;
     timestamp: Date;
   }): Promise<void> {
     await this.db.insert(interactions).values({
@@ -23,6 +24,7 @@ export class DrizzleInteractionWriteRepository implements InteractionWritePort {
       userId: params.userId as string,
       itemId: params.itemId as string,
       type: params.type,
+      metadata: params.metadata ?? null,
       timestamp: params.timestamp,
     });
   }

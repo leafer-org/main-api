@@ -75,6 +75,10 @@ export function toDetailView(item: ItemReadModel): ItemDetailView {
     widgets.push({ type: 'schedule', entries: item.schedule.entries });
   }
 
+  if (item.contactInfo) {
+    widgets.push({ type: 'contact-info', contacts: item.contactInfo.contacts });
+  }
+
   const hasVideo = (item.baseInfo?.media ?? []).some((m) => m.type === 'video');
 
   return {

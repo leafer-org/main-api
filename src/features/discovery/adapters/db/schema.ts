@@ -39,6 +39,7 @@ export const discoveryItems = pgTable(
     itemReviewCount: integer('item_review_count').notNull().default(0),
     ownerRating: numeric('owner_rating'),
     ownerReviewCount: integer('owner_review_count').notNull().default(0),
+    contacts: jsonb('contacts').$type<{ type: string; value: string; label?: string }[]>(),
     publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
   },

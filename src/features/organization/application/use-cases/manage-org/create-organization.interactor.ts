@@ -6,6 +6,7 @@ import { isLeft, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { EmployeeRoleId, MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import type { ContactLink } from '@/kernel/domain/vo/widget.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 
 @Injectable()
@@ -23,6 +24,7 @@ export class CreateOrganizationInteractor {
     description: string;
     avatarId: MediaId | null;
     media: MediaItem[];
+    contacts: ContactLink[];
     adminRoleId: EmployeeRoleId;
   }) {
     const now = this.clock.now();
@@ -36,6 +38,7 @@ export class CreateOrganizationInteractor {
         description: command.description,
         avatarId: command.avatarId,
         media: command.media,
+        contacts: command.contacts,
         adminRoleId: command.adminRoleId,
         now,
       });

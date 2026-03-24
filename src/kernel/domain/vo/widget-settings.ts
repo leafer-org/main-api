@@ -20,6 +20,7 @@ type EventDateTimeWidgetSettings = {
   maxDates: number | null;
 };
 type ScheduleWidgetSettings = { type: 'schedule'; required: boolean };
+type ContactInfoWidgetSettings = { type: 'contact-info'; required: boolean };
 
 export type WidgetSettings =
   | BaseInfoWidgetSettings
@@ -31,7 +32,8 @@ export type WidgetSettings =
   | ItemReviewWidgetSettings
   | OwnerReviewWidgetSettings
   | EventDateTimeWidgetSettings
-  | ScheduleWidgetSettings;
+  | ScheduleWidgetSettings
+  | ContactInfoWidgetSettings;
 
 export type WidgetSettingsType = WidgetSettings['type'];
 

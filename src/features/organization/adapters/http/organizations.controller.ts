@@ -51,6 +51,7 @@ export class OrganizationsController {
       description: body.description,
       avatarId: body.avatarId ? MediaId.raw(body.avatarId) : null,
       media: (body.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })),
+      contacts: body.contacts ?? [],
       adminRoleId,
     });
 
@@ -144,6 +145,7 @@ export class OrganizationsController {
       description: body.description,
       avatarId: body.avatarId ? MediaId.raw(body.avatarId) : null,
       media: (body.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })),
+      contacts: body.contacts ?? [],
     });
 
     if (isLeft(result)) {
@@ -248,6 +250,7 @@ export class OrganizationsController {
         description: detail.infoDraft.description,
         avatarId: detail.infoDraft.avatarId ?? null,
         media: draftMedia,
+        contacts: detail.infoDraft.contacts,
         status: detail.infoDraft.status,
         updatedAt: detail.infoDraft.updatedAt.toISOString(),
         hasDraftChanges: detail.infoDraft.hasDraftChanges,
@@ -259,6 +262,7 @@ export class OrganizationsController {
             description: detail.infoPublication.description,
             avatarId: detail.infoPublication.avatarId ?? null,
             media: pubMedia,
+            contacts: detail.infoPublication.contacts,
             publishedAt: detail.infoPublication.publishedAt.toISOString(),
           }
         : null,

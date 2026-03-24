@@ -27,7 +27,7 @@ import {
 } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
-import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
+import type { ContactLink, PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 
 @Injectable()
 export class DrizzleItemQuery implements ItemQueryPort {
@@ -375,6 +375,10 @@ export class DrizzleItemQuery implements ItemQueryPort {
           endTime: s.endTime,
         })) as ScheduleEntry[],
       };
+    }
+
+    if (row.contacts) {
+      model.contactInfo = { contacts: row.contacts as ContactLink[] };
     }
 
     return model;
