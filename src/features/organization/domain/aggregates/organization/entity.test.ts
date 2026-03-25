@@ -28,6 +28,7 @@ function createOrg() {
     avatarId: null,
     media: [],
     contacts: [],
+    team: { title: '', members: [] },
     adminRoleId: ADMIN_ROLE_ID,
     now: NOW,
   });
@@ -95,6 +96,7 @@ describe('OrganizationEntity', () => {
         avatarId: AVATAR_ID,
         media: [],
         contacts: [],
+        team: { title: '', members: [] },
         adminRoleId: ADMIN_ROLE_ID,
         now: NOW,
       });
@@ -133,6 +135,7 @@ describe('OrganizationEntity', () => {
         avatarId: AVATAR_ID,
         media: [],
         contacts: [],
+        team: { title: '', members: [] },
         now: LATER,
       });
 

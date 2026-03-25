@@ -6,9 +6,8 @@ import { isLeft, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { EmployeeRoleId, MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
-import type { ContactLink } from '@/kernel/domain/vo/widget.js';
+import type { ContactLink, OrgTeam } from '@/kernel/domain/vo/widget.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
-
 @Injectable()
 export class CreateOrganizationInteractor {
   public constructor(
@@ -16,7 +15,6 @@ export class CreateOrganizationInteractor {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
   ) {}
-
   public async execute(command: {
     id: OrganizationId;
     creatorUserId: UserId;
@@ -25,10 +23,10 @@ export class CreateOrganizationInteractor {
     avatarId: MediaId | null;
     media: MediaItem[];
     contacts: ContactLink[];
+    team: OrgTeam;
     adminRoleId: EmployeeRoleId;
   }) {
     const now = this.clock.now();
-
     return this.txHost.startTransaction(async (tx) => {
       const result = OrganizationEntity.create({
         type: 'CreateOrganization',
@@ -39,15 +37,13 @@ export class CreateOrganizationInteractor {
         avatarId: command.avatarId,
         media: command.media,
         contacts: command.contacts,
+        team: command.team,
         adminRoleId: command.adminRoleId,
         now,
       });
-
       if (isLeft(result)) return result;
-
       const { state } = result.value;
       await this.organizationRepository.save(tx, state);
-
       return Right(state);
     });
   }

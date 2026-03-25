@@ -27,7 +27,7 @@ import {
 } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
-import type { ContactLink, PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
+import type { ItemWidget, PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 
 @Injectable()
 export class DrizzleItemQuery implements ItemQueryPort {
@@ -296,6 +296,7 @@ export class DrizzleItemQuery implements ItemQueryPort {
     const model: ItemReadModel = {
       itemId: ItemId.raw(row.id),
       typeId: TypeId.raw(row.typeId),
+      widgets: (row.widgets ?? []) as ItemWidget[],
       publishedAt: row.publishedAt,
       updatedAt: row.updatedAt,
     };
@@ -364,7 +365,7 @@ export class DrizzleItemQuery implements ItemQueryPort {
     }
 
     if (eventDates.length > 0) {
-      model.eventDateTime = { dates: eventDates.map((d) => d.eventDate) };
+      model.eventDateTime = { dates: eventDates.map((d) => ({ date: d.eventDate, label: d.label ?? undefined })) };
     }
 
     if (schedules.length > 0) {
@@ -375,10 +376,6 @@ export class DrizzleItemQuery implements ItemQueryPort {
           endTime: s.endTime,
         })) as ScheduleEntry[],
       };
-    }
-
-    if (row.contacts) {
-      model.contactInfo = { contacts: row.contacts as ContactLink[] };
     }
 
     return model;

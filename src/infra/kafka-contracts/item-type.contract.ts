@@ -13,6 +13,7 @@ const BaseWidgetSettingsSchema = Type.Object({
     Type.Literal('owner-review'),
     Type.Literal('schedule'),
     Type.Literal('contact-info'),
+    Type.Literal('team'),
   ]),
   required: Type.Boolean(),
 });

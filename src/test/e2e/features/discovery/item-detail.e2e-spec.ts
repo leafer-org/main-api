@@ -67,7 +67,7 @@ describe('GET /items/:itemId (Item Detail)', () => {
       itemReviewCount?: number;
       ownerRating?: number | null;
       ownerReviewCount?: number;
-      eventDates?: string[];
+      eventDates?: { date: string; label?: string }[];
       schedule?: { dayOfWeek: number; startTime: string; endTime: string }[];
       typeId?: string;
     },
@@ -237,7 +237,7 @@ describe('GET /items/:itemId (Item Detail)', () => {
       itemReviewCount: 10,
       ownerRating: 4.8,
       ownerReviewCount: 25,
-      eventDates: [futureDate],
+      eventDates: [{ date: futureDate }],
       schedule: [{ dayOfWeek: 1, startTime: '09:00', endTime: '18:00' }],
     });
 
@@ -344,7 +344,7 @@ describe('GET /items/:itemId (Item Detail)', () => {
 
     await seedItem(eventItemId, {
       title: 'Event Item',
-      eventDates: [new Date(Date.now() + 86_400_000).toISOString()],
+      eventDates: [{ date: new Date(Date.now() + 86_400_000).toISOString() }],
       paymentStrategy: 'free',
     });
 

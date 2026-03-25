@@ -4,7 +4,7 @@ import type { AdminOrganizationsListReadModel } from '../domain/read-models/admi
 import type { EmployeeListReadModel } from '../domain/read-models/employee-list.read-model.js';
 import type { EmployeeRoleListReadModel } from '../domain/read-models/employee-role-list.read-model.js';
 import type { ItemDetailReadModel } from '../domain/read-models/item-detail.read-model.js';
-import type { ItemListReadModel } from '../domain/read-models/item-list.read-model.js';
+import type { ItemListQuery, ItemListReadModel } from '../domain/read-models/item-list.read-model.js';
 import type { OrganizationDetailReadModel } from '../domain/read-models/organization-detail.read-model.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type {
@@ -103,7 +103,7 @@ export abstract class OrganizationQueryPort {
 }
 
 export abstract class ItemQueryPort {
-  public abstract findByOrganizationId(orgId: OrganizationId): Promise<ItemListReadModel>;
+  public abstract findList(query: ItemListQuery): Promise<ItemListReadModel>;
   public abstract findDetail(itemId: ItemId): Promise<ItemDetailReadModel | null>;
 }
 

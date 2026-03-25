@@ -10,7 +10,8 @@ import type {
 } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
-import type { ContactLink, PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
+import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
+import type { PaymentStrategy, ScheduleEntry } from '@/kernel/domain/vo/widget.js';
 
 export type ItemBaseInfo = {
   title: string;
@@ -68,9 +69,11 @@ export type ItemReadModel = {
   owner?: ItemOwner;
   itemReview?: ItemReview;
   ownerReview?: ItemReview;
-  eventDateTime?: { dates: Date[] };
+  eventDateTime?: { dates: { date: Date; label?: string }[] };
   schedule?: { entries: ScheduleEntry[] };
-  contactInfo?: { contacts: ContactLink[] };
+
+  /** Raw widgets for detail view — stored as-is, not used for filtering */
+  widgets: ItemWidget[];
 
   publishedAt: Date;
   updatedAt: Date;
@@ -164,6 +167,7 @@ export function projectItemFromEvent(event: ItemPublishedEvent): ItemReadModel {
   const model: ItemReadModel = {
     itemId: event.itemId,
     typeId: event.typeId,
+    widgets: event.widgets,
     publishedAt: event.publishedAt,
     updatedAt: event.publishedAt,
   };
@@ -210,13 +214,10 @@ export function projectItemFromEvent(event: ItemPublishedEvent): ItemReadModel {
         model.ownerReview = { rating: widget.rating, reviewCount: widget.reviewCount };
         break;
       case 'event-date-time':
-        model.eventDateTime = { dates: widget.dates.map((d) => new Date(d)) };
+        model.eventDateTime = { dates: widget.dates.map((d) => ({ date: new Date(d.date), label: d.label })) };
         break;
       case 'schedule':
         model.schedule = { entries: widget.entries };
-        break;
-      case 'contact-info':
-        model.contactInfo = { contacts: widget.contacts };
         break;
       default:
         break;

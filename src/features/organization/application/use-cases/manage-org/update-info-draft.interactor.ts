@@ -8,9 +8,8 @@ import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
-import type { ContactLink } from '@/kernel/domain/vo/widget.js';
+import type { ContactLink, OrgTeam } from '@/kernel/domain/vo/widget.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
-
 @Injectable()
 export class UpdateInfoDraftInteractor {
   public constructor(
@@ -20,7 +19,6 @@ export class UpdateInfoDraftInteractor {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
   ) {}
-
   public async execute(command: {
     organizationId: OrganizationId;
     userId: UserId;
@@ -29,6 +27,7 @@ export class UpdateInfoDraftInteractor {
     avatarId: MediaId | null;
     media: MediaItem[];
     contacts: ContactLink[];
+    team: OrgTeam;
   }) {
     const auth = await this.permissionCheck.mustHavePermission(
       command.organizationId,
@@ -36,13 +35,10 @@ export class UpdateInfoDraftInteractor {
       'edit_organization',
     );
     if (isLeft(auth)) return auth;
-
     const now = this.clock.now();
-
     return this.txHost.startTransaction(async (tx) => {
       const state = await this.organizationRepository.findById(tx, command.organizationId);
       if (!state) return Left(new OrganizationNotFoundError());
-
       const result = OrganizationEntity.updateInfoDraft(state, {
         type: 'UpdateInfoDraft',
         name: command.name,
@@ -50,12 +46,11 @@ export class UpdateInfoDraftInteractor {
         avatarId: command.avatarId,
         media: command.media,
         contacts: command.contacts,
+        team: command.team,
         now,
       });
       if (isLeft(result)) return result;
-
       await this.organizationRepository.save(tx, result.value.state);
-
       return Right(undefined);
     });
   }

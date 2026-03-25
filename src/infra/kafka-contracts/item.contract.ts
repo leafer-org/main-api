@@ -68,9 +68,14 @@ const OwnerReviewWidgetSchema = Type.Object({
   reviewCount: Type.Number(),
 });
 
+const EventDateSchema = Type.Object({
+  date: Type.String(),
+  label: Type.Optional(Type.String()),
+});
+
 const EventDateTimeWidgetSchema = Type.Object({
   type: Type.Literal('event-date-time'),
-  dates: Type.Array(Type.String()),
+  dates: Type.Array(EventDateSchema),
 });
 
 const ScheduleEntrySchema = Type.Object({
@@ -95,6 +100,19 @@ const ContactInfoWidgetSchema = Type.Object({
   contacts: Type.Array(ContactLinkSchema),
 });
 
+const TeamMemberSchema = Type.Object({
+  name: Type.String(),
+  description: Type.Optional(Type.String()),
+  media: Type.Array(Type.Object({ type: Type.String(), mediaId: Type.String() })),
+  employeeUserId: Type.Optional(Type.String()),
+});
+
+const TeamWidgetSchema = Type.Object({
+  type: Type.Literal('team'),
+  title: Type.String(),
+  members: Type.Array(TeamMemberSchema),
+});
+
 const WidgetSchema = Type.Union([
   BaseInfoWidgetSchema,
   AgeGroupWidgetSchema,
@@ -107,6 +125,7 @@ const WidgetSchema = Type.Union([
   EventDateTimeWidgetSchema,
   ScheduleWidgetSchema,
   ContactInfoWidgetSchema,
+  TeamWidgetSchema,
 ]);
 
 const ItemStreamingMessage = Type.Object({

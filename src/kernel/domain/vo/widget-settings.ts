@@ -21,6 +21,7 @@ type EventDateTimeWidgetSettings = {
 };
 type ScheduleWidgetSettings = { type: 'schedule'; required: boolean };
 type ContactInfoWidgetSettings = { type: 'contact-info'; required: boolean };
+type TeamWidgetSettings = { type: 'team'; required: boolean };
 
 export type WidgetSettings =
   | BaseInfoWidgetSettings
@@ -33,7 +34,8 @@ export type WidgetSettings =
   | OwnerReviewWidgetSettings
   | EventDateTimeWidgetSettings
   | ScheduleWidgetSettings
-  | ContactInfoWidgetSettings;
+  | ContactInfoWidgetSettings
+  | TeamWidgetSettings;
 
 export type WidgetSettingsType = WidgetSettings['type'];
 

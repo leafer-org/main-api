@@ -59,7 +59,8 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
             ? String(item.ownerReview.rating)
             : null,
         ownerReviewCount: item.ownerReview?.reviewCount ?? 0,
-        contacts: item.contactInfo?.contacts ?? null,
+        widgets: item.widgets,
+
         publishedAt: item.publishedAt,
         updatedAt: item.updatedAt,
       })
@@ -89,7 +90,8 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
               ? String(item.ownerReview.rating)
               : null,
           ownerReviewCount: item.ownerReview?.reviewCount ?? 0,
-          contacts: item.contactInfo?.contacts ?? null,
+          widgets: item.widgets,
+  
           updatedAt: item.updatedAt,
         },
       });
@@ -190,7 +192,7 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
     if (eventDates.length > 0) {
       await this.dbClient.db
         .insert(discoveryItemEventDates)
-        .values(eventDates.map((d) => ({ itemId, eventDate: d })));
+        .values(eventDates.map((d) => ({ itemId, eventDate: d.date, label: d.label ?? null })));
     }
 
     // Insert schedule entries

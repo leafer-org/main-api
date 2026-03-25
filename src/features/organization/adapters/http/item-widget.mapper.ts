@@ -16,11 +16,13 @@ export function toItemWidget(w: PublicSchemas['ItemWidgetInput']): ItemWidget {
     case 'category':
       return { type: 'category', categoryIds: w.categoryIds.map((id) => CategoryId.raw(id)), attributes: (w.attributes ?? []).map((a) => ({ attributeId: AttributeId.raw(a.attributeId), value: a.value })) };
     case 'event-date-time':
-      return { type: 'event-date-time', dates: w.dates };
+      return { type: 'event-date-time', dates: w.dates.map((d) => ({ date: d.date, label: d.label })) };
     case 'schedule':
       return { type: 'schedule', entries: w.entries };
     case 'contact-info':
       return { type: 'contact-info', contacts: w.contacts };
+    case 'team':
+      return { type: 'team', title: w.title, members: w.members.map((m) => ({ name: m.name, description: m.description, media: m.media.map((med) => ({ type: med.type, mediaId: MediaId.raw(med.mediaId) })), employeeUserId: m.employeeUserId })) };
   }
 }
 

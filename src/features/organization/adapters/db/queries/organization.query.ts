@@ -39,6 +39,7 @@ export class DrizzleOrganizationQuery implements OrganizationQueryPort {
       avatarId: (s.infoDraft.avatarId ?? null) as OrganizationDetailReadModel['infoDraft']['avatarId'],
       media: (s.infoDraft.media ?? []) as OrganizationDetailReadModel['infoDraft']['media'],
       contacts: (s.infoDraft.contacts ?? []) as OrganizationDetailReadModel['infoDraft']['contacts'],
+      team: (s.infoDraft.team ?? { title: '', members: [] }) as OrganizationDetailReadModel['infoDraft']['team'],
       status: s.infoDraft.status as OrganizationDetailReadModel['infoDraft']['status'],
       updatedAt: draftUpdatedAt,
       hasDraftChanges: InfoDraftEntity.hasDraftChanges(
@@ -66,6 +67,7 @@ export class DrizzleOrganizationQuery implements OrganizationQueryPort {
               : never,
             media: (s.infoPublication.media ?? []) as OrganizationDetailReadModel['infoDraft']['media'],
             contacts: (s.infoPublication.contacts ?? []) as OrganizationDetailReadModel['infoDraft']['contacts'],
+            team: (s.infoPublication.team ?? { title: '', members: [] }) as OrganizationDetailReadModel['infoDraft']['team'],
             publishedAt: new Date(s.infoPublication.publishedAt),
           }
         : null,

@@ -53,11 +53,14 @@ export type OwnerReviewWidget = {
   rating: number | null;
   reviewCount: number;
 };
-export type EventDateTimeWidget = { type: 'event-date-time'; dates: string[] };
+export type EventDate = { date: string; label?: string };
+export type EventDateTimeWidget = { type: 'event-date-time'; dates: EventDate[] };
 
 export const EventDateTimeWidget = {
-  findNextDate(dates: Date[], now: Date): Date | null {
-    const future = dates.filter((d) => d.getTime() > now.getTime());
+  findNextDate(dates: EventDate[], now: Date): Date | null {
+    const future = dates
+      .map((d) => new Date(d.date))
+      .filter((d) => d.getTime() > now.getTime());
     if (future.length === 0) return null;
     future.sort((a, b) => a.getTime() - b.getTime());
     return future[0] ?? null;
@@ -68,6 +71,15 @@ export type ScheduleWidget = { type: 'schedule'; entries: ScheduleEntry[] };
 export type ContactLinkType = 'phone' | 'email' | 'link';
 export type ContactLink = { type: ContactLinkType; value: string; label?: string };
 export type ContactInfoWidget = { type: 'contact-info'; contacts: ContactLink[] };
+
+export type TeamMember = {
+  name: string;
+  description?: string;
+  media: MediaItem[];
+  employeeUserId?: string;
+};
+export type OrgTeam = { title: string; members: TeamMember[] };
+export type TeamWidget = { type: 'team'; title: string; members: TeamMember[] };
 
 export type ItemWidget =
   | BaseInfoWidget
@@ -80,7 +92,8 @@ export type ItemWidget =
   | OwnerReviewWidget
   | EventDateTimeWidget
   | ScheduleWidget
-  | ContactInfoWidget;
+  | ContactInfoWidget
+  | TeamWidget;
 
 export type WidgetType = ItemWidget['type'];
 
@@ -96,4 +109,5 @@ export const ALL_WIDGET_TYPES: WidgetType[] = [
   'event-date-time',
   'schedule',
   'contact-info',
+  'team',
 ];

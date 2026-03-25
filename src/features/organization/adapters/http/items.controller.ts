@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 
 import { ItemQueryPort } from '../../application/ports.js';
@@ -71,27 +72,37 @@ export class ItemsController {
   @Get()
   public async list(
     @Param('orgId') orgId: string,
-    @CurrentUser() user: JwtUserPayload,
+    @Query('search') search?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limitStr?: string,
+    @CurrentUser() user?: JwtUserPayload,
   ): Promise<PublicResponse['getOrganizationItems']> {
     const result = await this.getOrganizationItems.execute({
       organizationId: OrganizationId.raw(orgId),
-      userId: user.userId,
+      userId: user!.userId,
+      search: search || undefined,
+      cursor: cursor || undefined,
+      limit: limitStr ? Number(limitStr) : undefined,
     });
 
     if (isLeft(result)) {
       throw domainToHttpError<'getOrganizationItems'>(result.error.toResponse());
     }
 
-    return result.value.items.map((item) => ({
-      itemId: item.itemId,
-      organizationId: orgId,
-      typeId: item.typeId,
-      hasDraft: item.draftStatus !== null,
-      draftStatus: item.draftStatus,
-      hasPublication: item.hasPublication,
-      createdAt: item.createdAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString(),
-    }));
+    return {
+      items: result.value.items.map((item) => ({
+        itemId: item.itemId,
+        organizationId: orgId,
+        typeId: item.typeId,
+        hasDraft: item.draftStatus !== null,
+        draftStatus: item.draftStatus,
+        hasPublication: item.hasPublication,
+        widgets: item.widgets,
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString(),
+      })),
+      nextCursor: result.value.nextCursor,
+    };
   }
 
   @Get(':itemId')

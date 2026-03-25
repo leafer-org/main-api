@@ -1,90 +1,25 @@
+import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
 import type { ItemReadModel } from '../read-models/item.read-model.js';
 import type { ItemDetailView, ItemWidgetView } from '../read-models/item-detail-view.read-model.js';
 
-/** ItemReadModel → ItemDetailView. Собирает ItemWidgetView[] из optional-полей read model. */
-export function toDetailView(item: ItemReadModel): ItemDetailView {
-  const widgets: ItemWidgetView[] = [];
-
-  if (item.baseInfo) {
-    widgets.push({
-      type: 'base-info',
-      title: item.baseInfo.title,
-      description: item.baseInfo.description,
-      media: item.baseInfo.media,
-    });
-  }
-
-  if (item.ageGroup) {
-    widgets.push({ type: 'age-group', value: item.ageGroup });
-  }
-
-  if (item.location) {
-    widgets.push({
-      type: 'location',
-      cityId: item.location.cityId,
-      lat: item.location.coordinates.lat,
-      lng: item.location.coordinates.lng,
-      address: item.location.address,
-    });
-  }
-
-  if (item.payment) {
-    widgets.push({
-      type: 'payment',
-      options: item.payment.options,
-    });
-  }
-
-  if (item.category) {
-    widgets.push({ type: 'category', categoryIds: item.category.categoryIds });
-  }
-
-  if (item.owner) {
-    widgets.push({
-      type: 'owner',
-      organizationId: item.owner.organizationId,
-      name: item.owner.name,
-      avatarId: item.owner.avatarId,
-    });
-  }
-
-  if (item.itemReview) {
-    widgets.push({
-      type: 'item-review',
-      rating: item.itemReview.rating,
-      reviewCount: item.itemReview.reviewCount,
-    });
-  }
-
-  if (item.ownerReview) {
-    widgets.push({
-      type: 'owner-review',
-      rating: item.ownerReview.rating,
-      reviewCount: item.ownerReview.reviewCount,
-    });
-  }
-
-  if (item.eventDateTime) {
-    widgets.push({
+function toWidgetView(w: ItemWidget): ItemWidgetView {
+  if (w.type === 'event-date-time') {
+    return {
       type: 'event-date-time',
-      dates: item.eventDateTime.dates.map((d) => d.toISOString()),
-    });
+      dates: w.dates.map((d) => ({ date: typeof d.date === 'string' ? d.date : (d.date as unknown as Date).toISOString(), label: d.label })),
+    };
   }
+  return w as ItemWidgetView;
+}
 
-  if (item.schedule) {
-    widgets.push({ type: 'schedule', entries: item.schedule.entries });
-  }
-
-  if (item.contactInfo) {
-    widgets.push({ type: 'contact-info', contacts: item.contactInfo.contacts });
-  }
-
+/** ItemReadModel → ItemDetailView. */
+export function toDetailView(item: ItemReadModel): ItemDetailView {
   const hasVideo = (item.baseInfo?.media ?? []).some((m) => m.type === 'video');
 
   return {
     itemId: item.itemId,
     typeId: item.typeId,
-    widgets,
+    widgets: item.widgets.map(toWidgetView),
     hasVideo,
     publishedAt: item.publishedAt,
   };

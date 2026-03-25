@@ -94,7 +94,7 @@ export function filterItems(items: ItemReadModel[], filters: CategoryItemFilters
     result = result.filter((item) => {
       const dates = item.eventDateTime?.dates;
       if (!dates || dates.length === 0) return false;
-      return dates.some((d) => d >= from && d <= to);
+      return dates.some((d) => d.date >= from && d.date <= to);
     });
   }
 

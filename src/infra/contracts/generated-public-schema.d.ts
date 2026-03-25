@@ -1527,7 +1527,7 @@ export interface paths {
     };
     /**
      * Список товаров организации
-     * @description Возвращает список товаров организации с информацией о статусе черновика и публикации.
+     * @description Возвращает список товаров организации с поиском и курсорной пагинацией.
      */
     get: operations['getOrganizationItems'];
     put?: never;
@@ -2343,6 +2343,11 @@ export interface components {
       message: string;
       error?: string;
     };
+    EventDate: {
+      /** Format: date-time */
+      date: string;
+      label?: string;
+    };
     ScheduleEntry: {
       dayOfWeek: number;
       startTime: string;
@@ -2353,6 +2358,12 @@ export interface components {
       type: 'phone' | 'email' | 'link';
       value: string;
       label?: string;
+    };
+    TeamMember: {
+      name: string;
+      description?: string;
+      media: components['schemas']['MediaItem'][];
+      employeeUserId?: string;
     };
     ItemWidgetView:
       | {
@@ -2408,7 +2419,7 @@ export interface components {
       | {
           /** @enum {string} */
           type: 'event-date-time';
-          dates: string[];
+          dates: components['schemas']['EventDate'][];
         }
       | {
           /** @enum {string} */
@@ -2419,6 +2430,12 @@ export interface components {
           /** @enum {string} */
           type: 'contact-info';
           contacts: components['schemas']['ContactLink'][];
+        }
+      | {
+          /** @enum {string} */
+          type: 'team';
+          title: string;
+          members: components['schemas']['TeamMember'][];
         };
     ItemDetailView: {
       itemId: string;
@@ -2549,7 +2566,8 @@ export interface components {
         | 'item-review'
         | 'owner-review'
         | 'schedule'
-        | 'contact-info';
+        | 'contact-info'
+        | 'team';
       required: boolean;
     };
     WidgetSettings:
@@ -2611,7 +2629,7 @@ export interface components {
       | {
           /** @enum {string} */
           type: 'event-date-time';
-          dates: string[];
+          dates: components['schemas']['EventDate'][];
         }
       | {
           /** @enum {string} */
@@ -2622,6 +2640,12 @@ export interface components {
           /** @enum {string} */
           type: 'contact-info';
           contacts: components['schemas']['ContactLink'][];
+        }
+      | {
+          /** @enum {string} */
+          type: 'team';
+          title: string;
+          members: components['schemas']['TeamMember'][];
         };
     ItemWidget:
       | {
@@ -2681,7 +2705,7 @@ export interface components {
       | {
           /** @enum {string} */
           type: 'event-date-time';
-          dates: string[];
+          dates: components['schemas']['EventDate'][];
         }
       | {
           /** @enum {string} */
@@ -2692,6 +2716,12 @@ export interface components {
           /** @enum {string} */
           type: 'contact-info';
           contacts: components['schemas']['ContactLink'][];
+        }
+      | {
+          /** @enum {string} */
+          type: 'team';
+          title: string;
+          members: components['schemas']['TeamMember'][];
         };
     /** @enum {string} */
     ItemDraftStatus: 'draft' | 'moderation-request' | 'rejected';
@@ -2759,6 +2789,10 @@ export interface components {
       avatarId?: string | null;
       media: components['schemas']['ResolvedMediaItem'][];
       contacts?: components['schemas']['ContactLink'][];
+      team?: {
+        title?: string;
+        members?: components['schemas']['TeamMember'][];
+      };
       status: components['schemas']['InfoDraftStatus'];
       /** Format: date-time */
       updatedAt: string;
@@ -2801,7 +2835,8 @@ export interface components {
       | 'owner-review'
       | 'event-date-time'
       | 'schedule'
-      | 'contact-info';
+      | 'contact-info'
+      | 'team';
     Subscription: {
       planId: components['schemas']['SubscriptionPlanId'];
       maxEmployees: number;
@@ -2817,6 +2852,10 @@ export interface components {
         avatarId?: string | null;
         media: components['schemas']['ResolvedMediaItem'][];
         contacts?: components['schemas']['ContactLink'][];
+        team?: {
+          title?: string;
+          members?: components['schemas']['TeamMember'][];
+        };
         /** Format: date-time */
         publishedAt: string;
       } | null;
@@ -2835,6 +2874,7 @@ export interface components {
       hasDraft?: boolean;
       draftStatus?: string | null;
       hasPublication?: boolean;
+      widgets?: components['schemas']['ItemWidget'][];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -6336,6 +6376,10 @@ export interface operations {
           avatarId?: string | null;
           media?: components['schemas']['MediaItem'][];
           contacts?: components['schemas']['ContactLink'][];
+          team?: {
+            title?: string;
+            members?: components['schemas']['TeamMember'][];
+          };
         };
       };
     };
@@ -6536,6 +6580,10 @@ export interface operations {
           avatarId?: string | null;
           media?: components['schemas']['MediaItem'][];
           contacts?: components['schemas']['ContactLink'][];
+          team?: {
+            title?: string;
+            members?: components['schemas']['TeamMember'][];
+          };
         };
       };
     };
@@ -6695,6 +6743,10 @@ export interface operations {
           avatarId?: string | null;
           media?: components['schemas']['MediaItem'][];
           contacts?: components['schemas']['ContactLink'][];
+          team?: {
+            title?: string;
+            members?: components['schemas']['TeamMember'][];
+          };
         };
       };
     };
@@ -7459,7 +7511,11 @@ export interface operations {
   };
   getOrganizationItems: {
     parameters: {
-      query?: never;
+      query?: {
+        search?: string;
+        cursor?: string;
+        limit?: number;
+      };
       header?: never;
       path: {
         orgId: string;
@@ -7474,7 +7530,10 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ItemListItem'][];
+          'application/json': {
+            items: components['schemas']['ItemListItem'][];
+            nextCursor?: string | null;
+          };
         };
       };
       401: components['responses']['UnauthorizedError'];

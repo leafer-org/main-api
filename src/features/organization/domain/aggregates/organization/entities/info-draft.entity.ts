@@ -3,7 +3,7 @@ import { InfoNotInDraftError, InfoNotInModerationError } from '../errors.js';
 import type { EntityState } from '@/infra/ddd/entity-state.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 import type { MediaId } from '@/kernel/domain/ids.js';
-import type { ContactLink } from '@/kernel/domain/vo/widget.js';
+import type { ContactLink, OrgTeam } from '@/kernel/domain/vo/widget.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 
 export type InfoDraftStatus = 'draft' | 'moderation-request' | 'rejected';
@@ -14,6 +14,7 @@ export type InfoDraftEntity = EntityState<{
   avatarId: MediaId | null;
   media: MediaItem[];
   contacts: ContactLink[];
+  team: OrgTeam;
   status: InfoDraftStatus;
   updatedAt: Date;
 }>;
@@ -25,9 +26,10 @@ export const InfoDraftEntity = {
     avatarId: MediaId | null,
     media: MediaItem[],
     contacts: ContactLink[],
+    team: OrgTeam,
     now: Date,
   ): InfoDraftEntity {
-    return { name, description, avatarId, media, contacts, status: 'draft', updatedAt: now };
+    return { name, description, avatarId, media, contacts, team, status: 'draft', updatedAt: now };
   },
 
   update(
@@ -37,9 +39,10 @@ export const InfoDraftEntity = {
     avatarId: MediaId | null,
     media: MediaItem[],
     contacts: ContactLink[],
+    team: OrgTeam,
     now: Date,
   ): InfoDraftEntity {
-    return { name, description, avatarId, media, contacts, status: 'draft', updatedAt: now };
+    return { name, description, avatarId, media, contacts, team, status: 'draft', updatedAt: now };
   },
 
   revertToPublication(publication: InfoPublicationEntity, now: Date): InfoDraftEntity {
@@ -49,6 +52,7 @@ export const InfoDraftEntity = {
       avatarId: publication.avatarId,
       media: publication.media,
       contacts: publication.contacts,
+      team: publication.team,
       status: 'draft',
       updatedAt: now,
     };
@@ -86,10 +90,12 @@ export const InfoDraftEntity = {
       return m.type !== pub.type || m.mediaId !== pub.mediaId;
     })) return true;
     if (state.contacts.length !== publication.contacts.length) return true;
-    return state.contacts.some((c, i) => {
+    if (state.contacts.some((c, i) => {
       const pub = publication.contacts[i]!;
       return c.type !== pub.type || c.value !== pub.value || c.label !== pub.label;
-    });
+    })) return true;
+    if (JSON.stringify(state.team) !== JSON.stringify(publication.team)) return true;
+    return false;
   },
 
   canSubmitForModeration(state: InfoDraftEntity, publication: InfoPublicationEntity | null): boolean {

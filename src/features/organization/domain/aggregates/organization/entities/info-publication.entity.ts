@@ -1,7 +1,7 @@
 import type { InfoDraftEntity } from './info-draft.entity.js';
 import type { EntityState } from '@/infra/ddd/entity-state.js';
 import type { MediaId } from '@/kernel/domain/ids.js';
-import type { ContactLink } from '@/kernel/domain/vo/widget.js';
+import type { ContactLink, OrgTeam } from '@/kernel/domain/vo/widget.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 
 export type InfoPublicationEntity = EntityState<{
@@ -10,6 +10,7 @@ export type InfoPublicationEntity = EntityState<{
   avatarId: MediaId | null;
   media: MediaItem[];
   contacts: ContactLink[];
+  team: OrgTeam;
   publishedAt: Date;
 }>;
 
@@ -21,6 +22,7 @@ export const InfoPublicationEntity = {
       avatarId: draft.avatarId,
       media: draft.media,
       contacts: draft.contacts,
+      team: draft.team,
       publishedAt,
     };
   },

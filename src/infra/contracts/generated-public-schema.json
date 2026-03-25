@@ -5611,6 +5611,20 @@
                     "items": {
                       "$ref": "#/components/schemas/ContactLink"
                     }
+                  },
+                  "team": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string"
+                      },
+                      "members": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/TeamMember"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -5958,6 +5972,20 @@
                     "items": {
                       "$ref": "#/components/schemas/ContactLink"
                     }
+                  },
+                  "team": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string"
+                      },
+                      "members": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/TeamMember"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -6165,6 +6193,20 @@
                     "type": "array",
                     "items": {
                       "$ref": "#/components/schemas/ContactLink"
+                    }
+                  },
+                  "team": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string"
+                      },
+                      "members": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/TeamMember"
+                        }
+                      }
                     }
                   }
                 }
@@ -7468,7 +7510,7 @@
           "organization-items"
         ],
         "summary": "Список товаров организации",
-        "description": "Возвращает список товаров организации с информацией о статусе черновика и публикации.",
+        "description": "Возвращает список товаров организации с поиском и курсорной пагинацией.",
         "security": [
           {
             "bearerAuth": []
@@ -7482,6 +7524,28 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
           }
         ],
         "responses": {
@@ -7490,9 +7554,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ItemListItem"
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ItemListItem"
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
                   }
                 }
               }
@@ -11401,6 +11479,21 @@
           }
         }
       },
+      "EventDate": {
+        "type": "object",
+        "required": [
+          "date"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
       "ScheduleEntry": {
         "type": "object",
         "required": [
@@ -11439,6 +11532,30 @@
             "type": "string"
           },
           "label": {
+            "type": "string"
+          }
+        }
+      },
+      "TeamMember": {
+        "type": "object",
+        "required": [
+          "name",
+          "media"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaItem"
+            }
+          },
+          "employeeUserId": {
             "type": "string"
           }
         }
@@ -11663,8 +11780,7 @@
               "dates": {
                 "type": "array",
                 "items": {
-                  "type": "string",
-                  "format": "date-time"
+                  "$ref": "#/components/schemas/EventDate"
                 }
               }
             }
@@ -11707,6 +11823,31 @@
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/ContactLink"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "title",
+              "members"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "team"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "members": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TeamMember"
                 }
               }
             }
@@ -12206,7 +12347,8 @@
               "item-review",
               "owner-review",
               "schedule",
-              "contact-info"
+              "contact-info",
+              "team"
             ]
           },
           "required": {
@@ -12239,7 +12381,8 @@
             "item-review": "#/components/schemas/BaseWidgetSettings",
             "owner-review": "#/components/schemas/BaseWidgetSettings",
             "schedule": "#/components/schemas/BaseWidgetSettings",
-            "contact-info": "#/components/schemas/BaseWidgetSettings"
+            "contact-info": "#/components/schemas/BaseWidgetSettings",
+            "team": "#/components/schemas/BaseWidgetSettings"
           }
         }
       },
@@ -12467,8 +12610,7 @@
               "dates": {
                 "type": "array",
                 "items": {
-                  "type": "string",
-                  "format": "date-time"
+                  "$ref": "#/components/schemas/EventDate"
                 }
               }
             }
@@ -12511,6 +12653,31 @@
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/ContactLink"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "title",
+              "members"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "team"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "members": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TeamMember"
                 }
               }
             }
@@ -12758,8 +12925,7 @@
               "dates": {
                 "type": "array",
                 "items": {
-                  "type": "string",
-                  "format": "date-time"
+                  "$ref": "#/components/schemas/EventDate"
                 }
               }
             }
@@ -12802,6 +12968,31 @@
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/ContactLink"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "title",
+              "members"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "team"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "members": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TeamMember"
                 }
               }
             }
@@ -13060,6 +13251,20 @@
               "$ref": "#/components/schemas/ContactLink"
             }
           },
+          "team": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "members": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TeamMember"
+                }
+              }
+            }
+          },
           "status": {
             "$ref": "#/components/schemas/InfoDraftStatus"
           },
@@ -13155,7 +13360,8 @@
           "owner-review",
           "event-date-time",
           "schedule",
-          "contact-info"
+          "contact-info",
+          "team"
         ]
       },
       "Subscription": {
@@ -13238,6 +13444,20 @@
                   "$ref": "#/components/schemas/ContactLink"
                 }
               },
+              "team": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "members": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/TeamMember"
+                    }
+                  }
+                }
+              },
               "publishedAt": {
                 "type": "string",
                 "format": "date-time"
@@ -13299,6 +13519,12 @@
           },
           "hasPublication": {
             "type": "boolean"
+          },
+          "widgets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemWidget"
+            }
           },
           "createdAt": {
             "type": "string",

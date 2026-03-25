@@ -91,11 +91,13 @@ export class DrizzleOrganizationRepository extends OrganizationRepository {
       infoDraft: {
         ...state.infoDraft,
         contacts: state.infoDraft.contacts ?? [],
+        team: state.infoDraft.team ?? { title: '', members: [] },
       },
       infoPublication: state.infoPublication
         ? {
             ...state.infoPublication,
             contacts: state.infoPublication.contacts ?? [],
+            team: state.infoPublication.team ?? { title: '', members: [] },
             publishedAt: new Date(state.infoPublication.publishedAt as unknown as string),
           }
         : null,

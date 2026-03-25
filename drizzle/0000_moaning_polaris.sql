@@ -60,6 +60,7 @@ CREATE TABLE "discovery_item_categories" (
 CREATE TABLE "discovery_item_event_dates" (
 	"item_id" uuid NOT NULL,
 	"event_date" timestamp with time zone NOT NULL,
+	"label" text,
 	CONSTRAINT "discovery_item_event_dates_item_id_event_date_pk" PRIMARY KEY("item_id","event_date")
 );
 --> statement-breakpoint
@@ -99,7 +100,7 @@ CREATE TABLE "discovery_items" (
 	"item_review_count" integer DEFAULT 0 NOT NULL,
 	"owner_rating" numeric,
 	"owner_review_count" integer DEFAULT 0 NOT NULL,
-	"contacts" jsonb,
+	"widgets" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"published_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL
 );

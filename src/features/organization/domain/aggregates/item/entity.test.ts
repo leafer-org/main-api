@@ -199,7 +199,7 @@ describe('ItemEntity', () => {
       ];
       const dateWidget: ItemWidget = {
         type: 'event-date-time',
-        dates: ['2024-07-01', '2024-07-02'],
+        dates: [{ date: '2024-07-01' }, { date: '2024-07-02' }],
       };
       const result = ItemEntity.create({
         type: 'CreateItem',

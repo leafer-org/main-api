@@ -13,11 +13,22 @@ export class GetOrganizationItemsInteractor {
     private readonly permissionCheck: OrganizationPermissionCheckService,
   ) {}
 
-  public async execute(command: { organizationId: OrganizationId; userId: UserId }) {
+  public async execute(command: {
+    organizationId: OrganizationId;
+    userId: UserId;
+    search?: string;
+    cursor?: string;
+    limit?: number;
+  }) {
     const auth = await this.permissionCheck.mustBeEmployee(command.organizationId, command.userId);
     if (isLeft(auth)) return auth;
 
-    const readModel = await this.itemQuery.findByOrganizationId(command.organizationId);
+    const readModel = await this.itemQuery.findList({
+      organizationId: command.organizationId as string,
+      search: command.search,
+      cursor: command.cursor,
+      limit: command.limit ?? 20,
+    });
 
     return Right(readModel);
   }

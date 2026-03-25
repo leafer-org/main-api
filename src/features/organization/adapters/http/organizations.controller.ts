@@ -52,6 +52,15 @@ export class OrganizationsController {
       avatarId: body.avatarId ? MediaId.raw(body.avatarId) : null,
       media: (body.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })),
       contacts: body.contacts ?? [],
+      team: {
+        title: body.team?.title ?? '',
+        members: (body.team?.members ?? []).map((m) => ({
+          name: m.name,
+          description: m.description,
+          media: m.media.map((med) => ({ type: med.type, mediaId: MediaId.raw(med.mediaId) })),
+          employeeUserId: m.employeeUserId,
+        })),
+      },
       adminRoleId,
     });
 
@@ -146,6 +155,15 @@ export class OrganizationsController {
       avatarId: body.avatarId ? MediaId.raw(body.avatarId) : null,
       media: (body.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })),
       contacts: body.contacts ?? [],
+      team: {
+        title: body.team?.title ?? '',
+        members: (body.team?.members ?? []).map((m) => ({
+          name: m.name,
+          description: m.description,
+          media: m.media.map((med) => ({ type: med.type, mediaId: MediaId.raw(med.mediaId) })),
+          employeeUserId: m.employeeUserId,
+        })),
+      },
     });
 
     if (isLeft(result)) {
@@ -251,6 +269,7 @@ export class OrganizationsController {
         avatarId: detail.infoDraft.avatarId ?? null,
         media: draftMedia,
         contacts: detail.infoDraft.contacts,
+        team: detail.infoDraft.team as any,
         status: detail.infoDraft.status,
         updatedAt: detail.infoDraft.updatedAt.toISOString(),
         hasDraftChanges: detail.infoDraft.hasDraftChanges,
@@ -263,6 +282,7 @@ export class OrganizationsController {
             avatarId: detail.infoPublication.avatarId ?? null,
             media: pubMedia,
             contacts: detail.infoPublication.contacts,
+            team: detail.infoPublication.team as any,
             publishedAt: detail.infoPublication.publishedAt.toISOString(),
           }
         : null,
