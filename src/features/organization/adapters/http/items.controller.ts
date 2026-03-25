@@ -141,6 +141,7 @@ export class ItemsController {
       organizationId: OrganizationId.raw(orgId),
       userId: user.userId,
       itemId: ItemId.raw(itemId),
+      typeId: body.typeId ? TypeId.raw(body.typeId) : undefined,
       widgets: body.widgets.map(toItemWidget),
     });
 

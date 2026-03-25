@@ -237,8 +237,53 @@ describe('ItemEntity', () => {
       expect(result.value.state.draft!.widgets[0]!.type).toBe('base-info');
     });
 
-    it('returns ItemNoDraftError if no draft', () => {
+    it('creates draft from published item when no draft exists', () => {
       const state = publishedItem();
+      const newWidgets: ItemWidget[] = [{ ...BASE_WIDGET, title: 'Edited Published' }, OWNER_WIDGET];
+
+      const result = ItemEntity.updateDraft(state, {
+        type: 'UpdateDraft',
+        widgets: newWidgets,
+        widgetSettings: WIDGET_SETTINGS,
+        allowedWidgetTypes: ALLOWED,
+        now: LATER,
+      });
+
+      expect(isLeft(result)).toBe(false);
+      if (isLeft(result)) return;
+
+      const { state: newState } = result.value;
+      expect(newState.draft).not.toBeNull();
+      expect(newState.draft!.status).toBe('draft');
+      expect(newState.draft!.widgets[0]).toEqual({ ...BASE_WIDGET, title: 'Edited Published' });
+      // publication remains untouched
+      expect(newState.publication).not.toBeNull();
+      expect(newState.publication!.widgets).toEqual(state.publication!.widgets);
+    });
+
+    it('changes typeId when provided', () => {
+      const state = createItem();
+      const newTypeId = TypeId.raw('type-2');
+
+      const result = ItemEntity.updateDraft(state, {
+        type: 'UpdateDraft',
+        typeId: newTypeId,
+        widgets: WIDGETS,
+        widgetSettings: WIDGET_SETTINGS,
+        allowedWidgetTypes: ALLOWED,
+        now: LATER,
+      });
+
+      expect(isLeft(result)).toBe(false);
+      if (isLeft(result)) return;
+
+      expect(result.value.state.typeId).toBe(newTypeId);
+      expect(result.value.event.typeId).toBe(newTypeId);
+    });
+
+    it('keeps typeId when not provided', () => {
+      const state = createItem();
+
       const result = ItemEntity.updateDraft(state, {
         type: 'UpdateDraft',
         widgets: WIDGETS,
@@ -246,10 +291,12 @@ describe('ItemEntity', () => {
         allowedWidgetTypes: ALLOWED,
         now: LATER,
       });
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
-        expect(result.error.type).toBe('item_no_draft');
-      }
+
+      expect(isLeft(result)).toBe(false);
+      if (isLeft(result)) return;
+
+      expect(result.value.state.typeId).toBe(TYPE_ID);
+      expect(result.value.event.typeId).toBeUndefined();
     });
 
     it('returns ItemDraftInModerationError if draft in moderation', () => {

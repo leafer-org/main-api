@@ -15,6 +15,7 @@ export type ItemCreatedEvent = {
 export type ItemDraftUpdatedEvent = {
   type: 'item.draft-updated';
   itemId: ItemId;
+  typeId?: TypeId;
   widgets: ItemWidget[];
   updatedAt: Date;
 };

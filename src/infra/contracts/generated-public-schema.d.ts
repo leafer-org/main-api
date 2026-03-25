@@ -7720,6 +7720,8 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': {
+          /** @description Новый тип товара (опционально, если нужно сменить тип) */
+          typeId?: string;
           widgets: components['schemas']['ItemWidgetInput'][];
         };
       };

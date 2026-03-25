@@ -12,7 +12,7 @@ import { CatalogValidationPort } from '@/kernel/application/ports/catalog-valida
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { Permissions } from '@/kernel/domain/permissions.js';
-import type { ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import type { ItemId, OrganizationId, TypeId, UserId } from '@/kernel/domain/ids.js';
 import { ALL_WIDGET_TYPES, type ItemWidget } from '@/kernel/domain/vo/widget.js';
 import { fillOwnerWidget } from './create-item.interactor.js';
 
@@ -35,6 +35,7 @@ export class UpdateItemDraftInteractor {
     organizationId: OrganizationId;
     userId?: UserId;
     itemId: ItemId;
+    typeId?: TypeId;
     widgets: ItemWidget[];
   }) {
     const isAdmin = await this.globalPermissionCheck.can(Permissions.manageOrganization);
@@ -60,13 +61,15 @@ export class UpdateItemDraftInteractor {
       const org = await this.organizationRepository.findById(tx, command.organizationId);
       if (!org) return Left(new OrganizationNotFoundError());
 
-      const itemType = await this.catalogValidation.getItemType(item.typeId);
+      const resolvedTypeId = command.typeId ?? item.typeId;
+      const itemType = await this.catalogValidation.getItemType(resolvedTypeId);
       if (!itemType) return Left(new ItemTypeNotFoundError());
 
       const widgets = fillOwnerWidget(command.widgets, command.organizationId, org.infoDraft);
 
       const result = ItemEntity.updateDraft(item, {
         type: 'UpdateDraft',
+        typeId: command.typeId,
         widgets,
         widgetSettings: itemType.widgetSettings,
         allowedWidgetTypes: isAdmin ? ALL_WIDGET_TYPES : org.subscription.availableWidgetTypes,

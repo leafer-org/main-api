@@ -17,6 +17,7 @@ export type CreateItemCommand = {
 
 export type UpdateDraftCommand = {
   type: 'UpdateDraft';
+  typeId?: TypeId;
   widgets: ItemWidget[];
   widgetSettings: WidgetSettings[];
   allowedWidgetTypes: WidgetType[];

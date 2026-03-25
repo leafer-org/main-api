@@ -7709,6 +7709,10 @@
                   "widgets"
                 ],
                 "properties": {
+                  "typeId": {
+                    "type": "string",
+                    "description": "Новый тип товара (опционально, если нужно сменить тип)"
+                  },
                   "widgets": {
                     "type": "array",
                     "items": {

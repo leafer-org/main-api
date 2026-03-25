@@ -178,24 +178,28 @@ export const ItemEntity = {
     | WidgetValidationError,
     { state: ItemEntity; event: ItemDraftUpdatedEvent }
   > {
-    if (!state.draft) return Left(new ItemNoDraftError());
-    if (state.draft.status === 'moderation-request') return Left(new ItemDraftInModerationError());
+    if (!state.draft && !state.publication) return Left(new ItemNoDraftError());
+    if (state.draft?.status === 'moderation-request') return Left(new ItemDraftInModerationError());
 
     const validation = validateWidgets(cmd.widgets, cmd.widgetSettings, cmd.allowedWidgetTypes);
     if (isLeft(validation)) return validation;
 
+    const newTypeId = cmd.typeId ?? state.typeId;
+
     const event: ItemDraftUpdatedEvent = {
       type: 'item.draft-updated',
       itemId: state.itemId,
+      typeId: cmd.typeId,
       widgets: cmd.widgets,
       updatedAt: cmd.now,
     };
 
     const newState: ItemEntity = {
       ...state,
+      typeId: newTypeId,
       draft: {
         widgets: event.widgets,
-        status: state.draft.status,
+        status: state.draft?.status === 'rejected' ? 'rejected' : 'draft',
         updatedAt: event.updatedAt,
       },
       updatedAt: cmd.now,
