@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { TicketDatabaseClient } from './adapters/db/client.js';
+import { TicketTriggerConsumerHandler } from './adapters/kafka/ticket-trigger-consumer.handler.js';
 import { DrizzleBoardQuery } from './adapters/db/queries/board.query.js';
 import { DrizzleTicketQuery } from './adapters/db/queries/ticket.query.js';
 import { DrizzleBoardRepository } from './adapters/db/repositories/board.repository.js';
@@ -34,6 +35,8 @@ import { GetTriggersQuery } from './application/use-cases/queries/get-triggers.q
 import { AddCommentInteractor } from './application/use-cases/tickets/add-comment.interactor.js';
 import { AssignTicketInteractor } from './application/use-cases/tickets/assign-ticket.interactor.js';
 import { CreateTicketInteractor } from './application/use-cases/tickets/create-ticket.interactor.js';
+import { HandleCloseTriggerInteractor } from './application/use-cases/tickets/handle-close-trigger.interactor.js';
+import { HandleTriggerEventInteractor } from './application/use-cases/tickets/handle-trigger-event.interactor.js';
 import { MarkDoneInteractor } from './application/use-cases/tickets/mark-done.interactor.js';
 import { MoveTicketInteractor } from './application/use-cases/tickets/move-ticket.interactor.js';
 import { ReassignTicketInteractor } from './application/use-cases/tickets/reassign-ticket.interactor.js';
@@ -71,8 +74,13 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     AddAutomationInteractor,
     RemoveAutomationInteractor,
 
+    // Kafka consumer handler
+    TicketTriggerConsumerHandler,
+
     // Use cases — Tickets
     CreateTicketInteractor,
+    HandleTriggerEventInteractor,
+    HandleCloseTriggerInteractor,
     AssignTicketInteractor,
     ReassignTicketInteractor,
     UnassignTicketInteractor,

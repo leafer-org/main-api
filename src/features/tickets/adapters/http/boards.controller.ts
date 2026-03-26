@@ -24,7 +24,7 @@ import { RemoveSubscriptionInteractor } from '../../application/use-cases/boards
 import { UpdateBoardInteractor } from '../../application/use-cases/boards/update-board.interactor.js';
 import { GetBoardsQuery } from '../../application/use-cases/queries/get-boards.query.js';
 import { GetTriggersQuery } from '../../application/use-cases/queries/get-triggers.query.js';
-import type { BoardScope } from '../../domain/aggregates/board/state.js';
+import type { BoardScope, CloseTrigger } from '../../domain/aggregates/board/state.js';
 import type { SubscriptionFilter } from '../../domain/vo/filters.js';
 import type { TriggerId, TriggerScope } from '../../domain/vo/triggers.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
@@ -118,6 +118,7 @@ export class BoardsController {
       memberIds: state.memberIds,
       subscriptions: state.subscriptions,
       automations: state.automations,
+      closeTrigger: state.closeTrigger,
       createdAt: state.createdAt.toISOString(),
       updatedAt: state.updatedAt.toISOString(),
     };
@@ -132,6 +133,7 @@ export class BoardsController {
       description: string | null;
       manualCreation: boolean;
       allowedTransferBoardIds: string[];
+      closeTrigger: CloseTrigger | null;
     },
   ) {
     const result = await this.updateBoard.execute({
@@ -140,6 +142,7 @@ export class BoardsController {
       description: body.description,
       manualCreation: body.manualCreation,
       allowedTransferBoardIds: body.allowedTransferBoardIds.map((id) => BoardId.raw(id)),
+      closeTrigger: body.closeTrigger ?? null,
     });
 
     if (isLeft(result)) throwDomainError(result.error);
@@ -157,6 +160,7 @@ export class BoardsController {
       memberIds: state.memberIds,
       subscriptions: state.subscriptions,
       automations: state.automations,
+      closeTrigger: state.closeTrigger,
       createdAt: state.createdAt.toISOString(),
       updatedAt: state.updatedAt.toISOString(),
     };

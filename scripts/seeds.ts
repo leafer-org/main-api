@@ -95,6 +95,9 @@ export async function seedAdminUser(connectionUri: string) {
       phoneNumber: ADMIN_PHONE,
       fullName: 'Admin User',
       role: 'ADMIN',
+      cityId: 'moscow',
+      lat: 55.7558,
+      lng: 37.6173,
     })
     .onConflictDoNothing({ target: users.phoneNumber });
 

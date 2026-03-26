@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { OrganizationEntity } from '../../../domain/aggregates/organization/entity.js';
 import { OrganizationNotFoundError } from '../../../domain/aggregates/organization/errors.js';
 import { OrganizationPermissionCheckService } from '../../organization-permission.js';
-import { OrganizationEventPublisher, OrganizationRepository } from '../../ports.js';
+import { ModerationResultPublisher, OrganizationEventPublisher, OrganizationRepository } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
@@ -16,6 +16,7 @@ export class ApproveInfoModerationInteractor {
     private readonly permissionCheck: OrganizationPermissionCheckService,
     @Inject(OrganizationRepository) private readonly organizationRepository: OrganizationRepository,
     @Inject(OrganizationEventPublisher) private readonly eventPublisher: OrganizationEventPublisher,
+    @Inject(ModerationResultPublisher) private readonly moderationResultPublisher: ModerationResultPublisher,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
   ) {}
@@ -51,6 +52,13 @@ export class ApproveInfoModerationInteractor {
         media: domainEvent.media,
         republished,
         publishedAt: domainEvent.publishedAt,
+      });
+
+      await this.moderationResultPublisher.publish(tx, {
+        id: crypto.randomUUID(),
+        type: 'moderation.approved',
+        entityType: 'organization',
+        entityId: command.organizationId as string,
       });
 
       return Right(undefined);

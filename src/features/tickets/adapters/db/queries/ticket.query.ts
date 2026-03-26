@@ -119,6 +119,7 @@ export class DrizzleTicketQuery
       message: s.message,
       data: s.data as TicketData,
       triggerId: s.triggerId as TriggerId | null,
+      eventId: s.eventId ?? null,
       status: s.status as TicketStatus,
       assigneeId: s.assigneeId as UserId | null,
       history: s.history.map(

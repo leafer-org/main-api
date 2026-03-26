@@ -2731,6 +2731,9 @@
         "description": "Товары в категории с фильтрами и сортировкой",
         "parameters": [
           {
+            "$ref": "#/components/parameters/DeviceDprHeader"
+          },
+          {
             "name": "id",
             "in": "path",
             "required": true,
@@ -2990,6 +2993,9 @@
         "description": "Персонализированная лента рекомендаций по всему каталогу",
         "parameters": [
           {
+            "$ref": "#/components/parameters/DeviceDprHeader"
+          },
+          {
             "name": "cityId",
             "in": "query",
             "required": true,
@@ -3075,6 +3081,9 @@
         ],
         "description": "Полнотекстовый поиск товаров через Meilisearch с динамическими фасетными фильтрами",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/DeviceDprHeader"
+          },
           {
             "name": "query",
             "in": "query",
@@ -3220,6 +3229,9 @@
         ],
         "parameters": [
           {
+            "$ref": "#/components/parameters/DeviceDprHeader"
+          },
+          {
             "name": "search",
             "in": "query",
             "required": false,
@@ -3275,6 +3287,9 @@
         ],
         "description": "Детальная страница товара — полные данные всех виджетов",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/DeviceDprHeader"
+          },
           {
             "name": "itemId",
             "in": "path",
@@ -8346,6 +8361,16 @@
                     "items": {
                       "type": "string"
                     }
+                  },
+                  "closeTrigger": {
+                    "oneOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/components/schemas/CloseTrigger"
+                      }
+                    ]
                   }
                 }
               }
@@ -10351,6 +10376,7 @@
         "required": [
           "id",
           "phoneNumber",
+          "cityId",
           "createdAt",
           "updatedAt"
         ],
@@ -10372,6 +10398,18 @@
           },
           "avatar": {
             "$ref": "#/components/schemas/Avatar"
+          },
+          "cityId": {
+            "type": "string",
+            "description": "Идентификатор города пользователя"
+          },
+          "lat": {
+            "type": "number",
+            "description": "Широта"
+          },
+          "lng": {
+            "type": "number",
+            "description": "Долгота"
           },
           "createdAt": {
             "type": "string",
@@ -10903,7 +10941,19 @@
           }
         }
       },
-      "ImageMediaItem": {
+      "ImagePreview": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "ResolvedImageMedia": {
         "type": "object",
         "required": [
           "type",
@@ -10918,10 +10968,62 @@
           },
           "mediaId": {
             "type": "string"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/ImagePreview"
           }
         }
       },
-      "VideoMediaItem": {
+      "VideoPreview": {
+        "type": "object",
+        "required": [
+          "thumbnailUrl",
+          "hlsUrl",
+          "mp4PreviewUrl",
+          "processingStatus"
+        ],
+        "properties": {
+          "thumbnailUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "hlsUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "mp4PreviewUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "processingStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "ready",
+              "failed"
+            ]
+          },
+          "progress": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      },
+      "ResolvedVideoMedia": {
         "type": "object",
         "required": [
           "type",
@@ -10936,23 +11038,26 @@
           },
           "mediaId": {
             "type": "string"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/VideoPreview"
           }
         }
       },
-      "MediaItem": {
+      "ResolvedMediaItem": {
         "oneOf": [
           {
-            "$ref": "#/components/schemas/ImageMediaItem"
+            "$ref": "#/components/schemas/ResolvedImageMedia"
           },
           {
-            "$ref": "#/components/schemas/VideoMediaItem"
+            "$ref": "#/components/schemas/ResolvedVideoMedia"
           }
         ],
         "discriminator": {
           "propertyName": "type",
           "mapping": {
-            "image": "#/components/schemas/ImageMediaItem",
-            "video": "#/components/schemas/VideoMediaItem"
+            "image": "#/components/schemas/ResolvedImageMedia",
+            "video": "#/components/schemas/ResolvedVideoMedia"
           }
         }
       },
@@ -11016,6 +11121,13 @@
               "string",
               "null"
             ]
+          },
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
           }
         }
       },
@@ -11065,7 +11177,7 @@
           "media": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MediaItem"
+              "$ref": "#/components/schemas/ResolvedMediaItem"
             }
           },
           "hasVideo": {
@@ -11540,7 +11652,7 @@
           }
         }
       },
-      "TeamMember": {
+      "ResolvedTeamMember": {
         "type": "object",
         "required": [
           "name",
@@ -11556,7 +11668,7 @@
           "media": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MediaItem"
+              "$ref": "#/components/schemas/ResolvedMediaItem"
             }
           },
           "employeeUserId": {
@@ -11590,7 +11702,7 @@
               "media": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/MediaItem"
+                  "$ref": "#/components/schemas/ResolvedMediaItem"
                 }
               }
             }
@@ -11717,6 +11829,13 @@
                   "string",
                   "null"
                 ]
+              },
+              "avatarUrl": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uri"
               }
             }
           },
@@ -11851,7 +11970,7 @@
               "members": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/TeamMember"
+                  "$ref": "#/components/schemas/ResolvedTeamMember"
                 }
               }
             }
@@ -12449,6 +12568,83 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "ImageMediaItem": {
+        "type": "object",
+        "required": [
+          "type",
+          "mediaId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "image"
+            ]
+          },
+          "mediaId": {
+            "type": "string"
+          }
+        }
+      },
+      "VideoMediaItem": {
+        "type": "object",
+        "required": [
+          "type",
+          "mediaId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "video"
+            ]
+          },
+          "mediaId": {
+            "type": "string"
+          }
+        }
+      },
+      "MediaItem": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ImageMediaItem"
+          },
+          {
+            "$ref": "#/components/schemas/VideoMediaItem"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "image": "#/components/schemas/ImageMediaItem",
+            "video": "#/components/schemas/VideoMediaItem"
+          }
+        }
+      },
+      "TeamMember": {
+        "type": "object",
+        "required": [
+          "name",
+          "media"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaItem"
+            }
+          },
+          "employeeUserId": {
+            "type": "string"
           }
         }
       },
@@ -13091,126 +13287,6 @@
           }
         }
       },
-      "ImagePreview": {
-        "type": "object",
-        "required": [
-          "url"
-        ],
-        "properties": {
-          "url": {
-            "type": "string",
-            "format": "uri"
-          }
-        }
-      },
-      "ResolvedImageMedia": {
-        "type": "object",
-        "required": [
-          "type",
-          "mediaId"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "image"
-            ]
-          },
-          "mediaId": {
-            "type": "string"
-          },
-          "preview": {
-            "$ref": "#/components/schemas/ImagePreview"
-          }
-        }
-      },
-      "VideoPreview": {
-        "type": "object",
-        "required": [
-          "thumbnailUrl",
-          "hlsUrl",
-          "mp4PreviewUrl",
-          "processingStatus"
-        ],
-        "properties": {
-          "thumbnailUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uri"
-          },
-          "hlsUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uri"
-          },
-          "mp4PreviewUrl": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uri"
-          },
-          "processingStatus": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "processing",
-              "ready",
-              "failed"
-            ]
-          },
-          "progress": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "minimum": 0,
-            "maximum": 100
-          }
-        }
-      },
-      "ResolvedVideoMedia": {
-        "type": "object",
-        "required": [
-          "type",
-          "mediaId"
-        ],
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "video"
-            ]
-          },
-          "mediaId": {
-            "type": "string"
-          },
-          "preview": {
-            "$ref": "#/components/schemas/VideoPreview"
-          }
-        }
-      },
-      "ResolvedMediaItem": {
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/ResolvedImageMedia"
-          },
-          {
-            "$ref": "#/components/schemas/ResolvedVideoMedia"
-          }
-        ],
-        "discriminator": {
-          "propertyName": "type",
-          "mapping": {
-            "image": "#/components/schemas/ResolvedImageMedia",
-            "video": "#/components/schemas/ResolvedVideoMedia"
-          }
-        }
-      },
       "InfoDraftStatus": {
         "type": "string",
         "enum": [
@@ -13699,6 +13775,24 @@
           }
         }
       },
+      "CloseTrigger": {
+        "type": "object",
+        "required": [
+          "type",
+          "addComment"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "on-moderation-resolved"
+            ]
+          },
+          "addComment": {
+            "type": "boolean"
+          }
+        }
+      },
       "BoardDetail": {
         "type": "object",
         "required": [
@@ -13765,6 +13859,16 @@
             "items": {
               "$ref": "#/components/schemas/BoardAutomation"
             }
+          },
+          "closeTrigger": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CloseTrigger"
+              }
+            ]
           },
           "createdAt": {
             "type": "string",
@@ -13952,6 +14056,12 @@
               "null"
             ]
           },
+          "eventId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "data": {
             "$ref": "#/components/schemas/TicketData"
           },
@@ -14006,6 +14116,20 @@
               "organization"
             ]
           }
+        }
+      }
+    },
+    "parameters": {
+      "DeviceDprHeader": {
+        "name": "X-Device-DPR",
+        "in": "header",
+        "required": false,
+        "description": "Device pixel ratio (1–4). Используется для вычисления размеров изображений через imgproxy. По умолчанию 3.",
+        "schema": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4,
+          "default": 3
         }
       }
     },

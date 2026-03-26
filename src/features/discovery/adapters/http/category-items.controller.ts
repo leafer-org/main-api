@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Query, Req } from '@nestjs/common';
+import type { Request } from 'express';
 
 import { GetCategoryItemsInteractor } from '../../application/use-cases/browse-category/get-category-items.interactor.js';
 import type {
@@ -6,10 +7,13 @@ import type {
   CategoryItemFilters,
   SortOption,
 } from '../../application/use-cases/browse-category/types.js';
+import { avatarImageProxy, cardImageOptions } from './image-proxy-options.js';
+import { resolveItemListMedia } from './resolve-item-media.js';
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';
+import { MediaService } from '@/kernel/application/ports/media.js';
 import { AttributeId, CategoryId, TypeId } from '@/kernel/domain/ids.js';
-import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
+import { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 type RawFilterParams = {
   typeIds?: string;
@@ -87,11 +91,15 @@ function parseFilters(raw: RawFilterParams): CategoryItemFilters {
 
 @Controller('categories')
 export class CategoryItemsController {
-  public constructor(private readonly getCategoryItems: GetCategoryItemsInteractor) {}
+  public constructor(
+    private readonly getCategoryItems: GetCategoryItemsInteractor,
+    @Inject(MediaService) private readonly mediaService: MediaService,
+  ) {}
 
   @Public()
   @Get(':id/items')
   public async getItems(
+    @Req() req: Request,
     @Param('id') id: string,
     @Query('sort') sort?: PublicQuery['getCategoryItems']['sort'],
     @Query('cursor') cursor?: PublicQuery['getCategoryItems']['cursor'],
@@ -136,12 +144,18 @@ export class CategoryItemsController {
       sort: (sort ?? 'personal') as SortOption,
       cityId: cityId ?? '',
       coordinates,
-      ageGroup: (ageGroup ?? 'adults') as AgeGroupOption,
+      ageGroup: AgeGroupOption.restore(ageGroup ?? 'adults'),
       filters,
       cursor: cursor ?? undefined,
       limit: Number(limit ?? 20),
     });
 
-    return result.value as PublicResponse['getCategoryItems'];
+    const loader = this.mediaService.createMediaLoader(cardImageOptions(req));
+    const resolvedItems = await resolveItemListMedia(result.value.items, loader, avatarImageProxy(req));
+
+    return {
+      items: resolvedItems,
+      nextCursor: result.value.nextCursor,
+    };
   }
 }

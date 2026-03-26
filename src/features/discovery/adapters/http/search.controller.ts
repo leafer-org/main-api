@@ -1,18 +1,26 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Inject, Query, Req } from '@nestjs/common';
+import type { Request } from 'express';
 
 import { SearchItemsInteractor } from '../../application/use-cases/search/search-items.interactor.js';
+import { avatarImageProxy, cardImageOptions } from './image-proxy-options.js';
+import { resolveItemListMedia } from './resolve-item-media.js';
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';
+import { MediaService } from '@/kernel/application/ports/media.js';
 import { CategoryId, TypeId } from '@/kernel/domain/ids.js';
-import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
+import { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 @Public()
 @Controller('search')
 export class SearchController {
-  public constructor(private readonly searchItems: SearchItemsInteractor) {}
+  public constructor(
+    private readonly searchItems: SearchItemsInteractor,
+    @Inject(MediaService) private readonly mediaService: MediaService,
+  ) {}
 
   @Get()
   public async search(
+    @Req() req: Request,
     @Query('query') query: PublicQuery['searchItems']['query'],
     @Query('cityId') cityId: PublicQuery['searchItems']['cityId'],
     @Query('ageGroup') ageGroup?: PublicQuery['searchItems']['ageGroup'],
@@ -26,7 +34,7 @@ export class SearchController {
     const result = await this.searchItems.execute({
       query,
       cityId,
-      ageGroup: (ageGroup ?? 'adults') as AgeGroupOption,
+      ageGroup: AgeGroupOption.restore(ageGroup ?? 'adults'),
       filters: {
         categoryIds: categoryIds
           ? categoryIds.split(',').map((s) => CategoryId.raw(s.trim()))
@@ -44,6 +52,12 @@ export class SearchController {
       limit: Number(limit ?? 20),
     });
 
-    return result.value as PublicResponse['searchItems'];
+    const loader = this.mediaService.createMediaLoader(cardImageOptions(req));
+    const resolvedItems = await resolveItemListMedia(result.value.items, loader, avatarImageProxy(req));
+
+    return {
+      ...result.value,
+      items: resolvedItems,
+    };
   }
 }

@@ -152,38 +152,31 @@ services:
       redis:
         condition: service_healthy
 
-  gorse-postgres:
-    image: postgres:18-alpine
-    environment:
-      POSTGRES_USER: gorse
-      POSTGRES_PASSWORD: gorse
-      POSTGRES_DB: gorse
+  gorse-redis:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6380:6379"
     volumes:
-      - gorse_postgres_data:/var/lib/postgresql/data
+      - gorse_redis_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gorse -d gorse"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
-    profiles:
-      - gorse
 
   gorse:
     image: zhenghaoz/gorse-in-one:0.5.5
     environment:
-      GORSE_CACHE_STORE: redis://redis:6379/1
-      GORSE_DATA_STORE: postgres://gorse:gorse@gorse-postgres:5432/gorse?sslmode=disable
+      GORSE_CACHE_STORE: redis://gorse-redis:6379/0
+      GORSE_DATA_STORE: sqlite:///var/lib/gorse/data.db
     ports:
       - "8088:8088"
     volumes:
       - ./gorse-config.toml:/etc/gorse/config.toml
+      - gorse_data:/var/lib/gorse
     depends_on:
-      redis:
+      gorse-redis:
         condition: service_healthy
-      gorse-postgres:
-        condition: service_healthy
-    profiles:
-      - gorse
 
   file-processor:
     build:
@@ -214,5 +207,6 @@ volumes:
   redpanda_data:
   meili_data:
   minio_data:
-  gorse_postgres_data:
+  gorse_data:
+  gorse_redis_data:
   file_processor_node_modules:

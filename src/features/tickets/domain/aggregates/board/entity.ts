@@ -56,6 +56,7 @@ export const BoardEntity = {
       allowedTransferBoardIds: [],
       memberIds: [],
       automations: [],
+      closeTrigger: null,
       createdAt: cmd.now,
       updatedAt: cmd.now,
     };
@@ -73,6 +74,7 @@ export const BoardEntity = {
       description: cmd.description,
       manualCreation: cmd.manualCreation,
       allowedTransferBoardIds: cmd.allowedTransferBoardIds,
+      closeTrigger: cmd.closeTrigger,
       updatedAt: cmd.now,
     };
 
@@ -83,6 +85,7 @@ export const BoardEntity = {
         description: cmd.description,
         manualCreation: cmd.manualCreation,
         allowedTransferBoardIds: cmd.allowedTransferBoardIds,
+        closeTrigger: cmd.closeTrigger,
         updatedAt: cmd.now,
       },
       event,

@@ -307,12 +307,22 @@ describe('GET /items/:itemId (Item Detail)', () => {
       type: 'base-info',
       title: 'Precise Item',
       description: 'Precise description',
+      media: [],
     });
 
     const payment = res.body.widgets.find((w: { type: string }) => w.type === 'payment');
     expect(payment).toMatchObject({
       type: 'payment',
       options: [{ name: 'Оплата', description: null, strategy: 'one-time', price: 2500 }],
+    });
+
+    const owner = res.body.widgets.find((w: { type: string }) => w.type === 'owner');
+    expect(owner).toMatchObject({
+      type: 'owner',
+      organizationId: orgId,
+      name: 'Precise Org',
+      avatarId: null,
+      avatarUrl: null,
     });
 
     const itemReview = res.body.widgets.find((w: { type: string }) => w.type === 'item-review');

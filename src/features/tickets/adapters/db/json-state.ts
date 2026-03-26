@@ -20,6 +20,7 @@ export type TicketJsonState = {
     };
   };
   triggerId: string | null;
+  eventId: string | null;
   status: string;
   assigneeId: string | null;
   history: {
@@ -46,6 +47,10 @@ export type BoardJsonState = {
   manualCreation: boolean;
   allowedTransferBoardIds: string[];
   memberIds: string[];
+  closeTrigger: {
+    type: string;
+    addComment: boolean;
+  } | null;
   automations: {
     id: string;
     enabled: boolean;

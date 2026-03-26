@@ -53,6 +53,7 @@ export class CreateTicketInteractor {
         message: command.message,
         data: command.data,
         triggerId: null,
+        eventId: null,
         createdBy: command.createdBy,
         now,
       });

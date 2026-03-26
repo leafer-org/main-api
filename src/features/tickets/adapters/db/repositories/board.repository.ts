@@ -4,7 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import { BoardRepository } from '../../../application/ports.js';
 import type { BoardAutomationEntity } from '../../../domain/aggregates/board/entities/board-automation.entity.js';
 import type { BoardSubscriptionEntity } from '../../../domain/aggregates/board/entities/board-subscription.entity.js';
-import type { BoardScope, BoardState } from '../../../domain/aggregates/board/state.js';
+import type { BoardScope, BoardState, CloseTrigger } from '../../../domain/aggregates/board/state.js';
 import type { SubscriptionFilter } from '../../../domain/vo/filters.js';
 import type { TriggerId } from '../../../domain/vo/triggers.js';
 import type { BoardJsonState } from '../json-state.js';
@@ -114,6 +114,7 @@ export class DrizzleBoardRepository extends BoardRepository {
           },
         }),
       ),
+      closeTrigger: raw.closeTrigger as CloseTrigger | null ?? null,
       createdAt: new Date(raw.createdAt),
       updatedAt: new Date(raw.updatedAt),
     };

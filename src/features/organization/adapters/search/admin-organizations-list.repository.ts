@@ -19,4 +19,8 @@ export class MeiliAdminOrganizationsListRepository implements AdminOrganizations
       models.map((m) => ({ id: m.organizationId, document: m })),
     );
   }
+
+  public async deleteById(organizationId: string): Promise<void> {
+    await this.searchClient.deleteDoc(ADMIN_ORGANIZATIONS_INDEX, organizationId);
+  }
 }

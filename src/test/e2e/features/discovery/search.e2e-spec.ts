@@ -361,7 +361,9 @@ describe('Discovery Search HTTP (e2e)', () => {
         itemId,
         title: 'Shape test item',
         description: 'A detailed description',
-        owner: { name: 'Shape Org', avatarId: null },
+        media: [],
+        hasVideo: false,
+        owner: { name: 'Shape Org', avatarId: null, avatarUrl: null },
         location: { cityId: CITY_ID, address: 'Shape Street 1' },
       });
       expect(item).toHaveProperty('typeId');

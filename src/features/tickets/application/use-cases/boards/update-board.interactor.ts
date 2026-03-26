@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { BoardEntity } from '../../../domain/aggregates/board/entity.js';
 import { BoardNotFoundError } from '../../../domain/aggregates/board/errors.js';
+import type { CloseTrigger } from '../../../domain/aggregates/board/state.js';
 import { BoardRepository } from '../../ports.js';
 import { isLeft, Left } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
@@ -25,6 +26,7 @@ export class UpdateBoardInteractor {
     description: string | null;
     manualCreation: boolean;
     allowedTransferBoardIds: BoardId[];
+    closeTrigger: CloseTrigger | null;
   }) {
     const auth = await this.permissionCheck.mustCan(Permissions.manageTicketBoard);
     if (isLeft(auth)) return auth;
@@ -41,6 +43,7 @@ export class UpdateBoardInteractor {
         description: command.description,
         manualCreation: command.manualCreation,
         allowedTransferBoardIds: command.allowedTransferBoardIds,
+        closeTrigger: command.closeTrigger,
         now,
       });
 

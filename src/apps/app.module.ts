@@ -10,6 +10,7 @@ import { DiscoveryModule } from '../features/discovery/discovery.module.js';
 import { IDP_CONSUMER_ID } from '../features/idp/adapters/kafka/consumer-ids.js';
 import { IdpModule } from '../features/idp/idp.module.js';
 import { INTERACTIONS_CONSUMER_ID } from '../features/interactions/adapters/kafka/consumer-ids.js';
+import { TICKETS_CONSUMER_ID } from '../features/tickets/adapters/kafka/consumer-ids.js';
 import { InteractionsModule } from '../features/interactions/interactions.module.js';
 import { MediaModule } from '../features/media/media.module.js';
 import { ORGANIZATION_CONSUMER_ID } from '../features/organization/adapters/kafka/consumer-ids.js';
@@ -94,6 +95,18 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
         consumerConfig: {
           'metadata.broker.list': config.get('KAFKA_BROKER'),
           'group.id': 'interactions-consumer',
+        },
+      }),
+      inject: [MainConfigService],
+    }),
+    KafkaConsumerModule.registerAsync({
+      consumerId: TICKETS_CONSUMER_ID,
+      mode: { type: 'single' },
+      imports: [MainConfigModule],
+      useFactory: (config: MainConfigService) => ({
+        consumerConfig: {
+          'metadata.broker.list': config.get('KAFKA_BROKER'),
+          'group.id': 'tickets-consumer',
         },
       }),
       inject: [MainConfigService],

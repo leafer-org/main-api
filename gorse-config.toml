@@ -3,7 +3,7 @@ http_port = 8088
 api_key = ""
 
 [recommend]
-cache_expire = "10m"
+cache_expire = "10s"
 explore_recommend = { popular = 0.8, latest = 0.2 }
 
 [recommend.data_source]
@@ -18,12 +18,12 @@ fallback_recommend = "latest"
 num_feedback_fallback_item_based = 10
 
 [recommend.collaborative]
-fit_period = "60m"
+fit_period = "30s"
 optimize_period = "0s"
 enable_index = false
 
 [recommend.ranker]
-fit_period = "60m"
+fit_period = "30s"
 
 [master]
 meta_timeout = "10s"

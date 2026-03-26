@@ -103,6 +103,7 @@ export class TicketsController {
       message: ticket.message,
       data: ticket.data,
       triggerId: ticket.triggerId,
+      eventId: ticket.eventId,
       status: ticket.status,
       assigneeId: ticket.assigneeId,
       history: ticket.history.map((entry) => ({

@@ -191,7 +191,11 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
   private handleFatalError(consumePromise: Promise<void>): void {
     consumePromise.catch(async (error) => {
       this.isHealthy = false;
-      this.logger.fatal('Consumer crashed due to consecutive errors', error);
+      const topics = this.state.type === 'running' ? this.state.consumer.topics.join(', ') : 'unknown';
+      this.logger.fatal(
+        `Consumer "${this.consumerId.description}" crashed (topics: ${topics})`,
+        error,
+      );
 
       try {
         if (this.state.type === 'running') {

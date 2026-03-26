@@ -11,6 +11,10 @@ export class AdminOrganizationsSyncService {
     private readonly repo: AdminOrganizationsListRepository,
   ) {}
 
+  public async deleteFromSearch(orgId: string): Promise<void> {
+    await this.repo.deleteById(orgId);
+  }
+
   public async syncFromState(orgId: string, state: OrganizationJsonState): Promise<void> {
     const model: AdminOrganizationsListReadModel = {
       organizationId: orgId,

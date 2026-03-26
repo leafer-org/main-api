@@ -59,6 +59,8 @@ export class DrizzleOrganizationRepository extends OrganizationRepository {
   public async delete(tx: Transaction, id: OrganizationId): Promise<void> {
     const db = this.txHost.get(tx);
     await db.delete(organizations).where(eq(organizations.id, id));
+
+    this.searchSync.deleteFromSearch(id as string).catch(() => {});
   }
 
   private toJson(state: OrganizationEntity): unknown {

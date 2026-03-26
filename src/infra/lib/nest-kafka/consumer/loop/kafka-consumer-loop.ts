@@ -58,7 +58,7 @@ export class KafkaConsumerLoop {
 
         if (this.retryTracker.isExhausted) {
           throw new KafkaConnectionError(
-            `Consumer crashed after ${this.retryTracker.tryCount} consecutive errors`,
+            `Consumer crashed after ${this.retryTracker.tryCount} consecutive errors (topics: ${this.topics.join(', ')})`,
             error instanceof Error ? error : new Error(String(error)),
           );
         }
@@ -89,7 +89,7 @@ export class KafkaConsumerLoop {
 
           if (this.retryTracker.isExhausted) {
             throw new KafkaConnectionError(
-              `Consumer crashed after ${this.retryTracker.tryCount} consecutive errors`,
+              `Consumer crashed after ${this.retryTracker.tryCount} consecutive errors (topics: ${this.topics.join(', ')})`,
               error instanceof Error ? error : new Error(String(error)),
             );
           }

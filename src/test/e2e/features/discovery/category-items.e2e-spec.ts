@@ -238,7 +238,9 @@ describe('Discovery Category Items HTTP (e2e)', () => {
       expect(item.price).toMatchObject({ options: [{ name: 'Оплата', description: null, strategy: 'one-time', price: 1000 }] });
       expect(item.rating).toBe(4.5);
       expect(item.reviewCount).toBe(10);
-      expect(item.owner).toMatchObject({ name: 'Org' });
+      expect(item.media).toEqual([]);
+      expect(item.hasVideo).toBe(false);
+      expect(item.owner).toMatchObject({ name: 'Org', avatarUrl: null });
       expect(item.categoryIds).toContain(categoryId);
     });
 

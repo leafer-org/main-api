@@ -1,6 +1,6 @@
 import type { SubscriptionFilter } from '../../vo/filters.js';
 import type { TriggerId } from '../../vo/triggers.js';
-import type { BoardScope } from './state.js';
+import type { BoardScope, CloseTrigger } from './state.js';
 import type {
   BoardAutomationId,
   BoardId,
@@ -26,6 +26,7 @@ export type UpdateBoardCommand = {
   description: string | null;
   manualCreation: boolean;
   allowedTransferBoardIds: BoardId[];
+  closeTrigger: CloseTrigger | null;
   now: Date;
 };
 

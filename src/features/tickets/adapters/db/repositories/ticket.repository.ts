@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { TicketRepository } from '../../../application/ports.js';
 import type { TicketState, TicketStatus } from '../../../domain/aggregates/ticket/state.js';
@@ -58,6 +58,38 @@ export class DrizzleTicketRepository extends TicketRepository {
     await db.delete(tickets).where(eq(tickets.id, ticketId));
   }
 
+  public async existsByEventId(tx: Transaction, eventId: string): Promise<boolean> {
+    const db = this.txHost.get(tx);
+    const rows = await db
+      .select({ id: tickets.id })
+      .from(tickets)
+      .where(sql`${tickets.state}->>'eventId' = ${eventId}`)
+      .limit(1);
+    return rows.length > 0;
+  }
+
+  public async findOpenByTriggerAndEntityId(
+    tx: Transaction,
+    triggerId: TriggerId,
+    entityId: string,
+  ): Promise<TicketState[]> {
+    const db = this.txHost.get(tx);
+    const rows = await db
+      .select()
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.status, 'open'),
+          sql`${tickets.state}->>'triggerId' = ${triggerId as string}`,
+          sql`(
+            ${tickets.state}->'data'->'item'->>'id' = ${entityId}
+            OR ${tickets.state}->'data'->'organization'->>'id' = ${entityId}
+          )`,
+        ),
+      );
+    return rows.map((row) => this.toDomain(row.state));
+  }
+
   private toJson(state: TicketState): unknown {
     return {
       ...state,
@@ -79,6 +111,7 @@ export class DrizzleTicketRepository extends TicketRepository {
       message: raw.message,
       data: raw.data as TicketData,
       triggerId: raw.triggerId as TriggerId | null,
+      eventId: raw.eventId ?? null,
       status: raw.status as TicketStatus,
       assigneeId: raw.assigneeId as UserId | null,
       history: raw.history.map(

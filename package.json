@@ -76,6 +76,7 @@
     "concurrently": "^9.2.1",
     "drizzle-kit": "^0.31.8",
     "globals": "^16.0.0",
+    "openapi-fetch": "^0.17.0",
     "openapi-typescript": "^7.10.1",
     "supertest": "^7.0.0",
     "testcontainers": "^11.12.0",

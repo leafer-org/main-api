@@ -75,6 +75,7 @@ describe('BoardEntity', () => {
         description: 'New description',
         manualCreation: true,
         allowedTransferBoardIds: [BOARD_2_ID],
+        closeTrigger: null,
         now: LATER,
       });
 

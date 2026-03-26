@@ -13,6 +13,7 @@ import { OrganizationEmployeesController } from './adapters/http/organization-em
 import { OrganizationRolesController } from './adapters/http/organization-roles.controller.js';
 import { OrganizationsController } from './adapters/http/organizations.controller.js';
 import { OutboxItemEventPublisher } from './adapters/kafka/publishers/item-event.publisher.js';
+import { OutboxModerationResultPublisher } from './adapters/kafka/publishers/moderation-result.publisher.js';
 import { OutboxOrganizationEventPublisher } from './adapters/kafka/publishers/organization-event.publisher.js';
 import { MeiliAdminOrganizationsListQuery } from './adapters/search/admin-organizations-list.query.js';
 import { MeiliAdminOrganizationsListRepository } from './adapters/search/admin-organizations-list.repository.js';
@@ -25,6 +26,7 @@ import {
   ItemEventPublisher,
   ItemQueryPort,
   ItemRepository,
+  ModerationResultPublisher,
   OrganizationEventPublisher,
   OrganizationQueryPort,
   OrganizationRepository,
@@ -83,6 +85,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     { provide: ItemQueryPort, useClass: DrizzleItemQuery },
     { provide: OrganizationEventPublisher, useClass: OutboxOrganizationEventPublisher },
     { provide: ItemEventPublisher, useClass: OutboxItemEventPublisher },
+    { provide: ModerationResultPublisher, useClass: OutboxModerationResultPublisher },
     { provide: ClaimTokenQueryPort, useClass: DrizzleClaimTokenQuery },
     {
       provide: OrganizationPermissionCheckService,

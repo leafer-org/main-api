@@ -9,6 +9,9 @@ export type MeReadModel = {
   sessionId: SessionId;
   fullName: FullName;
   phoneNumber: PhoneNumber;
+  cityId: string;
+  lat: number | undefined;
+  lng: number | undefined;
   createdAt: Date;
   updatedAt: Date;
   avatarId: MediaId | undefined;

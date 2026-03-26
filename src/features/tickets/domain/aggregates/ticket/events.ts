@@ -9,6 +9,7 @@ export type TicketCreatedEvent = {
   message: string;
   data: TicketData;
   triggerId: TriggerId | null;
+  eventId: string | null;
   createdBy: UserId;
   createdAt: Date;
 };

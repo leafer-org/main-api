@@ -9,6 +9,7 @@ export type CreateTicketCommand = {
   message: string;
   data: TicketData;
   triggerId: TriggerId | null;
+  eventId: string | null;
   createdBy: UserId;
   now: Date;
 };

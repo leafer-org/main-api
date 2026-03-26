@@ -47,6 +47,9 @@ export class MeController {
       phoneNumber: me.phoneNumber as string,
       fullName: (me.fullName as string) || undefined,
       avatar,
+      cityId: me.cityId,
+      lat: me.lat,
+      lng: me.lng,
       createdAt: me.createdAt.toISOString(),
       updatedAt: me.updatedAt.toISOString(),
     };
@@ -94,6 +97,9 @@ export class MeController {
       phoneNumber: me.phoneNumber as string,
       fullName: (me.fullName as string) || undefined,
       avatar,
+      cityId: me.cityId,
+      lat: me.lat,
+      lng: me.lng,
       createdAt: me.createdAt.toISOString(),
       updatedAt: me.updatedAt.toISOString(),
     };

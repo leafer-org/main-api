@@ -258,8 +258,10 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(item).toHaveProperty('itemId');
     expect(item).toHaveProperty('title');
     expect(item).toHaveProperty('description');
-    expect(item).toHaveProperty('owner');
     expect(item).toHaveProperty('typeId');
+    expect(item).toHaveProperty('media');
+    expect(item).toHaveProperty('hasVideo');
+    expect(item.owner).toMatchObject({ name: expect.any(String), avatarUrl: null });
   });
 
   it('should respect limit parameter', async () => {
@@ -513,7 +515,8 @@ describe('GET /feed (personalized)', { timeout: 300_000 }, () => {
     const item = res.body.items[0];
     expect(item).toHaveProperty('itemId');
     expect(item).toHaveProperty('title');
-    expect(item).toHaveProperty('owner');
+    expect(item).toHaveProperty('media');
+    expect(item.owner).toMatchObject({ name: expect.any(String), avatarUrl: null });
   });
 });
 

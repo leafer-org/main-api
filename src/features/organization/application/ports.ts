@@ -84,6 +84,19 @@ export abstract class ItemEventPublisher {
   ): Promise<void>;
 }
 
+// --- Moderation result publisher ---
+
+export type ModerationResultEvent = {
+  id: string;
+  type: 'moderation.approved' | 'moderation.rejected';
+  entityType: 'organization' | 'item';
+  entityId: string;
+};
+
+export abstract class ModerationResultPublisher {
+  public abstract publish(tx: Transaction, event: ModerationResultEvent): Promise<void>;
+}
+
 // --- Claim token query port ---
 
 export abstract class ClaimTokenQueryPort {
@@ -111,6 +124,7 @@ export abstract class ItemQueryPort {
 
 export abstract class AdminOrganizationsListRepository {
   public abstract saveBatch(models: AdminOrganizationsListReadModel[]): Promise<void>;
+  public abstract deleteById(organizationId: string): Promise<void>;
 }
 
 export abstract class AdminOrganizationsListQueryPort {

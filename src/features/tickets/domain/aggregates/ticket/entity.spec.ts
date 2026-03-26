@@ -24,6 +24,7 @@ function createTicket() {
     message: 'Модерация товара: Test Item',
     data: {},
     triggerId: 'item.moderation-requested',
+    eventId: null,
     createdBy: AI_AGENT_USER,
     now: NOW,
   });
@@ -61,6 +62,7 @@ describe('TicketEntity', () => {
         message: 'Test message',
         data: {},
         triggerId: 'item.moderation-requested',
+        eventId: null,
         createdBy: USER_1,
         now: NOW,
       });
@@ -90,6 +92,7 @@ describe('TicketEntity', () => {
         message: 'Manual ticket',
         data: {},
         triggerId: null,
+        eventId: null,
         createdBy: USER_1,
         now: NOW,
       });

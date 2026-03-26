@@ -5,6 +5,11 @@ import type { BoardId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 
 export type BoardScope = 'platform' | 'organization';
 
+export type CloseTrigger = {
+  type: 'on-moderation-resolved';
+  addComment: boolean;
+};
+
 export type BoardState = EntityState<{
   boardId: BoardId;
   name: string;
@@ -16,6 +21,7 @@ export type BoardState = EntityState<{
   allowedTransferBoardIds: BoardId[];
   memberIds: UserId[];
   automations: BoardAutomationEntity[];
+  closeTrigger: CloseTrigger | null;
   createdAt: Date;
   updatedAt: Date;
 }>;

@@ -50,6 +50,7 @@ export const TicketEntity = {
       message: cmd.message,
       data: cmd.data,
       triggerId: cmd.triggerId,
+      eventId: cmd.eventId,
       createdBy: cmd.createdBy,
       createdAt: cmd.now,
     };
@@ -60,6 +61,7 @@ export const TicketEntity = {
       message: cmd.message,
       data: cmd.data,
       triggerId: cmd.triggerId,
+      eventId: cmd.eventId,
       status: 'open',
       assigneeId: null,
       history: [historyEntry('created', cmd.createdBy, cmd.now)],

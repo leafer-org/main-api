@@ -1,15 +1,19 @@
 {
 	"folders": [
 		{
+			"name": "main-api",
 			"path": "."
 		},
 		{
+			"name": "admin",
 			"path": "../admin"
 		},
 		{
+			"name": "mobile",
 			"path": "../mobile"
 		},
 		{
+			"name": "http-contracts",
 			"path": "../http-contracts"
 		}
 	],

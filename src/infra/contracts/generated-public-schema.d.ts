@@ -2050,6 +2050,12 @@ export interface components {
       phoneNumber: string;
       fullName?: string;
       avatar?: components['schemas']['Avatar'];
+      /** @description Идентификатор города пользователя */
+      cityId: string;
+      /** @description Широта */
+      lat?: number;
+      /** @description Долгота */
+      lng?: number;
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -2207,23 +2213,42 @@ export interface components {
       childCount: number;
       itemCount: number;
     };
-    ImageMediaItem: {
+    ImagePreview: {
+      /** Format: uri */
+      url: string;
+    };
+    ResolvedImageMedia: {
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
        */
       type: 'image';
       mediaId: string;
+      preview?: components['schemas']['ImagePreview'];
     };
-    VideoMediaItem: {
+    VideoPreview: {
+      /** Format: uri */
+      thumbnailUrl: string | null;
+      /** Format: uri */
+      hlsUrl: string | null;
+      /** Format: uri */
+      mp4PreviewUrl: string | null;
+      /** @enum {string} */
+      processingStatus: 'pending' | 'processing' | 'ready' | 'failed';
+      progress?: number | null;
+    };
+    ResolvedVideoMedia: {
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
        */
       type: 'video';
       mediaId: string;
+      preview?: components['schemas']['VideoPreview'];
     };
-    MediaItem: components['schemas']['ImageMediaItem'] | components['schemas']['VideoMediaItem'];
+    ResolvedMediaItem:
+      | components['schemas']['ResolvedImageMedia']
+      | components['schemas']['ResolvedVideoMedia'];
     PaymentOption: {
       name: string;
       description?: string | null;
@@ -2237,6 +2262,8 @@ export interface components {
     ItemOwnerSummary: {
       name: string;
       avatarId?: string | null;
+      /** Format: uri */
+      avatarUrl?: string | null;
     };
     ItemLocationSummary: {
       cityId: string;
@@ -2247,7 +2274,7 @@ export interface components {
       typeId: string;
       title: string;
       description?: string | null;
-      media?: components['schemas']['MediaItem'][];
+      media?: components['schemas']['ResolvedMediaItem'][];
       hasVideo: boolean;
       price?: components['schemas']['ItemPayment'] | null;
       rating?: number | null;
@@ -2359,10 +2386,10 @@ export interface components {
       value: string;
       label?: string;
     };
-    TeamMember: {
+    ResolvedTeamMember: {
       name: string;
       description?: string;
-      media: components['schemas']['MediaItem'][];
+      media: components['schemas']['ResolvedMediaItem'][];
       employeeUserId?: string;
     };
     ItemWidgetView:
@@ -2371,7 +2398,7 @@ export interface components {
           type: 'base-info';
           title: string;
           description: string;
-          media: components['schemas']['MediaItem'][];
+          media: components['schemas']['ResolvedMediaItem'][];
         }
       | {
           /** @enum {string} */
@@ -2403,6 +2430,8 @@ export interface components {
           organizationId: string;
           name: string;
           avatarId?: string | null;
+          /** Format: uri */
+          avatarUrl?: string | null;
         }
       | {
           /** @enum {string} */
@@ -2435,7 +2464,7 @@ export interface components {
           /** @enum {string} */
           type: 'team';
           title: string;
-          members: components['schemas']['TeamMember'][];
+          members: components['schemas']['ResolvedTeamMember'][];
         };
     ItemDetailView: {
       itemId: string;
@@ -2589,6 +2618,29 @@ export interface components {
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
+    };
+    ImageMediaItem: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'image';
+      mediaId: string;
+    };
+    VideoMediaItem: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'video';
+      mediaId: string;
+    };
+    MediaItem: components['schemas']['ImageMediaItem'] | components['schemas']['VideoMediaItem'];
+    TeamMember: {
+      name: string;
+      description?: string;
+      media: components['schemas']['MediaItem'][];
+      employeeUserId?: string;
     };
     ItemWidgetInput:
       | {
@@ -2745,42 +2797,6 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
-    ImagePreview: {
-      /** Format: uri */
-      url: string;
-    };
-    ResolvedImageMedia: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'image';
-      mediaId: string;
-      preview?: components['schemas']['ImagePreview'];
-    };
-    VideoPreview: {
-      /** Format: uri */
-      thumbnailUrl: string | null;
-      /** Format: uri */
-      hlsUrl: string | null;
-      /** Format: uri */
-      mp4PreviewUrl: string | null;
-      /** @enum {string} */
-      processingStatus: 'pending' | 'processing' | 'ready' | 'failed';
-      progress?: number | null;
-    };
-    ResolvedVideoMedia: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'video';
-      mediaId: string;
-      preview?: components['schemas']['VideoPreview'];
-    };
-    ResolvedMediaItem:
-      | components['schemas']['ResolvedImageMedia']
-      | components['schemas']['ResolvedVideoMedia'];
     /** @enum {string} */
     InfoDraftStatus: 'draft' | 'moderation-request' | 'rejected';
     InfoDraft: {
@@ -2923,6 +2939,11 @@ export interface components {
         moveToBoardId: string | null;
       };
     };
+    CloseTrigger: {
+      /** @enum {string} */
+      type: 'on-moderation-resolved';
+      addComment: boolean;
+    };
     BoardDetail: {
       boardId: string;
       name: string;
@@ -2935,6 +2956,7 @@ export interface components {
       allowedTransferBoardIds: string[];
       memberIds: string[];
       automations: components['schemas']['BoardAutomation'][];
+      closeTrigger?: null | components['schemas']['CloseTrigger'];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -2993,6 +3015,7 @@ export interface components {
       boardId: string;
       message: string;
       triggerId?: string | null;
+      eventId?: string | null;
       data: components['schemas']['TicketData'];
       /** @enum {string} */
       status: 'open' | 'in-progress' | 'done';
@@ -3030,7 +3053,10 @@ export interface components {
       };
     };
   };
-  parameters: never;
+  parameters: {
+    /** @description Device pixel ratio (1–4). Используется для вычисления размеров изображений через imgproxy. По умолчанию 3. */
+    DeviceDprHeader: number;
+  };
   requestBodies: never;
   headers: never;
   pathItems: never;
@@ -4838,7 +4864,10 @@ export interface operations {
         /** @description Конец диапазона времени (HH:mm) для фильтрации по расписанию */
         scheduleTimeTo?: string;
       };
-      header?: never;
+      header?: {
+        /** @description Device pixel ratio (1–4). Используется для вычисления размеров изображений через imgproxy. По умолчанию 3. */
+        'X-Device-DPR'?: components['parameters']['DeviceDprHeader'];
+      };
       path: {
         /** @description ID категории */
         id: string;
@@ -4906,7 +4935,10 @@ export interface operations {
         /** @description Количество элементов на странице */
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Device pixel ratio (1–4). Используется для вычисления размеров изображений через imgproxy. По умолчанию 3. */
+        'X-Device-DPR'?: components['parameters']['DeviceDprHeader'];
+      };
       path?: never;
       cookie?: never;
     };
@@ -4945,7 +4977,10 @@ export interface operations {
         /** @description Количество элементов на странице */
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Device pixel ratio (1–4). Используется для вычисления размеров изображений через imgproxy. По умолчанию 3. */
+        'X-Device-DPR'?: components['parameters']['DeviceDprHeader'];
+      };
       path?: never;
       cookie?: never;
     };
@@ -4977,7 +5012,10 @@ export interface operations {
         /** @description Количество элементов на странице */
         limit?: number;
       };
-      header?: never;
+      header?: {
+        /** @description Device pixel ratio (1–4). Используется для вычисления размеров изображений через imgproxy. По умолчанию 3. */
+        'X-Device-DPR'?: components['parameters']['DeviceDprHeader'];
+      };
       path?: never;
       cookie?: never;
     };
@@ -4998,7 +5036,10 @@ export interface operations {
   getDiscoveryItemDetail: {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Device pixel ratio (1–4). Используется для вычисления размеров изображений через imgproxy. По умолчанию 3. */
+        'X-Device-DPR'?: components['parameters']['DeviceDprHeader'];
+      };
       path: {
         /** @description ID товара */
         itemId: string;
@@ -8126,6 +8167,7 @@ export interface operations {
           description?: string | null;
           manualCreation: boolean;
           allowedTransferBoardIds: string[];
+          closeTrigger?: null | components['schemas']['CloseTrigger'];
         };
       };
     };

@@ -12,6 +12,7 @@ export type TicketState = EntityState<{
   message: string;
   data: TicketData;
   triggerId: TriggerId | null;
+  eventId: string | null;
   status: TicketStatus;
   assigneeId: UserId | null;
   history: TicketHistoryEntry[];

@@ -16,6 +16,12 @@ export abstract class TicketRepository {
   public abstract findById(tx: Transaction, ticketId: TicketId): Promise<TicketState | null>;
   public abstract save(tx: Transaction, state: TicketState): Promise<void>;
   public abstract deleteById(tx: Transaction, ticketId: TicketId): Promise<void>;
+  public abstract existsByEventId(tx: Transaction, eventId: string): Promise<boolean>;
+  public abstract findOpenByTriggerAndEntityId(
+    tx: Transaction,
+    triggerId: TriggerId,
+    entityId: string,
+  ): Promise<TicketState[]>;
 }
 
 export abstract class BoardRepository {
