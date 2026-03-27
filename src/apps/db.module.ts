@@ -29,6 +29,7 @@ import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
       imports: [MainConfigModule],
       useFactory: (config: MainConfigService) => ({
         connection: config.get('DB_URL'),
+        pool: { max: 30 },
       }),
       inject: [MainConfigService],
     }),

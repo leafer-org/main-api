@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 
 import { type GorseModuleOptions, MODULE_OPTIONS_TOKEN } from './tokens.js';
 
+
 export type GorseItemPayload = {
   ItemId: string;
   IsHidden: boolean;

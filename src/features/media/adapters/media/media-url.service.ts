@@ -70,15 +70,60 @@ export class CachedMediaUrlService {
   public async getDownloadUrls(
     requests: { fileId: MediaId; options: GetDownloadUrlOptions }[],
   ): Promise<(string | null)[]> {
-    const settled = await Promise.allSettled(
-      requests.map(({ fileId, options }) => this.getDownloadUrl(fileId, options)),
+    if (requests.length === 0) return [];
+
+    // Check cache first, collect uncached indices
+    const results: (string | null)[] = new Array(requests.length).fill(null);
+    const uncachedIndices: number[] = [];
+
+    for (let i = 0; i < requests.length; i++) {
+      const { fileId, options } = requests[i]!;
+      const cacheKey = this.buildCacheKey(fileId, options);
+      const cached = this.getFromCache(cacheKey);
+      if (cached) {
+        results[i] = cached;
+      } else {
+        uncachedIndices.push(i);
+      }
+    }
+
+    if (uncachedIndices.length === 0) return results;
+
+    // Batch-load all uncached files from DB in one query
+    const noTx = NO_TRANSACTION as Transaction;
+    const uncachedFileIds = uncachedIndices.map((i) => requests[i]!.fileId);
+    const uniqueIds = [...new Set(uncachedFileIds.map(String))];
+    const fileMap = await this.mediaRepository.findByIds(
+      noTx,
+      uniqueIds.map((id) => id as unknown as MediaId),
     );
 
-    return settled.map((entry, i) => {
-      if (entry.status === 'fulfilled') return entry.value;
-      this.logger.warn(`Failed to resolve download URL for ${requests[i]?.fileId}`, entry.reason);
-      return null;
-    });
+    // Resolve URLs in parallel for uncached entries
+    const settled = await Promise.allSettled(
+      uncachedIndices.map((i) => {
+        const { fileId, options } = requests[i]!;
+        const file = fileMap.get(fileId);
+        if (!file) return Promise.resolve(null);
+        return this.resolveUrlFromFile(file, options);
+      }),
+    );
+
+    for (let j = 0; j < uncachedIndices.length; j++) {
+      const i = uncachedIndices[j]!;
+      const entry = settled[j]!;
+      if (entry.status === 'fulfilled') {
+        const url = entry.value;
+        if (url) {
+          const { fileId, options } = requests[i]!;
+          this.setInCache(this.buildCacheKey(fileId, options), url, options.visibility);
+        }
+        results[i] = url;
+      } else {
+        this.logger.warn(`Failed to resolve download URL for ${requests[i]?.fileId}`, entry.reason);
+      }
+    }
+
+    return results;
   }
 
   public async getPreviewDownloadUrl(fileId: MediaId): Promise<string | null> {
@@ -153,7 +198,13 @@ export class CachedMediaUrlService {
     const noTx = NO_TRANSACTION as Transaction;
     const file = await this.mediaRepository.findById(noTx, fileId);
     if (!file) return null;
+    return this.resolveUrlFromFile(file, options);
+  }
 
+  private async resolveUrlFromFile(
+    file: { id: MediaId; bucket: string; mimeType: string; isTemporary: boolean },
+    options: GetDownloadUrlOptions,
+  ): Promise<string | null> {
     const bucket = file.isTemporary ? `${file.bucket}-temp` : file.bucket;
 
     if (options.visibility === 'PUBLIC' && this.cdnUrl && !file.isTemporary) {

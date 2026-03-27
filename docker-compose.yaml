@@ -178,6 +178,76 @@ services:
       gorse-redis:
         condition: service_healthy
 
+  # === Observability stack ===
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    profiles: [monitoring]
+    volumes:
+      - ./docker/otel-collector.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    depends_on:
+      tempo:
+        condition: service_started
+      loki:
+        condition: service_started
+      prometheus:
+        condition: service_started
+
+  tempo:
+    image: grafana/tempo:latest
+    profiles: [monitoring]
+    volumes:
+      - ./docker/tempo.yaml:/etc/tempo/config.yaml
+      - tempo_data:/var/tempo
+    command: ["-config.file=/etc/tempo/config.yaml"]
+    ports:
+      - "3200:3200"
+
+  loki:
+    image: grafana/loki:latest
+    profiles: [monitoring]
+    volumes:
+      - ./docker/loki.yaml:/etc/loki/config.yaml
+      - loki_data:/loki
+    command: ["-config.file=/etc/loki/config.yaml"]
+    ports:
+      - "3101:3100"
+
+  prometheus:
+    image: prom/prometheus:latest
+    profiles: [monitoring]
+    volumes:
+      - ./docker/prometheus.yaml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+      - "--storage.tsdb.path=/prometheus"
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    profiles: [monitoring]
+    volumes:
+      - ./docker/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./docker/grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./docker/grafana/json:/etc/grafana/provisioning/dashboards/json
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    ports:
+      - "3300:3000"
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+
   file-processor:
     build:
       context: .
@@ -209,4 +279,8 @@ volumes:
   minio_data:
   gorse_data:
   gorse_redis_data:
+  tempo_data:
+  loki_data:
+  prometheus_data:
+  grafana_data:
   file_processor_node_modules:
