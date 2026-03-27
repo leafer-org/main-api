@@ -81,6 +81,10 @@ export abstract class BoardListQueryPort {
   public abstract findBoards(params?: { scope?: BoardScope }): Promise<BoardListItem[]>;
 }
 
+export abstract class BoardDetailQueryPort {
+  public abstract findById(boardId: BoardId): Promise<BoardState | null>;
+}
+
 // --- Service ports ---
 
 export abstract class TicketIdGenerator {

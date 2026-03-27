@@ -22,6 +22,7 @@ import { RemoveAutomationInteractor } from '../../application/use-cases/boards/r
 import { RemoveMemberInteractor } from '../../application/use-cases/boards/remove-member.interactor.js';
 import { RemoveSubscriptionInteractor } from '../../application/use-cases/boards/remove-subscription.interactor.js';
 import { UpdateBoardInteractor } from '../../application/use-cases/boards/update-board.interactor.js';
+import { GetBoardDetailQuery } from '../../application/use-cases/queries/get-board-detail.query.js';
 import { GetBoardsQuery } from '../../application/use-cases/queries/get-boards.query.js';
 import { GetTriggersQuery } from '../../application/use-cases/queries/get-triggers.query.js';
 import type { BoardScope, CloseTrigger } from '../../domain/aggregates/board/state.js';
@@ -59,6 +60,7 @@ export class BoardsController {
     private readonly removeMember: RemoveMemberInteractor,
     private readonly addAutomation: AddAutomationInteractor,
     private readonly removeAutomation: RemoveAutomationInteractor,
+    private readonly getBoardDetailQuery: GetBoardDetailQuery,
     private readonly getBoardsQuery: GetBoardsQuery,
     private readonly getTriggersQuery: GetTriggersQuery,
   ) {}
@@ -82,6 +84,44 @@ export class BoardsController {
       automationCount: board.automationCount,
       createdAt: board.createdAt.toISOString(),
     }));
+  }
+
+  @Get('triggers')
+  public async getTriggers(@Query('scope') scope?: string) {
+    const result = await this.getTriggersQuery.execute({
+      scope: scope as TriggerScope | undefined,
+    });
+
+    if (isLeft(result)) throwDomainError(result.error);
+
+    return result.value;
+  }
+
+  @Get(':boardId')
+  public async detail(@Param('boardId') boardId: string) {
+    const result = await this.getBoardDetailQuery.execute({
+      boardId: BoardId.raw(boardId),
+    });
+
+    if (isLeft(result)) throwDomainError(result.error);
+
+    const state = result.value;
+
+    return {
+      boardId: state.boardId,
+      name: state.name,
+      description: state.description,
+      scope: state.scope,
+      organizationId: state.organizationId,
+      manualCreation: state.manualCreation,
+      allowedTransferBoardIds: state.allowedTransferBoardIds,
+      memberIds: state.memberIds,
+      subscriptions: state.subscriptions,
+      automations: state.automations,
+      closeTrigger: state.closeTrigger,
+      createdAt: state.createdAt.toISOString(),
+      updatedAt: state.updatedAt.toISOString(),
+    };
   }
 
   @Post()
@@ -268,16 +308,5 @@ export class BoardsController {
     });
 
     if (isLeft(result)) throwDomainError(result.error);
-  }
-
-  @Get('triggers')
-  public async getTriggers(@Query('scope') scope?: string) {
-    const result = await this.getTriggersQuery.execute({
-      scope: scope as TriggerScope | undefined,
-    });
-
-    if (isLeft(result)) throwDomainError(result.error);
-
-    return result.value;
   }
 }

@@ -10,6 +10,7 @@ import { BoardsController } from './adapters/http/boards.controller.js';
 import { TicketsController } from './adapters/http/tickets.controller.js';
 import { UuidTicketIdGenerator } from './adapters/id-generator.js';
 import {
+  BoardDetailQueryPort,
   BoardListQueryPort,
   BoardRepository,
   MyTicketsQueryPort,
@@ -27,6 +28,7 @@ import { RemoveAutomationInteractor } from './application/use-cases/boards/remov
 import { RemoveMemberInteractor } from './application/use-cases/boards/remove-member.interactor.js';
 import { RemoveSubscriptionInteractor } from './application/use-cases/boards/remove-subscription.interactor.js';
 import { UpdateBoardInteractor } from './application/use-cases/boards/update-board.interactor.js';
+import { GetBoardDetailQuery } from './application/use-cases/queries/get-board-detail.query.js';
 import { GetBoardsQuery } from './application/use-cases/queries/get-boards.query.js';
 import { GetMyTicketsQuery } from './application/use-cases/queries/get-my-tickets.query.js';
 import { GetTicketDetailQuery } from './application/use-cases/queries/get-ticket-detail.query.js';
@@ -59,6 +61,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     { provide: TicketDetailQueryPort, useClass: DrizzleTicketQuery },
     { provide: MyTicketsQueryPort, useClass: DrizzleTicketQuery },
     { provide: BoardListQueryPort, useClass: DrizzleBoardQuery },
+    { provide: BoardDetailQueryPort, useClass: DrizzleBoardQuery },
 
     // Port → Adapter bindings (services)
     { provide: TicketIdGenerator, useClass: UuidTicketIdGenerator },
@@ -90,6 +93,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     AddCommentInteractor,
 
     // Queries
+    GetBoardDetailQuery,
     GetBoardsQuery,
     GetTicketsQuery,
     GetTicketDetailQuery,
