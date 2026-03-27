@@ -178,6 +178,48 @@ services:
       gorse-redis:
         condition: service_healthy
 
+  # === Spec Box ===
+
+  specbox-postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: tms
+    ports:
+      - "5433:5432"
+    volumes:
+      - specbox_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tms"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  specbox-web:
+    image: specbox/web:1.0.0
+    environment:
+      ConnectionStrings__Default: "host=specbox-postgres;port=5432;database=tms;username=postgres;password=123"
+    ports:
+      - "8084:80"
+    depends_on:
+      specbox-postgres:
+        condition: service_healthy
+
+  specbox-init:
+    image: specbox/web:1.0.0
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        ./SpecBox.CLI migrate &&
+        ./SpecBox.CLI project create leafer-admin "Leafer Admin" || true
+    environment:
+      ConnectionStrings__Default: "host=specbox-postgres;port=5432;database=tms;username=postgres;password=123"
+    depends_on:
+      specbox-web:
+        condition: service_started
+
   # === Observability stack ===
 
   otel-collector:
@@ -284,3 +326,4 @@ volumes:
   prometheus_data:
   grafana_data:
   file_processor_node_modules:
+  specbox_pgdata:
