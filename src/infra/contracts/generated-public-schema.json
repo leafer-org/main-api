@@ -3393,6 +3393,74 @@
         }
       }
     },
+    "/items/liked-status": {
+      "post": {
+        "operationId": "checkLikedStatus",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Проверить статус лайков для списка товаров (батч)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "itemIds"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "itemIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "description": "Список ID товаров для проверки"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Статус лайков",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "likedItemIds"
+                  ],
+                  "properties": {
+                    "likedItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "description": "ID товаров, которые лайкнуты пользователем"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
     "/interactions/views": {
       "post": {
         "operationId": "recordViews",

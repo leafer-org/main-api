@@ -139,4 +139,20 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
       likedAt: row.likedAt,
     };
   }
+
+  public async checkLikedStatus(userId: UserId, itemIds: ItemId[]): Promise<Set<ItemId>> {
+    if (itemIds.length === 0) return new Set();
+
+    const rows = await this.dbClient.db
+      .select({ itemId: discoveryUserLikes.itemId })
+      .from(discoveryUserLikes)
+      .where(
+        and(
+          eq(discoveryUserLikes.userId, userId),
+          inArray(discoveryUserLikes.itemId, itemIds),
+        ),
+      );
+
+    return new Set(rows.map((r) => ItemId.raw(r.itemId)));
+  }
 }

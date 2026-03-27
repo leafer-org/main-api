@@ -41,6 +41,9 @@ export abstract class LikedItemsQueryPort {
     cursor?: string;
     limit: number;
   }): Promise<{ items: LikedItemView[]; nextCursor: string | null }>;
+
+  /** Проверяет, какие из переданных itemIds лайкнуты пользователем. */
+  public abstract checkLikedStatus(userId: UserId, itemIds: ItemId[]): Promise<Set<ItemId>>;
 }
 
 export abstract class CategoryListQueryPort {
