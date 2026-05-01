@@ -1,9 +1,13 @@
 import type { BoardAutomationEntity } from './entities/board-automation.entity.js';
 import type { BoardSubscriptionEntity } from './entities/board-subscription.entity.js';
-import type { BoardScope, CloseTrigger } from './state.js';
+import type { CloseSubscriptionEntity } from './entities/close-subscription.entity.js';
+import type { RedirectSubscriptionEntity } from './entities/redirect-subscription.entity.js';
+import type { BoardScope } from './state.js';
 import type {
   BoardAutomationId,
+  BoardCloseSubscriptionId,
   BoardId,
+  BoardRedirectSubscriptionId,
   BoardSubscriptionId,
   OrganizationId,
   UserId,
@@ -26,7 +30,6 @@ export type BoardUpdatedEvent = {
   description: string | null;
   manualCreation: boolean;
   allowedTransferBoardIds: BoardId[];
-  closeTrigger: CloseTrigger | null;
   updatedAt: Date;
 };
 
@@ -39,6 +42,30 @@ export type BoardSubscriptionAddedEvent = {
 export type BoardSubscriptionRemovedEvent = {
   type: 'board.subscription-removed';
   subscriptionId: BoardSubscriptionId;
+  removedAt: Date;
+};
+
+export type BoardCloseSubscriptionAddedEvent = {
+  type: 'board.close-subscription-added';
+  subscription: CloseSubscriptionEntity;
+  addedAt: Date;
+};
+
+export type BoardCloseSubscriptionRemovedEvent = {
+  type: 'board.close-subscription-removed';
+  subscriptionId: BoardCloseSubscriptionId;
+  removedAt: Date;
+};
+
+export type BoardRedirectSubscriptionAddedEvent = {
+  type: 'board.redirect-subscription-added';
+  subscription: RedirectSubscriptionEntity;
+  addedAt: Date;
+};
+
+export type BoardRedirectSubscriptionRemovedEvent = {
+  type: 'board.redirect-subscription-removed';
+  subscriptionId: BoardRedirectSubscriptionId;
   removedAt: Date;
 };
 
@@ -71,6 +98,10 @@ export type BoardEvent =
   | BoardUpdatedEvent
   | BoardSubscriptionAddedEvent
   | BoardSubscriptionRemovedEvent
+  | BoardCloseSubscriptionAddedEvent
+  | BoardCloseSubscriptionRemovedEvent
+  | BoardRedirectSubscriptionAddedEvent
+  | BoardRedirectSubscriptionRemovedEvent
   | BoardMemberAddedEvent
   | BoardMemberRemovedEvent
   | BoardAutomationAddedEvent

@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
 import { TicketIdGenerator } from '../application/ports.js';
-import { BoardAutomationId, BoardId, BoardSubscriptionId, TicketId } from '@/kernel/domain/ids.js';
+import {
+  BoardAutomationId,
+  BoardCloseSubscriptionId,
+  BoardId,
+  BoardRedirectSubscriptionId,
+  BoardSubscriptionId,
+  TicketId,
+} from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class UuidTicketIdGenerator extends TicketIdGenerator {
@@ -15,6 +22,14 @@ export class UuidTicketIdGenerator extends TicketIdGenerator {
 
   public generateBoardSubscriptionId(): BoardSubscriptionId {
     return BoardSubscriptionId.raw(crypto.randomUUID());
+  }
+
+  public generateBoardCloseSubscriptionId(): BoardCloseSubscriptionId {
+    return BoardCloseSubscriptionId.raw(crypto.randomUUID());
+  }
+
+  public generateBoardRedirectSubscriptionId(): BoardRedirectSubscriptionId {
+    return BoardRedirectSubscriptionId.raw(crypto.randomUUID());
   }
 
   public generateBoardAutomationId(): BoardAutomationId {

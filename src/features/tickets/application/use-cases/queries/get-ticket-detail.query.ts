@@ -5,7 +5,7 @@ import { TicketDetailQueryPort } from '../../ports.js';
 import { isLeft, Left } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import type { TicketId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class GetTicketDetailQuery {
@@ -15,7 +15,7 @@ export class GetTicketDetailQuery {
   ) {}
 
   public async execute(params: { ticketId: TicketId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageTicket);
+    const auth = await this.permissionCheck.mustCan(Permission.TicketRead);
     if (isLeft(auth)) return auth;
 
     const ticket = await this.ticketDetailQuery.findById(params.ticketId);

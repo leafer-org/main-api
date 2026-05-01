@@ -1,0 +1,108 @@
+feature: Ticket Realtime (SSE)
+code: ticket-realtime
+description: |
+  Server-Sent Events для подписки на изменения тикетов в пределах доски.
+
+  Транспорт между инстансами API — Redis Pub/Sub (fire-and-forget, без догона).
+  После commit'а транзакции в Redis-канал доски публикуется детальное событие
+  (1-к-1 с доменным действием). Подписчики (SSE-handler'ы на любых инстансах
+  API) транслируют событие подключённым клиентам.
+
+  Клиент — «тупой»: на любое событие делает refetch
+  GET /admin/tickets?boardId=:boardId. Детализация событий нужна для будущих
+  расширений (тосты, точечные обновления, аналитика) без изменения серверного
+  контракта.
+
+  Один поток: GET /admin/boards/:boardId/stream
+
+specs-unit:
+  # ==================== ПОДКЛЮЧЕНИЕ ====================
+
+  Подключение и авторизация:
+    - assert: GET /admin/boards/:boardId/stream открывает SSE-соединение
+      description: |
+        Заголовки: Content-Type: text/event-stream, Cache-Control: no-cache,
+        Connection: keep-alive. Поток открыт до разрыва клиентом или сервером.
+    - assert: Без авторизации — 401 до открытия стрима
+    - assert: Нет права manageTicket — 403 до открытия стрима
+    - assert: Пользователь не участник доски — 403 not_a_board_member до открытия стрима
+    - assert: Несуществующая доска — 404 board_not_found до открытия стрима
+    - assert: Удаление пользователя из memberIds во время активного стрима не разрывает соединение
+      description: Права проверяются только на старте; следующее переподключение
+        отработает заново.
+    - assert: Сервер шлёт comment-строку `: keepalive` каждые 15 секунд
+      description: Heartbeat против таймаутов прокси.
+    - assert: Клиент закрыл соединение — сервер отписывается от Redis-канала
+      description: Утечка подписчиков недопустима.
+    - assert: Перезапуск инстанса API разрывает все его SSE-соединения
+      description: Без догона. Клиент переподключится и сделает обычный
+        GET /admin/tickets?boardId= для свежего snapshot'а.
+
+  # ==================== СОБЫТИЯ ====================
+
+  Формат и типы событий:
+    - assert: Событие имеет поля event (тип) и data (JSON), поле id не используется
+      description: |
+        Тип события 1-к-1 с доменным действием. Все payload содержат как минимум
+        { ticketId, boardId } (кроме ticket.moved — у него fromBoardId/toBoardId).
+
+        Полный список:
+          ticket.created      { ticketId, boardId, triggerId|null, createdBy }
+          ticket.assigned     { ticketId, boardId, assigneeId }
+          ticket.reassigned   { ticketId, boardId, oldAssigneeId, newAssigneeId, reassignedBy }
+          ticket.unassigned   { ticketId, boardId, oldAssigneeId }
+          ticket.done         { ticketId, boardId, doneBy }
+          ticket.reopened     { ticketId, boardId, reopenedBy }
+          ticket.commented    { ticketId, boardId, authorId }
+          ticket.moved        { ticketId, fromBoardId, toBoardId, movedBy }
+
+  # ==================== REDIS PUB/SUB ====================
+
+  Публикация:
+    - assert: Каждое доменное действие → одна публикация в канал tickets:board:<boardId> тикета
+      description: |
+        Маппинг доменное действие ↔ тип события — 1-к-1 (см. секцию выше).
+        boardId в имени канала = доска, к которой относится событие.
+        SSE-handler НЕ обогащает payload — транслирует as-is.
+    - assert: ticket.moved публикуется в ДВА канала — fromBoardId и toBoardId
+      description: |
+        Одно и то же событие { ticketId, fromBoardId, toBoardId, movedBy }
+        улетает в оба канала. Клиент исходной доски видит «тикет ушёл»
+        (рефетч → пропал), целевой — «тикет пришёл» (рефетч → появился).
+    - assert: Публикация происходит ПОСЛЕ commit'а транзакции
+      description: |
+        Реализация — afterCommit-хук TransactionHost (или Outbox).
+        Откат транзакции = событие не публикуется.
+    - assert: Сбой публикации в Redis НЕ откатывает транзакцию
+      description: Fire-and-forget. Redis недоступен — лог, событие теряется,
+        клиент со временем переподключится / обновит экран вручную.
+
+  # ==================== МНОГО ИНСТАНСОВ ====================
+
+  Multi-pod:
+    - assert: Событие, опубликованное подом A, доходит до SSE-соединений на подах B и C
+      description: |
+        Каждый под держит Redis-подписку только на каналы досок, для которых
+        у него есть активные SSE-соединения. Первое соединение на доску →
+        подписка, последнее закрылось → отписка.
+    - assert: Падение пода рвёт только его SSE-соединения, события на других подах продолжают идти
+
+  # ==================== СЦЕНАРИИ ====================
+
+  Сквозные сценарии:
+    - assert: Любое доменное действие на тикете доски — клиент стрима получает событие и рефетчит список
+      description: |
+        Достаточно одной проверки на репрезентативный набор: create (по триггеру),
+        assigned, done. Не нужно дублировать для всех 8 типов — маппинг уже
+        зафиксирован выше.
+    - assert: Move тикета между досками — стрим исходной и целевой досок одновременно получают ticket.moved
+      description: |
+        Если у пользователя открыт стрим обеих досок (две вкладки) — оба
+        UI рефетчат, тикет одновременно пропадает из одного и появляется в другом.
+
+definitions:
+  feature:
+    - ticket-realtime
+  section:
+    - tickets
+    - sse

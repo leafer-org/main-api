@@ -10,7 +10,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { BoardId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class AddSubscriptionInteractor {
@@ -27,7 +27,7 @@ export class AddSubscriptionInteractor {
     triggerId: TriggerId;
     filters: SubscriptionFilter[];
   }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageTicketBoard);
+    const auth = await this.permissionCheck.mustCan(Permission.TicketBoardSubscriptionAdd);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {

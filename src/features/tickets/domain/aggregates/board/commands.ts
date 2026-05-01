@@ -1,9 +1,11 @@
 import type { SubscriptionFilter } from '../../vo/filters.js';
 import type { TriggerId } from '../../vo/triggers.js';
-import type { BoardScope, CloseTrigger } from './state.js';
+import type { BoardScope } from './state.js';
 import type {
   BoardAutomationId,
+  BoardCloseSubscriptionId,
   BoardId,
+  BoardRedirectSubscriptionId,
   BoardSubscriptionId,
   OrganizationId,
   UserId,
@@ -26,7 +28,6 @@ export type UpdateBoardCommand = {
   description: string | null;
   manualCreation: boolean;
   allowedTransferBoardIds: BoardId[];
-  closeTrigger: CloseTrigger | null;
   now: Date;
 };
 
@@ -41,6 +42,38 @@ export type AddSubscriptionCommand = {
 export type RemoveSubscriptionCommand = {
   type: 'RemoveSubscription';
   subscriptionId: BoardSubscriptionId;
+  now: Date;
+};
+
+export type AddCloseSubscriptionCommand = {
+  type: 'AddCloseSubscription';
+  subscriptionId: BoardCloseSubscriptionId;
+  triggerId: TriggerId;
+  filters: SubscriptionFilter[];
+  addComment: boolean;
+  now: Date;
+};
+
+export type RemoveCloseSubscriptionCommand = {
+  type: 'RemoveCloseSubscription';
+  subscriptionId: BoardCloseSubscriptionId;
+  now: Date;
+};
+
+export type AddRedirectSubscriptionCommand = {
+  type: 'AddRedirectSubscription';
+  subscriptionId: BoardRedirectSubscriptionId;
+  triggerId: TriggerId;
+  filters: SubscriptionFilter[];
+  targetBoardId: BoardId;
+  addComment: boolean;
+  commentTemplate: string;
+  now: Date;
+};
+
+export type RemoveRedirectSubscriptionCommand = {
+  type: 'RemoveRedirectSubscription';
+  subscriptionId: BoardRedirectSubscriptionId;
   now: Date;
 };
 
@@ -76,6 +109,10 @@ export type BoardCommand =
   | UpdateBoardCommand
   | AddSubscriptionCommand
   | RemoveSubscriptionCommand
+  | AddCloseSubscriptionCommand
+  | RemoveCloseSubscriptionCommand
+  | AddRedirectSubscriptionCommand
+  | RemoveRedirectSubscriptionCommand
   | AddMemberCommand
   | RemoveMemberCommand
   | AddAutomationCommand

@@ -25,7 +25,8 @@
     "serve:file-processor": "node dist/apps/file-processor.js",
     "dev:file-processor": "concurrently \"swc src -w -s --copy-files -d dist --strip-leading-paths\" \"node --watch-path dist/apps --watch-path dist/features --watch-path dist/infra --watch-path dist/kernel dist/apps/file-processor.js\"",
     "seed": "npx tsx scripts/seed.ts",
-    "db:reset": "bash scripts/db-reset.sh"
+    "db:reset": "bash scripts/db-reset.sh",
+    "spec:check": "specward --specs \"src/**/*.spec.yaml\" --tests \"src/test/e2e/**/*.e2e-spec.ts\""
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1009.0",
@@ -91,6 +92,7 @@
     "globals": "^16.0.0",
     "openapi-fetch": "^0.17.0",
     "openapi-typescript": "^7.10.1",
+    "specward": "^0.1.2",
     "supertest": "^7.0.0",
     "testcontainers": "^11.12.0",
     "typescript": "^5.7.3",

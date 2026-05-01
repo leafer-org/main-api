@@ -23,6 +23,8 @@ export type EmployeeRoleId = EntityId<'EmployeeRole'>;
 export type TicketId = EntityId<'Ticket'>;
 export type BoardId = EntityId<'Board'>;
 export type BoardSubscriptionId = EntityId<'BoardSubscription'>;
+export type BoardCloseSubscriptionId = EntityId<'BoardCloseSubscription'>;
+export type BoardRedirectSubscriptionId = EntityId<'BoardRedirectSubscription'>;
 export type BoardAutomationId = EntityId<'BoardAutomation'>;
 export type ReviewId = EntityId<'Review'>;
 
@@ -41,5 +43,7 @@ export const EmployeeRoleId = createEntityId<EmployeeRoleId>();
 export const TicketId = createEntityId<TicketId>();
 export const BoardId = createEntityId<BoardId>();
 export const BoardSubscriptionId = createEntityId<BoardSubscriptionId>();
+export const BoardCloseSubscriptionId = createEntityId<BoardCloseSubscriptionId>();
+export const BoardRedirectSubscriptionId = createEntityId<BoardRedirectSubscriptionId>();
 export const BoardAutomationId = createEntityId<BoardAutomationId>();
 export const ReviewId = createEntityId<ReviewId>();

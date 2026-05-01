@@ -1,0 +1,128 @@
+feature: Ticket Management
+code: ticket-management
+description: |
+  Управление тикетами — создание, назначение, перемещение, закрытие.
+
+  Статусная машина: open → in-progress → done → open (reopen).
+  Тикет создаётся в статусе open. assign переводит в in-progress.
+  unassign/reopen возвращает в open. done завершает тикет.
+
+  Тикет привязан к доске. Создать вручную можно только на доске с manualCreation=true.
+  Только участник доски (memberIds) может создавать тикеты и назначаться исполнителем.
+
+  История (history) — иммутабельный лог действий: created, assigned, reassigned,
+  unassigned, done, reopened, commented, moved.
+
+specs-unit:
+  # ==================== СОЗДАНИЕ ====================
+
+  Создание тикета:
+    - assert: POST /admin/tickets создаёт тикет на доске с manualCreation=true
+      description: |
+        Body: { boardId, message, data }.
+        Создатель должен быть участником доски.
+        Ответ: { ticketId, boardId, message, status=open, createdAt }.
+        В history записывается действие created.
+    - assert: Доска с manualCreation=false — ошибка 400 manual_creation_not_allowed
+    - assert: Создатель не является участником доски — ошибка 403 not_a_board_member
+
+  # ==================== МОИ ДОСКИ ====================
+
+  Мои доски:
+    - assert: GET /admin/boards/my возвращает доски где текущий пользователь является участником
+      description: |
+        Ответ аналогичен GET /admin/boards — список с boardId, name, description, scope,
+        manualCreation, subscriptionCount, memberCount, automationCount, createdAt.
+        Не участник — доска не попадает в список.
+    - assert: Пользователь добавлен в доску — доска появляется в /admin/boards/my
+    - assert: Пользователь удалён из доски — доска исчезает из /admin/boards/my
+
+  # ==================== ЧТЕНИЕ ====================
+
+  Список тикетов:
+    - assert: GET /admin/tickets возвращает список с пагинацией (from, size)
+      description: |
+        Ответ: { tickets, total }.
+        Каждый элемент: ticketId, boardId, message, triggerId, status, assigneeId, createdAt, updatedAt.
+    - assert: GET /admin/tickets?boardId= фильтрует по доске
+    - assert: GET /admin/tickets?status= фильтрует по статусу (open/in-progress/done)
+    - assert: GET /admin/tickets?assigneeId= фильтрует по исполнителю
+    - assert: GET /admin/tickets/my возвращает тикеты в статусе in-progress назначенные текущему пользователю
+    - assert: GET /admin/tickets/:ticketId возвращает полные данные тикета с историей
+      description: |
+        Поля: ticketId, boardId, message, data, triggerId, eventId, status, assigneeId,
+        history[]{action, actorId, data, timestamp}, createdAt, updatedAt.
+    - assert: GET /admin/tickets/:ticketId — несуществующий тикет — 404
+
+  # ==================== НАЗНАЧЕНИЕ ====================
+
+  Назначение исполнителя:
+    - assert: POST /admin/tickets/:ticketId/assign назначает участника доски, переводит в in-progress
+      description: |
+        Body: { assigneeId }.
+        Ответ: { ticketId, status=in-progress, assigneeId }.
+        В history записывается действие assigned.
+    - assert: Назначение на не-участника доски — ошибка 403 not_a_board_member
+    - assert: POST /admin/tickets/:ticketId/reassign переназначает исполнителя у in-progress тикета
+      description: |
+        Body: { assigneeId }.
+        Тикет остаётся в in-progress с новым assigneeId.
+        В history записывается действие reassigned.
+    - assert: Переназначение тикета не в in-progress — ошибка 400 ticket_not_in_progress
+    - assert: POST /admin/tickets/:ticketId/unassign снимает назначение, возвращает в open
+      description: Ответ 204. В history записывается действие unassigned.
+    - assert: Снятие назначения с тикета не в in-progress — ошибка 400 ticket_not_in_progress
+
+  # ==================== ЗАВЕРШЕНИЕ ====================
+
+  Закрытие и переоткрытие:
+    - assert: POST /admin/tickets/:ticketId/done переводит in-progress тикет в done
+      description: Ответ 204. В history записывается действие done.
+    - assert: Закрытие тикета не в in-progress — ошибка 400 ticket_not_in_progress
+    - assert: POST /admin/tickets/:ticketId/reopen переводит done тикет обратно в open
+      description: Ответ 204. assigneeId обнуляется. В history записывается действие reopened.
+    - assert: Переоткрытие тикета не в done — ошибка 400 ticket_not_done
+
+  # ==================== ПЕРЕМЕЩЕНИЕ ====================
+
+  Перемещение между досками:
+    - assert: POST /admin/tickets/:ticketId/move перемещает тикет на разрешённую доску
+      description: |
+        Body: { toBoardId, comment }.
+        toBoardId должен быть в allowedTransferBoardIds исходной доски.
+        Ответ: { ticketId, boardId, status }.
+        В history записывается действие moved с data: { fromBoardId, toBoardId }.
+    - assert: Перемещение на доску не из allowedTransferBoardIds — ошибка 400 ticket_transfer_not_allowed
+
+  # ==================== ЗАВЕРШЕНИЕ СЕССИИ ====================
+
+  Завершение сессии оператора:
+    - assert: POST /admin/tickets/unassign-all снимает назначение со всех тикетов текущего пользователя
+      description: |
+        Все in-progress тикеты с assigneeId текущего пользователя переходят в open.
+        Ответ 204.
+        В history каждого тикета записывается действие unassigned.
+    - assert: Нет назначенных тикетов — unassign-all возвращает 204 без ошибок
+    - assert: unassign-all затрагивает только тикеты текущего пользователя, чужие не трогает
+
+  # ==================== КОММЕНТАРИИ ====================
+
+  Комментарии:
+    - assert: POST /admin/tickets/:ticketId/comments добавляет комментарий в историю
+      description: |
+        Body: { text }.
+        Ответ: { ticketId, status }.
+        В history появляется запись с action=commented и data.text.
+
+  # ==================== ПОЛНЫЙ ФЛОУ ====================
+
+  Полный жизненный цикл:
+    - assert: created → assigned → commented → done → reopened → assigned → done
+      description: |
+        История должна содержать все действия в правильном порядке.
+
+definitions:
+  feature:
+    - ticket-management
+  section:
+    - tickets

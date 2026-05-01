@@ -23,7 +23,7 @@ function createTicket() {
     boardId: BOARD_ID,
     message: 'Модерация товара: Test Item',
     data: {},
-    triggerId: 'item.moderation-requested',
+    triggerId: 'item-moderation.requested',
     eventId: null,
     createdBy: AI_AGENT_USER,
     now: NOW,
@@ -61,7 +61,7 @@ describe('TicketEntity', () => {
         boardId: BOARD_ID,
         message: 'Test message',
         data: {},
-        triggerId: 'item.moderation-requested',
+        triggerId: 'item-moderation.requested',
         eventId: null,
         createdBy: USER_1,
         now: NOW,
@@ -78,7 +78,7 @@ describe('TicketEntity', () => {
 
       expect(state.status).toBe('open');
       expect(state.assigneeId).toBeNull();
-      expect(state.triggerId).toBe('item.moderation-requested');
+      expect(state.triggerId).toBe('item-moderation.requested');
       expect(state.history).toHaveLength(1);
       expect(state.history[0]!.action).toBe('created');
       expect(state.history[0]!.actorId).toBe(USER_1);

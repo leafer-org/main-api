@@ -1,50 +1,41 @@
-import type { TriggerId } from './triggers.js';
+export type FilterType =
+  | 'json-logic'
+  | 'every-nth'
+  | 'random-sample';
 
-// --- Programmatic filter IDs ---
+export type FilterCategory = 'open' | 'close' | 'redirect';
 
-export type UniversalFilterId = 'every-nth' | 'random-sample';
-export type OrgFilterId = 'first-time-org' | 'repeat-offender';
-export type ItemFilterId = 'high-price';
+export type SubscriptionFilter =
+  | { type: 'json-logic'; rule: Record<string, unknown> }
+  | { type: 'every-nth'; n: number }
+  | { type: 'random-sample'; percent: number };
 
-export type ProgrammaticFilterId = UniversalFilterId | OrgFilterId | ItemFilterId;
-
-// --- Trigger → allowed filters mapping ---
-
-export type TriggerFilters = {
-  'item.moderation-requested': UniversalFilterId | OrgFilterId | ItemFilterId;
-  'organization.moderation-requested': UniversalFilterId | OrgFilterId;
+export type FilterParam = {
+  key: string;
+  label: string;
+  type: 'number' | 'string';
 };
 
-// --- Filter metadata (for UI) ---
+export type FilterMeta = {
+  name: string;
+  categories: FilterCategory[];
+  params: FilterParam[];
+};
 
-export const FILTER_META: Record<
-  ProgrammaticFilterId,
-  { name: string; params: { key: string; label: string; type: 'number' }[] }
-> = {
+export const FILTER_META: Record<FilterType, FilterMeta> = {
+  'json-logic': {
+    name: 'JSON Logic',
+    categories: ['open', 'close', 'redirect'],
+    params: [],
+  },
   'every-nth': {
     name: 'Каждый N-й',
+    categories: ['open'],
     params: [{ key: 'n', label: 'N', type: 'number' }],
   },
   'random-sample': {
     name: 'Случайная выборка %',
+    categories: ['open'],
     params: [{ key: 'percent', label: 'Процент', type: 'number' }],
   },
-  'first-time-org': {
-    name: 'Первая публикация организации',
-    params: [],
-  },
-  'repeat-offender': {
-    name: 'Организация с историей отклонений',
-    params: [],
-  },
-  'high-price': {
-    name: 'Цена выше порога',
-    params: [{ key: 'threshold', label: 'Порог', type: 'number' }],
-  },
 };
-
-// --- Subscription filter types ---
-
-export type SubscriptionFilter =
-  | { type: 'json-logic'; rule: unknown }
-  | { type: 'programmatic'; filterId: string; params: Record<string, unknown> };

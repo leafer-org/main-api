@@ -20,7 +20,6 @@ import { RecommendationService } from '@/features/discovery/application/ports.js
 import { GorseSyncPort } from '@/features/discovery/application/sync-ports.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
-import type { OrgFilterId } from '@/features/tickets/domain/vo/filters.js';
 import { categoryStreamingContract } from '@/infra/kafka-contracts/category.contract.js';
 import { itemStreamingContract } from '@/infra/kafka-contracts/item.contract.js';
 import type { Contract, ContractMessage } from '@/infra/lib/nest-kafka/contract/contract.js';

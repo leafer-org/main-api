@@ -1,0 +1,98 @@
+feature: Board Subscriptions
+code: board-subscriptions
+description: |
+  Подписки доски — открытие, закрытие, перенаправление тикетов.
+  Все подписки управляются через PATCH /admin/boards/:boardId — closeSubscriptions и redirectSubscriptions передаются целиком.
+  Open-подписки (subscriptions) управляются через отдельные POST/DELETE эндпоинты (add/remove).
+
+  TriggerId — системное событие: item-moderation.requested/approved/rejected, organization-moderation.requested/approved/rejected.
+  Для закрытия/перенаправления дополнительно: timer.since-created, timer.since-status.
+
+  SubscriptionFilter — discriminated union по type: json-logic, every-nth, random-sample.
+  Фильтры внутри подписки — AND, подписки на доске — OR.
+
+specs-unit:
+  # ==================== ПОДПИСКИ ОТКРЫТИЯ ====================
+
+  CRUD подписки открытия:
+    - assert: Добавление подписки с валидным triggerId и фильтрами
+      description: |
+        POST /admin/boards/:boardId/subscriptions.
+        Поддерживаемые triggerId: item-moderation.requested/approved/rejected, organization-moderation.requested/approved/rejected.
+        Фильтры опциональны — без фильтров матчит любое событие.
+    - assert: Невалидный triggerId — ошибка 400
+    - assert: Удаление подписки по id, несуществующая — 404
+
+  Матчинг фильтров:
+    - assert: Подписка без фильтров матчит любое событие
+    - assert: Фильтр every-nth срабатывает каждый N-й раз
+      description: Счётчик на уровне подписки, параметр n > 0
+    - assert: Фильтр random-sample срабатывает с заданной вероятностью
+      description: Параметр percent — число от 0 до 100
+    - assert: Фильтр json-logic вычисляется над данными события
+      description: Правило — JSON-объект, переменные — поля события (item, organization и т.д.)
+    - assert: Несколько фильтров в подписке — AND, несколько подписок — OR
+
+  # ==================== ПОДПИСКИ ЗАКРЫТИЯ ====================
+
+  CRUD подписки закрытия:
+    - assert: POST /admin/boards/:boardId/close-subscriptions создаёт подписку закрытия
+      description: |
+        Body: { triggerId, filters, addComment }.
+        Те же triggerId что и для открытия, плюс timer.since-created, timer.since-status.
+    - assert: DELETE /admin/boards/:boardId/close-subscriptions/:id удаляет подписку
+    - assert: addComment=true — при срабатывании в историю тикета добавляется комментарий
+
+  Таймерные триггеры:
+    - assert: timer.since-created срабатывает через N минут после создания тикета
+      description: Параметр duration в минутах на подписке
+    - assert: timer.since-status срабатывает через N минут после смены статуса
+      description: Таймер сбрасывается при каждой смене статуса
+
+  Срабатывание подписки закрытия:
+    - assert: При матче тикет переходит в статус done
+    - assert: Тикет уже в done — повторное закрытие игнорируется
+
+  # ==================== ПОДПИСКИ ПЕРЕНАПРАВЛЕНИЯ ====================
+
+  CRUD подписки перенаправления:
+    - assert: POST /admin/boards/:boardId/redirect-subscriptions создаёт подписку перенаправления
+      description: |
+        Body: { triggerId, targetBoardId, filters, addComment, commentTemplate }.
+        targetBoardId ≠ текущая доска (400), должна существовать (404).
+    - assert: DELETE /admin/boards/:boardId/redirect-subscriptions/:id удаляет подписку
+    - assert: addComment=true + commentTemplate → комментарий из шаблона
+      description: Если commentTemplate пуст — дефолтный "Перенаправлен с доски {boardName}"
+
+  Срабатывание подписки перенаправления:
+    - assert: При матче тикет перемещается на targetBoardId со статусом open
+    - assert: При совпадении нескольких подписок — срабатывает первая по порядку
+    - assert: В истории фиксируется действие moved
+      description: В data — fromBoardId и toBoardId
+
+  # ==================== ПРИОРИТЕТ ====================
+
+  Приоритет при одновременном матче:
+    - assert: redirect имеет приоритет над close
+      description: Перенаправление важнее закрытия — тикет может быть нужен на другой доске
+    - assert: Close-подписки не срабатывают на тикет перенаправлённый в этом цикле
+
+  # ==================== СПРАВОЧНИКИ ====================
+
+  API справочника триггеров:
+    - assert: GET /admin/boards/triggers — список с triggerId, name, categories, params
+      description: |
+        Фильтрация через ?category=open/close/redirect.
+        Таймерные триггеры — close и redirect, params: [{key: 'duration', label: 'Длительность (мин)', type: 'number'}].
+
+  API справочника фильтров:
+    - assert: GET /admin/boards/filters — список с type, name, categories, params
+      description: |
+        Фильтрация через ?category=open/close/redirect.
+        json-logic — все категории. every-nth, random-sample — open.
+
+definitions:
+  feature:
+    - board-subscriptions
+  section:
+    - tickets

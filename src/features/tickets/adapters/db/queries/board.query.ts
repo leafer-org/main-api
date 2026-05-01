@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import type { BoardListItem } from '../../../application/ports.js';
-import { BoardDetailQueryPort, BoardListQueryPort } from '../../../application/ports.js';
+import { BoardDetailQueryPort, BoardListQueryPort, MyBoardsQueryPort } from '../../../application/ports.js';
 import type { BoardScope, BoardState } from '../../../domain/aggregates/board/state.js';
 import type { SubscriptionFilter } from '../../../domain/vo/filters.js';
 import type { TriggerId } from '../../../domain/vo/triggers.js';
@@ -11,14 +11,16 @@ import type { BoardJsonState } from '../json-state.js';
 import { boards } from '../schema.js';
 import type {
   BoardAutomationId,
+  BoardCloseSubscriptionId,
   BoardId,
+  BoardRedirectSubscriptionId,
   BoardSubscriptionId,
   OrganizationId,
   UserId,
 } from '@/kernel/domain/ids.js';
 
 @Injectable()
-export class DrizzleBoardQuery implements BoardListQueryPort, BoardDetailQueryPort {
+export class DrizzleBoardQuery implements BoardListQueryPort, BoardDetailQueryPort, MyBoardsQueryPort {
   public constructor(@Inject(TicketDatabaseClient) private readonly db: TicketDatabaseClient) {}
 
   public async findBoards(params?: { scope?: BoardScope }): Promise<BoardListItem[]> {
@@ -51,6 +53,30 @@ export class DrizzleBoardQuery implements BoardListQueryPort, BoardDetailQueryPo
     return this.toFullState(row.state as BoardJsonState);
   }
 
+  public async findByMember(userId: UserId): Promise<BoardListItem[]> {
+    const rows = await this.db
+      .select()
+      .from(boards)
+      .where(
+        sql`${boards.state}->'memberIds' @> ${JSON.stringify([userId])}::jsonb`,
+      );
+
+    return rows.map((row) => {
+      const s = row.state as BoardJsonState;
+      return {
+        boardId: s.boardId as BoardId,
+        name: s.name,
+        description: s.description,
+        scope: s.scope as BoardScope,
+        manualCreation: s.manualCreation,
+        subscriptionCount: s.subscriptions.length,
+        memberCount: s.memberIds.length,
+        automationCount: s.automations.length,
+        createdAt: new Date(s.createdAt),
+      };
+    });
+  }
+
   private toFullState(s: BoardJsonState): BoardState {
     return {
       boardId: s.boardId as BoardId,
@@ -58,24 +84,35 @@ export class DrizzleBoardQuery implements BoardListQueryPort, BoardDetailQueryPo
       description: s.description,
       scope: s.scope as BoardScope,
       organizationId: s.organizationId as OrganizationId | null,
-      subscriptions: s.subscriptions.map((sub) => ({
+      subscriptions: (s.subscriptions ?? []).map((sub) => ({
         id: sub.id as BoardSubscriptionId,
         triggerId: sub.triggerId as TriggerId,
         filters: sub.filters as SubscriptionFilter[],
       })),
+      closeSubscriptions: (s.closeSubscriptions ?? []).map((sub) => ({
+        id: sub.id as BoardCloseSubscriptionId,
+        triggerId: sub.triggerId as TriggerId,
+        filters: sub.filters as SubscriptionFilter[],
+        addComment: sub.addComment,
+      })),
+      redirectSubscriptions: (s.redirectSubscriptions ?? []).map((sub) => ({
+        id: sub.id as BoardRedirectSubscriptionId,
+        triggerId: sub.triggerId as TriggerId,
+        filters: sub.filters as SubscriptionFilter[],
+        targetBoardId: sub.targetBoardId as BoardId,
+        addComment: sub.addComment,
+        commentTemplate: sub.commentTemplate,
+      })),
       manualCreation: s.manualCreation,
       allowedTransferBoardIds: s.allowedTransferBoardIds as BoardId[],
       memberIds: s.memberIds as UserId[],
-      automations: s.automations.map((a) => ({
+      automations: (s.automations ?? []).map((a) => ({
         id: a.id as BoardAutomationId,
         enabled: a.enabled,
         agentId: a.agentId,
         systemPrompt: a.systemPrompt,
         onUncertain: { moveToBoardId: a.onUncertain.moveToBoardId as BoardId | null },
       })),
-      closeTrigger: s.closeTrigger
-        ? { type: s.closeTrigger.type as 'on-moderation-resolved', addComment: s.closeTrigger.addComment }
-        : null,
       createdAt: new Date(s.createdAt),
       updatedAt: new Date(s.updatedAt),
     };

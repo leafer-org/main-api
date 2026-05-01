@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { TicketRepository } from '../../../application/ports.js';
 import type { TicketState, TicketStatus } from '../../../domain/aggregates/ticket/state.js';
@@ -68,6 +68,20 @@ export class DrizzleTicketRepository extends TicketRepository {
     return rows.length > 0;
   }
 
+  public async findInProgressByAssignee(tx: Transaction, userId: UserId): Promise<TicketState[]> {
+    const db = this.txHost.get(tx);
+    const rows = await db
+      .select()
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.status, 'in-progress'),
+          eq(tickets.assigneeId, userId as string),
+        ),
+      );
+    return rows.map((row) => this.toDomain(row.state));
+  }
+
   public async findOpenByTriggerAndEntityId(
     tx: Transaction,
     triggerId: TriggerId,
@@ -80,6 +94,28 @@ export class DrizzleTicketRepository extends TicketRepository {
       .where(
         and(
           eq(tickets.status, 'open'),
+          sql`${tickets.state}->>'triggerId' = ${triggerId as string}`,
+          sql`(
+            ${tickets.state}->'data'->'item'->>'id' = ${entityId}
+            OR ${tickets.state}->'data'->'organization'->>'id' = ${entityId}
+          )`,
+        ),
+      );
+    return rows.map((row) => this.toDomain(row.state));
+  }
+
+  public async findActiveByTriggerAndEntityId(
+    tx: Transaction,
+    triggerId: TriggerId,
+    entityId: string,
+  ): Promise<TicketState[]> {
+    const db = this.txHost.get(tx);
+    const rows = await db
+      .select()
+      .from(tickets)
+      .where(
+        and(
+          inArray(tickets.status, ['open', 'in-progress']),
           sql`${tickets.state}->>'triggerId' = ${triggerId as string}`,
           sql`(
             ${tickets.state}->'data'->'item'->>'id' = ${entityId}

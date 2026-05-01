@@ -10,7 +10,7 @@ import { BoardRepository, TicketIdGenerator, TicketRepository } from '../../port
 import { isLeft } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import { UserId, type ItemId, type OrganizationId, type TypeId, type CategoryId } from '@/kernel/domain/ids.js';
+import { UserId, type CategoryId } from '@/kernel/domain/ids.js';
 import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
 
 type MappedEvent = {
@@ -79,7 +79,7 @@ export class HandleTriggerEventInteractor {
           (w): w is Extract<ItemWidget, { type: 'base-info' }> => w.type === 'base-info',
         );
         return {
-          triggerId: 'item.moderation-requested',
+          triggerId: 'item-moderation.requested',
           eventId: event.id,
           message: `Модерация товара: ${baseInfo?.title ?? 'без названия'}`,
           data: {
@@ -89,9 +89,7 @@ export class HandleTriggerEventInteractor {
               typeId: event.typeId,
               title: baseInfo?.title ?? '',
               description: baseInfo?.description ?? '',
-              imageUrl: baseInfo?.media[0]
-                ? (baseInfo.media[0].mediaId as string)
-                : null,
+              imageId: baseInfo?.media[0]?.mediaId ?? null,
               categoryIds: extractCategoryIds(event.widgets),
             },
           },
@@ -99,7 +97,7 @@ export class HandleTriggerEventInteractor {
       }
       case 'organization.moderation-requested':
         return {
-          triggerId: 'organization.moderation-requested',
+          triggerId: 'organization-moderation.requested',
           eventId: event.id,
           message: `Модерация организации: ${event.name}`,
           data: {
@@ -107,7 +105,7 @@ export class HandleTriggerEventInteractor {
               id: event.organizationId,
               name: event.name,
               description: event.description,
-              avatarUrl: event.avatarId ? (event.avatarId as string) : null,
+              avatarId: event.avatarId,
             },
           },
         };

@@ -10,6 +10,7 @@ import { MarkDoneInteractor } from '../../application/use-cases/tickets/mark-don
 import { MoveTicketInteractor } from '../../application/use-cases/tickets/move-ticket.interactor.js';
 import { ReassignTicketInteractor } from '../../application/use-cases/tickets/reassign-ticket.interactor.js';
 import { ReopenTicketInteractor } from '../../application/use-cases/tickets/reopen-ticket.interactor.js';
+import { UnassignAllTicketsInteractor } from '../../application/use-cases/tickets/unassign-all-tickets.interactor.js';
 import { UnassignTicketInteractor } from '../../application/use-cases/tickets/unassign-ticket.interactor.js';
 import type { TicketStatus } from '../../domain/aggregates/ticket/state.js';
 import type { TicketData } from '../../domain/vo/ticket-data.js';
@@ -41,6 +42,7 @@ export class TicketsController {
     private readonly getTicketsQuery: GetTicketsQuery,
     private readonly getMyTicketsQuery: GetMyTicketsQuery,
     private readonly getTicketDetailQuery: GetTicketDetailQuery,
+    private readonly unassignAllTickets: UnassignAllTicketsInteractor,
   ) {}
 
   @Get()
@@ -85,6 +87,15 @@ export class TicketsController {
       tickets: result.value.tickets.map(this.toTicketListResponse),
       total: result.value.total,
     };
+  }
+
+  @Post('unassign-all')
+  @HttpCode(204)
+  public async unassignAll(@CurrentUser() user: JwtUserPayload): Promise<void> {
+    const result = await this.unassignAllTickets.execute({
+      userId: user.userId,
+    });
+    if (isLeft(result)) throwDomainError(result.error);
   }
 
   @Get(':ticketId')
@@ -263,6 +274,7 @@ export class TicketsController {
     triggerId: unknown;
     status: string;
     assigneeId: unknown;
+    data: unknown;
     createdAt: Date;
     updatedAt: Date;
   }) {
@@ -273,6 +285,7 @@ export class TicketsController {
       triggerId: ticket.triggerId,
       status: ticket.status,
       assigneeId: ticket.assigneeId,
+      data: ticket.data,
       createdAt: ticket.createdAt.toISOString(),
       updatedAt: ticket.updatedAt.toISOString(),
     };

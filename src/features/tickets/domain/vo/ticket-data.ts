@@ -1,4 +1,10 @@
-import type { CategoryId, ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
+import type {
+  CategoryId,
+  ItemId,
+  MediaId,
+  OrganizationId,
+  TypeId,
+} from '@/kernel/domain/ids.js';
 
 export type TicketItemData = {
   id: ItemId;
@@ -6,7 +12,7 @@ export type TicketItemData = {
   typeId: TypeId;
   title: string;
   description: string;
-  imageUrl: string | null;
+  imageId: MediaId | null;
   categoryIds: CategoryId[];
 };
 
@@ -14,7 +20,7 @@ export type TicketOrganizationData = {
   id: OrganizationId;
   name: string;
   description: string;
-  avatarUrl: string | null;
+  avatarId: MediaId | null;
 };
 
 export type TicketData = {

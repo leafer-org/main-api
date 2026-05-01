@@ -10,7 +10,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { TicketId, UserId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class AssignTicketInteractor {
@@ -23,7 +23,7 @@ export class AssignTicketInteractor {
   ) {}
 
   public async execute(command: { ticketId: TicketId; assigneeId: UserId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageTicket);
+    const auth = await this.permissionCheck.mustCan(Permission.TicketAssign);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {

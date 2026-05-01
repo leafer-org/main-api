@@ -6,7 +6,7 @@ import { isLeft, Left } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { BoardId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class DeleteBoardInteractor {
@@ -17,7 +17,7 @@ export class DeleteBoardInteractor {
   ) {}
 
   public async execute(command: { boardId: BoardId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageTicketBoard);
+    const auth = await this.permissionCheck.mustCan(Permission.TicketBoardDelete);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {

@@ -4,7 +4,7 @@ import type { BoardScope } from '../../../domain/aggregates/board/state.js';
 import { BoardListQueryPort } from '../../ports.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class GetBoardsQuery {
@@ -14,7 +14,7 @@ export class GetBoardsQuery {
   ) {}
 
   public async execute(params?: { scope?: BoardScope }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageTicketBoard);
+    const auth = await this.permissionCheck.mustCan(Permission.TicketBoardRead);
     if (isLeft(auth)) return auth;
 
     const boards = await this.boardListQuery.findBoards(params);

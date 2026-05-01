@@ -1,12 +1,19 @@
 import type { BoardScope, BoardState } from '../domain/aggregates/board/state.js';
 import type { TicketState, TicketStatus } from '../domain/aggregates/ticket/state.js';
+import type { TicketHistoryEntry } from '../domain/vo/history.js';
 import type { TriggerId } from '../domain/vo/triggers.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type {
   BoardAutomationId,
+  BoardCloseSubscriptionId,
   BoardId,
+  BoardRedirectSubscriptionId,
   BoardSubscriptionId,
+  CategoryId,
+  ItemId,
+  OrganizationId,
   TicketId,
+  TypeId,
   UserId,
 } from '@/kernel/domain/ids.js';
 
@@ -22,6 +29,12 @@ export abstract class TicketRepository {
     triggerId: TriggerId,
     entityId: string,
   ): Promise<TicketState[]>;
+  public abstract findActiveByTriggerAndEntityId(
+    tx: Transaction,
+    triggerId: TriggerId,
+    entityId: string,
+  ): Promise<TicketState[]>;
+  public abstract findInProgressByAssignee(tx: Transaction, userId: UserId): Promise<TicketState[]>;
 }
 
 export abstract class BoardRepository {
@@ -33,6 +46,25 @@ export abstract class BoardRepository {
 
 // --- Read-model query ports (read-side, no transactions) ---
 
+// Read-side view: IDs из домена резолвятся в URL через MediaService на уровне query-адаптера.
+export type TicketDataView = {
+  item?: {
+    id: ItemId;
+    organizationId: OrganizationId;
+    typeId: TypeId;
+    title: string;
+    description: string;
+    imageUrl: string | null;
+    categoryIds: CategoryId[];
+  };
+  organization?: {
+    id: OrganizationId;
+    name: string;
+    description: string;
+    avatarUrl: string | null;
+  };
+};
+
 export type TicketListItem = {
   ticketId: TicketId;
   boardId: BoardId;
@@ -40,6 +72,21 @@ export type TicketListItem = {
   triggerId: TriggerId | null;
   status: TicketStatus;
   assigneeId: UserId | null;
+  data: TicketDataView;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type TicketDetailView = {
+  ticketId: TicketId;
+  boardId: BoardId;
+  message: string;
+  data: TicketDataView;
+  triggerId: TriggerId | null;
+  eventId: string | null;
+  status: TicketStatus;
+  assigneeId: UserId | null;
+  history: TicketHistoryEntry[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -55,7 +102,7 @@ export abstract class TicketListQueryPort {
 }
 
 export abstract class TicketDetailQueryPort {
-  public abstract findById(ticketId: TicketId): Promise<TicketState | null>;
+  public abstract findById(ticketId: TicketId): Promise<TicketDetailView | null>;
 }
 
 export abstract class MyTicketsQueryPort {
@@ -81,6 +128,10 @@ export abstract class BoardListQueryPort {
   public abstract findBoards(params?: { scope?: BoardScope }): Promise<BoardListItem[]>;
 }
 
+export abstract class MyBoardsQueryPort {
+  public abstract findByMember(userId: UserId): Promise<BoardListItem[]>;
+}
+
 export abstract class BoardDetailQueryPort {
   public abstract findById(boardId: BoardId): Promise<BoardState | null>;
 }
@@ -91,5 +142,7 @@ export abstract class TicketIdGenerator {
   public abstract generateTicketId(): TicketId;
   public abstract generateBoardId(): BoardId;
   public abstract generateBoardSubscriptionId(): BoardSubscriptionId;
+  public abstract generateBoardCloseSubscriptionId(): BoardCloseSubscriptionId;
+  public abstract generateBoardRedirectSubscriptionId(): BoardRedirectSubscriptionId;
   public abstract generateBoardAutomationId(): BoardAutomationId;
 }

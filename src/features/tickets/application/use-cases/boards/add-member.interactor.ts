@@ -1,14 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { BoardEntity } from '../../../domain/aggregates/board/entity.js';
-import { BoardNotFoundError } from '../../../domain/aggregates/board/errors.js';
+import { BoardNotFoundError, UserNotFoundByPhoneError } from '../../../domain/aggregates/board/errors.js';
 import { BoardRepository } from '../../ports.js';
 import { isLeft, Left } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { BoardId, UserId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
+import type { BoardId } from '@/kernel/domain/ids.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class AddMemberInteractor {
@@ -17,11 +18,15 @@ export class AddMemberInteractor {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
+    @Inject(UserLookupPort) private readonly userLookup: UserLookupPort,
   ) {}
 
-  public async execute(command: { boardId: BoardId; userId: UserId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageTicketBoard);
+  public async execute(command: { boardId: BoardId; phone: string }) {
+    const auth = await this.permissionCheck.mustCan(Permission.TicketBoardMemberAdd);
     if (isLeft(auth)) return auth;
+
+    const user = await this.userLookup.findByPhone(command.phone);
+    if (!user) return Left(new UserNotFoundByPhoneError());
 
     return this.txHost.startTransaction(async (tx) => {
       const state = await this.boardRepo.findById(tx, command.boardId);
@@ -31,7 +36,7 @@ export class AddMemberInteractor {
 
       const result = BoardEntity.addMember(state, {
         type: 'AddMember',
-        userId: command.userId,
+        userId: user.userId,
         now,
       });
 

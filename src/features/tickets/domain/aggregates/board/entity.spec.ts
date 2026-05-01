@@ -75,7 +75,6 @@ describe('BoardEntity', () => {
         description: 'New description',
         manualCreation: true,
         allowedTransferBoardIds: [BOARD_2_ID],
-        closeTrigger: null,
         now: LATER,
       });
 
@@ -97,7 +96,7 @@ describe('BoardEntity', () => {
       const result = BoardEntity.addSubscription(state, {
         type: 'AddSubscription',
         subscriptionId: SUB_1,
-        triggerId: 'item.moderation-requested',
+        triggerId: 'item-moderation.requested',
         filters: [],
         now: LATER,
       });
@@ -107,7 +106,7 @@ describe('BoardEntity', () => {
 
       expect(result.value.state.subscriptions).toHaveLength(1);
       expect(result.value.state.subscriptions[0]!.id).toBe(SUB_1);
-      expect(result.value.state.subscriptions[0]!.triggerId).toBe('item.moderation-requested');
+      expect(result.value.state.subscriptions[0]!.triggerId).toBe('item-moderation.requested');
       expect(result.value.event.type).toBe('board.subscription-added');
     });
   });
@@ -119,7 +118,7 @@ describe('BoardEntity', () => {
       let r = BoardEntity.addSubscription(state, {
         type: 'AddSubscription',
         subscriptionId: SUB_1,
-        triggerId: 'item.moderation-requested',
+        triggerId: 'item-moderation.requested',
         filters: [],
         now: NOW,
       });
@@ -129,7 +128,7 @@ describe('BoardEntity', () => {
       r = BoardEntity.addSubscription(state, {
         type: 'AddSubscription',
         subscriptionId: SUB_2,
-        triggerId: 'organization.moderation-requested',
+        triggerId: 'organization-moderation.requested',
         filters: [],
         now: NOW,
       });
@@ -149,7 +148,7 @@ describe('BoardEntity', () => {
 
       expect(result.value.state.subscriptions).toHaveLength(1);
       expect(result.value.state.subscriptions[0]!.triggerId).toBe(
-        'organization.moderation-requested',
+        'organization-moderation.requested',
       );
     });
 

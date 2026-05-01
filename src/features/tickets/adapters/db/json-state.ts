@@ -9,14 +9,14 @@ export type TicketJsonState = {
       typeId: string;
       title: string;
       description: string;
-      imageUrl: string | null;
+      imageId: string | null;
       categoryIds: string[];
     };
     organization?: {
       id: string;
       name: string;
       description: string;
-      avatarUrl: string | null;
+      avatarId: string | null;
     };
   };
   triggerId: string | null;
@@ -44,13 +44,23 @@ export type BoardJsonState = {
     triggerId: string;
     filters: unknown[];
   }[];
+  closeSubscriptions: {
+    id: string;
+    triggerId: string;
+    filters: unknown[];
+    addComment: boolean;
+  }[];
+  redirectSubscriptions: {
+    id: string;
+    triggerId: string;
+    filters: unknown[];
+    targetBoardId: string;
+    addComment: boolean;
+    commentTemplate: string;
+  }[];
   manualCreation: boolean;
   allowedTransferBoardIds: string[];
   memberIds: string[];
-  closeTrigger: {
-    type: string;
-    addComment: boolean;
-  } | null;
   automations: {
     id: string;
     enabled: boolean;

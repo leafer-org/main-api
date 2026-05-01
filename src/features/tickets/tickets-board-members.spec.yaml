@@ -1,0 +1,25 @@
+feature: Board Members
+code: board-members
+description: |
+  Управление участниками доски.
+  Участник добавляется по номеру телефона — система ищет пользователя через UserLookupPort.
+  Ответ на добавление возвращает обновлённый список memberIds.
+  Участник в GET /admin/boards/:boardId отображается в поле members (объекты с данными пользователя).
+
+specs-unit:
+  CRUD участников:
+    - assert: POST /admin/boards/:boardId/members добавляет участника по номеру телефона
+      description: |
+        Body: { phone }.
+        Ответ: { boardId, memberIds } — обновлённый список id участников.
+        Поиск пользователя по телефону через UserLookupPort.
+    - assert: Пользователь не найден по телефону — 404
+    - assert: Участник уже добавлен — 409
+    - assert: DELETE /admin/boards/:boardId/members/:userId удаляет участника, возвращает 204
+    - assert: Участник не найден при удалении — 404
+
+definitions:
+  feature:
+    - board-members
+  section:
+    - tickets

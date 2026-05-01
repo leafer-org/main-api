@@ -4,7 +4,9 @@ import { eq, sql } from 'drizzle-orm';
 import { BoardRepository } from '../../../application/ports.js';
 import type { BoardAutomationEntity } from '../../../domain/aggregates/board/entities/board-automation.entity.js';
 import type { BoardSubscriptionEntity } from '../../../domain/aggregates/board/entities/board-subscription.entity.js';
-import type { BoardScope, BoardState, CloseTrigger } from '../../../domain/aggregates/board/state.js';
+import type { CloseSubscriptionEntity } from '../../../domain/aggregates/board/entities/close-subscription.entity.js';
+import type { RedirectSubscriptionEntity } from '../../../domain/aggregates/board/entities/redirect-subscription.entity.js';
+import type { BoardScope, BoardState } from '../../../domain/aggregates/board/state.js';
 import type { SubscriptionFilter } from '../../../domain/vo/filters.js';
 import type { TriggerId } from '../../../domain/vo/triggers.js';
 import type { BoardJsonState } from '../json-state.js';
@@ -13,7 +15,9 @@ import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type {
   BoardAutomationId,
+  BoardCloseSubscriptionId,
   BoardId,
+  BoardRedirectSubscriptionId,
   BoardSubscriptionId,
   OrganizationId,
   UserId,
@@ -93,17 +97,35 @@ export class DrizzleBoardRepository extends BoardRepository {
       description: raw.description,
       scope: raw.scope as BoardScope,
       organizationId: raw.organizationId as OrganizationId | null,
-      subscriptions: raw.subscriptions.map(
+      subscriptions: (raw.subscriptions ?? []).map(
         (sub): BoardSubscriptionEntity => ({
           id: sub.id as BoardSubscriptionId,
           triggerId: sub.triggerId as TriggerId,
           filters: sub.filters as SubscriptionFilter[],
         }),
       ),
+      closeSubscriptions: (raw.closeSubscriptions ?? []).map(
+        (sub): CloseSubscriptionEntity => ({
+          id: sub.id as BoardCloseSubscriptionId,
+          triggerId: sub.triggerId as TriggerId,
+          filters: sub.filters as SubscriptionFilter[],
+          addComment: sub.addComment,
+        }),
+      ),
+      redirectSubscriptions: (raw.redirectSubscriptions ?? []).map(
+        (sub): RedirectSubscriptionEntity => ({
+          id: sub.id as BoardRedirectSubscriptionId,
+          triggerId: sub.triggerId as TriggerId,
+          filters: sub.filters as SubscriptionFilter[],
+          targetBoardId: sub.targetBoardId as BoardId,
+          addComment: sub.addComment,
+          commentTemplate: sub.commentTemplate,
+        }),
+      ),
       manualCreation: raw.manualCreation,
       allowedTransferBoardIds: raw.allowedTransferBoardIds as BoardId[],
       memberIds: raw.memberIds as UserId[],
-      automations: raw.automations.map(
+      automations: (raw.automations ?? []).map(
         (auto): BoardAutomationEntity => ({
           id: auto.id as BoardAutomationId,
           enabled: auto.enabled,
@@ -114,7 +136,6 @@ export class DrizzleBoardRepository extends BoardRepository {
           },
         }),
       ),
-      closeTrigger: raw.closeTrigger as CloseTrigger | null ?? null,
       createdAt: new Date(raw.createdAt),
       updatedAt: new Date(raw.updatedAt),
     };

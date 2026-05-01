@@ -1,0 +1,24 @@
+feature: Board Automations
+code: board-automations
+description: |
+  Управление автоматизациями доски.
+  Автоматизация — AI-агент с системным промптом, который обрабатывает тикеты на доске.
+  onUncertainMoveToBoardId — доска, на которую агент перемещает тикет при неопределённости (nullable).
+  Ответ на добавление возвращает обновлённый список automations.
+
+specs-unit:
+  CRUD автоматизаций:
+    - assert: PUT /admin/boards/:boardId/automation добавляет автоматизацию
+      description: |
+        Body: { agentId, systemPrompt, onUncertainMoveToBoardId }.
+        onUncertainMoveToBoardId — nullable, boardId доски для fallback-перемещения.
+        Ответ: { boardId, automations }.
+    - assert: PUT с onUncertainMoveToBoardId=null — автоматизация без fallback-доски
+    - assert: DELETE /admin/boards/:boardId/automation/:automationId удаляет автоматизацию, возвращает 204
+    - assert: Автоматизация не найдена при удалении — 404
+
+definitions:
+  feature:
+    - board-automations
+  section:
+    - tickets

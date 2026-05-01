@@ -1,0 +1,55 @@
+feature: Board Management
+code: board-management
+description: |
+  Управление досками тикетов — создание, обновление, удаление, просмотр.
+  Доска — агрегат с участниками (members), автоматизациями и подписками.
+  Scope: platform (глобальная) или organization (привязана к organizationId).
+  allowedTransferBoardIds — список досок, на которые можно перемещать тикеты вручную.
+  manualCreation — разрешает операторам создавать тикеты вручную.
+
+specs-unit:
+  # ==================== CRUD ДОСОК ====================
+
+  Создание доски:
+    - assert: POST /admin/boards создаёт доску с валидными полями
+      description: |
+        Body: { name, description, scope, organizationId, manualCreation }.
+        scope=platform — organizationId должен быть null.
+        scope=organization — organizationId обязателен.
+        Ответ содержит boardId, name, description, scope, organizationId, manualCreation,
+        allowedTransferBoardIds=[], memberIds=[], subscriptions=[], closeSubscriptions=[],
+        redirectSubscriptions=[], automations=[], createdAt, updatedAt.
+    - assert: Создание доски scope=platform с organizationId=null
+    - assert: Создание доски scope=organization с organizationId
+
+  Чтение досок:
+    - assert: GET /admin/boards возвращает список всех досок
+      description: |
+        Каждый элемент: boardId, name, description, scope, manualCreation,
+        subscriptionCount, memberCount, automationCount, createdAt.
+    - assert: GET /admin/boards?scope=platform фильтрует по scope
+    - assert: GET /admin/boards?scope=organization фильтрует по scope
+    - assert: GET /admin/boards/:boardId возвращает полные данные доски
+      description: |
+        Включает members (массив объектов с userId и данными пользователя),
+        subscriptions, closeSubscriptions, redirectSubscriptions, automations,
+        allowedTransferBoardIds.
+    - assert: GET /admin/boards/:boardId — несуществующая доска — 404
+
+  Обновление доски:
+    - assert: PATCH /admin/boards/:boardId обновляет name, description, manualCreation, allowedTransferBoardIds
+      description: |
+        Body: { name, description, manualCreation, allowedTransferBoardIds }.
+        scope и organizationId не меняются через этот эндпоинт.
+    - assert: allowedTransferBoardIds обновляется целиком (replace, не append)
+    - assert: PATCH /admin/boards/:boardId — несуществующая доска — 404
+
+  Удаление доски:
+    - assert: DELETE /admin/boards/:boardId удаляет доску, возвращает 204
+    - assert: DELETE /admin/boards/:boardId — несуществующая доска — 404
+
+definitions:
+  feature:
+    - board-management
+  section:
+    - tickets

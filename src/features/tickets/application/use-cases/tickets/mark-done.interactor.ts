@@ -8,7 +8,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { TicketId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class MarkDoneInteractor {
@@ -20,7 +20,7 @@ export class MarkDoneInteractor {
   ) {}
 
   public async execute(command: { ticketId: TicketId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageTicket);
+    const auth = await this.permissionCheck.mustCan(Permission.TicketMarkDone);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {
