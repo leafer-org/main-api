@@ -1,16 +1,15 @@
-import { Body, Controller, Get, HttpCode, Inject, NotFoundException, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query } from '@nestjs/common';
 
-import { ItemQueryPort, OrganizationQueryPort } from '../../application/ports.js';
+import { ItemQueryPort } from '../../application/ports.js';
 import { SearchAdminOrganizationsInteractor } from '../../application/use-cases/admin-organizations-list/search-admin-organizations.interactor.js';
 import { AdminCreateOrganizationInteractor } from '../../application/use-cases/create-and-claim-organization/admin-create-organization.interactor.js';
+import { GetClaimTokenInteractor } from '../../application/use-cases/create-and-claim-organization/get-claim-token.interactor.js';
 import { RegenerateClaimTokenInteractor } from '../../application/use-cases/create-and-claim-organization/regenerate-claim-token.interactor.js';
 import { CreateItemInteractor } from '../../application/use-cases/manage-items/create-item.interactor.js';
 import { domainToHttpError } from '@/infra/contracts/api-error.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
 import { isLeft } from '@/infra/lib/box.js';
-import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { EmployeeRoleId, MediaId, ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
 import { toItemWidget } from './item-widget.mapper.js';
 
 @Controller('admin/organizations')
@@ -20,9 +19,8 @@ export class AdminOrganizationsController {
     private readonly adminCreateOrganization: AdminCreateOrganizationInteractor,
     private readonly createItemInteractor: CreateItemInteractor,
     private readonly regenerateClaimToken: RegenerateClaimTokenInteractor,
+    private readonly getClaimTokenInteractor: GetClaimTokenInteractor,
     @Inject(ItemQueryPort) private readonly itemQuery: ItemQueryPort,
-    @Inject(OrganizationQueryPort) private readonly organizationQuery: OrganizationQueryPort,
-    @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
   @Get()
@@ -106,13 +104,15 @@ export class AdminOrganizationsController {
 
   @Get(':id/claim-token')
   public async getClaimToken(@Param('id') id: string): Promise<{ claimToken: string | null }> {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageOrganization);
-    if (isLeft(auth)) {
-      throw domainToHttpError<'getClaimToken'>(auth.error.toResponse());
+    const result = await this.getClaimTokenInteractor.execute({
+      organizationId: OrganizationId.raw(id),
+    });
+
+    if (isLeft(result)) {
+      throw domainToHttpError<'getClaimToken'>(result.error.toResponse());
     }
 
-    const claimToken = await this.organizationQuery.findClaimToken(OrganizationId.raw(id));
-    return { claimToken };
+    return result.value;
   }
 
   @Post(':id/regenerate-token')

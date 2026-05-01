@@ -35,7 +35,7 @@ const makeClock = () => {
 const makeRole = (overrides?: Partial<RoleState>): RoleState => ({
   id: ROLE_ID,
   name: 'OldRole',
-  permissions: {},
+  permissions: [],
   isStatic: false,
   createdAt: NOW,
   updatedAt: NOW,
@@ -45,7 +45,7 @@ const makeRole = (overrides?: Partial<RoleState>): RoleState => ({
 const makeReplacementRole = (): RoleState => ({
   id: REPLACEMENT_ROLE_ID,
   name: 'NewRole',
-  permissions: {},
+  permissions: [],
   isStatic: false,
   createdAt: NOW,
   updatedAt: NOW,

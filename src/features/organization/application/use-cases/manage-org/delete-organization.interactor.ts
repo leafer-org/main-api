@@ -13,7 +13,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { OrganizationId, UserId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class DeleteOrganizationInteractor {
@@ -31,7 +31,7 @@ export class DeleteOrganizationInteractor {
   ) {}
 
   public async execute(command: { organizationId: OrganizationId; userId: UserId }) {
-    const isAdmin = await this.globalPermissionCheck.can(Permissions.manageOrganization);
+    const isAdmin = await this.globalPermissionCheck.can(Permission.OrganizationDelete);
     if (!isAdmin) {
       const ownerCheck = await this.orgPermissionCheck.mustBeEmployee(
         command.organizationId,

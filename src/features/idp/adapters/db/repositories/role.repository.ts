@@ -7,6 +7,7 @@ import { roles } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import { RoleId } from '@/kernel/domain/ids.js';
+import type { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class DrizzleRoleRepository implements RoleRepository {
@@ -65,7 +66,7 @@ export class DrizzleRoleRepository implements RoleRepository {
     return {
       id: RoleId.raw(row.id),
       name: row.name,
-      permissions: (row.permissions ?? {}) as Record<string, unknown>,
+      permissions: (row.permissions ?? []) as Permission[],
       isStatic: row.isStatic,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

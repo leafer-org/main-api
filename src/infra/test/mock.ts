@@ -1,13 +1,12 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: generic types */
 import { type Mock, vitest } from 'vitest';
 
-import type { WhereArg } from '@/infra/auth/authz/permission-service.js';
-import type { InferPermissionValue, PermissionVariant } from '@/infra/auth/authz/schema.js';
 import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
 import {
   PermissionCheckService,
   PermissionDeniedError,
 } from '@/kernel/application/ports/permission.js';
+import type { Permission } from '@/kernel/domain/permissions.js';
 import {
   createTransaction,
   type Transaction,
@@ -52,17 +51,11 @@ export class MockPermissionCheckService extends PermissionCheckService {
     return this;
   }
 
-  public async can<T extends PermissionVariant>(
-    _perm: T,
-    ..._args: WhereArg<InferPermissionValue<T>>
-  ): Promise<boolean> {
+  public async can(_perm: Permission): Promise<boolean> {
     return !isLeft(this.result);
   }
 
-  public async mustCan<T extends PermissionVariant>(
-    _perm: T,
-    ..._args: WhereArg<InferPermissionValue<T>>
-  ): Promise<Either<PermissionDeniedError, void>> {
+  public async mustCan(_perm: Permission): Promise<Either<PermissionDeniedError, void>> {
     return this.result;
   }
 }

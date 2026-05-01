@@ -11,10 +11,12 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+import type { Permission } from '@/kernel/domain/permissions.js';
+
 export const roles = pgTable('roles', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull().unique(),
-  permissions: jsonb('permissions').notNull().default({}),
+  permissions: jsonb('permissions').$type<Permission[]>().notNull().default([]),
   isStatic: boolean('is_static').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })

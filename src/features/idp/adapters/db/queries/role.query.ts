@@ -6,6 +6,7 @@ import type { RoleReadModel } from '../../../domain/read-models/role.read-model.
 import { IdpDatabaseClient } from '../client.js';
 import { roles } from '../schema.js';
 import { RoleId } from '@/kernel/domain/ids.js';
+import type { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class DrizzleRoleQuery extends RoleQueryPort {
@@ -21,7 +22,7 @@ export class DrizzleRoleQuery extends RoleQueryPort {
     return {
       id: RoleId.raw(row.id),
       name: row.name,
-      permissions: (row.permissions ?? {}) as Record<string, unknown>,
+      permissions: (row.permissions ?? []) as Permission[],
       isStatic: row.isStatic,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

@@ -49,6 +49,7 @@ import { UnpublishExcessItemsHandler } from './application/use-cases/manage-item
 import { UnpublishItemInteractor } from './application/use-cases/manage-items/unpublish-item.interactor.js';
 import { UpdateItemDraftInteractor } from './application/use-cases/manage-items/update-item-draft.interactor.js';
 import { AdminCreateOrganizationInteractor } from './application/use-cases/create-and-claim-organization/admin-create-organization.interactor.js';
+import { GetClaimTokenInteractor } from './application/use-cases/create-and-claim-organization/get-claim-token.interactor.js';
 import { ApproveInfoModerationInteractor } from './application/use-cases/moderation/approve-info-moderation.interactor.js';
 import { ClaimOrganizationInteractor } from './application/use-cases/create-and-claim-organization/claim-organization.interactor.js';
 import { CreateOrganizationInteractor } from './application/use-cases/manage-org/create-organization.interactor.js';
@@ -102,6 +103,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     ClaimOrganizationInteractor,
     DeleteOrganizationInteractor,
     RegenerateClaimTokenInteractor,
+    GetClaimTokenInteractor,
     UpdateInfoDraftInteractor,
     DiscardInfoDraftChangesInteractor,
     GetOrganizationDetailInteractor,

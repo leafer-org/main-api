@@ -8,7 +8,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { OrganizationId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class RegenerateClaimTokenInteractor {
@@ -20,7 +20,7 @@ export class RegenerateClaimTokenInteractor {
   ) {}
 
   public async execute(command: { organizationId: OrganizationId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageOrganization);
+    const auth = await this.permissionCheck.mustCan(Permission.OrganizationClaimTokenRegenerate);
     if (isLeft(auth)) return auth;
 
     const now = this.clock.now();

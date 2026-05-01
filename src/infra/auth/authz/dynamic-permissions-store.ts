@@ -4,6 +4,7 @@ import type { PermissionsMap } from './permissions-store.js';
 import { PermissionsStore } from './permissions-store.js';
 import { IdpDatabaseClient } from '@/features/idp/adapters/db/client.js';
 import { roles } from '@/features/idp/adapters/db/schema.js';
+import type { Permission } from '@/kernel/domain/permissions.js';
 
 export class DynamicPermissionsStore extends PermissionsStore {
   public constructor(
@@ -16,7 +17,7 @@ export class DynamicPermissionsStore extends PermissionsStore {
   public async get(): Promise<PermissionsMap> {
     const allRoles = await this.db.select().from(roles);
     const rolesMap = Object.fromEntries(
-      allRoles.map((r) => [r.name, (r.permissions ?? {}) as Record<string, unknown>]),
+      allRoles.map((r) => [r.name, (r.permissions ?? []) as Permission[]]),
     );
     return { roles: rolesMap };
   }

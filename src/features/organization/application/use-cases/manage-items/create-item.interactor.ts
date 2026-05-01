@@ -10,7 +10,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { CatalogValidationPort } from '@/kernel/application/ports/catalog-validation.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 import type { ItemId, OrganizationId, TypeId, UserId } from '@/kernel/domain/ids.js';
 import { ALL_WIDGET_TYPES, type ItemWidget, type OwnerWidget } from '@/kernel/domain/vo/widget.js';
 
@@ -55,17 +55,18 @@ export class CreateItemInteractor {
     typeId: TypeId;
     widgets: ItemWidget[];
   }) {
-    const isAdmin = await this.globalPermissionCheck.can(Permissions.manageOrganization);
+    const isAdmin = await this.globalPermissionCheck.can(Permission.OrganizationItemEdit);
 
     if (command.userId) {
       const auth = await this.permissionCheck.mustHavePermission(
         command.organizationId,
         command.userId,
         'edit_items',
+        { globalBypass: Permission.OrganizationItemEdit },
       );
       if (isLeft(auth)) return auth;
     } else {
-      const auth = await this.globalPermissionCheck.mustCan(Permissions.manageOrganization);
+      const auth = await this.globalPermissionCheck.mustCan(Permission.OrganizationItemEdit);
       if (isLeft(auth)) return auth;
     }
 

@@ -17,7 +17,7 @@ const READ_MODEL: RolesListReadModel = {
     {
       id: RoleId.raw('role-1'),
       name: 'Admin',
-      permissions: { 'ROLE.MANAGE': true },
+      permissions: ['role.create', 'role.read', 'role.update', 'role.delete'],
       isStatic: true,
       createdAt: NOW,
       updatedAt: NOW,
@@ -25,7 +25,7 @@ const READ_MODEL: RolesListReadModel = {
     {
       id: RoleId.raw('role-2'),
       name: 'Editor',
-      permissions: {},
+      permissions: [],
       isStatic: false,
       createdAt: NOW,
       updatedAt: NOW,

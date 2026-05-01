@@ -7,7 +7,7 @@ import { isLeft } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class CreateRoleInteractor {
@@ -19,8 +19,8 @@ export class CreateRoleInteractor {
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
-  public async execute(command: { name: string; permissions: Record<string, unknown> }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
+  public async execute(command: { name: string; permissions: unknown }) {
+    const auth = await this.permissionCheck.mustCan(Permission.RoleCreate);
     if (isLeft(auth)) return auth;
 
     const validated = validatePermissions(command.permissions);
@@ -35,7 +35,7 @@ export class CreateRoleInteractor {
         type: 'CreateRole',
         id,
         name: command.name,
-        permissions: command.permissions,
+        permissions: validated.value,
         now,
       });
 

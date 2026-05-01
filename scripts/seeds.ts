@@ -5,6 +5,7 @@ import pg from 'pg';
 import { cmsCities } from '../src/features/cms/adapters/db/schema.js';
 import { roles } from '../src/features/idp/adapters/db/schema.js';
 import { users } from '../src/features/idp/adapters/db/schema.js';
+import { ALL_PERMISSIONS } from '../src/kernel/domain/permissions.js';
 
 export async function truncateAll(connectionUri: string) {
   const client = new pg.Client({ connectionString: connectionUri });
@@ -61,22 +62,12 @@ export async function seedStaticRoles(connectionUri: string) {
     .values([
       {
         name: 'ADMIN',
-        permissions: {
-          'ROLE.MANAGE': true,
-          'USER.MANAGE': true,
-          'SESSION.MANAGE': 'all',
-          'CMS.MANAGE': true,
-          'ORGANIZATION.MODERATE': true,
-          'ORGANIZATION.MANAGE': true,
-          'TICKET_BOARD.MANAGE': true,
-          'TICKET.MANAGE': true,
-          'TICKET.REASSIGN': true,
-        },
+        permissions: [...ALL_PERMISSIONS],
         isStatic: true,
       },
       {
         name: 'USER',
-        permissions: {},
+        permissions: [],
         isStatic: true,
       },
     ])

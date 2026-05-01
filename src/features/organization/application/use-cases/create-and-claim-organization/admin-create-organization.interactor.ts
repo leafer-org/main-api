@@ -9,7 +9,7 @@ import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { EmployeeRoleId, MediaId, OrganizationId } from '@/kernel/domain/ids.js';
 import type { ContactLink, OrgTeam } from '@/kernel/domain/vo/widget.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 @Injectable()
 export class AdminCreateOrganizationInteractor {
   public constructor(
@@ -29,7 +29,7 @@ export class AdminCreateOrganizationInteractor {
     adminRoleId: EmployeeRoleId;
     claimToken: string;
   }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageOrganization);
+    const auth = await this.permissionCheck.mustCan(Permission.OrganizationCreate);
     if (isLeft(auth)) return auth;
     const now = this.clock.now();
     return this.txHost.startTransaction(async (tx) => {

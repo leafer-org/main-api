@@ -11,7 +11,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { RoleId, UserId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 import { Role } from '@/kernel/domain/vo/role.js';
 
 @Injectable()
@@ -26,7 +26,7 @@ export class UpdateUserRoleInteractor {
   ) {}
 
   public async execute(command: { userId: UserId; roleId: RoleId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
+    const auth = await this.permissionCheck.mustCan(Permission.UserRoleAssign);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {

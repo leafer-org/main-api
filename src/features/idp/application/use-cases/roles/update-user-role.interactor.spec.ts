@@ -32,7 +32,7 @@ const makeClock = () => {
 const makeRole = (): RoleState => ({
   id: ROLE_ID,
   name: 'Admin',
-  permissions: { 'ROLE.MANAGE': true },
+  permissions: ['role.create', 'role.read', 'role.update', 'role.delete'],
   isStatic: false,
   createdAt: NOW,
   updatedAt: NOW,

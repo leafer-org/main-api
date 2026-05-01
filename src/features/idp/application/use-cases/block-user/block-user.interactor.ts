@@ -10,7 +10,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { UserId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class BlockUserInteractor {
@@ -23,7 +23,7 @@ export class BlockUserInteractor {
   ) {}
 
   public async execute(command: { userId: UserId; reason: string }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageUser);
+    const auth = await this.permissionCheck.mustCan(Permission.UserBlock);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {

@@ -777,8 +777,10 @@
                   "additionalProperties": false,
                   "properties": {
                     "permissions": {
-                      "type": "object",
-                      "additionalProperties": {}
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   }
                 }
@@ -1063,8 +1065,10 @@
                     "minLength": 1
                   },
                   "permissions": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   }
                 }
               }
@@ -1164,8 +1168,8 @@
         "tags": [
           "roles"
         ],
-        "summary": "Получение схемы разрешений",
-        "description": "Возвращает схему всех доступных разрешений для построения UI.",
+        "summary": "Каталог пермишенов и групп",
+        "description": "Возвращает список групп пермишенов с описанием для построения UI редактирования ролей.",
         "security": [
           {
             "bearerAuth": []
@@ -1173,42 +1177,19 @@
         ],
         "responses": {
           "200": {
-            "description": "Схема разрешений",
+            "description": "Каталог пермишенов",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "required": [
-                      "action",
-                      "key",
-                      "type",
-                      "default"
-                    ],
-                    "properties": {
-                      "action": {
-                        "type": "string"
-                      },
-                      "key": {
-                        "type": "string"
-                      },
-                      "type": {
-                        "type": "string",
-                        "enum": [
-                          "boolean",
-                          "enum"
-                        ]
-                      },
-                      "values": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "default": {},
-                      "description": {
-                        "type": "string"
+                  "type": "object",
+                  "required": [
+                    "groups"
+                  ],
+                  "properties": {
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PermissionGroup"
                       }
                     }
                   }
@@ -1350,8 +1331,10 @@
                 ],
                 "properties": {
                   "permissions": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   }
                 }
               }
@@ -8376,6 +8359,46 @@
         }
       }
     },
+    "/admin/boards/my": {
+      "get": {
+        "operationId": "getAdminMyBoards",
+        "tags": [
+          "tickets",
+          "boards"
+        ],
+        "summary": "Мои доски (где текущий пользователь — участник)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список досок",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BoardListItem"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/boards/{boardId}": {
       "get": {
         "operationId": "getAdminBoardDetail",
@@ -8494,16 +8517,6 @@
                     "items": {
                       "type": "string"
                     }
-                  },
-                  "closeTrigger": {
-                    "oneOf": [
-                      {
-                        "type": "null"
-                      },
-                      {
-                        "$ref": "#/components/schemas/CloseTrigger"
-                      }
-                    ]
                   }
                 }
               }
@@ -8704,11 +8717,18 @@
             }
           },
           "400": {
-            "description": "Ошибка валидации",
+            "description": "Ошибка валидации / невалидный triggerId",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpenApiValidationError"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenApiValidationError"
+                    },
+                    {
+                      "$ref": "#/components/schemas/DomainErrorResponse"
+                    }
+                  ]
                 }
               }
             }
@@ -8844,10 +8864,10 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "userId"
+                  "phone"
                 ],
                 "properties": {
-                  "userId": {
+                  "phone": {
                     "type": "string"
                   }
                 }
@@ -9191,6 +9211,352 @@
         }
       }
     },
+    "/admin/boards/{boardId}/close-subscriptions": {
+      "post": {
+        "operationId": "addAdminBoardCloseSubscription",
+        "tags": [
+          "tickets",
+          "boards"
+        ],
+        "summary": "Добавление подписки закрытия",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "triggerId",
+                  "filters",
+                  "addComment"
+                ],
+                "properties": {
+                  "triggerId": {
+                    "type": "string"
+                  },
+                  "filters": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SubscriptionFilter"
+                    }
+                  },
+                  "addComment": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Подписка закрытия добавлена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "boardId",
+                    "closeSubscriptions"
+                  ],
+                  "properties": {
+                    "boardId": {
+                      "type": "string"
+                    },
+                    "closeSubscriptions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CloseSubscription"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Невалидный triggerId",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Доска не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/boards/{boardId}/close-subscriptions/{subId}": {
+      "delete": {
+        "operationId": "removeAdminBoardCloseSubscription",
+        "tags": [
+          "tickets",
+          "boards"
+        ],
+        "summary": "Удаление подписки закрытия",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Подписка закрытия удалена"
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Доска или подписка не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/boards/{boardId}/redirect-subscriptions": {
+      "post": {
+        "operationId": "addAdminBoardRedirectSubscription",
+        "tags": [
+          "tickets",
+          "boards"
+        ],
+        "summary": "Добавление подписки перенаправления",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "triggerId",
+                  "filters",
+                  "targetBoardId",
+                  "addComment",
+                  "commentTemplate"
+                ],
+                "properties": {
+                  "triggerId": {
+                    "type": "string"
+                  },
+                  "filters": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/SubscriptionFilter"
+                    }
+                  },
+                  "targetBoardId": {
+                    "type": "string"
+                  },
+                  "addComment": {
+                    "type": "boolean"
+                  },
+                  "commentTemplate": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Подписка перенаправления добавлена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "boardId",
+                    "redirectSubscriptions"
+                  ],
+                  "properties": {
+                    "boardId": {
+                      "type": "string"
+                    },
+                    "redirectSubscriptions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RedirectSubscription"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "targetBoardId совпадает с текущей доской",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Доска или целевая доска не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/boards/{boardId}/redirect-subscriptions/{subId}": {
+      "delete": {
+        "operationId": "removeAdminBoardRedirectSubscription",
+        "tags": [
+          "tickets",
+          "boards"
+        ],
+        "summary": "Удаление подписки перенаправления",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Подписка перенаправления удалена"
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Доска или подписка не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/tickets": {
       "get": {
         "operationId": "getAdminTickets",
@@ -9331,7 +9697,7 @@
                     "minLength": 1
                   },
                   "data": {
-                    "$ref": "#/components/schemas/TicketData"
+                    "$ref": "#/components/schemas/TicketDataInput"
                   }
                 }
               }
@@ -9487,6 +9853,45 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/tickets/unassign-all": {
+      "post": {
+        "operationId": "unassignAllAdminTickets",
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Снять назначение со всех своих тикетов",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Все тикеты текущего пользователя сняты с назначения"
           },
           "403": {
             "description": "Нет доступа",
@@ -10275,16 +10680,17 @@
         ],
         "parameters": [
           {
-            "name": "scope",
+            "name": "category",
             "in": "query",
             "schema": {
               "type": "string",
               "enum": [
-                "platform",
-                "organization"
+                "open",
+                "close",
+                "redirect"
               ]
             },
-            "description": "Фильтр по scope"
+            "description": "Фильтр по категории подписки"
           }
         ],
         "responses": {
@@ -10300,6 +10706,77 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Нет доступа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/boards/filters": {
+      "get": {
+        "operationId": "getAdminTicketFilters",
+        "tags": [
+          "tickets",
+          "boards"
+        ],
+        "summary": "Справочник фильтров",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "close",
+                "redirect"
+              ]
+            },
+            "description": "Фильтр по категории подписки"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список фильтров",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilterInfo"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
           },
           "403": {
             "description": "Нет доступа",
@@ -10619,8 +11096,10 @@
             "type": "string"
           },
           "permissions": {
-            "type": "object",
-            "additionalProperties": true
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "isStatic": {
             "type": "boolean"
@@ -10632,6 +11111,47 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "PermissionItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "PermissionGroup": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "permissions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionItem"
+            }
           }
         }
       },
@@ -13824,22 +14344,35 @@
             "type": "object",
             "required": [
               "type",
-              "filterId",
-              "params"
+              "n"
             ],
             "properties": {
               "type": {
                 "type": "string",
                 "enum": [
-                  "programmatic"
+                  "every-nth"
                 ]
               },
-              "filterId": {
-                "type": "string"
+              "n": {
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "percent"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "random-sample"
+                ]
               },
-              "params": {
-                "type": "object",
-                "additionalProperties": true
+              "percent": {
+                "type": "number"
               }
             }
           }
@@ -13867,6 +14400,29 @@
             "items": {
               "$ref": "#/components/schemas/SubscriptionFilter"
             }
+          }
+        }
+      },
+      "BoardMember": {
+        "type": "object",
+        "required": [
+          "userId",
+          "fullName",
+          "phone",
+          "role"
+        ],
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
           }
         }
       },
@@ -13908,21 +14464,63 @@
           }
         }
       },
-      "CloseTrigger": {
+      "CloseSubscription": {
         "type": "object",
         "required": [
-          "type",
+          "id",
+          "triggerId",
+          "filters",
           "addComment"
         ],
         "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "on-moderation-resolved"
-            ]
+          "id": {
+            "type": "string"
+          },
+          "triggerId": {
+            "type": "string"
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionFilter"
+            }
           },
           "addComment": {
             "type": "boolean"
+          }
+        }
+      },
+      "RedirectSubscription": {
+        "type": "object",
+        "required": [
+          "id",
+          "triggerId",
+          "filters",
+          "targetBoardId",
+          "addComment",
+          "commentTemplate"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "triggerId": {
+            "type": "string"
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionFilter"
+            }
+          },
+          "targetBoardId": {
+            "type": "string"
+          },
+          "addComment": {
+            "type": "boolean"
+          },
+          "commentTemplate": {
+            "type": "string"
           }
         }
       },
@@ -13987,71 +14585,29 @@
               "type": "string"
             }
           },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardMember"
+            }
+          },
           "automations": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BoardAutomation"
             }
           },
-          "closeTrigger": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/CloseTrigger"
-              }
-            ]
+          "closeSubscriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CloseSubscription"
+            }
           },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "TicketListItem": {
-        "type": "object",
-        "required": [
-          "ticketId",
-          "boardId",
-          "message",
-          "status",
-          "createdAt",
-          "updatedAt"
-        ],
-        "properties": {
-          "ticketId": {
-            "type": "string"
-          },
-          "boardId": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "triggerId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "open",
-              "in-progress",
-              "done"
-            ]
-          },
-          "assigneeId": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "redirectSubscriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RedirectSubscription"
+            }
           },
           "createdAt": {
             "type": "string",
@@ -14117,6 +14673,122 @@
                 "type": "string"
               },
               "avatarUrl": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "TicketListItem": {
+        "type": "object",
+        "required": [
+          "ticketId",
+          "boardId",
+          "message",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "ticketId": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "triggerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "in-progress",
+              "done"
+            ]
+          },
+          "assigneeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {
+            "$ref": "#/components/schemas/TicketData"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TicketDataInput": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "organizationId": {
+                "type": "string"
+              },
+              "typeId": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "imageId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "categoryIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "organization": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "avatarId": {
                 "type": [
                   "string",
                   "null"
@@ -14228,12 +14900,36 @@
           }
         }
       },
+      "TriggerParam": {
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "type"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "number",
+              "string"
+            ]
+          }
+        }
+      },
       "TriggerInfo": {
         "type": "object",
         "required": [
           "triggerId",
           "name",
-          "scope"
+          "categories",
+          "params"
         ],
         "properties": {
           "triggerId": {
@@ -14242,12 +14938,56 @@
           "name": {
             "type": "string"
           },
-          "scope": {
-            "type": "string",
-            "enum": [
-              "platform",
-              "organization"
-            ]
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "open",
+                "close",
+                "redirect"
+              ]
+            }
+          },
+          "params": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TriggerParam"
+            }
+          }
+        }
+      },
+      "FilterInfo": {
+        "type": "object",
+        "required": [
+          "type",
+          "name",
+          "categories",
+          "params"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "open",
+                "close",
+                "redirect"
+              ]
+            }
+          },
+          "params": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TriggerParam"
+            }
           }
         }
       }

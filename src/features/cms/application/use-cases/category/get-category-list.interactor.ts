@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CategoryQueryPort } from '../../ports.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class GetCategoryListInteractor {
@@ -13,7 +13,7 @@ export class GetCategoryListInteractor {
   ) {}
 
   public async execute() {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageCms);
+    const auth = await this.permissionCheck.mustCan(Permission.CmsCategoryRead);
     if (isLeft(auth)) return auth;
 
     const categories = await this.categoryQuery.findAll();

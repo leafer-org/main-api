@@ -27,7 +27,7 @@ const makeClock = () => {
 const makeRole = (overrides?: Partial<RoleState>): RoleState => ({
   id: ROLE_ID,
   name: 'Editor',
-  permissions: { 'ROLE.MANAGE': false },
+  permissions: [],
   isStatic: false,
   createdAt: NOW,
   updatedAt: NOW,
@@ -55,7 +55,7 @@ describe('UpdateRoleInteractor', () => {
 
     const result = await interactor.execute({
       roleId: ROLE_ID,
-      permissions: { 'ROLE.MANAGE': true },
+      permissions: ['role.create', 'role.read', 'role.update', 'role.delete'],
     });
 
     expect(isRight(result)).toBe(true);
@@ -63,7 +63,7 @@ describe('UpdateRoleInteractor', () => {
       txHost.transaction,
       expect.objectContaining({
         id: ROLE_ID,
-        permissions: { 'ROLE.MANAGE': true },
+        permissions: ['role.create', 'role.read', 'role.update', 'role.delete'],
       }),
     );
   });
@@ -81,7 +81,7 @@ describe('UpdateRoleInteractor', () => {
 
     const result = await interactor.execute({
       roleId: ROLE_ID,
-      permissions: {},
+      permissions: [],
     });
 
     expect(isLeft(result)).toBe(true);
@@ -104,7 +104,7 @@ describe('UpdateRoleInteractor', () => {
 
     const result = await interactor.execute({
       roleId: ROLE_ID,
-      permissions: {},
+      permissions: [],
     });
 
     expect(isLeft(result)).toBe(true);
@@ -127,7 +127,7 @@ describe('UpdateRoleInteractor', () => {
 
     const result = await interactor.execute({
       roleId: ROLE_ID,
-      permissions: {},
+      permissions: [],
     });
 
     expect(isLeft(result)).toBe(true);

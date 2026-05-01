@@ -1,5 +1,5 @@
 {
-  "id": "950afd88-9d8f-4e6e-8404-fbb117aa182f",
+  "id": "f7bbe2aa-d97d-42ab-adc5-d78eb0bd7462",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1071,7 +1071,7 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": "'{}'::jsonb"
+          "default": "'[]'::jsonb"
         },
         "is_static": {
           "name": "is_static",

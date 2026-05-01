@@ -1,16 +1,17 @@
 import type { RoleId } from '@/kernel/domain/ids.js';
+import type { Permission } from '@/kernel/domain/permissions.js';
 
 export type CreateRoleCommand = {
   type: 'CreateRole';
   id: RoleId;
   name: string;
-  permissions: Record<string, unknown>;
+  permissions: Permission[];
   now: Date;
 };
 
 export type UpdateRoleCommand = {
   type: 'UpdateRole';
-  permissions: Record<string, unknown>;
+  permissions: Permission[];
   now: Date;
 };
 

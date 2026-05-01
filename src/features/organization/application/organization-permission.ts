@@ -3,10 +3,15 @@ import type { EmployeeEntity } from '../domain/aggregates/organization/entity.js
 import { CreateDomainError } from '@/infra/ddd/error.js';
 import type { Either } from '@/infra/lib/box.js';
 import type { OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import type { Permission } from '@/kernel/domain/permissions.js';
 
 export class NotEmployeeError extends CreateDomainError('not_employee', 403) {}
 
 export class OrgPermissionDeniedError extends CreateDomainError('org_permission_denied', 403) {}
+
+export type OrgPermissionOptions = {
+  globalBypass?: Permission;
+};
 
 export abstract class OrganizationPermissionCheckService {
   public abstract mustBeEmployee(
@@ -18,8 +23,6 @@ export abstract class OrganizationPermissionCheckService {
     organizationId: OrganizationId,
     userId: UserId,
     permission: OrganizationPermission,
+    options?: OrgPermissionOptions,
   ): Promise<Either<OrgPermissionDeniedError, EmployeeEntity>>;
-
-  /** Allows users with ORGANIZATION.MODERATE or ORGANIZATION.MANAGE global permission */
-  public abstract mustCanModerate(): Promise<Either<OrgPermissionDeniedError, void>>;
 }

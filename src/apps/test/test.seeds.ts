@@ -1,26 +1,17 @@
 import type { cmsCities } from '@/features/cms/adapters/db/schema.js';
+import { ALL_PERMISSIONS } from '@/kernel/domain/permissions.js';
 
 export const ADMIN_PHONE = '79990000001';
 
 export const STATIC_ROLES = [
   {
     name: 'ADMIN',
-    permissions: {
-      'ROLE.MANAGE': true,
-      'USER.MANAGE': true,
-      'SESSION.MANAGE': 'all',
-      'CMS.MANAGE': true,
-      'ORGANIZATION.MODERATE': true,
-      'ORGANIZATION.MANAGE': true,
-      'TICKET_BOARD.MANAGE': true,
-      'TICKET.MANAGE': true,
-      'TICKET.REASSIGN': true,
-    },
+    permissions: [...ALL_PERMISSIONS],
     isStatic: true,
   },
   {
     name: 'USER',
-    permissions: {},
+    permissions: [],
     isStatic: true,
   },
 ];

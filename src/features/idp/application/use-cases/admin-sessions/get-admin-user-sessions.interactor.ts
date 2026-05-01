@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { UserSessionsQueryPort } from '../../ports.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 import type { UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
@@ -16,10 +16,7 @@ export class GetAdminUserSessionsInteractor {
   ) {}
 
   public async execute(command: { userId: UserId }) {
-    const auth = await this.permissionCheck.mustCan(
-      Permissions.manageSession,
-      (v) => v === 'all',
-    );
+    const auth = await this.permissionCheck.mustCan(Permission.SessionReadAll);
     if (isLeft(auth)) return auth;
 
     const readModel = await this.sessionsQuery.findUserSessions(command.userId);

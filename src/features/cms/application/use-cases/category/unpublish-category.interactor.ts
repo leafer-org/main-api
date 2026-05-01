@@ -8,7 +8,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { CategoryId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class UnpublishCategoryInteractor {
@@ -21,7 +21,7 @@ export class UnpublishCategoryInteractor {
   ) {}
 
   public async execute(command: { id: CategoryId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageCms);
+    const auth = await this.permissionCheck.mustCan(Permission.CmsCategoryUnpublish);
     if (isLeft(auth)) return auth;
 
     const now = this.clock.now();

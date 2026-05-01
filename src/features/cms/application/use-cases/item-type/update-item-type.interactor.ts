@@ -8,7 +8,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { TypeId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 @Injectable()
@@ -27,7 +27,7 @@ export class UpdateItemTypeInteractor {
     label: string;
     widgetSettings: WidgetSettings[];
   }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageCms);
+    const auth = await this.permissionCheck.mustCan(Permission.CmsItemTypeUpdate);
     if (isLeft(auth)) return auth;
 
     const now = this.clock.now();

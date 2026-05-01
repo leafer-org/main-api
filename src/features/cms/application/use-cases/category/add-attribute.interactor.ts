@@ -8,7 +8,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { AttributeId, CategoryId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 
 @Injectable()
@@ -27,7 +27,7 @@ export class AddAttributeInteractor {
     required: boolean;
     schema: AttributeSchema;
   }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageCms);
+    const auth = await this.permissionCheck.mustCan(Permission.CmsCategoryAttributeAdd);
     if (isLeft(auth)) return auth;
 
     const now = this.clock.now();

@@ -1,11 +1,10 @@
-/** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: test describe to long */
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { StaticSessionContext } from '../session/session-context.js';
 import { PermissionService } from './permission-service.js';
 import type { PermissionsMap } from './permissions-store.js';
 import { PermissionsStore } from './permissions-store.js';
-import { BooleanPerm, EnumPerm } from './schema.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 class TestPermissionsStore extends PermissionsStore {
   public constructor(private readonly map: PermissionsMap) {
@@ -22,136 +21,51 @@ function createStore(roles: PermissionsMap['roles']): TestPermissionsStore {
 }
 
 describe('PermissionService', () => {
-  const testPerms = {
-    canLogin: BooleanPerm('AUTH.CAN_LOGIN', false),
-    canLogout: BooleanPerm('AUTH.CAN_LOGOUT', true),
-    accessLevel: EnumPerm('ACCESS.LEVEL', ['all', 'self', 'none'] as const, 'none'),
-  };
-
   describe('canLocal', () => {
-    it('should return true for boolean permission set to true', async () => {
-      const store = createStore({
-        ADMIN: { 'AUTH.CAN_LOGIN': true },
-      });
-      const sessionContext = new StaticSessionContext('ADMIN');
-      const service = new PermissionService(store, sessionContext);
+    it('returns true when role contains the permission', async () => {
+      const store = createStore({ ADMIN: [Permission.RoleCreate] });
+      const service = new PermissionService(store, new StaticSessionContext('ADMIN'));
 
-      const result = await service.canLocal(testPerms.canLogin, 'ADMIN');
+      const result = await service.canLocal(Permission.RoleCreate, 'ADMIN');
 
       expect(result).toBe(true);
     });
 
-    it('should return false for boolean permission set to false', async () => {
-      const store = createStore({
-        USER: { 'AUTH.CAN_LOGIN': false, 'ACCESS.LEVEL': 'all' },
-      });
-      const sessionContext = new StaticSessionContext('USER');
-      const service = new PermissionService(store, sessionContext);
+    it('returns false when role lacks the permission', async () => {
+      const store = createStore({ USER: [Permission.UserRead] });
+      const service = new PermissionService(store, new StaticSessionContext('USER'));
 
-      const result = await service.canLocal(testPerms.canLogin, 'USER');
+      const result = await service.canLocal(Permission.RoleCreate, 'USER');
 
       expect(result).toBe(false);
     });
 
-    it('should return false for non-existent role', async () => {
+    it('returns false for unknown role', async () => {
       const store = createStore({});
-      const sessionContext = new StaticSessionContext('UNKNOWN');
-      const service = new PermissionService(store, sessionContext);
+      const service = new PermissionService(store, new StaticSessionContext('GHOST'));
 
-      const result = await service.canLocal(testPerms.canLogin, 'UNKNOWN');
+      const result = await service.canLocal(Permission.RoleCreate, 'GHOST');
 
       expect(result).toBe(false);
-    });
-
-    it('should use default value when permission is not set', async () => {
-      const store = createStore({ USER: {} });
-      const sessionContext = new StaticSessionContext('USER');
-      const service = new PermissionService(store, sessionContext);
-
-      const resultLogin = await service.canLocal(testPerms.canLogin, 'USER');
-      const resultLogout = await service.canLocal(testPerms.canLogout, 'USER');
-
-      expect(resultLogin).toBe(false);
-      expect(resultLogout).toBe(true);
-    });
-
-    it('should call where function for enum permission and return true', async () => {
-      const store = createStore({
-        ADMIN: { 'ACCESS.LEVEL': 'all' },
-      });
-      const sessionContext = new StaticSessionContext('ADMIN');
-      const service = new PermissionService(store, sessionContext);
-      const where = vi.fn((value: string) => value === 'all');
-
-      const result = await service.canLocal(testPerms.accessLevel, 'ADMIN', where);
-
-      expect(where).toHaveBeenCalledWith('all');
-      expect(result).toBe(true);
-    });
-
-    it('should call where function for enum permission and return false', async () => {
-      const store = createStore({
-        USER: { 'ACCESS.LEVEL': 'self' },
-      });
-      const sessionContext = new StaticSessionContext('USER');
-      const service = new PermissionService(store, sessionContext);
-      const where = vi.fn((value: string) => value === 'all');
-
-      const result = await service.canLocal(testPerms.accessLevel, 'USER', where);
-
-      expect(where).toHaveBeenCalledWith('self');
-      expect(result).toBe(false);
-    });
-
-    it('should use default value for enum when not set', async () => {
-      const store = createStore({ USER: {} });
-      const sessionContext = new StaticSessionContext('USER');
-      const service = new PermissionService(store, sessionContext);
-      const where = vi.fn((value: string) => value === 'none');
-
-      const result = await service.canLocal(testPerms.accessLevel, 'USER', where);
-
-      expect(where).toHaveBeenCalledWith('none');
-      expect(result).toBe(true);
     });
   });
 
   describe('can', () => {
-    it('should use role from SessionContext', async () => {
+    it('uses role from SessionContext', async () => {
       const store = createStore({
-        ADMIN: { 'AUTH.CAN_LOGIN': true },
-        USER: { 'AUTH.CAN_LOGIN': false },
+        ADMIN: [Permission.UserBlock],
+        USER: [],
       });
-      const sessionContext = new StaticSessionContext('ADMIN');
-      const service = new PermissionService(store, sessionContext);
+      const service = new PermissionService(store, new StaticSessionContext('ADMIN'));
 
-      const result = await service.can(testPerms.canLogin);
-
-      expect(result).toBe(true);
+      expect(await service.can(Permission.UserBlock)).toBe(true);
     });
 
-    it('should delegate to canLocal with current role', async () => {
-      const store = createStore({
-        USER: { 'ACCESS.LEVEL': 'self' },
-      });
-      const sessionContext = new StaticSessionContext('USER');
-      const service = new PermissionService(store, sessionContext);
-      const where = vi.fn((value: string) => value === 'self');
+    it('returns false when role has empty permissions', async () => {
+      const store = createStore({ USER: [] });
+      const service = new PermissionService(store, new StaticSessionContext('USER'));
 
-      const result = await service.can(testPerms.accessLevel, where);
-
-      expect(where).toHaveBeenCalledWith('self');
-      expect(result).toBe(true);
-    });
-
-    it('should return false when current role has no permissions', async () => {
-      const store = createStore({});
-      const sessionContext = new StaticSessionContext('GUEST');
-      const service = new PermissionService(store, sessionContext);
-
-      const result = await service.can(testPerms.canLogin);
-
-      expect(result).toBe(false);
+      expect(await service.can(Permission.UserBlock)).toBe(false);
     });
   });
 });

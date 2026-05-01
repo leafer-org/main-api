@@ -5,7 +5,7 @@ import { RoleQueryPort } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import type { RoleId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class GetRoleInteractor {
@@ -15,7 +15,7 @@ export class GetRoleInteractor {
   ) {}
 
   public async execute(command: { roleId: RoleId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
+    const auth = await this.permissionCheck.mustCan(Permission.RoleRead);
     if (isLeft(auth)) return auth;
 
     const readModel = await this.roleQuery.findRole(command.roleId);

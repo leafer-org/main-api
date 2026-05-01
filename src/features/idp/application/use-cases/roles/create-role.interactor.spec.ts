@@ -24,7 +24,7 @@ const makeClock = () => {
 const makeExistingRole = (): RoleState => ({
   id: ROLE_ID,
   name: 'Editor',
-  permissions: {},
+  permissions: [],
   isStatic: false,
   createdAt: NOW,
   updatedAt: NOW,
@@ -60,7 +60,7 @@ describe('CreateRoleInteractor', () => {
 
     const result = await interactor.execute({
       name: 'Editor',
-      permissions: { 'ROLE.MANAGE': true },
+      permissions: ['role.create', 'role.read', 'role.update', 'role.delete'],
     });
 
     expect(isRight(result)).toBe(true);
@@ -69,7 +69,7 @@ describe('CreateRoleInteractor', () => {
       expect.objectContaining({
         id: ROLE_ID,
         name: 'Editor',
-        permissions: { 'ROLE.MANAGE': true },
+        permissions: ['role.create', 'role.read', 'role.update', 'role.delete'],
         isStatic: false,
       }),
     );
@@ -89,7 +89,7 @@ describe('CreateRoleInteractor', () => {
 
     const result = await interactor.execute({
       name: 'Editor',
-      permissions: {},
+      permissions: [],
     });
 
     expect(isLeft(result)).toBe(true);
@@ -113,7 +113,7 @@ describe('CreateRoleInteractor', () => {
 
     const result = await interactor.execute({
       name: 'Editor',
-      permissions: {},
+      permissions: [],
     });
 
     expect(isLeft(result)).toBe(true);

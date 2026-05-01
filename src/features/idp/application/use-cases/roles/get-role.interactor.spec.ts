@@ -17,7 +17,7 @@ const NOW = new Date('2024-06-01T12:00:00.000Z');
 const ROLE_READ_MODEL: RoleReadModel = {
   id: ROLE_ID,
   name: 'Editor',
-  permissions: { 'ROLE.MANAGE': true },
+  permissions: ['role.create', 'role.read', 'role.update', 'role.delete'],
   isStatic: false,
   createdAt: NOW,
   updatedAt: NOW,

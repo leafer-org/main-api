@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import {
   NotEmployeeError,
+  type OrgPermissionOptions,
   OrganizationPermissionCheckService,
   OrgPermissionDeniedError,
 } from '../../application/organization-permission.js';
@@ -12,7 +13,7 @@ import { type Either, Left, Right } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
 import type { EmployeeRoleId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 const SYNTHETIC_ADMIN_EMPLOYEE: EmployeeEntity = {
   userId: 'system-admin' as UserId,
@@ -40,12 +41,9 @@ export class DrizzleOrganizationPermissionCheckService extends OrganizationPermi
     const employee = org.employees.find((e) => e.userId === userId);
     if (employee) return Right(employee);
 
-    // manageOrganization and moderateOrganization bypass employee check
-    const isManager = await this.globalPermissionCheck.can(Permissions.manageOrganization);
-    if (isManager) return Right(SYNTHETIC_ADMIN_EMPLOYEE);
-
-    const isModerator = await this.globalPermissionCheck.can(Permissions.moderateOrganization);
-    if (isModerator) return Right(SYNTHETIC_ADMIN_EMPLOYEE);
+    if (await this.globalPermissionCheck.can(Permission.OrganizationRead)) {
+      return Right(SYNTHETIC_ADMIN_EMPLOYEE);
+    }
 
     return Left(new NotEmployeeError());
   }
@@ -54,13 +52,17 @@ export class DrizzleOrganizationPermissionCheckService extends OrganizationPermi
     organizationId: OrganizationId,
     userId: UserId,
     permission: OrganizationPermission,
+    options?: OrgPermissionOptions,
   ): Promise<Either<OrgPermissionDeniedError, EmployeeEntity>> {
     const org = await this.organizationRepository.findById(NO_TRANSACTION, organizationId);
     if (!org) return Left(new OrgPermissionDeniedError());
 
-    // manageOrganization bypasses all org-level permission checks
-    const isManager = await this.globalPermissionCheck.can(Permissions.manageOrganization);
-    if (isManager) return Right(SYNTHETIC_ADMIN_EMPLOYEE);
+    if (
+      options?.globalBypass &&
+      (await this.globalPermissionCheck.can(options.globalBypass))
+    ) {
+      return Right(SYNTHETIC_ADMIN_EMPLOYEE);
+    }
 
     const employee = org.employees.find((e) => e.userId === userId);
     if (!employee) return Left(new OrgPermissionDeniedError());
@@ -71,15 +73,5 @@ export class DrizzleOrganizationPermissionCheckService extends OrganizationPermi
     }
 
     return Right(employee);
-  }
-
-  public async mustCanModerate(): Promise<Either<OrgPermissionDeniedError, void>> {
-    const isModerator = await this.globalPermissionCheck.can(Permissions.moderateOrganization);
-    if (isModerator) return Right(undefined);
-
-    const isManager = await this.globalPermissionCheck.can(Permissions.manageOrganization);
-    if (isManager) return Right(undefined);
-
-    return Left(new OrgPermissionDeniedError());
   }
 }

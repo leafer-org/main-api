@@ -12,7 +12,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { RoleId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class DeleteRoleInteractor {
@@ -26,7 +26,7 @@ export class DeleteRoleInteractor {
   ) {}
 
   public async execute(command: { roleId: RoleId; replacementRoleId: RoleId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
+    const auth = await this.permissionCheck.mustCan(Permission.RoleDelete);
     if (isLeft(auth)) return auth;
 
     return this.txHost.startTransaction(async (tx) => {

@@ -1,11 +1,9 @@
-export type PermissionAction = string;
-export type RoleKey = string;
-export type PermissionValue = unknown;
+import type { Permission } from '@/kernel/domain/permissions.js';
 
-export type RolePermissions = Record<PermissionAction, PermissionValue>;
+export type RoleKey = string;
 
 export type PermissionsMap = {
-  roles: Record<RoleKey, RolePermissions>;
+  roles: Record<RoleKey, readonly Permission[]>;
 };
 
 export abstract class PermissionsStore {

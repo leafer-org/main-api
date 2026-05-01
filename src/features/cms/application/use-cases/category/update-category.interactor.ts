@@ -10,7 +10,7 @@ import { PermissionCheckService } from '@/kernel/application/ports/permission.js
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { CategoryId, MediaId, TypeId } from '@/kernel/domain/ids.js';
 import type { AgeGroup } from '@/kernel/domain/vo/age-group.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class UpdateCategoryInteractor {
@@ -31,7 +31,7 @@ export class UpdateCategoryInteractor {
     allowedTypeIds: TypeId[];
     ageGroups: AgeGroup[];
   }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageCms);
+    const auth = await this.permissionCheck.mustCan(Permission.CmsCategoryUpdate);
     if (isLeft(auth)) return auth;
 
     const now = this.clock.now();

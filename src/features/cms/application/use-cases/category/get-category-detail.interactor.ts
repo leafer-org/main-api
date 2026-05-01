@@ -5,7 +5,7 @@ import { CategoryQueryPort } from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import type { CategoryId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class GetCategoryDetailInteractor {
@@ -15,7 +15,7 @@ export class GetCategoryDetailInteractor {
   ) {}
 
   public async execute(command: { id: CategoryId }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageCms);
+    const auth = await this.permissionCheck.mustCan(Permission.CmsCategoryRead);
     if (isLeft(auth)) return auth;
 
     const category = await this.categoryQuery.findDetail(command.id);

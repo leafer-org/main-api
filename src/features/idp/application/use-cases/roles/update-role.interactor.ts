@@ -9,7 +9,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { RoleId } from '@/kernel/domain/ids.js';
-import { Permissions } from '@/kernel/domain/permissions.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class UpdateRoleInteractor {
@@ -20,8 +20,8 @@ export class UpdateRoleInteractor {
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
   ) {}
 
-  public async execute(command: { roleId: RoleId; permissions: Record<string, unknown> }) {
-    const auth = await this.permissionCheck.mustCan(Permissions.manageRole);
+  public async execute(command: { roleId: RoleId; permissions: unknown }) {
+    const auth = await this.permissionCheck.mustCan(Permission.RoleUpdate);
     if (isLeft(auth)) return auth;
 
     const validated = validatePermissions(command.permissions);
@@ -35,7 +35,7 @@ export class UpdateRoleInteractor {
       const now = this.clock.now();
       const result = RoleEntity.update(state, {
         type: 'UpdateRole',
-        permissions: command.permissions,
+        permissions: validated.value,
         now,
       });
 
