@@ -16,7 +16,7 @@ import { KafkaConsumerService } from '@/infra/lib/nest-kafka/consumer/kafka-cons
 
 const FIXED_OTP = '123456';
 
-describe('Admin Users Controller (e2e)', () => {
+describe('idp-admin-users', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -62,17 +62,17 @@ describe('Admin Users Controller (e2e)', () => {
   // ─── GET /admin/users ──────────────────────────────────────────────
 
   describe('GET /admin/users', () => {
-    it('should return 401 without auth token', async () => {
+    it('Без авторизации — 401', async () => {
       await e2e.agent.get('/admin/users').expect(401);
     });
 
-    it('should return 403 for user without USER.MANAGE permission', async () => {
+    it('Без права USER.MANAGE — 403', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent.get('/admin/users').set('Authorization', `Bearer ${accessToken}`).expect(403);
     });
 
-    it('should return empty results for admin', async () => {
+    it('Возвращает пустые результаты для админа', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
@@ -85,7 +85,7 @@ describe('Admin Users Controller (e2e)', () => {
       expect(res.body.users).toBeInstanceOf(Array);
     });
 
-    it('should find a registered user by name after projection', async () => {
+    it('Находит зарегистрированного пользователя по имени после проекции', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Register a user — this triggers outbox → Kafka → MeiliSearch projection
@@ -128,7 +128,7 @@ describe('Admin Users Controller (e2e)', () => {
       expect(found).toHaveProperty('updatedAt');
     });
 
-    it('should support pagination with from and size', async () => {
+    it('Поддерживает пагинацию через from и size', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Register multiple users

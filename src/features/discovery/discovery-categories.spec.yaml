@@ -1,0 +1,58 @@
+feature: Discovery Categories HTTP
+code: discovery-categories
+description: |
+  Публичный HTTP-API для дерева категорий каталога. Категории проецируются
+  из Kafka-событий cms-сервиса (category.published / category.unpublished),
+  внутри Discovery поддерживается агрегированная статистика по веткам
+  (childCount, itemCount).
+
+  Эндпоинты:
+    GET /categories                 — корневые или дочерние категории.
+    GET /categories/:id/filters     — фильтры (атрибуты, типы, common-флаги).
+
+specs-unit:
+  GET /categories:
+    - assert: возвращает пустой массив при отсутствии категорий
+      description: Пустой каталог — пустой массив, без 404.
+    - assert: возвращает корневые категории
+      description: Без `parentCategoryId` отдаются только корневые категории.
+    - assert: возвращает детей по parentCategoryId
+      description: Передача `parentCategoryId` фильтрует выдачу прямыми детьми.
+    - assert: возвращает корректный childCount после recalc
+      description: |
+        Поле `childCount` обновляется проекцией `recalcAllCounts()` —
+        у корня видно количество прямых детей.
+    - assert: возвращает корректный прямой itemCount после recalc
+      description: |
+        `itemCount` суммирует товары, привязанные напрямую к категории
+        (через widget `category.categoryIds`).
+    - assert: аккумулирует itemCount от детей к родителю
+      description: |
+        `itemCount` родителя включает товары всех потомков
+        (1 прямой + 2 у ребёнка = 3).
+    - assert: сортирует категории по order asc, затем по name asc
+      description: |
+        Стабильная сортировка: сначала по `order` по возрастанию,
+        внутри одного `order` — по `name`.
+    - assert: сбрасывает счётчики после unpublish категории
+      description: |
+        После `category.unpublished` запись удаляется и пересчёт
+        возвращает корректные значения (childCount = 0).
+
+  GET /categories/:id/filters:
+    - assert: возвращает 404 для несуществующей категории
+      description: Несуществующая категория — 404.
+    - assert: возвращает фильтры с attributes и type filters
+      description: |
+        Возвращаются `attributeFilters` (по атрибутам категории)
+        и `typeFilters` (по разрешённым типам товаров).
+    - assert: возвращает commonFilters со всеми полями true
+      description: |
+        Базовые фильтры (`hasPriceRange`, `hasRating`, `hasLocation`,
+        `hasSchedule`, `hasEventDateTime`) включены по умолчанию.
+
+definitions:
+  feature:
+    - discovery-categories
+  section:
+    - discovery

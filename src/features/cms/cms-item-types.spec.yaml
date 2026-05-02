@@ -1,0 +1,49 @@
+feature: CMS Item Types
+code: cms-item-types
+description: |
+  Типы товаров/услуг (item-type) — справочник, на который ссылаются категории
+  через allowedTypeIds.
+
+  Каждый тип содержит:
+    - id, name, label;
+    - widgetSettings — список виджетов, доступных для item-карточки этого типа,
+      с признаком required и опциональными параметрами (например, allowedStrategies
+      для виджета 'payment').
+
+  Инвариант widgetSettings: каждый type встречается не более одного раза.
+
+specs-unit:
+  # ==================== CRUD ====================
+
+  CRUD:
+    - assert: создаёт item type
+      description: |
+        POST /cms/item-types с body { id, name, label, widgetSettings }.
+        Ответ 201 содержит id, name, widgetSettings.
+    - assert: возвращает список item types
+      description: |
+        GET /cms/item-types возвращает массив типов.
+    - assert: обновляет item type
+      description: |
+        PATCH /cms/item-types/:id обновляет name, label, widgetSettings.
+
+  # ==================== ВАЛИДАЦИЯ ====================
+
+  Validation:
+    - assert: отклоняет дублирующиеся типы виджетов в settings
+      description: |
+        widgetSettings не должен содержать два элемента с одинаковым type — 400.
+
+  # ==================== ПРАВА ====================
+
+  Permissions:
+    - assert: Без авторизации — 401
+    - assert: Пользователь без manageCms — 403
+      description: |
+        Управление item-types требует permission manageCms.
+
+definitions:
+  feature:
+    - cms-item-types
+  section:
+    - cms

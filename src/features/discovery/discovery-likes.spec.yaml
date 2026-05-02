@@ -1,0 +1,58 @@
+feature: Discovery Likes & Liked Items HTTP
+code: discovery-likes
+description: |
+  Лайки товаров и список «понравившегося» текущего пользователя.
+
+  Эндпоинты:
+    POST   /items/:itemId/like   — поставить лайк (идемпотентно).
+    DELETE /items/:itemId/like   — снять лайк (идемпотентно).
+    GET    /liked-items          — список понравившихся
+                                    (пагинация, поиск по title).
+
+specs-unit:
+  POST /items/:itemId/like:
+    - assert: возвращает 401 без авторизации
+    - assert: возвращает 404 для несуществующего item
+      description: Лайк несуществующего item — 404.
+    - assert: ставит лайк и возвращает 204
+      description: |
+        В таблице `discovery_user_likes` появляется запись
+        `(userId, itemId)`.
+    - assert: идемпотентно — повторный лайк возвращает 204
+      description: Повторный лайк не падает и не дублирует запись.
+
+  DELETE /items/:itemId/like:
+    - assert: возвращает 401 без авторизации
+    - assert: снимает лайк и возвращает 204
+      description: Запись в `discovery_user_likes` удаляется.
+    - assert: возвращает 204 даже если лайка не было
+      description: Идемпотентно — снять отсутствующий лайк не ошибка.
+
+  GET /liked-items:
+    - assert: возвращает 401 без авторизации
+    - assert: возвращает пустой список при отсутствии лайков
+      description: |
+        Пустой список — `items: []`, `nextCursor: null`.
+    - assert: возвращает liked items с likedAt как ISO-строкой
+      description: |
+        Каждый item содержит `itemId` и `likedAt` (ISO-строка).
+    - assert: не возвращает items без лайка
+      description: После снятия лайка item исчезает из `liked-items`.
+    - assert: учитывает query-параметр limit
+      description: |
+        `limit` ограничивает страницу; при наличии следующей —
+        `nextCursor` не null.
+    - assert: пагинирует все liked items курсором
+      description: |
+        Курсорная пагинация — все элементы уникальны между страницами,
+        итоговое множество совпадает с залайканным.
+    - assert: пагинирует с применённым search-фильтром
+      description: |
+        Поиск по подстроке в `title` сохраняется при переходе по
+        страницам (передаётся в каждом запросе).
+
+definitions:
+  feature:
+    - discovery-likes
+  section:
+    - discovery

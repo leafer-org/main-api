@@ -15,7 +15,7 @@ import { KafkaConsumerService } from '@/infra/lib/nest-kafka/consumer/kafka-cons
 
 const FIXED_OTP = '123456';
 
-describe('Block User (e2e)', () => {
+describe('idp-block-user', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -58,7 +58,8 @@ describe('Block User (e2e)', () => {
     await stopContainers();
   });
 
-  it('should block a user and prevent login', async () => {
+  describe('Block user', () => {
+  it('Блокирует пользователя и запрещает логин', async () => {
     const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
     const { userId } = await registerUser(e2e.agent, FIXED_OTP, {
       phone: '+79990000010',
@@ -84,7 +85,7 @@ describe('Block User (e2e)', () => {
     expect(verifyRes.body.data.reason).toBe('Violation of terms');
   });
 
-  it('should unblock a user and allow login', async () => {
+  it('Разблокирует пользователя и разрешает логин', async () => {
     const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
     const { userId } = await registerUser(e2e.agent, FIXED_OTP, {
       phone: '+79990000011',
@@ -115,7 +116,7 @@ describe('Block User (e2e)', () => {
     expect(verifyRes.body.type).toBe('authenticated');
   });
 
-  it('should return 400 when blocking already blocked user', async () => {
+  it('Повторная блокировка заблокированного — 400', async () => {
     const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
     const { userId } = await registerUser(e2e.agent, FIXED_OTP, {
       phone: '+79990000012',
@@ -137,7 +138,7 @@ describe('Block User (e2e)', () => {
     expect(res.body.type).toBe('user_already_blocked');
   });
 
-  it('should return 400 when unblocking non-blocked user', async () => {
+  it('Разблокировка незаблокированного — 400', async () => {
     const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
     const { userId } = await registerUser(e2e.agent, FIXED_OTP, {
       phone: '+79990000013',
@@ -152,7 +153,7 @@ describe('Block User (e2e)', () => {
     expect(res.body.type).toBe('user_not_blocked');
   });
 
-  it('should return 403 for non-admin user', async () => {
+  it('Не админу — 403', async () => {
     const { accessToken, userId } = await registerUser(e2e.agent, FIXED_OTP, {
       phone: '+79990000014',
       fullName: 'Regular User',
@@ -165,7 +166,7 @@ describe('Block User (e2e)', () => {
       .expect(403);
   });
 
-  it('should invalidate existing sessions on block', async () => {
+  it('Блокировка инвалидирует активные сессии', async () => {
     const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
     const { accessToken: userToken, userId } = await registerUser(e2e.agent, FIXED_OTP, {
       phone: '+79990000015',
@@ -184,5 +185,6 @@ describe('Block User (e2e)', () => {
 
     // User's token should now be invalid (session deleted)
     await e2e.agent.get('/me').set('Authorization', `Bearer ${userToken}`).expect(401);
+  });
   });
 });

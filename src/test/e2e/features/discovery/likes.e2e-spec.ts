@@ -36,7 +36,7 @@ function sleep(t = 100) {
   return new Promise((res) => setTimeout(() => res(undefined), t));
 }
 
-describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
+describe('discovery-likes', () => {
   let app: INestApplication;
   let agent: ReturnType<typeof request>;
   let producer: KafkaProducerService;
@@ -119,11 +119,11 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
   // ─── POST /items/:itemId/like ──────────────────────────────────
 
   describe('POST /items/:itemId/like', () => {
-    it('should return 401 without auth', async () => {
+    it('возвращает 401 без авторизации', async () => {
       await agent.post(`/items/${randomUUID()}/like`).expect(401);
     });
 
-    it('should return 404 for non-existent item', async () => {
+    it('возвращает 404 для несуществующего item', async () => {
       const { accessToken } = await registerUser(agent, FIXED_OTP);
 
       await agent
@@ -132,7 +132,7 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
         .expect(404);
     });
 
-    it('should like an item and return 204', async () => {
+    it('ставит лайк и возвращает 204', async () => {
       const itemId = randomUUID();
       await seedItem(itemId);
       const { accessToken, userId } = await registerUser(agent, FIXED_OTP);
@@ -150,7 +150,7 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
       expect(like.userId).toBe(userId);
     });
 
-    it('should be idempotent — liking twice returns 204', async () => {
+    it('идемпотентно — повторный лайк возвращает 204', async () => {
       const itemId = randomUUID();
       await seedItem(itemId);
       const { accessToken } = await registerUser(agent, FIXED_OTP);
@@ -170,11 +170,11 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
   // ─── DELETE /items/:itemId/like ─────────────────────────────────
 
   describe('DELETE /items/:itemId/like', () => {
-    it('should return 401 without auth', async () => {
+    it('возвращает 401 без авторизации', async () => {
       await agent.delete(`/items/${randomUUID()}/like`).expect(401);
     });
 
-    it('should unlike an item and return 204', async () => {
+    it('снимает лайк и возвращает 204', async () => {
       const itemId = randomUUID();
       await seedItem(itemId);
       const { accessToken } = await registerUser(agent, FIXED_OTP);
@@ -196,7 +196,7 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
       expect(likes).toHaveLength(0);
     });
 
-    it('should return 204 even if item was not liked', async () => {
+    it('возвращает 204 даже если лайка не было', async () => {
       const { accessToken } = await registerUser(agent, FIXED_OTP);
 
       await agent
@@ -209,11 +209,11 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
   // ─── GET /liked-items ──────────────────────────────────────────
 
   describe('GET /liked-items', () => {
-    it('should return 401 without auth', async () => {
+    it('возвращает 401 без авторизации', async () => {
       await agent.get('/liked-items').expect(401);
     });
 
-    it('should return empty list when no likes', async () => {
+    it('возвращает пустой список при отсутствии лайков', async () => {
       const { accessToken } = await registerUser(agent, FIXED_OTP);
 
       const res = await agent
@@ -225,7 +225,7 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
       expect(res.body.nextCursor).toBeNull();
     });
 
-    it('should return liked items with likedAt as ISO string', async () => {
+    it('возвращает liked items с likedAt как ISO-строкой', async () => {
       const itemId = randomUUID();
       await seedItem(itemId);
       const { accessToken } = await registerUser(agent, FIXED_OTP);
@@ -245,7 +245,7 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
       expect(typeof res.body.items[0].likedAt).toBe('string');
     });
 
-    it('should not return unliked items', async () => {
+    it('не возвращает items без лайка', async () => {
       const itemId = randomUUID();
       await seedItem(itemId);
       const { accessToken } = await registerUser(agent, FIXED_OTP);
@@ -268,7 +268,7 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
       expect(res.body.items).toHaveLength(0);
     });
 
-    it('should respect limit query param', async () => {
+    it('учитывает query-параметр limit', async () => {
       const item1 = randomUUID();
       const item2 = randomUUID();
       await seedItem(item1);
@@ -295,7 +295,7 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
       expect(res.body.nextCursor).not.toBeNull();
     });
 
-    it('should paginate through all liked items using cursor', async () => {
+    it('пагинирует все liked items курсором', async () => {
       const id1 = randomUUID();
       const id2 = randomUUID();
       const id3 = randomUUID();
@@ -349,7 +349,7 @@ describe('Discovery Likes & Liked Items HTTP (e2e)', () => {
       expect(new Set(allIds)).toEqual(new Set(itemIds));
     });
 
-    it('should paginate with search filter applied', async () => {
+    it('пагинирует с применённым search-фильтром', async () => {
       const id1 = randomUUID();
       const id2 = randomUUID();
       const id3 = randomUUID();

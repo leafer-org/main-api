@@ -41,7 +41,7 @@ function expectDefined<T>(value: T | undefined): asserts value is T {
 
 type AnyWidget = Record<string, unknown>;
 
-describe('Discovery Projection Handlers (e2e)', () => {
+describe('discovery-handlers', () => {
   let app: INestApplication;
   let producer: KafkaProducerService;
   let db: DiscoveryDatabaseClient;
@@ -119,7 +119,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
   }
 
   describe('Owner projection', () => {
-    it('should project organization.published into discovery_owners', async () => {
+    it('проецирует organization.published в discovery_owners', async () => {
       const orgId = randomUUID();
 
       await produce(organizationStreamingContract, {
@@ -142,7 +142,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       }, WAIT_OPTIONS);
     });
 
-    it('should update owner and cascade to items on republish', async () => {
+    it('обновляет owner и каскадно items при republish', async () => {
       const orgId = randomUUID();
       const itemId = randomUUID();
       const typeId = randomUUID();
@@ -198,7 +198,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       }, WAIT_OPTIONS);
     });
 
-    it('should delete owner and all items on unpublish', async () => {
+    it('удаляет owner и все items при unpublish', async () => {
       const orgId = randomUUID();
       const itemId = randomUUID();
       const typeId = randomUUID();
@@ -251,7 +251,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
   // ─── Category projection ───────────────────────────────────────────
 
   describe('Category projection', () => {
-    it('should project category.published into discovery_categories with attributes', async () => {
+    it('проецирует category.published в discovery_categories с атрибутами', async () => {
       const categoryId = randomUUID();
       const attrId = randomUUID();
 
@@ -293,7 +293,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       }, WAIT_OPTIONS);
     });
 
-    it('should delete category on unpublish', async () => {
+    it('удаляет category при unpublish', async () => {
       const categoryId = randomUUID();
 
       await produce(categoryStreamingContract, {
@@ -340,7 +340,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
   // ─── Item Type projection ─────────────────────────────────────────
 
   describe('Item Type projection', () => {
-    it('should project item-type.created into discovery_item_types', async () => {
+    it('проецирует item-type.created в discovery_item_types', async () => {
       const typeId = randomUUID();
 
       const settings = [
@@ -370,7 +370,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       }, WAIT_OPTIONS);
     });
 
-    it('should update item type on item-type.updated', async () => {
+    it('обновляет item type при item-type.updated', async () => {
       const typeId = randomUUID();
 
       await produce(itemTypeStreamingContract, {
@@ -421,7 +421,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
   // ─── Item projection ──────────────────────────────────────────────
 
   describe('Item projection', () => {
-    it('should project item.published into discovery_items with widgets', async () => {
+    it('проецирует item.published в discovery_items с widgets', async () => {
       const itemId = randomUUID();
       const typeId = randomUUID();
       const orgId = randomUUID();
@@ -455,7 +455,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       }, WAIT_OPTIONS);
     });
 
-    it('should delete item on item.unpublished', async () => {
+    it('удаляет item при item.unpublished', async () => {
       const itemId = randomUUID();
       const typeId = randomUUID();
 
@@ -485,7 +485,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
   // ─── Review projection ────────────────────────────────────────────
 
   describe('Review projection', () => {
-    it('should update item rating on review.created with item target', async () => {
+    it('обновляет рейтинг item при review.created с target=item', async () => {
       const itemId = randomUUID();
       const typeId = randomUUID();
 
@@ -516,7 +516,7 @@ describe('Discovery Projection Handlers (e2e)', () => {
       }, WAIT_OPTIONS);
     });
 
-    it('should update owner rating on review.created with organization target', async () => {
+    it('обновляет рейтинг owner при review.created с target=organization', async () => {
       const orgId = randomUUID();
       const itemId = randomUUID();
       const typeId = randomUUID();

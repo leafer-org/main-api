@@ -35,7 +35,7 @@ function sleep(t = 100) {
   return new Promise((res) => setTimeout(() => res(undefined), t));
 }
 
-describe('GET /items/:itemId (Item Detail)', () => {
+describe('discovery-item-detail', () => {
   let app: INestApplication;
   let agent: ReturnType<typeof request>;
   let producer: KafkaProducerService;
@@ -205,9 +205,11 @@ describe('GET /items/:itemId (Item Detail)', () => {
     await truncateAll(process.env.DB_URL);
   });
 
+  describe('GET /items/:itemId', () => {
+
   // ─── 404 ──────────────────────────────────────────────────────────
 
-  it('should return 404 for non-existent item', async () => {
+  it('возвращает 404 для несуществующего item', async () => {
     const res = await agent.get(`/items/${randomUUID()}`).expect(404);
 
     expect(res.body).toHaveProperty('type', 'item_not_found');
@@ -215,7 +217,7 @@ describe('GET /items/:itemId (Item Detail)', () => {
 
   // ─── Полный detail view со всеми виджетами ────────────────────────
 
-  it('should return detail view with all widgets', async () => {
+  it('возвращает детальную карточку со всеми widgets', async () => {
     const itemId = randomUUID();
     const orgId = randomUUID();
     const futureDate = new Date(Date.now() + 86_400_000).toISOString();
@@ -263,7 +265,7 @@ describe('GET /items/:itemId (Item Detail)', () => {
 
   // ─── Минимальный набор виджетов ────────────────────────────────────
 
-  it('should return only base-info and owner for minimal item', async () => {
+  it('возвращает только base-info и owner для минимального item', async () => {
     const itemId = randomUUID();
 
     await seedItem(itemId, { title: 'Minimal Item' });
@@ -281,7 +283,7 @@ describe('GET /items/:itemId (Item Detail)', () => {
 
   // ─── Корректность данных виджетов ──────────────────────────────────
 
-  it('should return correct widget data values', async () => {
+  it('возвращает корректные данные widgets', async () => {
     const itemId = randomUUID();
     const orgId = randomUUID();
 
@@ -348,7 +350,7 @@ describe('GET /items/:itemId (Item Detail)', () => {
 
   // ─── Разные товары — разный набор виджетов ─────────────────────────
 
-  it('should return different widget sets for different items', async () => {
+  it('возвращает разные наборы widgets для разных items', async () => {
     const eventItemId = randomUUID();
     const scheduleItemId = randomUUID();
 
@@ -381,5 +383,6 @@ describe('GET /items/:itemId (Item Detail)', () => {
     expect(scheduleTypes).toContain('location');
     expect(scheduleTypes).not.toContain('event-date-time');
     expect(scheduleTypes).not.toContain('payment');
+  });
   });
 });

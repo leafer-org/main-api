@@ -14,7 +14,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
-describe('Ticket My Boards (e2e)', () => {
+describe('ticket-management', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -86,8 +86,8 @@ describe('Ticket My Boards (e2e)', () => {
 
   // ─── GET /admin/boards/my ───────────────────────────────────────────
 
-  describe('GET /admin/boards/my', () => {
-    it('возвращает доски где текущий пользователь является участником', async () => {
+  describe('Мои доски', () => {
+    it('GET /admin/boards/my возвращает доски где текущий пользователь является участником', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -137,7 +137,7 @@ describe('Ticket My Boards (e2e)', () => {
       expect(res.body.length).toBe(1);
     });
 
-    it('Доска появляется после добавления участника', async () => {
+    it('Пользователь добавлен в доску — доска появляется в /admin/boards/my', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -184,7 +184,7 @@ describe('Ticket My Boards (e2e)', () => {
       expect(resAfter.body.length).toBe(1);
     });
 
-    it('Доска исчезает после удаления участника', async () => {
+    it('Пользователь удалён из доски — доска исчезает из /admin/boards/my', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent

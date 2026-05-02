@@ -25,6 +25,8 @@ specs-unit:
         В history записывается действие created.
     - assert: Доска с manualCreation=false — ошибка 400 manual_creation_not_allowed
     - assert: Создатель не является участником доски — ошибка 403 not_a_board_member
+    - assert: POST /admin/tickets без авторизации — 401
+    - assert: POST /admin/tickets без TICKET.MANAGE — 403
 
   # ==================== МОИ ДОСКИ ====================
 

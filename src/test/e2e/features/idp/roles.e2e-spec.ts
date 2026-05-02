@@ -14,7 +14,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
-describe('Roles Controller (e2e)', () => {
+describe('idp-roles', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -59,7 +59,7 @@ describe('Roles Controller (e2e)', () => {
   // ─── GET /roles ─────────────────────────────────────────────────────
 
   describe('GET /roles', () => {
-    it('should return list of roles for admin user', async () => {
+    it('Возвращает список ролей админу', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
@@ -75,11 +75,11 @@ describe('Roles Controller (e2e)', () => {
       expect(names).toContain('USER');
     });
 
-    it('should return 401 without auth token', async () => {
+    it('Без авторизации — 401', async () => {
       await e2e.agent.get('/roles').expect(401);
     });
 
-    it('should return 403 for user without manageRole permission', async () => {
+    it('Без права manageRole — 403', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent.get('/roles').set('Authorization', `Bearer ${accessToken}`).expect(403);
@@ -89,7 +89,7 @@ describe('Roles Controller (e2e)', () => {
   // ─── GET /roles/permissions-schema ──────────────────────────────────
 
   describe('GET /roles/permissions-schema', () => {
-    it('should return permissions schema', async () => {
+    it('Возвращает схему прав', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
@@ -97,21 +97,24 @@ describe('Roles Controller (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
-      expect(res.body).toBeInstanceOf(Array);
-      expect(res.body.length).toBeGreaterThan(0);
+      expect(Array.isArray(res.body.groups)).toBe(true);
+      expect(res.body.groups.length).toBeGreaterThan(0);
 
-      const item = res.body[0];
-      expect(item).toHaveProperty('action');
-      expect(item).toHaveProperty('key');
-      expect(item).toHaveProperty('type');
-      expect(item).toHaveProperty('default');
+      const group = res.body.groups[0];
+      expect(group).toHaveProperty('id');
+      expect(group).toHaveProperty('title');
+      expect(Array.isArray(group.permissions)).toBe(true);
+      const permission = group.permissions[0];
+      expect(permission).toHaveProperty('id');
+      expect(permission).toHaveProperty('title');
+      expect(permission).toHaveProperty('description');
     });
   });
 
   // ─── GET /roles/:roleId ────────────────────────────────────────────
 
   describe('GET /roles/:roleId', () => {
-    it('should return role by ID', async () => {
+    it('Возвращает роль по ID', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Get list to find a real role ID
@@ -137,7 +140,7 @@ describe('Roles Controller (e2e)', () => {
       expect(res.body).toHaveProperty('updatedAt');
     });
 
-    it('should return 404 for non-existent role', async () => {
+    it('Несуществующая роль — 404', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -150,39 +153,39 @@ describe('Roles Controller (e2e)', () => {
   // ─── POST /roles ───────────────────────────────────────────────────
 
   describe('POST /roles', () => {
-    it('should create a new role', async () => {
+    it('Создаёт новую роль', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
         .post('/roles')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'MODERATOR', permissions: { 'ROLE.MANAGE': false } })
+        .send({ name: 'MODERATOR', permissions: ['role.read'] })
         .expect(201);
 
       expect(res.body).toMatchObject({
         name: 'MODERATOR',
-        permissions: { 'ROLE.MANAGE': false },
+        permissions: ['role.read'],
         isStatic: false,
       });
       expect(res.body).toHaveProperty('id');
       expect(res.body).toHaveProperty('createdAt');
     });
 
-    it('should return 400 for duplicate role name', async () => {
+    it('Дублирующее имя роли — 400', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create role
       await e2e.agent
         .post('/roles')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'MODERATOR', permissions: {} })
+        .send({ name: 'MODERATOR', permissions: [] })
         .expect(201);
 
       // Try duplicate
       const res = await e2e.agent
         .post('/roles')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'MODERATOR', permissions: {} })
+        .send({ name: 'MODERATOR', permissions: [] })
         .expect(400);
 
       expect(res.body.type).toBe('role_already_exists');
@@ -192,46 +195,20 @@ describe('Roles Controller (e2e)', () => {
   // ─── Permission validation ─────────────────────────────────────────
 
   describe('Permission validation', () => {
-    it('should return 400 when creating role with unknown permission key', async () => {
+    it('Создание роли с неизвестным правом — 400', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
         .post('/roles')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'BAD_ROLE', permissions: { 'FAKE.KEY': true } })
+        .send({ name: 'BAD_ROLE', permissions: ['fake.key'] })
         .expect(400);
 
       expect(res.body.type).toBe('invalid_permissions');
-      expect(res.body.data.errors).toContain('Unknown permission action: FAKE.KEY');
+      expect(res.body.data.errors).toContain('Unknown permission: fake.key');
     });
 
-    it('should return 400 when creating role with invalid boolean permission value', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
-
-      const res = await e2e.agent
-        .post('/roles')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'BAD_ROLE', permissions: { 'ROLE.MANAGE': 'yes' } })
-        .expect(400);
-
-      expect(res.body.type).toBe('invalid_permissions');
-      expect(res.body.data.errors[0]).toMatch(/ROLE\.MANAGE.*boolean/);
-    });
-
-    it('should return 400 when creating role with invalid enum permission value', async () => {
-      const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
-
-      const res = await e2e.agent
-        .post('/roles')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'BAD_ROLE', permissions: { 'SESSION.MANAGE': 'invalid' } })
-        .expect(400);
-
-      expect(res.body.type).toBe('invalid_permissions');
-      expect(res.body.data.errors[0]).toMatch(/SESSION\.MANAGE.*self.*all/);
-    });
-
-    it('should return 400 with multiple errors for multiple invalid permissions', async () => {
+    it('Возвращает 400 со списком всех ошибок при нескольких невалидных правах', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
@@ -239,7 +216,7 @@ describe('Roles Controller (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           name: 'BAD_ROLE',
-          permissions: { 'UNKNOWN': true, 'ROLE.MANAGE': 123 },
+          permissions: ['unknown.one', 'unknown.two'],
         })
         .expect(400);
 
@@ -247,14 +224,14 @@ describe('Roles Controller (e2e)', () => {
       expect(res.body.data.errors).toHaveLength(2);
     });
 
-    it('should return 400 when updating role with invalid permissions', async () => {
+    it('Обновление роли с невалидными правами — 400', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create a valid role first
       const createRes = await e2e.agent
         .post('/roles')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'VALID_ROLE', permissions: {} })
+        .send({ name: 'VALID_ROLE', permissions: [] })
         .expect(201);
 
       const roleId = createRes.body.id;
@@ -262,13 +239,13 @@ describe('Roles Controller (e2e)', () => {
       const res = await e2e.agent
         .patch(`/roles/${roleId}`)
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ permissions: { 'FAKE.KEY': true } })
+        .send({ permissions: ['fake.key'] })
         .expect(400);
 
       expect(res.body.type).toBe('invalid_permissions');
     });
 
-    it('should allow creating role with valid permissions', async () => {
+    it('Создаёт роль с корректным набором прав', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -276,11 +253,7 @@ describe('Roles Controller (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           name: 'VALID_MODERATOR',
-          permissions: {
-            'ROLE.MANAGE': true,
-            'CMS.MANAGE': false,
-            'SESSION.MANAGE': 'all',
-          },
+          permissions: ['role.read', 'cms.category.read', 'session.read.all'],
         })
         .expect(201);
     });
@@ -289,7 +262,7 @@ describe('Roles Controller (e2e)', () => {
   // ─── POST /roles → assign → verify /me/permissions ─────────────────
 
   describe('Custom role permissions flow', () => {
-    it('should apply custom role permissions to assigned user', async () => {
+    it('Применяет права кастомной роли к назначенному пользователю', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create custom role with specific permissions
@@ -298,11 +271,7 @@ describe('Roles Controller (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'MODERATOR',
-          permissions: {
-            'CMS.MANAGE': true,
-            'REVIEW.MODERATE': true,
-            'ORGANIZATION.MODERATE': true,
-          },
+          permissions: ['cms.category.read', 'review.moderate', 'organization.info.moderate'],
         })
         .expect(201);
 
@@ -337,24 +306,23 @@ describe('Roles Controller (e2e)', () => {
         .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
-      const p = permRes.body.permissions;
-      expect(p['CMS.MANAGE']).toBe(true);
-      expect(p['REVIEW.MODERATE']).toBe(true);
-      expect(p['ORGANIZATION.MODERATE']).toBe(true);
-      // Other permissions should remain at defaults
-      expect(p['ROLE.MANAGE']).toBe(false);
-      expect(p['USER.MANAGE']).toBe(false);
-      expect(p['SESSION.MANAGE']).toBe('self');
+      const p: string[] = permRes.body.permissions;
+      expect(p).toEqual(
+        expect.arrayContaining(['cms.category.read', 'review.moderate', 'organization.info.moderate']),
+      );
+      // Не должно быть прав, не выданных роли
+      expect(p).not.toContain('role.create');
+      expect(p).not.toContain('user.read');
     });
 
-    it('should reflect permission changes after role update', async () => {
+    it('Отражает изменения прав после обновления роли', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create role with no permissions
       const createRes = await e2e.agent
         .post('/roles')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'EDITOR', permissions: {} })
+        .send({ name: 'EDITOR', permissions: [] })
         .expect(201);
 
       const roleId = createRes.body.id;
@@ -372,7 +340,7 @@ describe('Roles Controller (e2e)', () => {
       await e2e.agent
         .patch(`/roles/${roleId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ permissions: { 'CMS.MANAGE': true, 'TICKET.MANAGE': true } })
+        .send({ permissions: ['cms.category.read', 'ticket.read'] })
         .expect(200);
 
       // Re-login as user
@@ -393,23 +361,24 @@ describe('Roles Controller (e2e)', () => {
         .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 
-      expect(permRes.body.permissions['CMS.MANAGE']).toBe(true);
-      expect(permRes.body.permissions['TICKET.MANAGE']).toBe(true);
-      expect(permRes.body.permissions['ROLE.MANAGE']).toBe(false);
+      const p: string[] = permRes.body.permissions;
+      expect(p).toContain('cms.category.read');
+      expect(p).toContain('ticket.read');
+      expect(p).not.toContain('role.create');
     });
   });
 
   // ─── PATCH /roles/:roleId ─────────────────────────────────────────
 
   describe('PATCH /roles/:roleId', () => {
-    it('should update role permissions', async () => {
+    it('Обновляет права роли', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create a non-static role first
       const createRes = await e2e.agent
         .post('/roles')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'EDITOR', permissions: {} })
+        .send({ name: 'EDITOR', permissions: [] })
         .expect(201);
 
       const roleId = createRes.body.id;
@@ -417,26 +386,26 @@ describe('Roles Controller (e2e)', () => {
       const res = await e2e.agent
         .patch(`/roles/${roleId}`)
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ permissions: { 'ROLE.MANAGE': true } })
+        .send({ permissions: ['role.read'] })
         .expect(200);
 
       expect(res.body).toMatchObject({
         id: roleId,
-        permissions: { 'ROLE.MANAGE': true },
+        permissions: ['role.read'],
       });
     });
 
-    it('should return 404 for non-existent role', async () => {
+    it('Несуществующая роль — 404', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       await e2e.agent
         .patch('/roles/00000000-0000-0000-0000-000000000000')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ permissions: {} })
+        .send({ permissions: [] })
         .expect(404);
     });
 
-    it('should return 403 when updating static role', async () => {
+    it('Обновление статической роли — 403', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Get ADMIN role (static)
@@ -450,7 +419,7 @@ describe('Roles Controller (e2e)', () => {
       const res = await e2e.agent
         .patch(`/roles/${adminRole.id}`)
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ permissions: { 'ROLE.MANAGE': false } })
+        .send({ permissions: ['role.read'] })
         .expect(403);
 
       expect(res.body.type).toBe('static_role_modification');
@@ -460,14 +429,14 @@ describe('Roles Controller (e2e)', () => {
   // ─── DELETE /roles/:roleId ─────────────────────────────────────────
 
   describe('DELETE /roles/:roleId', () => {
-    it('should delete a non-static role', async () => {
+    it('Удаляет нестатическую роль', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create a role to delete
       const createRes = await e2e.agent
         .post('/roles')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'TEMP_ROLE', permissions: {} })
+        .send({ name: 'TEMP_ROLE', permissions: [] })
         .expect(201);
 
       const roleId = createRes.body.id;
@@ -493,7 +462,7 @@ describe('Roles Controller (e2e)', () => {
         .expect(404);
     });
 
-    it('should return 404 for non-existent role', async () => {
+    it('Несуществующая роль — 404', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Get USER role ID as replacement
@@ -511,7 +480,7 @@ describe('Roles Controller (e2e)', () => {
         .expect(404);
     });
 
-    it('should return 403 when deleting static role', async () => {
+    it('Удаление статической роли — 403', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const listRes = await e2e.agent
@@ -535,7 +504,7 @@ describe('Roles Controller (e2e)', () => {
   // ─── PATCH /users/:userId/role ─────────────────────────────────────
 
   describe('PATCH /users/:userId/role', () => {
-    it('should update user role', async () => {
+    it('Обновляет роль пользователя', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const { userId } = await registerUser(e2e.agent, FIXED_OTP);
 
@@ -554,7 +523,7 @@ describe('Roles Controller (e2e)', () => {
         .expect(200);
     });
 
-    it('should return 404 for non-existent role', async () => {
+    it('Несуществующая роль — 404', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const { userId } = await registerUser(e2e.agent, FIXED_OTP);
 
@@ -565,7 +534,7 @@ describe('Roles Controller (e2e)', () => {
         .expect(404);
     });
 
-    it('should invalidate sessions after role change', async () => {
+    it('Инвалидирует сессии после смены роли', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const { accessToken: userToken, userId } = await registerUser(e2e.agent, FIXED_OTP);
 
@@ -588,7 +557,7 @@ describe('Roles Controller (e2e)', () => {
       await e2e.agent.get('/me').set('Authorization', `Bearer ${userToken}`).expect(401);
     });
 
-    it('should return 403 for regular user without ROLE.MANAGE', async () => {
+    it('Без права ROLE.MANAGE — 403', async () => {
       const { accessToken: userToken, userId } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -602,14 +571,14 @@ describe('Roles Controller (e2e)', () => {
   // ─── DELETE /roles/:roleId (role reassignment) ─────────────────────
 
   describe('DELETE /roles/:roleId (reassignment)', () => {
-    it('should reassign users to replacement role when deleting a role', async () => {
+    it('Переводит пользователей на роль-замену при удалении роли', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create a custom role
       const createRes = await e2e.agent
         .post('/roles')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ name: 'TEMP_CUSTOM', permissions: {} })
+        .send({ name: 'TEMP_CUSTOM', permissions: [] })
         .expect(201);
 
       const customRoleId = createRes.body.id;
@@ -650,27 +619,27 @@ describe('Roles Controller (e2e)', () => {
   // ─── Permission checks for role CRUD ───────────────────────────────
 
   describe('Permission checks', () => {
-    it('should return 403 for regular user on POST /roles', async () => {
+    it('POST /roles обычному пользователю — 403', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
         .post('/roles')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ name: 'BLOCKED', permissions: {} })
+        .send({ name: 'BLOCKED', permissions: [] })
         .expect(403);
     });
 
-    it('should return 403 for regular user on PATCH /roles/:roleId', async () => {
+    it('PATCH /roles/:roleId обычному пользователю — 403', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
         .patch('/roles/00000000-0000-0000-0000-000000000000')
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ permissions: {} })
+        .send({ permissions: [] })
         .expect(403);
     });
 
-    it('should return 403 for regular user on DELETE /roles/:roleId', async () => {
+    it('DELETE /roles/:roleId обычному пользователю — 403', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent

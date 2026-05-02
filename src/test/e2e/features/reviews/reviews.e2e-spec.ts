@@ -40,7 +40,7 @@ function createReview(
     });
 }
 
-describe('Reviews (e2e)', () => {
+describe('reviews', () => {
   let e2e: E2eApp;
   let adminToken: string;
 
@@ -96,10 +96,10 @@ describe('Reviews (e2e)', () => {
     return { owner, org, item };
   }
 
-  // ─── 5.1 Create review with rating >= 4 → published ──────────────
+  // ─── Создание отзыва ──────────────────────────────────────────────
 
-  describe('5.1 Create review with rating >= 4 → published', () => {
-    it('should create a published review', async () => {
+  describe('Создание отзыва', () => {
+    it('5.1 Create review with rating >= 4 → published', async () => {
       const { org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -117,12 +117,8 @@ describe('Reviews (e2e)', () => {
       expect(res.body.text).toBe('Excellent!');
       expect(res.body.authorId).toBe(reviewer.userId);
     });
-  });
 
-  // ─── 5.2 Create review with rating < 4 → pending ─────────────────
-
-  describe('5.2 Create review with rating < 4 → pending', () => {
-    it('should create a pending review', async () => {
+    it('5.2 Create review with rating < 4 → pending', async () => {
       const { org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -138,12 +134,8 @@ describe('Reviews (e2e)', () => {
       expect(res.body.status).toBe('pending');
       expect(res.body.rating).toBe(2.5);
     });
-  });
 
-  // ─── 5.3 Duplicate (userId, target) → error ──────────────────────
-
-  describe('5.3 Duplicate (userId, target) → error', () => {
-    it('should return 409 for duplicate review', async () => {
+    it('5.3 Duplicate (userId, target) → error', async () => {
       const { org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -165,10 +157,10 @@ describe('Reviews (e2e)', () => {
     });
   });
 
-  // ─── 5.4 Edit pending review, auto-publish on rating increase ─────
+  // ─── Редактирование автором ───────────────────────────────────────
 
-  describe('5.4 Edit pending review → auto-publish', () => {
-    it('should auto-publish when rating raised to >= 4', async () => {
+  describe('Редактирование автором', () => {
+    it('5.4 Edit pending review → auto-publish', async () => {
       const { org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -194,10 +186,10 @@ describe('Reviews (e2e)', () => {
     });
   });
 
-  // ─── 5.5 Approve / reject by moderator ────────────────────────────
+  // ─── Модерация (admin) ────────────────────────────────────────────
 
-  describe('5.5 Approve / reject by moderator', () => {
-    it('should approve a pending review', async () => {
+  describe('Модерация (admin)', () => {
+    it('одобрение pending-отзыва переводит его в published', async () => {
       const { org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -224,7 +216,7 @@ describe('Reviews (e2e)', () => {
       expect(fetched.body.status).toBe('published');
     });
 
-    it('should reject a pending review', async () => {
+    it('отклонение pending-отзыва переводит его в deleted', async () => {
       const { org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -250,10 +242,10 @@ describe('Reviews (e2e)', () => {
     });
   });
 
-  // ─── 5.6 Delete published review ──────────────────────────────────
+  // ─── Удаление автором ─────────────────────────────────────────────
 
-  describe('5.6 Delete published review', () => {
-    it('should delete a published review', async () => {
+  describe('Удаление автором', () => {
+    it('5.6 Delete published review', async () => {
       const { org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -280,10 +272,10 @@ describe('Reviews (e2e)', () => {
     });
   });
 
-  // ─── 5.7 Owner reply to review ────────────────────────────────────
+  // ─── Ответ владельца ──────────────────────────────────────────────
 
-  describe('5.7 Owner reply to review', () => {
-    it('should allow owner to reply to a published review', async () => {
+  describe('Ответ владельца', () => {
+    it('5.7 Owner reply to review', async () => {
       const { owner, org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -306,10 +298,10 @@ describe('Reviews (e2e)', () => {
     });
   });
 
-  // ─── 5.8 Dispute → review hidden ─────────────────────────────────
+  // ─── Диспуты ──────────────────────────────────────────────────────
 
-  describe('5.8 Dispute → review hidden', () => {
-    it('should hide review when disputed', async () => {
+  describe('Диспуты', () => {
+    it('5.8 Dispute → review hidden', async () => {
       const { owner, org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -330,12 +322,8 @@ describe('Reviews (e2e)', () => {
       expect(disputed.body.disputeReason).toBe('Fake review');
       expect(disputed.body.wasDisputed).toBe(true);
     });
-  });
 
-  // ─── 5.9 Resolve dispute (uphold) → review restored ──────────────
-
-  describe('5.9 Resolve dispute (uphold) → review restored', () => {
-    it('should restore review when dispute is upheld', async () => {
+    it('5.9 Resolve dispute (uphold) → review restored', async () => {
       const { owner, org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -366,12 +354,8 @@ describe('Reviews (e2e)', () => {
       expect(fetched.body.status).toBe('published');
       expect(fetched.body.wasDisputed).toBe(true);
     });
-  });
 
-  // ─── 5.10 Resolve dispute (remove) → review deleted ──────────────
-
-  describe('5.10 Resolve dispute (remove) → review deleted', () => {
-    it('should delete review when dispute resolved with remove', async () => {
+    it('5.10 Resolve dispute (remove) → review deleted', async () => {
       const { owner, org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -401,12 +385,8 @@ describe('Reviews (e2e)', () => {
 
       expect(fetched.body.status).toBe('deleted');
     });
-  });
 
-  // ─── 5.11 Re-dispute after uphold → error ────────────────────────
-
-  describe('5.11 Re-dispute after uphold → error', () => {
-    it('should return 400 when trying to dispute again after uphold', async () => {
+    it('5.11 Re-dispute after uphold → error', async () => {
       const { owner, org, item } = await setupTarget();
       const reviewer = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000020' });
 
@@ -441,10 +421,10 @@ describe('Reviews (e2e)', () => {
     });
   });
 
-  // ─── 5.12 Get reviews by target with pagination ───────────────────
+  // ─── Листинг отзывов ──────────────────────────────────────────────
 
-  describe('5.12 Get reviews by target with pagination', () => {
-    it('should return paginated reviews for a target', async () => {
+  describe('Листинг отзывов', () => {
+    it('5.12 Get reviews by target with pagination', async () => {
       const { org, item } = await setupTarget();
 
       // Create 3 published reviews from different users

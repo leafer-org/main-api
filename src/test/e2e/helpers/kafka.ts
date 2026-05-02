@@ -42,11 +42,8 @@ export async function waitForAllConsumers(app: INestApplication): Promise<void> 
   for (const [key, mod] of modules) {
     const wrapper = mod.providers?.get(KafkaConsumerService);
     if (wrapper?.instance && typeof wrapper.instance.waitForPartitions === 'function') {
-      console.log(`[waitForAllConsumers] found consumer in module: ${key}`);
       promises.push(wrapper.instance.waitForPartitions());
     }
   }
-  console.log(`[waitForAllConsumers] waiting for ${promises.length} consumers`);
   await Promise.all(promises);
-  console.log('[waitForAllConsumers] all consumers ready');
 }

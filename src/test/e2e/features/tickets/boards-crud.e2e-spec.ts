@@ -250,7 +250,7 @@ describe('Board Management', () => {
   // ─── Обновление доски ──────────────────────────────────────────────
 
   describe('Обновление доски', () => {
-    it('PATCH обновляет name, description, manualCreation, allowedTransferBoardIds', async () => {
+    it('PATCH /admin/boards/:boardId обновляет name, description, manualCreation, allowedTransferBoardIds', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const board = await createBoard(accessToken, {
@@ -280,7 +280,7 @@ describe('Board Management', () => {
       expect(res.body.organizationId).toBeNull();
     });
 
-    it('allowedTransferBoardIds обновляется целиком (replace)', async () => {
+    it('allowedTransferBoardIds обновляется целиком (replace, не append)', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const board = await createBoard(accessToken, { name: 'Main Board' });
@@ -314,7 +314,7 @@ describe('Board Management', () => {
       expect(res.body.allowedTransferBoardIds).toEqual([boardB.boardId]);
     });
 
-    it('PATCH — несуществующая доска — 404', async () => {
+    it('PATCH /admin/boards/:boardId — несуществующая доска — 404', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -333,7 +333,7 @@ describe('Board Management', () => {
   // ─── Удаление доски ────────────────────────────────────────────────
 
   describe('Удаление доски', () => {
-    it('DELETE удаляет доску, 204', async () => {
+    it('DELETE /admin/boards/:boardId удаляет доску, возвращает 204', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const board = await createBoard(accessToken, { name: 'To Delete' });
@@ -350,7 +350,7 @@ describe('Board Management', () => {
         .expect(404);
     });
 
-    it('DELETE — несуществующая доска — 404', async () => {
+    it('DELETE /admin/boards/:boardId — несуществующая доска — 404', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       await e2e.agent

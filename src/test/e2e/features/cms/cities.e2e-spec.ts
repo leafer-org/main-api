@@ -27,7 +27,7 @@ async function seedCities(connectionUri: string) {
   await client.end();
 }
 
-describe('Cities (e2e)', () => {
+describe('CMS Cities', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -62,36 +62,38 @@ describe('Cities (e2e)', () => {
     await stopContainers();
   });
 
-  it('should return empty array when no cities exist', async () => {
-    const res = await e2e.agent.get('/cities').expect(200);
+  describe('Чтение списка городов', () => {
+    it('возвращает пустой массив когда городов нет', async () => {
+      const res = await e2e.agent.get('/cities').expect(200);
 
-    expect(res.body).toEqual([]);
-  });
+      expect(res.body).toEqual([]);
+    });
 
-  it('should return list of cities', async () => {
-    await seedCities(process.env.DB_URL!);
+    it('возвращает список городов', async () => {
+      await seedCities(process.env.DB_URL!);
 
-    const res = await e2e.agent.get('/cities').expect(200);
+      const res = await e2e.agent.get('/cities').expect(200);
 
-    expect(res.body).toHaveLength(2);
-    expect(res.body).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: 'moscow', name: 'Москва', lat: 55.7558, lng: 37.6173 }),
-        expect.objectContaining({ id: 'spb', name: 'Санкт-Петербург', lat: 59.9343, lng: 30.3351 }),
-      ]),
-    );
-  });
+      expect(res.body).toHaveLength(2);
+      expect(res.body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: 'moscow', name: 'Москва', lat: 55.7558, lng: 37.6173 }),
+          expect.objectContaining({ id: 'spb', name: 'Санкт-Петербург', lat: 59.9343, lng: 30.3351 }),
+        ]),
+      );
+    });
 
-  it('should return cities sorted by name', async () => {
-    await seedCities(process.env.DB_URL!);
+    it('возвращает города отсортированные по name', async () => {
+      await seedCities(process.env.DB_URL!);
 
-    const res = await e2e.agent.get('/cities').expect(200);
+      const res = await e2e.agent.get('/cities').expect(200);
 
-    const names = res.body.map((c: { name: string }) => c.name);
-    expect(names).toEqual([...names].sort());
-  });
+      const names = res.body.map((c: { name: string }) => c.name);
+      expect(names).toEqual([...names].sort());
+    });
 
-  it('should be accessible without authentication', async () => {
-    await e2e.agent.get('/cities').expect(200);
+    it('доступен без авторизации', async () => {
+      await e2e.agent.get('/cities').expect(200);
+    });
   });
 });

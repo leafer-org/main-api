@@ -17,7 +17,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
-describe('Organizations (e2e)', () => {
+describe('organization-organizations', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -63,7 +63,7 @@ describe('Organizations (e2e)', () => {
   // ─── POST /organizations ─────────────────────────────────────────
 
   describe('POST /organizations', () => {
-    it('should create an organization with default free subscription', async () => {
+    it('создаёт организацию с дефолтной free-подпиской', async () => {
       const { accessToken, userId } = await registerUser(e2e.agent, FIXED_OTP);
 
       const org = await createOrganization(e2e.agent, accessToken, {
@@ -93,7 +93,7 @@ describe('Organizations (e2e)', () => {
       expect(org.roles[0].name).toBe('ADMIN');
     });
 
-    it('should return 401 without auth', async () => {
+    it('возвращает 401 без авторизации', async () => {
       await e2e.agent.post('/organizations').send({ name: 'Org', description: 'desc' }).expect(401);
     });
   });
@@ -101,7 +101,7 @@ describe('Organizations (e2e)', () => {
   // ─── GET /organizations/:id ───────────────────────────────────────
 
   describe('GET /organizations/:id', () => {
-    it('should return organization detail for owner', async () => {
+    it('возвращает карточку организации владельцу', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, accessToken);
 
@@ -114,7 +114,7 @@ describe('Organizations (e2e)', () => {
       expect(res.body.infoDraft.name).toBe('Test Organization');
     });
 
-    it('should return error for non-employee', async () => {
+    it('возвращает ошибку для не-сотрудника', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -130,7 +130,7 @@ describe('Organizations (e2e)', () => {
   // ─── PATCH /organizations/:id ─────────────────────────────────────
 
   describe('PATCH /organizations/:id', () => {
-    it('should update info draft', async () => {
+    it('обновляет infoDraft', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, accessToken);
 
@@ -151,7 +151,7 @@ describe('Organizations (e2e)', () => {
       });
     });
 
-    it('should return 403 for non-employee', async () => {
+    it('возвращает 403 для не-сотрудника', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -168,7 +168,7 @@ describe('Organizations (e2e)', () => {
   // ─── POST /organizations/:id/submit-for-moderation ────────────────
 
   describe('POST /organizations/:id/submit-for-moderation', () => {
-    it('should submit info for moderation', async () => {
+    it('отправляет info на модерацию', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, accessToken);
 
@@ -188,7 +188,7 @@ describe('Organizations (e2e)', () => {
       expect(res.body.infoDraft.status).toBe('moderation-request');
     });
 
-    it('should return 403 for non-employee', async () => {
+    it('возвращает 403 для не-сотрудника', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 

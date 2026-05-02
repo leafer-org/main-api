@@ -1,12 +1,16 @@
 feature: Board Subscriptions
 code: board-subscriptions
 description: |
-  Подписки доски — открытие, закрытие, перенаправление тикетов.
-  Все подписки управляются через PATCH /admin/boards/:boardId — closeSubscriptions и redirectSubscriptions передаются целиком.
-  Open-подписки (subscriptions) управляются через отдельные POST/DELETE эндпоинты (add/remove).
+  Подписки доски — открытие (создание тикета по событию), закрытие (автозакрытие
+  тикета по триггеру), перенаправление (автоперемещение тикета на другую доску).
 
-  TriggerId — системное событие: item-moderation.requested/approved/rejected, organization-moderation.requested/approved/rejected.
-  Для закрытия/перенаправления дополнительно: timer.since-created, timer.since-status.
+  Open-подписки управляются через POST/DELETE /admin/boards/:boardId/subscriptions.
+  Close/redirect-подписки — через отдельные эндпоинты close-subscriptions / redirect-subscriptions.
+
+  TriggerId — системное событие. Поддерживаются:
+    item-moderation.requested/approved/rejected,
+    organization-moderation.requested/approved/rejected.
+  Для close/redirect дополнительно: timer.since-created, timer.since-status.
 
   SubscriptionFilter — discriminated union по type: json-logic, every-nth, random-sample.
   Фильтры внутри подписки — AND, подписки на доске — OR.
@@ -18,20 +22,26 @@ specs-unit:
     - assert: Добавление подписки с валидным triggerId и фильтрами
       description: |
         POST /admin/boards/:boardId/subscriptions.
-        Поддерживаемые triggerId: item-moderation.requested/approved/rejected, organization-moderation.requested/approved/rejected.
         Фильтры опциональны — без фильтров матчит любое событие.
     - assert: Невалидный triggerId — ошибка 400
     - assert: Удаление подписки по id, несуществующая — 404
 
   Матчинг фильтров:
     - assert: Подписка без фильтров матчит любое событие
-    - assert: Фильтр every-nth срабатывает каждый N-й раз
-      description: Счётчик на уровне подписки, параметр n > 0
-    - assert: Фильтр random-sample срабатывает с заданной вероятностью
-      description: Параметр percent — число от 0 до 100
-    - assert: Фильтр json-logic вычисляется над данными события
-      description: Правило — JSON-объект, переменные — поля события (item, organization и т.д.)
-    - assert: Несколько фильтров в подписке — AND, несколько подписок — OR
+    - assert: Фильтр every-nth пропускает только каждый N-й
+      description: Счётчик на уровне подписки, параметр n > 0.
+    - assert: Фильтр json-logic не блокирует (текущая реализация — всегда true)
+      description: |
+        Тип фильтра json-logic зарегистрирован, но текущая реализация
+        матчера всегда возвращает true. random-sample реализован отдельно.
+    - assert: Несколько подписок на доске — одно событие создаёт один тикет (break)
+      description: При первом совпадении дальнейшие подписки пропускаются.
+    - assert: Повторное событие с тем же eventId не создаёт дубликат
+      description: Идемпотентность по eventId.
+    - assert: Тикет из Kafka-события содержит message и data.item
+      description: |
+        message формируется из шаблона события, data — payload события.
+    - assert: Событие не матчит подписку на другой triggerId
 
   # ==================== ПОДПИСКИ ЗАКРЫТИЯ ====================
 
@@ -41,17 +51,18 @@ specs-unit:
         Body: { triggerId, filters, addComment }.
         Те же triggerId что и для открытия, плюс timer.since-created, timer.since-status.
     - assert: DELETE /admin/boards/:boardId/close-subscriptions/:id удаляет подписку
-    - assert: addComment=true — при срабатывании в историю тикета добавляется комментарий
+    - assert: addComment=true сохраняется в подписке закрытия
 
   Таймерные триггеры:
-    - assert: timer.since-created срабатывает через N минут после создания тикета
-      description: Параметр duration в минутах на подписке
-    - assert: timer.since-status срабатывает через N минут после смены статуса
-      description: Таймер сбрасывается при каждой смене статуса
+    - assert: timer.since-created — подписка закрытия с таймером
+      description: Срабатывает через N минут после создания тикета. Параметр duration в минутах.
+    - assert: timer.since-status — подписка закрытия с таймером
+      description: Срабатывает через N минут после смены статуса. Таймер сбрасывается при каждой смене.
 
   Срабатывание подписки закрытия:
     - assert: При матче тикет переходит в статус done
     - assert: Тикет уже в done — повторное закрытие игнорируется
+    - assert: addComment=true — комментарий добавляется в историю тикета
 
   # ==================== ПОДПИСКИ ПЕРЕНАПРАВЛЕНИЯ ====================
 
@@ -59,22 +70,23 @@ specs-unit:
     - assert: POST /admin/boards/:boardId/redirect-subscriptions создаёт подписку перенаправления
       description: |
         Body: { triggerId, targetBoardId, filters, addComment, commentTemplate }.
-        targetBoardId ≠ текущая доска (400), должна существовать (404).
+        targetBoardId должен существовать и не равняться текущей доске.
     - assert: DELETE /admin/boards/:boardId/redirect-subscriptions/:id удаляет подписку
     - assert: addComment=true + commentTemplate → комментарий из шаблона
-      description: Если commentTemplate пуст — дефолтный "Перенаправлен с доски {boardName}"
+      description: Если commentTemplate пуст — дефолтный "Перенаправлен с доски {boardName}".
 
   Срабатывание подписки перенаправления:
     - assert: При матче тикет перемещается на targetBoardId со статусом open
+    - assert: При совпадении нескольких подписок — порядок сохраняется
     - assert: При совпадении нескольких подписок — срабатывает первая по порядку
-    - assert: В истории фиксируется действие moved
-      description: В data — fromBoardId и toBoardId
+    - assert: В истории фиксируется действие moved с fromBoardId и toBoardId
 
   # ==================== ПРИОРИТЕТ ====================
 
   Приоритет при одновременном матче:
+    - assert: close и redirect подписки сосуществуют на одной доске
     - assert: redirect имеет приоритет над close
-      description: Перенаправление важнее закрытия — тикет может быть нужен на другой доске
+      description: Перенаправление важнее закрытия — тикет может быть нужен на другой доске.
     - assert: Close-подписки не срабатывают на тикет перенаправлённый в этом цикле
 
   # ==================== СПРАВОЧНИКИ ====================

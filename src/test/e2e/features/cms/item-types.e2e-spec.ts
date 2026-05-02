@@ -15,7 +15,7 @@ import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 const FIXED_OTP = '123456';
 
-describe('CMS Item Types (e2e)', () => {
+describe('CMS Item Types', () => {
   let e2e: E2eApp;
   let adminToken: string;
 
@@ -90,7 +90,7 @@ describe('CMS Item Types (e2e)', () => {
   // --- CRUD ---
 
   describe('CRUD', () => {
-    it('should create an item type', async () => {
+    it('создаёт item type', async () => {
       const id = randomUUID();
       const res = await createItemType({ id, name: 'Service' });
 
@@ -102,7 +102,7 @@ describe('CMS Item Types (e2e)', () => {
       });
     });
 
-    it('should list item types', async () => {
+    it('возвращает список item types', async () => {
       await createItemType({ name: 'Type A' }).expect(201);
       await createItemType({ name: 'Type B' }).expect(201);
 
@@ -114,7 +114,7 @@ describe('CMS Item Types (e2e)', () => {
       expect(res.body).toHaveLength(2);
     });
 
-    it('should update an item type', async () => {
+    it('обновляет item type', async () => {
       const id = randomUUID();
       await createItemType({ id, name: 'Original' }).expect(201);
 
@@ -135,7 +135,7 @@ describe('CMS Item Types (e2e)', () => {
   // --- Validation ---
 
   describe('Validation', () => {
-    it('should reject duplicate widget types in settings', async () => {
+    it('отклоняет дублирующиеся типы виджетов в settings', async () => {
       const res = await createItemType({
         widgetSettings: [
           { type: 'base-info', required: true },
@@ -150,11 +150,11 @@ describe('CMS Item Types (e2e)', () => {
   // --- Permissions ---
 
   describe('Permissions', () => {
-    it('should return 401 without auth', async () => {
+    it('Без авторизации — 401', async () => {
       await e2e.agent.get('/cms/item-types').expect(401);
     });
 
-    it('should return 403 for user without manageCms', async () => {
+    it('Пользователь без manageCms — 403', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent

@@ -14,7 +14,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
-describe('Ticket Workflow (e2e)', () => {
+describe('ticket-management', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -110,8 +110,8 @@ describe('Ticket Workflow (e2e)', () => {
 
   // ─── POST /admin/tickets/:ticketId/assign ──────────────────────────
 
-  describe('POST /admin/tickets/:ticketId/assign', () => {
-    it('should assign ticket to a board member', async () => {
+  describe('Назначение исполнителя', () => {
+    it('POST /admin/tickets/:ticketId/assign назначает участника доски, переводит в in-progress', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -129,7 +129,7 @@ describe('Ticket Workflow (e2e)', () => {
       expect(res.assigneeId).toBe(adminUserId);
     });
 
-    it('should reject assigning to a non-member', async () => {
+    it('Назначение на не-участника доски — ошибка 403 not_a_board_member', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -157,8 +157,8 @@ describe('Ticket Workflow (e2e)', () => {
 
   // ─── POST /admin/tickets/:ticketId/unassign ────────────────────────
 
-  describe('POST /admin/tickets/:ticketId/unassign', () => {
-    it('should unassign an in-progress ticket back to open', async () => {
+  describe('Назначение исполнителя', () => {
+    it('POST /admin/tickets/:ticketId/unassign снимает назначение, возвращает в open', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -187,7 +187,7 @@ describe('Ticket Workflow (e2e)', () => {
       expect(detail.body.assigneeId).toBeNull();
     });
 
-    it('should reject unassigning an open ticket', async () => {
+    it('Снятие назначения с тикета не в in-progress — ошибка 400 ticket_not_in_progress', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -210,8 +210,8 @@ describe('Ticket Workflow (e2e)', () => {
 
   // ─── POST /admin/tickets/:ticketId/done ────────────────────────────
 
-  describe('POST /admin/tickets/:ticketId/done', () => {
-    it('should mark an in-progress ticket as done', async () => {
+  describe('Закрытие и переоткрытие', () => {
+    it('POST /admin/tickets/:ticketId/done переводит in-progress тикет в done', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -238,7 +238,7 @@ describe('Ticket Workflow (e2e)', () => {
       expect(detail.body.status).toBe('done');
     });
 
-    it('should reject marking an open ticket as done', async () => {
+    it('Закрытие тикета не в in-progress — ошибка 400 ticket_not_in_progress', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -261,8 +261,8 @@ describe('Ticket Workflow (e2e)', () => {
 
   // ─── POST /admin/tickets/:ticketId/reopen ──────────────────────────
 
-  describe('POST /admin/tickets/:ticketId/reopen', () => {
-    it('should reopen a done ticket', async () => {
+  describe('Закрытие и переоткрытие', () => {
+    it('POST /admin/tickets/:ticketId/reopen переводит done тикет обратно в open', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -295,7 +295,7 @@ describe('Ticket Workflow (e2e)', () => {
       expect(detail.body.assigneeId).toBeNull();
     });
 
-    it('should reject reopening an open ticket', async () => {
+    it('Переоткрытие тикета не в done — ошибка 400 ticket_not_done', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -318,8 +318,8 @@ describe('Ticket Workflow (e2e)', () => {
 
   // ─── POST /admin/tickets/:ticketId/move ────────────────────────────
 
-  describe('POST /admin/tickets/:ticketId/move', () => {
-    it('should move ticket to an allowed board', async () => {
+  describe('Перемещение между досками', () => {
+    it('POST /admin/tickets/:ticketId/move перемещает тикет на разрешённую доску', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -386,7 +386,7 @@ describe('Ticket Workflow (e2e)', () => {
       expect(res.body.boardId).toBe(targetBoardId);
     });
 
-    it('should reject move to disallowed board', async () => {
+    it('Перемещение на доску не из allowedTransferBoardIds — ошибка 400 ticket_transfer_not_allowed', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -410,8 +410,8 @@ describe('Ticket Workflow (e2e)', () => {
 
   // ─── POST /admin/tickets/:ticketId/comments ────────────────────────
 
-  describe('POST /admin/tickets/:ticketId/comments', () => {
-    it('should add a comment to a ticket', async () => {
+  describe('Комментарии', () => {
+    it('POST /admin/tickets/:ticketId/comments добавляет комментарий в историю', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -444,8 +444,8 @@ describe('Ticket Workflow (e2e)', () => {
 
   // ─── POST /admin/tickets/:ticketId/reassign ────────────────────────
 
-  describe('POST /admin/tickets/:ticketId/reassign', () => {
-    it('should reassign an in-progress ticket to another member', async () => {
+  describe('Назначение исполнителя', () => {
+    it('POST /admin/tickets/:ticketId/reassign переназначает исполнителя у in-progress тикета', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -480,7 +480,7 @@ describe('Ticket Workflow (e2e)', () => {
       expect(res.body.status).toBe('in-progress');
     });
 
-    it('should reject reassigning an open ticket', async () => {
+    it('Переназначение тикета не в in-progress — ошибка 400 ticket_not_in_progress', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -504,8 +504,8 @@ describe('Ticket Workflow (e2e)', () => {
 
   // ─── GET /admin/tickets/my ─────────────────────────────────────────
 
-  describe('GET /admin/tickets/my', () => {
-    it('should return tickets assigned to current user', async () => {
+  describe('Список тикетов', () => {
+    it('GET /admin/tickets/my возвращает тикеты в статусе in-progress назначенные текущему пользователю', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -533,8 +533,8 @@ describe('Ticket Workflow (e2e)', () => {
 
   // ─── Full workflow ─────────────────────────────────────────────────
 
-  describe('Full ticket workflow', () => {
-    it('should complete: create -> assign -> comment -> done -> reopen -> assign -> done', async () => {
+  describe('Полный жизненный цикл', () => {
+    it('created → assigned → commented → done → reopened → assigned → done', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent

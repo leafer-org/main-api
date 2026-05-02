@@ -1,0 +1,68 @@
+feature: Discovery Category Items HTTP
+code: discovery-category-items
+description: |
+  Эндпоинт `GET /categories/:id/items` — список товаров внутри категории
+  с сортировками, фильтрами, пагинацией и изоляцией по городу/возрастной
+  группе. Источник данных — DB-проекция `discovery_items`.
+
+  Сортировки: `newest`, `price-asc`, `price-desc`, `rating-desc`,
+  по умолчанию — `personal` (fallback на SQL).
+
+specs-unit:
+  GET /categories/:id/items:
+    - assert: возвращает пустой результат для категории без items
+      description: "Категория без привязанных товаров — пустой `items`, `nextCursor: null`."
+    - assert: возвращает items категории с корректной структурой
+      description: |
+        Структура item: `itemId`, `typeId`, `title`, `price`, `rating`,
+        `reviewCount`, `media`, `hasVideo`, `owner`, `categoryIds`.
+
+  sorting:
+    - assert: sort=newest сортирует items по publishedAt по убыванию
+      description: По убыванию `publishedAt`.
+    - assert: sort=price-asc сортирует items по price по возрастанию
+    - assert: sort=price-desc сортирует items по price по убыванию
+    - assert: sort=rating-desc сортирует items по rating по убыванию
+
+  filtering:
+    - assert: фильтрует по typeIds
+      description: Параметр `typeIds` — точное совпадение по типу товара.
+    - assert: фильтрует по priceMin и priceMax
+      description: Диапазон цены — оба конца включительно.
+    - assert: фильтрует по minRating
+      description: Минимальный рейтинг (>=).
+
+  pagination:
+    - assert: пагинация курсором
+      description: |
+        Курсорная пагинация: `nextCursor` ведёт на следующую страницу,
+        на последней — `null`. Все итемы уникальны между страницами.
+
+  ageGroup isolation:
+    - assert: не возвращает adults items при ageGroup=children
+    - assert: не возвращает children items при ageGroup=adults
+    - assert: возвращает items с ageGroup=all для обеих аудиторий
+      description: |
+        Возрастная группа `all` видна обеим аудиториям.
+
+  city isolation:
+    - assert: не возвращает items из другого города
+      description: Жёсткая фильтрация по `cityId`.
+
+  combined filters:
+    - assert: фильтрует по typeIds AND priceRange одновременно
+      description: Логическое AND между фильтрами разной природы.
+    - assert: фильтрует по minRating AND typeIds одновременно
+
+  defaults:
+    - assert: работает с дефолтным sort (personal) с fallback на SQL
+      description: |
+        Без указания `sort` — режим `personal`, с фолбэком на SQL,
+        если рекомендатель ничего не вернул.
+    - assert: использует дефолтный limit 20
+
+definitions:
+  feature:
+    - discovery-category-items
+  section:
+    - discovery

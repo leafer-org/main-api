@@ -1,0 +1,123 @@
+feature: Отзывы (Reviews)
+code: reviews
+description: |
+  Отзывы пользователей на товары/услуги (item) и организации (organization).
+  Жизненный цикл отзыва зависит от рейтинга и действий модерации/владельца.
+
+  Создание:
+    - rating >= 4  → отзыв сразу published.
+    - rating < 4   → отзыв уходит в pending, требует модерации.
+
+  Уникальность: один пользователь — один отзыв на конкретный target
+  (пара (userId, targetType+targetId)). Повторное создание — 409.
+
+  Редактирование автором:
+    - Меняется rating/text. Если pending-отзыв при редактировании получает
+      rating >= 4 — автоматически переходит в published.
+
+  Модерация (admin):
+    - approve   → pending → published.
+    - reject    → pending → deleted (с reason).
+    - resolve-dispute (uphold)  → disputed → published (wasDisputed=true).
+    - resolve-dispute (remove)  → disputed → deleted.
+
+  Владелец target'а:
+    - reply   — оставить ответ на published-отзыв.
+    - dispute — оспорить (один раз). Отзыв уходит в disputed, скрыт от публики.
+      После первого разрешения dispute (uphold) повторный dispute запрещён.
+
+  Удаление автором: published → deleted.
+
+  Листинг: GET /reviews?targetType=&targetId=&limit=&cursor= — постранично,
+  с курсорной пагинацией. Виден published и disputed восстановленный обратно
+  в published (deleted скрыт; disputed для публики недоступен).
+
+specs-unit:
+  # ==================== СОЗДАНИЕ ====================
+
+  Создание отзыва:
+    - assert: 5.1 Create review with rating >= 4 → published
+      description: |
+        POST /reviews { targetType, targetId, organizationId, rating, text }.
+        rating >= 4 → status=published, ответ 201 с reviewId, authorId, rating, text.
+    - assert: 5.2 Create review with rating < 4 → pending
+      description: |
+        rating < 4 (например 2.5) → status=pending. Отзыв ждёт модерации,
+        в публичном листинге не показывается.
+    - assert: 5.3 Duplicate (userId, target) → error
+      description: |
+        Повторный POST /reviews от того же автора на тот же (targetType, targetId)
+        — 409. Уникальность пары (userId, target).
+
+  # ==================== РЕДАКТИРОВАНИЕ ====================
+
+  Редактирование автором:
+    - assert: 5.4 Edit pending review → auto-publish
+      description: |
+        PATCH /reviews/:id { rating, text }.
+        Если pending-отзыв получает rating >= 4 — автоматически published.
+        Текст и рейтинг обновляются.
+
+  # ==================== МОДЕРАЦИЯ ====================
+
+  Модерация (admin):
+    - assert: одобрение pending-отзыва переводит его в published
+      description: |
+        POST /reviews/:id/approve — pending → published, 204.
+        Проверка через GET /reviews/:id.
+    - assert: отклонение pending-отзыва переводит его в deleted
+      description: |
+        POST /reviews/:id/reject { reason } — pending → deleted, 204.
+        reason сохраняется в записи, проверка статуса через GET /reviews/:id.
+
+  # ==================== УДАЛЕНИЕ ====================
+
+  Удаление автором:
+    - assert: 5.6 Delete published review
+      description: |
+        DELETE /reviews/:id автором published-отзыва — 204.
+        Статус переходит в deleted, отзыв пропадает из публичного листинга.
+
+  # ==================== ОТВЕТ ВЛАДЕЛЬЦА ====================
+
+  Ответ владельца:
+    - assert: 5.7 Owner reply to review
+      description: |
+        POST /reviews/:id/reply { text } владельцем target'а на published-отзыв.
+        В ответе replyText, repliedBy=owner.userId, repliedAt timestamp.
+
+  # ==================== ДИСПУТЫ ====================
+
+  Диспуты:
+    - assert: 5.8 Dispute → review hidden
+      description: |
+        POST /reviews/:id/dispute { reason } владельцем target'а.
+        Отзыв уходит в status=disputed, disputeReason сохраняется,
+        флаг wasDisputed=true. Из публичного листинга скрыт.
+    - assert: 5.9 Resolve dispute (uphold) → review restored
+      description: |
+        POST /reviews/:id/resolve-dispute { resolution: 'uphold' } админом.
+        Статус возвращается в published, wasDisputed=true остаётся.
+    - assert: 5.10 Resolve dispute (remove) → review deleted
+      description: |
+        POST /reviews/:id/resolve-dispute { resolution: 'remove' } админом —
+        отзыв окончательно удаляется (status=deleted).
+    - assert: 5.11 Re-dispute after uphold → error
+      description: |
+        После uphold (wasDisputed=true) повторный POST /reviews/:id/dispute —
+        400. Диспут на отзыв доступен один раз.
+
+  # ==================== ЛИСТИНГ ====================
+
+  Листинг отзывов:
+    - assert: 5.12 Get reviews by target with pagination
+      description: |
+        GET /reviews?targetType=&targetId=&limit=&cursor=.
+        Курсорная пагинация. На последней странице nextCursor=null.
+        items уникальны по reviewId между страницами.
+
+definitions:
+  feature:
+    - reviews
+  section:
+    - reviews

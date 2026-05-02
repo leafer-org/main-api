@@ -1,0 +1,53 @@
+feature: Discovery Search HTTP
+code: discovery-search
+description: |
+  Эндпоинт `GET /search` — текстовый поиск по каталогу через MeiliSearch.
+  Поддерживает фильтры (cityId, ageGroup, categoryIds, typeIds,
+  priceMin/priceMax), фасеты, курсорную пагинацию.
+
+  Изоляция возрастных групп: `ageGroup=adults|children` показывает
+  свои товары + все товары с `ageGroup=all`.
+
+specs-unit:
+  GET /search:
+    - assert: возвращает items по текстовому запросу
+      description: |
+        Полнотекстовый поиск возвращает item, в котором встречается
+        подстрока запроса; `total` отражает общее число найденных.
+    - assert: возвращает пустой результат при отсутствии совпадений
+      description: |
+        Нет совпадений — `items: []`, `total: 0`, `nextCursor: null`.
+    - assert: фильтрует по cityId
+      description: Фильтрация по городу — точное совпадение.
+    - assert: фильтрует по ageGroup (по умолчанию adults)
+      description: |
+        Без указания `ageGroup` — режим `adults`; товары `children` не
+        возвращаются.
+    - assert: включает items с ageGroup=all в любую выдачу
+      description: |
+        Товары с `ageGroup=all` видны и в `adults`, и в `children`-выдаче.
+    - assert: фильтрует по categoryIds
+      description: |
+        Параметр `categoryIds` оставляет только товары с пересечением
+        по категориям.
+    - assert: фильтрует по typeIds
+      description: Фильтрация по типу товара.
+    - assert: фильтрует по диапазону цены
+      description: |
+        `priceMin`/`priceMax` — оба конца включительно.
+    - assert: пагинация курсором
+      description: |
+        Курсорная пагинация: `nextCursor`/`null` на последней странице,
+        все элементы уникальны.
+    - assert: возвращает корректную структуру ответа
+      description: |
+        Ответ содержит `items`, `facets`, `nextCursor`, `total`. Каждый
+        item: `itemId`, `title`, `description`, `media`, `hasVideo`,
+        `owner` (`name`/`avatarId`/`avatarUrl`), `location`
+        (`cityId`/`address`), `typeId`, `price`, `categoryIds`.
+
+definitions:
+  feature:
+    - discovery-search
+  section:
+    - discovery

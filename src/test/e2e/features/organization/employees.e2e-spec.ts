@@ -17,7 +17,7 @@ import { SUBSCRIPTION_PLANS } from '@/features/organization/domain/aggregates/or
 
 const FIXED_OTP = '123456';
 
-describe('Organization Employees (e2e)', () => {
+describe('organization-employees', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -63,7 +63,7 @@ describe('Organization Employees (e2e)', () => {
   // ─── GET /organizations/:id/employees ─────────────────────────────
 
   describe('GET /organizations/:id/employees', () => {
-    it('should return owner after org creation', async () => {
+    it('возвращает владельца после создания организации', async () => {
       const { accessToken, userId } = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, accessToken);
 
@@ -83,7 +83,7 @@ describe('Organization Employees (e2e)', () => {
   // ─── POST /organizations/:id/employees ────────────────────────────
 
   describe('POST /organizations/:id/employees', () => {
-    it('should invite an employee by phone', async () => {
+    it('приглашает сотрудника по телефону', async () => {
       // Use team plan workaround: free plan allows only 1 employee
       // For now, test that invite works with default plan by registering another user
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
@@ -102,7 +102,7 @@ describe('Organization Employees (e2e)', () => {
       expect(res.status).toBe(400);
     });
 
-    it('should return 404 for unknown phone', async () => {
+    it('возвращает 404 для неизвестного телефона', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
       const adminRoleId = org.roles[0].id;
@@ -115,7 +115,7 @@ describe('Organization Employees (e2e)', () => {
       expect(res.status).toBe(404);
     });
 
-    it('should return 403 for non-employee', async () => {
+    it('возвращает 403 для не-сотрудника', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -133,7 +133,7 @@ describe('Organization Employees (e2e)', () => {
   // ─── DELETE /organizations/:id/employees/:userId ──────────────────
 
   describe('DELETE /organizations/:id/employees/:userId', () => {
-    it('should not allow removing the owner', async () => {
+    it('запрещает удаление владельца', async () => {
       const { accessToken, userId } = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, accessToken);
 
@@ -143,12 +143,14 @@ describe('Organization Employees (e2e)', () => {
 
       expect(res.status).toBe(400);
     });
+
+    it.todo('удаляет обычного сотрудника');
   });
 
   // ─── PATCH /organizations/:id/employees/:userId ───────────────────
 
   describe('PATCH /organizations/:id/employees/:userId', () => {
-    it('should return 403 for non-employee', async () => {
+    it('возвращает 403 для не-сотрудника', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -160,12 +162,14 @@ describe('Organization Employees (e2e)', () => {
         .send({ roleId: org.roles[0].id })
         .expect(403);
     });
+
+    it.todo('меняет роль сотрудника');
   });
 
   // ─── POST /organizations/:id/transfer-ownership ───────────────────
 
   describe('POST /organizations/:id/transfer-ownership', () => {
-    it('should return error when transferring to non-employee', async () => {
+    it('возвращает ошибку при передаче владения не-сотруднику', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -178,5 +182,7 @@ describe('Organization Employees (e2e)', () => {
 
       expect(res.status).toBe(400);
     });
+
+    it.todo('передаёт владение другому сотруднику');
   });
 });

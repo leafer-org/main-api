@@ -42,7 +42,7 @@ function sleep(t = 100) {
   return new Promise((res) => setTimeout(() => res(undefined), t));
 }
 
-describe('Discovery Categories HTTP (e2e)', () => {
+describe('discovery-categories', () => {
   let app: INestApplication;
   let agent: ReturnType<typeof request>;
   let producer: KafkaProducerService;
@@ -178,12 +178,12 @@ describe('Discovery Categories HTTP (e2e)', () => {
   // ─── GET /categories ─────────────────────────────────────────────
 
   describe('GET /categories', () => {
-    it('should return empty array when no categories exist', async () => {
+    it('возвращает пустой массив при отсутствии категорий', async () => {
       const res = await agent.get('/categories').expect(200);
       expect(res.body).toEqual([]);
     });
 
-    it('should return root categories', async () => {
+    it('возвращает корневые категории', async () => {
       const rootId1 = randomUUID();
       const rootId2 = randomUUID();
       const childId = randomUUID();
@@ -199,7 +199,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       expect(names).toEqual(['Root 1', 'Root 2']);
     });
 
-    it('should return children by parentCategoryId', async () => {
+    it('возвращает детей по parentCategoryId', async () => {
       const rootId = randomUUID();
       const childId1 = randomUUID();
       const childId2 = randomUUID();
@@ -215,7 +215,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       expect(names).toEqual(['Child 1', 'Child 2']);
     });
 
-    it('should return correct childCount after recalc', async () => {
+    it('возвращает корректный childCount после recalc', async () => {
       const rootId = randomUUID();
       const childId1 = randomUUID();
       const childId2 = randomUUID();
@@ -233,7 +233,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       expect(root.childCount).toBe(2);
     });
 
-    it('should return correct direct itemCount after recalc', async () => {
+    it('возвращает корректный прямой itemCount после recalc', async () => {
       const rootId = randomUUID();
       const typeId = randomUUID();
       const orgId = randomUUID();
@@ -251,7 +251,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       expect(root.itemCount).toBe(2);
     });
 
-    it('should accumulate itemCount from children to parent', async () => {
+    it('аккумулирует itemCount от детей к родителю', async () => {
       const rootId = randomUUID();
       const childId = randomUUID();
       const typeId = randomUUID();
@@ -279,7 +279,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       expect(root.itemCount).toBe(3);
     });
 
-    it('should sort categories by order asc then name asc', async () => {
+    it('сортирует категории по order asc, затем по name asc', async () => {
       const ids = {
         last: randomUUID(),
         first: randomUUID(),
@@ -298,7 +298,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       expect(categoryIds).toEqual([ids.first, ids.middleA, ids.middleB, ids.last]);
     });
 
-    it('should reset counts after category unpublished', async () => {
+    it('сбрасывает счётчики после unpublish категории', async () => {
       const rootId = randomUUID();
       const childId = randomUUID();
 
@@ -340,11 +340,11 @@ describe('Discovery Categories HTTP (e2e)', () => {
   // ─── GET /categories/:id/filters ─────────────────────────────────
 
   describe('GET /categories/:id/filters', () => {
-    it('should return 404 for non-existent category', async () => {
+    it('возвращает 404 для несуществующей категории', async () => {
       await agent.get(`/categories/${randomUUID()}/filters`).expect(404);
     });
 
-    it('should return filters with attributes and type filters', async () => {
+    it('возвращает фильтры с attributes и type filters', async () => {
       const typeId = randomUUID();
       const categoryId = randomUUID();
       const attrId = randomUUID();
@@ -377,7 +377,7 @@ describe('Discovery Categories HTTP (e2e)', () => {
       });
     });
 
-    it('should return commonFilters with all fields true', async () => {
+    it('возвращает commonFilters со всеми полями true', async () => {
       const categoryId = randomUUID();
 
       await seedCategory({ categoryId, parentCategoryId: null, name: 'Simple' });

@@ -16,7 +16,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
-describe('Organization Roles (e2e)', () => {
+describe('organization-roles', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -62,7 +62,7 @@ describe('Organization Roles (e2e)', () => {
   // ─── GET /organizations/:id/roles ─────────────────────────────────
 
   describe('GET /organizations/:id/roles', () => {
-    it('should return ADMIN role after org creation', async () => {
+    it('возвращает роль ADMIN после создания организации', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, accessToken);
 
@@ -91,7 +91,7 @@ describe('Organization Roles (e2e)', () => {
   // ─── POST /organizations/:id/roles ────────────────────────────────
 
   describe('POST /organizations/:id/roles', () => {
-    it('should create a custom role with specific permissions', async () => {
+    it('создаёт custom-роль с заданными permissions', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, accessToken);
 
@@ -111,7 +111,7 @@ describe('Organization Roles (e2e)', () => {
       expect(res.body.id).toBeDefined();
     });
 
-    it('should return 403 for non-employee', async () => {
+    it('возвращает 403 для не-сотрудника', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -128,7 +128,7 @@ describe('Organization Roles (e2e)', () => {
   // ─── PATCH /organizations/:id/roles/:roleId ───────────────────────
 
   describe('PATCH /organizations/:id/roles/:roleId', () => {
-    it('should update role name and permissions', async () => {
+    it('обновляет имя и permissions роли', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, accessToken);
 
@@ -161,7 +161,7 @@ describe('Organization Roles (e2e)', () => {
   // ─── DELETE /organizations/:id/roles/:roleId ──────────────────────
 
   describe('DELETE /organizations/:id/roles/:roleId', () => {
-    it('should delete a custom role with replacement', async () => {
+    it('удаляет custom-роль с replacement', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, accessToken);
       const adminRoleId = org.roles[0].id;
@@ -191,7 +191,7 @@ describe('Organization Roles (e2e)', () => {
       expect(listRes.body[0].name).toBe('ADMIN');
     });
 
-    it('should not allow deleting the ADMIN role', async () => {
+    it('запрещает удаление роли ADMIN', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, accessToken);
       const adminRoleId = org.roles[0].id;

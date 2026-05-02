@@ -40,7 +40,7 @@ function makeItemModerationEvent(overrides?: { id?: string; itemId?: string; tit
   };
 }
 
-describe('Open Subscription Matching (Kafka)', () => {
+describe('board-subscriptions', () => { describe('Матчинг фильтров', () => {
   let e2e: E2eApp;
   let producer: KafkaProducerService;
 
@@ -269,4 +269,4 @@ describe('Open Subscription Matching (Kafka)', () => {
     const { tickets } = await getTickets(accessToken, board.boardId);
     expect(tickets).toHaveLength(0);
   });
-});
+}); });

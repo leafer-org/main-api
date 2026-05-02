@@ -1,0 +1,157 @@
+feature: IDP Auth
+code: idp-auth
+description: |
+  Аутентификация и пользовательский доступ через OTP по номеру телефона.
+
+  Поток: запрос OTP → верификация → либо вход (existing user), либо создание
+  регистрационной сессии (new user) и завершение профиля. Выпускаются
+  access/refresh токены с ротацией refresh при каждом /auth/refresh.
+
+  Также покрыты: получение и обновление профиля /me, листинг и удаление
+  своих сессий, выход (logout), получение прав /me/permissions, блокировка
+  логина по числу неуспешных OTP-попыток.
+
+specs-unit:
+  # ==================== ЗАПРОС OTP ====================
+
+  POST /auth/request-otp:
+    - assert: Принимает валидный номер и возвращает пустое тело
+      description: |
+        Успешный запрос OTP — 200, тело пустое. Сам код в тестах
+        зафиксирован через override OtpGeneratorService.
+    - assert: Невалидный номер — 400
+      description: Невалидный формат телефона — 400.
+    - assert: Повторный запрос OTP в throttle-окне — 429
+      description: |
+        Повторный запрос OTP до истечения throttle-окна — 429,
+        body.type=throttled, в data.retryAfterSec — оставшиеся секунды.
+
+  # ==================== ВЕРИФИКАЦИЯ OTP ====================
+
+  POST /auth/verify-otp:
+    - assert: Возвращает new_registration для нового номера
+      description: |
+        Для незнакомого номера успешная верификация выдаёт
+        body.type=new_registration и registrationSessionId — нужен дальше
+        для complete-profile.
+    - assert: Возвращает authenticated с токенами для существующего пользователя
+      description: |
+        Для уже зарегистрированного пользователя верификация выдаёт
+        body.type=authenticated и пару accessToken/refreshToken.
+    - assert: Неверный OTP — 400
+      description: Неверный код — 400, body.type=invalid_otp.
+    - assert: Verify без предварительного request-otp — 400
+      description: |
+        Запрос verify без предварительного request-otp — 400 (для номера
+        нет активной OTP-сессии).
+
+  # ==================== ЗАВЕРШЕНИЕ ПРОФИЛЯ ====================
+
+  POST /auth/complete-profile:
+    - assert: Регистрирует нового пользователя и возвращает токены + user
+      description: |
+        По valid registrationSessionId создаём пользователя, возвращаем
+        accessToken/refreshToken и user с phoneNumber/fullName/id/createdAt.
+    - assert: Генерирует дефолтный fullName, если не передан
+      description: |
+        Если fullName не передан — генерируется дефолт вида
+        "Пользователь NNNN".
+    - assert: Невалидная registrationSessionId — 400
+      description: Несуществующий registrationSessionId — 400.
+
+  # ==================== РЕФРЕШ ТОКЕНОВ ====================
+
+  GET /auth/refresh:
+    - assert: Возвращает новые токены по валидному refresh
+      description: |
+        По заголовку x-refresh-token выдаётся новая пара,
+        новый refreshToken отличается от старого (ротация).
+    - assert: Без заголовка refresh — 400
+      description: Отсутствует обязательный заголовок x-refresh-token — 400.
+    - assert: Невалидный refresh — 401
+      description: Невалидный/несуществующий refresh — 401.
+
+  Refresh token rotation:
+    - assert: Инвалидирует старый refresh после ротации
+      description: |
+        После /auth/refresh старый refreshToken больше не работает —
+        повторное использование возвращает 401.
+
+  # ==================== ТЕКУЩИЙ ПОЛЬЗОВАТЕЛЬ ====================
+
+  GET /me:
+    - assert: Возвращает профиль текущего пользователя
+      description: |
+        По валидному access-токену возвращается профиль с
+        id/phoneNumber/fullName/createdAt/updatedAt.
+    - assert: Без токена — 401
+      description: Без авторизации — 401.
+
+  PATCH /me/profile:
+    - assert: Обновляет fullName пользователя
+      description: Обновление fullName — 200, в ответе обновлённое значение.
+
+  # ==================== ВЫХОД ====================
+
+  POST /auth/logout:
+    - assert: Logout инвалидирует сессию
+      description: |
+        После logout текущий accessToken перестаёт работать —
+        запросы возвращают 401.
+
+  # ==================== СВОИ СЕССИИ ====================
+
+  Sessions:
+    - assert: GET /me/sessions возвращает активные сессии
+      description: |
+        Возвращает массив sessions с полями id/createdAt/expiresAt
+        для текущего пользователя.
+    - assert: DELETE /me/sessions/:id удаляет конкретную сессию
+      description: |
+        Удаление одной сессии по id — 204. Полезно для логаута на
+        конкретном устройстве из общего списка.
+    - assert: DELETE /me/sessions удаляет все сессии кроме текущей
+      description: |
+        Массовый logout — после операции остаётся только текущая сессия.
+
+  # ==================== ПРАВА ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ ====================
+
+  GET /me/permissions:
+    - assert: Возвращает пустой список для обычного пользователя
+      description: |
+        Ответ — { permissions: string[] }. У роли USER (seed) permissions=[],
+        соответственно эндпоинт возвращает пустой массив.
+    - assert: Возвращает все права для админа
+      description: |
+        У роли ADMIN (seed) permissions = ALL_PERMISSIONS — массив со всеми
+        идентификаторами прав (например role.read, user.read, ticket.create и т.д.).
+    - assert: Без авторизации — 401
+    - assert: Отражает обновлённые права после смены роли
+      description: |
+        После смены роли у пользователя (re-login обязателен — старая сессия
+        инвалидируется) /me/permissions отражает новый набор прав.
+
+  # ==================== БЛОКИРОВКА ЛОГИНА ====================
+
+  Login blocking:
+    - assert: Блокирует логин после превышения лимита попыток OTP
+      description: |
+        После 5 неуспешных попыток verify-otp 6-я возвращает 403,
+        body.type=login_blocked, data.blockedUntil — момент разблокировки.
+
+  # ==================== СКВОЗНОЙ СЦЕНАРИЙ ====================
+
+  Full auth flow:
+    - assert: "новый пользователь: request-otp → verify → register → /me → refresh → logout"
+      description: |
+        End-to-end happy path для нового пользователя: запрос OTP,
+        верификация (new_registration), complete-profile, /me с
+        новым токеном, ротация через refresh (старый токен инвалидирован),
+        logout (новый токен перестаёт работать).
+
+definitions:
+  feature:
+    - idp-auth
+  section:
+    - idp
+    - auth

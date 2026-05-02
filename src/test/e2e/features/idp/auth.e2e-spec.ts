@@ -15,7 +15,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 const FIXED_OTP = '123456';
 const PHONE = '+79991234567';
 
-describe('Auth Controller (e2e)', () => {
+describe('idp-auth', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -54,7 +54,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── POST /auth/request-otp ───────────────────────────────────────
 
   describe('POST /auth/request-otp', () => {
-    it('should accept a valid phone number and return empty body', async () => {
+    it('Принимает валидный номер и возвращает пустое тело', async () => {
       const res = await e2e.agent
         .post('/auth/request-otp')
         .send({ phoneNumber: PHONE })
@@ -63,11 +63,11 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body).toEqual({});
     });
 
-    it('should return 400 for an invalid phone number', async () => {
+    it('Невалидный номер — 400', async () => {
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: '123' }).expect(400);
     });
 
-    it('should return 429 when requesting OTP twice within throttle window', async () => {
+    it('Повторный запрос OTP в throttle-окне — 429', async () => {
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       const res = await e2e.agent
@@ -83,7 +83,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── POST /auth/verify-otp ────────────────────────────────────────
 
   describe('POST /auth/verify-otp', () => {
-    it('should return new_registration for a new phone number', async () => {
+    it('Возвращает new_registration для нового номера', async () => {
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       const res = await e2e.agent
@@ -95,7 +95,7 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body).toHaveProperty('registrationSessionId');
     });
 
-    it('should return authenticated with tokens for an existing user', async () => {
+    it('Возвращает authenticated с токенами для существующего пользователя', async () => {
       // Register first
       await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
@@ -112,7 +112,7 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body).toHaveProperty('refreshToken');
     });
 
-    it('should return 400 for a wrong OTP code', async () => {
+    it('Неверный OTP — 400', async () => {
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       const res = await e2e.agent
@@ -123,7 +123,7 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body.type).toBe('invalid_otp');
     });
 
-    it('should return 400 when no OTP was requested', async () => {
+    it('Verify без предварительного request-otp — 400', async () => {
       await e2e.agent
         .post('/auth/verify-otp')
         .send({ phoneNumber: PHONE, code: FIXED_OTP })
@@ -134,7 +134,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── POST /auth/complete-profile ──────────────────────────────────
 
   describe('POST /auth/complete-profile', () => {
-    it('should register a new user and return tokens + user', async () => {
+    it('Регистрирует нового пользователя и возвращает токены + user', async () => {
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       const verifyRes = await e2e.agent
@@ -161,7 +161,7 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body.user).toHaveProperty('createdAt');
     });
 
-    it('should generate default fullName when not provided', async () => {
+    it('Генерирует дефолтный fullName, если не передан', async () => {
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       const verifyRes = await e2e.agent
@@ -182,7 +182,7 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body.user.fullName).toMatch(/^Пользователь \d{4}$/);
     });
 
-    it('should return 400 for an invalid registration session', async () => {
+    it('Невалидная registrationSessionId — 400', async () => {
       await e2e.agent
         .post('/auth/complete-profile')
         .send({
@@ -196,7 +196,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── GET /auth/refresh ────────────────────────────────────────────
 
   describe('GET /auth/refresh', () => {
-    it('should return new tokens with a valid refresh token', async () => {
+    it('Возвращает новые токены по валидному refresh', async () => {
       const { refreshToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       const res = await e2e.agent
@@ -210,11 +210,11 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body.refreshToken).not.toBe(refreshToken);
     });
 
-    it('should return 400 without a refresh token (missing required header)', async () => {
+    it('Без заголовка refresh — 400', async () => {
       await e2e.agent.get('/auth/refresh').expect(400);
     });
 
-    it('should return 401 with an invalid refresh token', async () => {
+    it('Невалидный refresh — 401', async () => {
       await e2e.agent.get('/auth/refresh').set('x-refresh-token', 'invalid-token').expect(401);
     });
   });
@@ -222,7 +222,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── GET /me ──────────────────────────────────────────────────────
 
   describe('GET /me', () => {
-    it('should return the current user profile', async () => {
+    it('Возвращает профиль текущего пользователя', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       const res = await e2e.agent
@@ -239,7 +239,7 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body).toHaveProperty('updatedAt');
     });
 
-    it('should return 401 without a token', async () => {
+    it('Без токена — 401', async () => {
       await e2e.agent.get('/me').expect(401);
     });
   });
@@ -247,7 +247,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── PATCH /me/profile ────────────────────────────────────────────
 
   describe('PATCH /me/profile', () => {
-    it('should update the user full name', async () => {
+    it('Обновляет fullName пользователя', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       const res = await e2e.agent
@@ -263,7 +263,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── POST /auth/logout ────────────────────────────────────────────
 
   describe('POST /auth/logout', () => {
-    it('should logout and invalidate the session', async () => {
+    it('Logout инвалидирует сессию', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       await e2e.agent
@@ -279,7 +279,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── Sessions management ──────────────────────────────────────────
 
   describe('Sessions', () => {
-    it('GET /me/sessions should list active sessions', async () => {
+    it('GET /me/sessions возвращает активные сессии', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       const res = await e2e.agent
@@ -293,7 +293,7 @@ describe('Auth Controller (e2e)', () => {
       expect(res.body.sessions[0]).toHaveProperty('expiresAt');
     });
 
-    it('DELETE /me/sessions/:id should delete a specific session', async () => {
+    it('DELETE /me/sessions/:id удаляет конкретную сессию', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       // Create a second session by logging in again
@@ -327,7 +327,7 @@ describe('Auth Controller (e2e)', () => {
         .expect(204);
     });
 
-    it('DELETE /me/sessions should delete all sessions except current', async () => {
+    it('DELETE /me/sessions удаляет все сессии кроме текущей', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       // Create a second session
@@ -357,7 +357,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── GET /me/permissions ──────────────────────────────────────────
 
   describe('GET /me/permissions', () => {
-    it('should return default permissions for regular user', async () => {
+    it('Возвращает пустой список для обычного пользователя', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       const res = await e2e.agent
@@ -365,22 +365,10 @@ describe('Auth Controller (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
-      expect(res.body).toHaveProperty('permissions');
-      const p = res.body.permissions;
-
-      // Regular USER role has empty permissions → all defaults
-      expect(p['SESSION.MANAGE']).toBe('self');
-      expect(p['ROLE.MANAGE']).toBe(false);
-      expect(p['USER.MANAGE']).toBe(false);
-      expect(p['CMS.MANAGE']).toBe(false);
-      expect(p['REVIEW.MODERATE']).toBe(false);
-      expect(p['ORGANIZATION.MODERATE']).toBe(false);
-      expect(p['TICKET_BOARD.MANAGE']).toBe(false);
-      expect(p['TICKET.MANAGE']).toBe(false);
-      expect(p['TICKET.REASSIGN']).toBe(false);
+      expect(res.body.permissions).toEqual([]);
     });
 
-    it('should return admin permissions for admin user', async () => {
+    it('Возвращает все права для админа', async () => {
       if (!process.env.DB_URL) throw new Error('DB_URL not set');
       await seedStaticRoles(process.env.DB_URL);
       await seedAdminUser(process.env.DB_URL);
@@ -392,23 +380,21 @@ describe('Auth Controller (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
-      expect(res.body).toHaveProperty('permissions');
-      const p = res.body.permissions;
-
-      expect(p['SESSION.MANAGE']).toBe('all');
-      expect(p['ROLE.MANAGE']).toBe(true);
-      expect(p['USER.MANAGE']).toBe(true);
-      expect(p['CMS.MANAGE']).toBe(true);
-      expect(p['TICKET_BOARD.MANAGE']).toBe(true);
-      expect(p['TICKET.MANAGE']).toBe(true);
-      expect(p['TICKET.REASSIGN']).toBe(true);
+      const p: string[] = res.body.permissions;
+      expect(Array.isArray(p)).toBe(true);
+      expect(p).toContain('role.read');
+      expect(p).toContain('role.create');
+      expect(p).toContain('user.read');
+      expect(p).toContain('cms.category.read');
+      expect(p).toContain('ticket.board.read');
+      expect(p).toContain('ticket.create');
     });
 
-    it('should return 401 without auth token', async () => {
+    it('Без авторизации — 401', async () => {
       await e2e.agent.get('/me/permissions').expect(401);
     });
 
-    it('should reflect updated permissions after role change', async () => {
+    it('Отражает обновлённые права после смены роли', async () => {
       if (!process.env.DB_URL) throw new Error('DB_URL not set');
       await seedStaticRoles(process.env.DB_URL);
       await seedAdminUser(process.env.DB_URL);
@@ -450,15 +436,16 @@ describe('Auth Controller (e2e)', () => {
         .expect(200);
 
       // After role change to ADMIN, should have admin permissions
-      expect(res.body.permissions['ROLE.MANAGE']).toBe(true);
-      expect(res.body.permissions['USER.MANAGE']).toBe(true);
+      const p: string[] = res.body.permissions;
+      expect(p).toContain('role.read');
+      expect(p).toContain('user.read');
     });
   });
 
   // ─── Login blocking ──────────────────────────────────────────────
 
   describe('Login blocking', () => {
-    it('should block login after exceeding max OTP attempts', async () => {
+    it('Блокирует логин после превышения лимита попыток OTP', async () => {
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 
       // Send wrong OTP 6 times (MAX_OTP_ATTEMPTS=5, blocked on attempt > 5)
@@ -486,7 +473,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── Refresh token rotation ─────────────────────────────────────
 
   describe('Refresh token rotation', () => {
-    it('should invalidate old refresh token after rotation', async () => {
+    it('Инвалидирует старый refresh после ротации', async () => {
       const { refreshToken } = await registerUser(e2e.agent, FIXED_OTP, { phone: PHONE });
 
       // Rotate: get new tokens using refresh
@@ -505,7 +492,7 @@ describe('Auth Controller (e2e)', () => {
   // ─── Full auth flow ───────────────────────────────────────────────
 
   describe('Full auth flow', () => {
-    it('new user: request-otp → verify → register → /me → refresh → logout', async () => {
+    it('новый пользователь: request-otp → verify → register → /me → refresh → logout', async () => {
       // 1. Request OTP
       await e2e.agent.post('/auth/request-otp').send({ phoneNumber: PHONE }).expect(200);
 

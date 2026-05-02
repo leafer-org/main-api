@@ -1,0 +1,90 @@
+feature: Взаимодействия пользователя (Interactions)
+code: interactions
+description: |
+  Сервис трекинга действий пользователя над товарами (items): просмотры,
+  клики, показы контактов, лайки, отзывы. Эти данные питают рекомендательную
+  систему и аналитику.
+
+  Источники данных:
+    - HTTP — синхронные ручки от клиента (mobile/admin):
+        POST /interactions/views          batch просмотров (дедуп в течение часа)
+        POST /interactions/click          клик по карточке item
+        POST /interactions/show-contacts  раскрытие контактов
+    - Kafka streams — асинхронная конвертация доменных событий:
+        like.streaming   → item.liked   → interaction(type=like)
+                           item.unliked → interaction(type=unlike)
+        review.streaming → review.created (target=item) → interaction(type=review)
+
+  Нормализация:
+    - review.created с target=organization игнорируется (interactions держит
+      только item-таргетированные действия).
+    - review.deleted и прочие review-события не порождают interactions.
+
+  Авторизация: HTTP-ручки требуют Bearer token, без него — 401.
+
+specs-unit:
+  # ==================== HTTP — VIEWS ====================
+
+  POST /interactions/views:
+    - assert: записывает batch views и возвращает 204
+      description: |
+        Body: { itemIds: string[] }. Каждый itemId превращается в одну запись
+        interaction(type=view, userId, itemId). Ответ — 204 No Content.
+    - assert: дедуплицирует views — повторный batch за час не создаёт дублей
+      description: |
+        Повторный POST с теми же itemIds в пределах окна дедупликации
+        не приводит к появлению новых записей. Дубль == совпадение
+        (userId, itemId, type=view) в окне.
+    - assert: возвращает 401 без авторизации
+
+  # ==================== HTTP — CLICK ====================
+
+  POST /interactions/click:
+    - assert: записывает click и возвращает 204
+      description: |
+        Body: { itemId }. Создаёт одну запись interaction(type=click).
+    - assert: возвращает 401 без авторизации
+
+  # ==================== HTTP — SHOW CONTACTS ====================
+
+  POST /interactions/show-contacts:
+    - assert: записывает show-contacts и возвращает 204
+      description: |
+        Body: { itemId }. Создаёт interaction(type=show-contacts).
+    - assert: возвращает 401 без авторизации
+
+  # ==================== KAFKA — LIKE STREAM ====================
+
+  like.streaming → interactions:
+    - assert: конвертирует item.liked в like interaction
+      description: |
+        Сообщение { type: 'item.liked', userId, itemId } из топика
+        like.streaming обрабатывается consumer'ом и порождает запись
+        interaction(type=like, userId, itemId).
+    - assert: конвертирует item.unliked в unlike interaction
+      description: |
+        item.unliked → interaction(type=unlike, userId, itemId).
+
+  # ==================== KAFKA — REVIEW STREAM ====================
+
+  review.streaming → interactions:
+    - assert: конвертирует review.created (item target) в review interaction
+      description: |
+        Сообщение review.created с target.targetType='item' порождает
+        interaction(type=review, userId, itemId). Используется itemId
+        из target'а сообщения.
+    - assert: игнорирует review.created с organization target
+      description: |
+        target.targetType='organization' не пишется в interactions —
+        фича трекает только действия по item.
+    - assert: игнорирует review.deleted
+      description: |
+        Сообщения review.deleted (любого target'а) не порождают записей
+        в interactions. Удаления отзывов не интересны рекомендательной
+        системе как сигнал.
+
+definitions:
+  feature:
+    - interactions
+  section:
+    - interactions

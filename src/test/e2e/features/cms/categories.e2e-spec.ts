@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loginAsAdmin, registerUser } from '../../actors/auth.js';
 import { startContainers, stopContainers } from '../../helpers/containers.js';
@@ -21,7 +21,7 @@ const TINY_PNG = Buffer.from(
   'base64',
 );
 
-describe('CMS Categories (e2e)', () => {
+describe('CMS Categories', () => {
   let e2e: E2eApp;
   let adminToken: string;
 
@@ -116,7 +116,7 @@ describe('CMS Categories (e2e)', () => {
   // --- CRUD ---
 
   describe('CRUD', () => {
-    it('should create a category', async () => {
+    it('создаёт категорию', async () => {
       const id = randomUUID();
       const iconId = await uploadIcon();
       const typeId = randomUUID();
@@ -136,7 +136,7 @@ describe('CMS Categories (e2e)', () => {
       expect(res.body.iconUrl).toEqual(expect.any(String));
     });
 
-    it('should list categories', async () => {
+    it('возвращает список категорий', async () => {
       const resA = await createCategory({ name: 'Cat A' });
       expect(resA.status).toBe(201);
       const resB = await createCategory({ name: 'Cat B' });
@@ -152,7 +152,7 @@ describe('CMS Categories (e2e)', () => {
       expect(res.body[0].ageGroups).toEqual(['adults']);
     });
 
-    it('should get category detail', async () => {
+    it('возвращает детали категории', async () => {
       const id = randomUUID();
       const res1 = await createCategory({ id, name: 'Detail Cat' });
       expect(res1.status).toBe(201);
@@ -171,14 +171,14 @@ describe('CMS Categories (e2e)', () => {
       expect(res.body.iconUrl).toEqual(expect.any(String));
     });
 
-    it('should return 404 for non-existent category', async () => {
+    it('Несуществующая категория — 404', async () => {
       await e2e.agent
         .get(`/cms/categories/${randomUUID()}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
     });
 
-    it('should update a category', async () => {
+    it('обновляет категорию', async () => {
       const id = randomUUID();
       const res1 = await createCategory({ id, name: 'Original' });
       expect(res1.status).toBe(201);
@@ -201,17 +201,17 @@ describe('CMS Categories (e2e)', () => {
       expect(res.body.ageGroups).toEqual(['children', 'adults']);
     });
 
-    it('should reject category with empty allowedTypeIds', async () => {
+    it('отклоняет создание с пустым allowedTypeIds', async () => {
       const res = await createCategory({ allowedTypeIds: [] });
       expect(res.status).toBe(400);
     });
 
-    it('should reject category with empty ageGroups', async () => {
+    it('отклоняет создание с пустым ageGroups', async () => {
       const res = await createCategory({ ageGroups: [] });
       expect(res.status).toBe(400);
     });
 
-    it('should reject update with empty allowedTypeIds', async () => {
+    it('отклоняет обновление с пустым allowedTypeIds', async () => {
       const id = randomUUID();
       const r = await createCategory({ id });
       expect(r.status).toBe(201);
@@ -230,7 +230,7 @@ describe('CMS Categories (e2e)', () => {
       expect(res.status).toBe(400);
     });
 
-    it('should reject update with empty ageGroups', async () => {
+    it('отклоняет обновление с пустым ageGroups', async () => {
       const id = randomUUID();
       const r = await createCategory({ id });
       expect(r.status).toBe(201);
@@ -249,7 +249,7 @@ describe('CMS Categories (e2e)', () => {
       expect(res.status).toBe(400);
     });
 
-    it('should create category with specific ageGroups', async () => {
+    it('создаёт категорию с несколькими ageGroups', async () => {
       const id = randomUUID();
       const res = await createCategory({
         id,
@@ -265,7 +265,7 @@ describe('CMS Categories (e2e)', () => {
   // --- Hierarchy ---
 
   describe('Hierarchy', () => {
-    it('should create a child category', async () => {
+    it('создаёт дочернюю категорию', async () => {
       const parentId = randomUUID();
       const childId = randomUUID();
       const typeIds = [randomUUID()];
@@ -291,7 +291,7 @@ describe('CMS Categories (e2e)', () => {
       expect(parent).toBeDefined();
     });
 
-    it('should reject child with allowedTypeIds not subset of parent', async () => {
+    it('отклоняет потомка с allowedTypeIds не из подмножества родителя', async () => {
       const parentId = randomUUID();
       const parentTypeId = randomUUID();
       const invalidTypeId = randomUUID();
@@ -307,7 +307,7 @@ describe('CMS Categories (e2e)', () => {
       expect(res.status).toBe(400);
     });
 
-    it('should reject child with ageGroups not subset of parent', async () => {
+    it('отклоняет потомка с ageGroups не из подмножества родителя', async () => {
       const parentId = randomUUID();
       const typeId = randomUUID();
 
@@ -327,7 +327,7 @@ describe('CMS Categories (e2e)', () => {
       expect(res.status).toBe(400);
     });
 
-    it('should allow child with ageGroups subset of parent', async () => {
+    it('разрешает потомка с ageGroups из подмножества родителя', async () => {
       const parentId = randomUUID();
       const typeId = randomUUID();
 
@@ -351,7 +351,7 @@ describe('CMS Categories (e2e)', () => {
   // --- Publish / Unpublish ---
 
   describe('Publish / Unpublish', () => {
-    it('should publish a category', async () => {
+    it('публикует категорию', async () => {
       const id = randomUUID();
       const r = await createCategory({ id });
       expect(r.status).toBe(201);
@@ -369,7 +369,7 @@ describe('CMS Categories (e2e)', () => {
       expect(detail.body.status).toBe('published');
     });
 
-    it('should unpublish a published category', async () => {
+    it('снимает публикацию опубликованной категории', async () => {
       const id = randomUUID();
       const r = await createCategory({ id });
       expect(r.status).toBe(201);
@@ -392,7 +392,7 @@ describe('CMS Categories (e2e)', () => {
       expect(detail.body.status).toBe('unpublished');
     });
 
-    it('should reject unpublish of non-published category', async () => {
+    it('отклоняет unpublish неопубликованной категории', async () => {
       const id = randomUUID();
       const r = await createCategory({ id });
       expect(r.status).toBe(201);
@@ -403,7 +403,7 @@ describe('CMS Categories (e2e)', () => {
         .expect(400);
     });
 
-    it('should flush outbox events after publish', async () => {
+    it('outbox события успешно обрабатываются после publish', async () => {
       const id = randomUUID();
       const r = await createCategory({ id });
       expect(r.status).toBe(201);
@@ -420,7 +420,7 @@ describe('CMS Categories (e2e)', () => {
   // --- Attributes ---
 
   describe('Attributes', () => {
-    it('should add an attribute to a category', async () => {
+    it('добавляет атрибут к категории', async () => {
       const categoryId = randomUUID();
       const attributeId = randomUUID();
       const r = await createCategory({ id: categoryId });
@@ -450,7 +450,7 @@ describe('CMS Categories (e2e)', () => {
       });
     });
 
-    it('should remove an attribute from a category', async () => {
+    it('удаляет атрибут из категории', async () => {
       const categoryId = randomUUID();
       const attributeId = randomUUID();
       const r = await createCategory({ id: categoryId });
@@ -475,7 +475,7 @@ describe('CMS Categories (e2e)', () => {
       expect(detail.body.attributes).toHaveLength(0);
     });
 
-    it('should reject duplicate attribute', async () => {
+    it('отклоняет дублирующийся атрибут', async () => {
       const categoryId = randomUUID();
       const attributeId = randomUUID();
       const r = await createCategory({ id: categoryId });
@@ -494,7 +494,7 @@ describe('CMS Categories (e2e)', () => {
         .expect(400);
     });
 
-    it('should reject removing non-existent attribute', async () => {
+    it('отклоняет удаление несуществующего атрибута', async () => {
       const categoryId = randomUUID();
       const r = await createCategory({ id: categoryId });
       expect(r.status).toBe(201);
@@ -509,11 +509,11 @@ describe('CMS Categories (e2e)', () => {
   // --- Permissions ---
 
   describe('Permissions', () => {
-    it('should return 401 without auth', async () => {
+    it('Без авторизации — 401', async () => {
       await e2e.agent.get('/cms/categories').expect(401);
     });
 
-    it('should return 403 for user without manageCms', async () => {
+    it('Пользователь без manageCms — 403', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -526,19 +526,19 @@ describe('CMS Categories (e2e)', () => {
   // --- Order ---
 
   describe('Order', () => {
-    it('should create category with default order 0', async () => {
+    it('создаёт категорию с order=0 по умолчанию', async () => {
       const res = await createCategory({ name: 'No Order' });
       expect(res.status).toBe(201);
       expect(res.body.order).toBe(0);
     });
 
-    it('should create category with explicit order', async () => {
+    it('создаёт категорию с явным order', async () => {
       const res = await createCategory({ name: 'Ordered', order: 10 });
       expect(res.status).toBe(201);
       expect(res.body.order).toBe(10);
     });
 
-    it('should update category order', async () => {
+    it('обновляет order категории', async () => {
       const id = randomUUID();
       const r = await createCategory({ id, name: 'Cat', order: 5 });
       expect(r.status).toBe(201);
@@ -560,7 +560,7 @@ describe('CMS Categories (e2e)', () => {
       expect(res.body.order).toBe(20);
     });
 
-    it('should list categories sorted by order asc, then name asc', async () => {
+    it('возвращает категории отсортированные по order ASC, затем по name ASC', async () => {
       const typeId = randomUUID();
       await createCategory({ name: 'Zebra', order: 10, allowedTypeIds: [typeId] });
       await createCategory({ name: 'Apple', order: 10, allowedTypeIds: [typeId] });
@@ -576,7 +576,7 @@ describe('CMS Categories (e2e)', () => {
       expect(names).toEqual(['Grape', 'Mango', 'Apple', 'Zebra']);
     });
 
-    it('should carry order through publish to discovery', async () => {
+    it('переносит order через publish в discovery', async () => {
       const id = randomUUID();
       const r = await createCategory({ id, name: 'Ordered Cat', order: 42 });
       expect(r.status).toBe(201);
@@ -588,12 +588,17 @@ describe('CMS Categories (e2e)', () => {
 
       await flushOutbox(e2e.app);
 
-      // Verify the published event carried the order by checking discovery endpoint
-      const discoveryRes = await e2e.agent.get('/categories').expect(200);
-      const cat = (discoveryRes.body as { categoryId: string }[]).find(
-        (c) => c.categoryId === id,
+      // Wait for discovery projection to consume the event
+      await vi.waitFor(
+        async () => {
+          const discoveryRes = await e2e.agent.get('/categories').expect(200);
+          const cat = (discoveryRes.body as { categoryId: string }[]).find(
+            (c) => c.categoryId === id,
+          );
+          expect(cat).toBeDefined();
+        },
+        { timeout: 10_000, interval: 200 },
       );
-      expect(cat).toBeDefined();
     });
 
   });

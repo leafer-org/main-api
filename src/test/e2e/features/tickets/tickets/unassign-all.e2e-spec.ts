@@ -14,7 +14,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
-describe('Ticket Unassign All (e2e)', () => {
+describe('ticket-management', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -110,8 +110,8 @@ describe('Ticket Unassign All (e2e)', () => {
 
   // ─── POST /admin/tickets/unassign-all ──────────────────────────────
 
-  describe('POST /admin/tickets/unassign-all', () => {
-    it('снимает назначение со всех тикетов текущего пользователя', async () => {
+  describe('Завершение сессии оператора', () => {
+    it('POST /admin/tickets/unassign-all снимает назначение со всех тикетов текущего пользователя', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -150,7 +150,7 @@ describe('Ticket Unassign All (e2e)', () => {
       expect(detail2.body.assigneeId).toBeNull();
     });
 
-    it('Нет назначенных тикетов — 204 без ошибки', async () => {
+    it('Нет назначенных тикетов — unassign-all возвращает 204 без ошибок', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -159,7 +159,7 @@ describe('Ticket Unassign All (e2e)', () => {
         .expect(204);
     });
 
-    it('Затрагивает только тикеты текущего пользователя', async () => {
+    it('unassign-all затрагивает только тикеты текущего пользователя, чужие не трогает', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent

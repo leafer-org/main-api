@@ -40,7 +40,7 @@ function makeItemModerationEvent(overrides?: { id?: string; itemId?: string; tit
   };
 }
 
-describe('Close & Redirect Subscription Firing (Kafka)', () => {
+describe('board-subscriptions', () => {
   let e2e: E2eApp;
   let producer: KafkaProducerService;
 

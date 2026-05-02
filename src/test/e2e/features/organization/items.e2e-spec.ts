@@ -17,7 +17,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
-describe('Organization Items (e2e)', () => {
+describe('organization-items', () => {
   let e2e: E2eApp;
   let adminToken: string;
 
@@ -67,7 +67,7 @@ describe('Organization Items (e2e)', () => {
   // ─── POST /organizations/:orgId/items ─────────────────────────────
 
   describe('POST /organizations/:orgId/items', () => {
-    it('should create an item with widgets', async () => {
+    it('создаёт item с виджетами', async () => {
       const user = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, user.accessToken);
       const itemType = await createItemType(e2e.agent, adminToken);
@@ -84,7 +84,7 @@ describe('Organization Items (e2e)', () => {
       expect(item.publication).toBeNull();
     });
 
-    it('should return 403 for non-employee', async () => {
+    it('возвращает 403 для не-сотрудника', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
       const itemType = await createItemType(e2e.agent, adminToken);
@@ -105,7 +105,7 @@ describe('Organization Items (e2e)', () => {
   // ─── GET /organizations/:orgId/items ──────────────────────────────
 
   describe('GET /organizations/:orgId/items', () => {
-    it('should list items for organization', async () => {
+    it('возвращает список item-ов организации', async () => {
       const user = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, user.accessToken);
       const itemType = await createItemType(e2e.agent, adminToken);
@@ -118,14 +118,15 @@ describe('Organization Items (e2e)', () => {
         .set('Authorization', `Bearer ${user.accessToken}`)
         .expect(200);
 
-      expect(res.body).toHaveLength(2);
-      expect(res.body[0]).toHaveProperty('itemId');
-      expect(res.body[0]).toHaveProperty('typeId');
-      expect(res.body[0].hasDraft).toBe(true);
-      expect(res.body[0].draftStatus).toBe('draft');
+      expect(res.body.items).toHaveLength(2);
+      expect(res.body.items[0]).toHaveProperty('itemId');
+      expect(res.body.items[0]).toHaveProperty('typeId');
+      expect(res.body.items[0].hasDraft).toBe(true);
+      expect(res.body.items[0].draftStatus).toBe('draft');
+      expect(res.body).toHaveProperty('nextCursor');
     });
 
-    it('should return empty list for org with no items', async () => {
+    it('возвращает пустой список для организации без item-ов', async () => {
       const user = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, user.accessToken);
 
@@ -134,14 +135,15 @@ describe('Organization Items (e2e)', () => {
         .set('Authorization', `Bearer ${user.accessToken}`)
         .expect(200);
 
-      expect(res.body).toHaveLength(0);
+      expect(res.body.items).toHaveLength(0);
+      expect(res.body.nextCursor).toBeNull();
     });
   });
 
   // ─── GET /organizations/:orgId/items/:itemId ──────────────────────
 
   describe('GET /organizations/:orgId/items/:itemId', () => {
-    it('should return item detail', async () => {
+    it('возвращает карточку item-а', async () => {
       const user = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, user.accessToken);
       const itemType = await createItemType(e2e.agent, adminToken);
@@ -157,7 +159,7 @@ describe('Organization Items (e2e)', () => {
       expect(res.body.draft.widgets[0].title).toBe('Test Item');
     });
 
-    it('should return 404 for non-existent item', async () => {
+    it('возвращает 404 для несуществующего item-а', async () => {
       const user = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, user.accessToken);
 
@@ -171,7 +173,7 @@ describe('Organization Items (e2e)', () => {
   // ─── PATCH /organizations/:orgId/items/:itemId ────────────────────
 
   describe('PATCH /organizations/:orgId/items/:itemId', () => {
-    it('should update item draft widgets', async () => {
+    it('обновляет виджеты draft-а', async () => {
       const user = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, user.accessToken);
       const itemType = await createItemType(e2e.agent, adminToken);
@@ -194,7 +196,7 @@ describe('Organization Items (e2e)', () => {
   // ─── DELETE /organizations/:orgId/items/:itemId ───────────────────
 
   describe('DELETE /organizations/:orgId/items/:itemId', () => {
-    it('should delete item draft', async () => {
+    it('удаляет draft item-а', async () => {
       const user = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, user.accessToken);
       const itemType = await createItemType(e2e.agent, adminToken);
@@ -216,7 +218,7 @@ describe('Organization Items (e2e)', () => {
   // ─── POST /organizations/:orgId/items/:itemId/submit-for-moderation
 
   describe('POST /organizations/:orgId/items/:itemId/submit-for-moderation', () => {
-    it('should submit item for moderation', async () => {
+    it('отправляет item на модерацию', async () => {
       const user = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, user.accessToken);
       const itemType = await createItemType(e2e.agent, adminToken);
@@ -238,7 +240,7 @@ describe('Organization Items (e2e)', () => {
       expect(res.body.draft.status).toBe('moderation-request');
     });
 
-    it('should return 403 for non-employee', async () => {
+    it('возвращает 403 для не-сотрудника', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
       const itemType = await createItemType(e2e.agent, adminToken);
@@ -256,7 +258,7 @@ describe('Organization Items (e2e)', () => {
   // ─── POST /organizations/:orgId/items/:itemId/unpublish ───────────
 
   describe('POST /organizations/:orgId/items/:itemId/unpublish', () => {
-    it('should return error when item has no publication', async () => {
+    it('возвращает ошибку если у item-а нет publication', async () => {
       const user = await registerUser(e2e.agent, FIXED_OTP);
       const org = await createOrganization(e2e.agent, user.accessToken);
       const itemType = await createItemType(e2e.agent, adminToken);
@@ -268,5 +270,7 @@ describe('Organization Items (e2e)', () => {
 
       expect(res.status).toBe(400);
     });
+
+    it.todo('снимает с публикации опубликованный item');
   });
 });

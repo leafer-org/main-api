@@ -1,0 +1,29 @@
+feature: CMS Cities
+code: cms-cities
+description: |
+  Справочник городов для публичной части приложения.
+
+  Города заводятся seed-скриптом / администратором напрямую в БД (id, name, lat, lng).
+  Публичный эндпоинт GET /cities возвращает все города, отсортированные по name.
+  Не требует авторизации — это публичный справочник.
+
+specs-unit:
+  Чтение списка городов:
+    - assert: возвращает пустой массив когда городов нет
+      description: |
+        GET /cities при пустой таблице возвращает [] и 200.
+    - assert: возвращает список городов
+      description: |
+        GET /cities возвращает все города с полями id, name, lat, lng.
+    - assert: возвращает города отсортированные по name
+      description: |
+        Сортировка по name ASC.
+    - assert: доступен без авторизации
+      description: |
+        Эндпоинт публичный — токен не требуется.
+
+definitions:
+  feature:
+    - cms-cities
+  section:
+    - cms

@@ -1,0 +1,39 @@
+feature: IDP Admin Users
+code: idp-admin-users
+description: |
+  Админский поиск пользователей через read-model в MeiliSearch.
+
+  Read-model обновляется асинхронно: при регистрации/изменении пользователя
+  в outbox пишется событие, которое после flush'а уезжает в Kafka, а консьюмер
+  обновляет индекс MeiliSearch. Endpoint GET /admin/users возвращает
+  массив users + total и поддерживает текстовый поиск (query) и пагинацию
+  (from/size).
+
+specs-unit:
+  GET /admin/users:
+    - assert: Без авторизации — 401
+      description: Без авторизации — 401.
+    - assert: Без права USER.MANAGE — 403
+      description: |
+        Обычному пользователю (роль USER) endpoint недоступен — 403.
+    - assert: Возвращает пустые результаты для админа
+      description: |
+        Админу всегда отдаётся 200 с полями users (массив) и total —
+        даже если зарегистрированных пользователей кроме самого админа нет.
+    - assert: Находит зарегистрированного пользователя по имени после проекции
+      description: |
+        После регистрации нового пользователя и flush'а outbox консьюмер
+        обновляет MeiliSearch. Поиск по query=fullName должен вернуть
+        пользователя с полями userId/phoneNumber/role/createdAt/updatedAt.
+        Для устойчивости теста используется vi.waitFor — проекция асинхронна.
+    - assert: Поддерживает пагинацию через from и size
+      description: |
+        Параметры from и size работают: при size=1 возвращается ровно
+        один элемент, total отражает общее число подходящих записей.
+
+definitions:
+  feature:
+    - idp-admin-users
+  section:
+    - idp
+    - admin

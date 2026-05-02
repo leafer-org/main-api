@@ -1,0 +1,49 @@
+feature: Organization Roles
+code: organization-roles
+description: |
+  CRUD ролей организации.
+
+  При создании организации автоматически создаётся системная роль ADMIN
+  со всем набором permissions (manage_employees, manage_roles,
+  edit_organization, publish_organization, edit_items, publish_items,
+  unpublish_items, manage_subscription).
+
+  ADMIN защищена: её нельзя удалить и (по контракту) изменить набор
+  permissions. Кастомные роли создаются с произвольным набором
+  permissions, при удалении требуется replacementRoleId — на неё
+  переводятся все сотрудники с удаляемой роли.
+
+specs-unit:
+  GET /organizations/:id/roles:
+    - assert: возвращает роль ADMIN после создания организации
+      description: |
+        Сразу после создания организации в ролях одна — ADMIN со
+        всеми permissions.
+
+  POST /organizations/:id/roles:
+    - assert: создаёт custom-роль с заданными permissions
+      description: |
+        Кастомная роль создаётся с произвольным набором permissions
+        (например, только edit_items + edit_organization).
+    - assert: возвращает 403 для не-сотрудника
+
+  PATCH /organizations/:id/roles/:roleId:
+    - assert: обновляет имя и permissions роли
+      description: |
+        Переименование и смена набора permissions у кастомной роли.
+
+  DELETE /organizations/:id/roles/:roleId:
+    - assert: удаляет custom-роль с replacement
+      description: |
+        При удалении кастомной роли передаём replacementRoleId — на неё
+        переводятся все сотрудники с удаляемой роли. После удаления
+        в списке ролей — только оставшиеся.
+    - assert: запрещает удаление роли ADMIN
+      description: |
+        Системную ADMIN-роль удалить нельзя даже с replacementRoleId — 400.
+
+definitions:
+  feature:
+    - organization-roles
+  section:
+    - organization

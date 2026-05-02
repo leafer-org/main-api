@@ -1,0 +1,90 @@
+feature: Organization Admin
+code: organization-admin
+description: |
+  Административные сценарии управления организациями.
+
+  Включает создание организации админом с claim-token (для onboarding),
+  регенерацию токена, claim организации пользователем, обход проверок
+  членства (ORGANIZATION.MANAGE bypass) для админ-доступа к карточке/
+  редактированию/удалению, модерацию информации (ORGANIZATION.MODERATE),
+  админское создание items в обход лимитов плана и unpublish организации.
+
+specs-unit:
+  POST /admin/organizations:
+    - assert: создаёт организацию с claim-токеном
+      description: |
+        Админ создаёт организацию через POST /admin/organizations.
+        В ответе — id и claimToken, по которому пользователь может
+        привязать организацию к себе.
+    - assert: возвращает 403 для обычного пользователя
+      description: Обычный пользователь без ORGANIZATION.MANAGE — 403.
+
+  POST /admin/organizations/:id/regenerate-token:
+    - assert: перегенерирует claim-токен
+      description: |
+        Админ может перегенерировать claim-token для непривязанной
+        организации; новый токен отличается от старого.
+    - assert: возвращает 403 для обычного пользователя
+
+  GET /admin/organizations/:id/claim-token:
+    - assert: возвращает claim-токен непривязанной организации
+    - assert: возвращает null после привязки организации
+      description: После claim токен сбрасывается (null).
+    - assert: возвращает обновлённый токен после регенерации
+    - assert: возвращает 403 для обычного пользователя
+    - assert: возвращает null для несуществующей организации
+      description: |
+        Несуществующая организация — 200 с claimToken=null.
+        Сделано, чтобы не светить факт существования через 404.
+
+  POST /organizations/claim:
+    - assert: привязывает организацию по токену
+      description: |
+        Пользователь привязывает админ-созданную организацию по токену
+        и становится её владельцем (employees содержит его как isOwner).
+    - assert: возвращает 400 при невалидном токене
+    - assert: возвращает 400 при попытке привязать уже привязанную организацию
+
+  Admin access to org endpoints (ORGANIZATION.MANAGE bypass):
+    - assert: админ читает любую организацию без членства
+      description: |
+        ORGANIZATION.MANAGE даёт админу доступ к карточкам любых
+        организаций без необходимости числиться сотрудником.
+    - assert: админ обновляет infoDraft без членства
+    - assert: админ удаляет организацию без членства
+
+  Moderation (ORGANIZATION.MODERATE + ORGANIZATION.MANAGE):
+    - assert: админ approve-ит модерацию info
+      description: |
+        После approve infoDraft переходит в draft, а infoPublication
+        заполняется опубликованной информацией.
+    - assert: админ reject-ит модерацию info
+      description: После reject infoDraft.status = rejected.
+    - assert: обычный пользователь не может approve-ить модерацию
+
+  POST /admin/organizations/:orgId/items:
+    - assert: создаёт item в обход лимитов плана
+      description: |
+        Админ создаёт item напрямую в любую организацию, лимиты плана
+        (maxPublishedItems и т.п.) не применяются. В draft появляются
+        widget'ы required по itemType.
+    - assert: возвращает 403 для обычного пользователя
+    - assert: возвращает 404 для несуществующей организации
+    - assert: возвращает 404 для несуществующего itemType
+
+  POST /organizations/:id/unpublish:
+    - assert: владелец снимает организацию с публикации
+      description: |
+        Owner снимает infoPublication с публикации; infoDraft при этом
+        не теряется.
+    - assert: админ снимает с публикации любую организацию
+      description: ORGANIZATION.MANAGE bypass — админ может снять
+        с публикации любую организацию.
+    - assert: возвращает 400 если организация не опубликована
+    - assert: возвращает 403 для не-сотрудника
+
+definitions:
+  feature:
+    - organization-admin
+  section:
+    - organization

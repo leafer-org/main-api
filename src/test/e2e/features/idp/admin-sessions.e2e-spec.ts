@@ -14,7 +14,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
-describe('Admin Sessions Controller (e2e)', () => {
+describe('idp-admin-sessions', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -59,7 +59,7 @@ describe('Admin Sessions Controller (e2e)', () => {
   // ─── GET /admin/users/:userId/sessions ──────────────────────────────
 
   describe('GET /admin/users/:userId/sessions', () => {
-    it('should return sessions of a user', async () => {
+    it('Возвращает сессии пользователя', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const { userId } = await registerUser(e2e.agent, FIXED_OTP);
 
@@ -75,7 +75,7 @@ describe('Admin Sessions Controller (e2e)', () => {
       expect(res.body.sessions[0]).toHaveProperty('expiresAt');
     });
 
-    it('should return empty sessions for user with no active sessions', async () => {
+    it('Возвращает пустой массив для пользователя без активных сессий', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
@@ -86,11 +86,11 @@ describe('Admin Sessions Controller (e2e)', () => {
       expect(res.body.sessions).toEqual([]);
     });
 
-    it('should return 401 without auth token', async () => {
+    it('Без авторизации — 401', async () => {
       await e2e.agent.get('/admin/users/00000000-0000-0000-0000-000000000000/sessions').expect(401);
     });
 
-    it('should return 403 for regular user without SESSION.MANAGE=all', async () => {
+    it('Без права SESSION.MANAGE=all — 403', async () => {
       const { accessToken, userId } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -103,7 +103,7 @@ describe('Admin Sessions Controller (e2e)', () => {
   // ─── DELETE /admin/users/:userId/sessions/:sessionId ────────────────
 
   describe('DELETE /admin/users/:userId/sessions/:sessionId', () => {
-    it('should delete a specific session', async () => {
+    it('Удаляет конкретную сессию', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const { userId } = await registerUser(e2e.agent, FIXED_OTP);
 
@@ -130,7 +130,7 @@ describe('Admin Sessions Controller (e2e)', () => {
       expect(afterRes.body.sessions).toHaveLength(0);
     });
 
-    it('should invalidate user token after session deletion', async () => {
+    it('Инвалидирует токен пользователя после удаления сессии', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const { accessToken: userToken, userId } = await registerUser(e2e.agent, FIXED_OTP);
 
@@ -152,7 +152,7 @@ describe('Admin Sessions Controller (e2e)', () => {
       await e2e.agent.get('/me').set('Authorization', `Bearer ${userToken}`).expect(401);
     });
 
-    it('should return 403 for regular user', async () => {
+    it('Обычному пользователю — 403', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -165,7 +165,7 @@ describe('Admin Sessions Controller (e2e)', () => {
   // ─── DELETE /admin/users/:userId/sessions ───────────────────────────
 
   describe('DELETE /admin/users/:userId/sessions', () => {
-    it('should delete all sessions of a user', async () => {
+    it('Удаляет все сессии пользователя', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const { userId } = await registerUser(e2e.agent, FIXED_OTP);
 
@@ -192,7 +192,7 @@ describe('Admin Sessions Controller (e2e)', () => {
       expect(afterRes.body.sessions).toHaveLength(0);
     });
 
-    it('should invalidate user token after all sessions deleted', async () => {
+    it('Инвалидирует токен пользователя после удаления всех сессий', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const { accessToken: userToken, userId } = await registerUser(e2e.agent, FIXED_OTP);
 
@@ -206,7 +206,7 @@ describe('Admin Sessions Controller (e2e)', () => {
       await e2e.agent.get('/me').set('Authorization', `Bearer ${userToken}`).expect(401);
     });
 
-    it('should return 204 even if user has no sessions', async () => {
+    it('Возвращает 204, даже если у пользователя нет сессий', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -215,7 +215,7 @@ describe('Admin Sessions Controller (e2e)', () => {
         .expect(204);
     });
 
-    it('should return 403 for regular user', async () => {
+    it('Обычному пользователю — 403', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent

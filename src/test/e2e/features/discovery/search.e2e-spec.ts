@@ -39,7 +39,7 @@ function sleep(t = 100) {
   return new Promise((res) => setTimeout(() => res(undefined), t));
 }
 
-describe('Discovery Search HTTP (e2e)', () => {
+describe('discovery-search', () => {
   let app: INestApplication;
   let agent: ReturnType<typeof request>;
   let producer: KafkaProducerService;
@@ -191,7 +191,7 @@ describe('Discovery Search HTTP (e2e)', () => {
   // ─── GET /search ──────────────────────────────────────────────
 
   describe('GET /search', () => {
-    it('should return matching items by text query', async () => {
+    it('возвращает items по текстовому запросу', async () => {
       const { itemId } = await seedItem({ title: 'Yoga class morning' });
 
       const res = await agent.get('/search').query({ query: 'Yoga', cityId: CITY_ID }).expect(200);
@@ -201,7 +201,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       expect(res.body.total).toBe(1);
     });
 
-    it('should return empty results for non-matching query', async () => {
+    it('возвращает пустой результат при отсутствии совпадений', async () => {
       await seedItem({ title: 'Cooking lesson' });
 
       const res = await agent
@@ -214,7 +214,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       expect(res.body.nextCursor).toBeNull();
     });
 
-    it('should filter by cityId', async () => {
+    it('фильтрует по cityId', async () => {
       await seedItem({ title: 'City A item', cityId: 'city-a' });
       await seedItem({ title: 'City B item', cityId: 'city-b' });
 
@@ -224,7 +224,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       expect(res.body.items[0].title).toBe('City A item');
     });
 
-    it('should filter by ageGroup (default is adults)', async () => {
+    it('фильтрует по ageGroup (по умолчанию adults)', async () => {
       await seedItem({ title: 'Adults dance', ageGroup: 'adults' });
       await seedItem({ title: 'Children dance', ageGroup: 'children' });
 
@@ -234,7 +234,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       expect(res.body.items[0].title).toBe('Adults dance');
     });
 
-    it('should include ageGroup "all" items in any search', async () => {
+    it('включает items с ageGroup=all в любую выдачу', async () => {
       await seedItem({ title: 'Universal art', ageGroup: 'all' });
       await seedItem({ title: 'Kids art', ageGroup: 'children' });
 
@@ -258,7 +258,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       expect(titles).toEqual(['Kids art', 'Universal art']);
     });
 
-    it('should filter by categoryIds', async () => {
+    it('фильтрует по categoryIds', async () => {
       const catA = randomUUID();
       const catB = randomUUID();
 
@@ -274,7 +274,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       expect(res.body.items[0].title).toBe('Cat A item');
     });
 
-    it('should filter by typeIds', async () => {
+    it('фильтрует по typeIds', async () => {
       const typeA = randomUUID();
       const typeB = randomUUID();
 
@@ -290,7 +290,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       expect(res.body.items[0].title).toBe('Type A service');
     });
 
-    it('should filter by price range', async () => {
+    it('фильтрует по диапазону цены', async () => {
       await seedItem({ title: 'Cheap workshop', paymentStrategy: 'one-time', price: 500 });
       await seedItem({ title: 'Mid workshop', paymentStrategy: 'one-time', price: 1500 });
       await seedItem({ title: 'Expensive workshop', paymentStrategy: 'one-time', price: 5000 });
@@ -304,7 +304,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       expect(res.body.items[0].title).toBe('Mid workshop');
     });
 
-    it('should paginate with cursor', async () => {
+    it('пагинация курсором', async () => {
       await seedItem({ title: 'Paginate alpha' });
       await seedItem({ title: 'Paginate beta' });
       await seedItem({ title: 'Paginate gamma' });
@@ -335,7 +335,7 @@ describe('Discovery Search HTTP (e2e)', () => {
       expect(new Set(allIds).size).toBe(3);
     });
 
-    it('should return correct response shape', async () => {
+    it('возвращает корректную структуру ответа', async () => {
       const { itemId } = await seedItem({
         title: 'Shape test item',
         description: 'A detailed description',

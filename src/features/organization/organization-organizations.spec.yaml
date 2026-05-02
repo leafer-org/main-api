@@ -1,0 +1,46 @@
+feature: Organizations (owner)
+code: organization-organizations
+description: |
+  Базовые операции владельца организации: самостоятельное создание
+  организации с дефолтной free-подпиской, чтение карточки, правка
+  черновика info и подача на модерацию.
+
+  При самостоятельном создании организация сразу принадлежит автору
+  (employees: один сотрудник с isOwner=true) и получает дефолтную
+  подписку free (maxEmployees=1, maxPublishedItems=3).
+  Также автоматически создаётся системная роль ADMIN со всеми
+  permissions.
+
+specs-unit:
+  POST /organizations:
+    - assert: создаёт организацию с дефолтной free-подпиской
+      description: |
+        В ответе — id, infoDraft (status=draft, без публикации),
+        subscription (planId=free), один employee (isOwner=true),
+        одна роль ADMIN.
+    - assert: возвращает 401 без авторизации
+
+  GET /organizations/:id:
+    - assert: возвращает карточку организации владельцу
+    - assert: возвращает ошибку для не-сотрудника
+      description: Чужой пользователь без членства — 403.
+
+  PATCH /organizations/:id:
+    - assert: обновляет infoDraft
+      description: |
+        Меняем name/description/avatarId; обновляется только infoDraft,
+        статус остаётся draft.
+    - assert: возвращает 403 для не-сотрудника
+
+  POST /organizations/:id/submit-for-moderation:
+    - assert: отправляет info на модерацию
+      description: |
+        После submit infoDraft.status переходит в moderation-request.
+        Дальше approve/reject делает админ (см. organization-admin).
+    - assert: возвращает 403 для не-сотрудника
+
+definitions:
+  feature:
+    - organization-organizations
+  section:
+    - organization

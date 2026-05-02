@@ -41,7 +41,7 @@ function sleep(t = 100) {
   return new Promise((res) => setTimeout(() => res(undefined), t));
 }
 
-describe('Discovery Category Items HTTP (e2e)', () => {
+describe('discovery-category-items', () => {
   let app: INestApplication;
   let agent: ReturnType<typeof request>;
   let producer: KafkaProducerService;
@@ -194,7 +194,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
   // ─── GET /categories/:id/items ────────────────────────────────────
 
   describe('GET /categories/:id/items', () => {
-    it('should return empty result for category with no items', async () => {
+    it('возвращает пустой результат для категории без items', async () => {
       const categoryId = randomUUID();
       await seedCategory({ categoryId });
 
@@ -207,7 +207,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
       expect(res.body.nextCursor).toBeNull();
     });
 
-    it('should return items belonging to category with correct structure', async () => {
+    it('возвращает items категории с корректной структурой', async () => {
       const categoryId = randomUUID();
       const typeId = randomUUID();
       const orgId = randomUUID();
@@ -242,11 +242,12 @@ describe('Discovery Category Items HTTP (e2e)', () => {
       expect(item.owner).toMatchObject({ name: 'Org', avatarUrl: null });
       expect(item.categoryIds).toContain(categoryId);
     });
+  });
 
     // ─── Sorting ──────────────────────────────────────────────────
 
     describe('sorting', () => {
-      it('sort=newest should return items ordered by publishedAt descending', async () => {
+      it('sort=newest сортирует items по publishedAt по убыванию', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -279,7 +280,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
         expect(res.body.items[2].itemId).toBe(ids[0]);
       });
 
-      it('sort=price-asc should return items ordered by price ascending', async () => {
+      it('sort=price-asc сортирует items по price по возрастанию', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -309,7 +310,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
         expect(res.body.items[2].itemId).toBe(expensiveId);
       });
 
-      it('sort=price-desc should return items ordered by price descending', async () => {
+      it('sort=price-desc сортирует items по price по убыванию', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -336,7 +337,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
         expect(res.body.items[1].itemId).toBe(cheapId);
       });
 
-      it('sort=rating-desc should return items ordered by rating descending', async () => {
+      it('sort=rating-desc сортирует items по rating по убыванию', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -361,7 +362,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
     // ─── Filtering ────────────────────────────────────────────────
 
     describe('filtering', () => {
-      it('should filter by typeIds', async () => {
+      it('фильтрует по typeIds', async () => {
         const categoryId = randomUUID();
         const typeA = randomUUID();
         const typeB = randomUUID();
@@ -382,7 +383,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
         expect(res.body.items[0].itemId).toBe(itemA);
       });
 
-      it('should filter by priceMin and priceMax', async () => {
+      it('фильтрует по priceMin и priceMax', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -416,7 +417,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
         expect(res.body.items[0].itemId).toBe(midId);
       });
 
-      it('should filter by minRating', async () => {
+      it('фильтрует по minRating', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -445,7 +446,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
     // ─── Pagination ───────────────────────────────────────────────
 
     describe('pagination', () => {
-      it('should paginate with cursor', async () => {
+      it('пагинация курсором', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -518,7 +519,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
     // ─── AgeGroup isolation ──────────────────────────────────────
 
     describe('ageGroup isolation', () => {
-      it('should not return adults items when querying ageGroup=children', async () => {
+      it('не возвращает adults items при ageGroup=children', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -540,7 +541,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
         expect(res.body.items).toEqual([]);
       });
 
-      it('should not return children items when querying ageGroup=adults', async () => {
+      it('не возвращает children items при ageGroup=adults', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -562,7 +563,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
         expect(res.body.items).toEqual([]);
       });
 
-      it('should return ageGroup=all items for both children and adults queries', async () => {
+      it('возвращает items с ageGroup=all для обеих аудиторий', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -594,7 +595,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
     // ─── City isolation ───────────────────────────────────────────
 
     describe('city isolation', () => {
-      it('should not return items from a different city', async () => {
+      it('не возвращает items из другого города', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -620,7 +621,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
     // ─── Combined filters ─────────────────────────────────────────
 
     describe('combined filters', () => {
-      it('should filter by typeIds AND priceRange simultaneously', async () => {
+      it('фильтрует по typeIds AND priceRange одновременно', async () => {
         const categoryId = randomUUID();
         const typeA = randomUUID();
         const typeB = randomUUID();
@@ -670,7 +671,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
         expect(res.body.items[0].itemId).toBe(matchId);
       });
 
-      it('should filter by minRating AND typeIds simultaneously', async () => {
+      it('фильтрует по minRating AND typeIds одновременно', async () => {
         const categoryId = randomUUID();
         const typeA = randomUUID();
         const orgId = randomUUID();
@@ -712,7 +713,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
     // ─── Defaults ─────────────────────────────────────────────────
 
     describe('defaults', () => {
-      it('should work with default sort (personal) and fallback to SQL', async () => {
+      it('работает с дефолтным sort (personal) с fallback на SQL', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -728,7 +729,7 @@ describe('Discovery Category Items HTTP (e2e)', () => {
         expect(res.body.items).toHaveLength(1);
       });
 
-      it('should use default limit of 20', async () => {
+      it('использует дефолтный limit 20', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
         const orgId = randomUUID();
@@ -746,5 +747,4 @@ describe('Discovery Category Items HTTP (e2e)', () => {
         expect(res.body.nextCursor).toBeNull();
       });
     });
-  });
 });

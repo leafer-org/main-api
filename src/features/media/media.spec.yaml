@@ -1,0 +1,102 @@
+feature: Media
+code: media
+description: |
+  Управление медиа-файлами (изображения и документы) — загрузка через
+  presigned POST в S3, подтверждение загрузки с извлечением метаданных
+  изображения, генерация предпросмотровых ссылок и доставка изображений
+  через imgproxy с подписанными URL.
+
+  Жизненный цикл файла:
+    1. Клиент инициирует загрузку (upload-request) — сервис создаёт запись
+       в БД и возвращает fileId + presigned POST в bucket media-public-temp.
+    2. Клиент заливает файл напрямую в S3 по полученным uploadUrl/uploadFields.
+    3. Для изображений вызывается upload-complete — сервер скачивает файл,
+       извлекает width/height/mimeType (через image probe) и обновляет запись.
+    4. До «использования» файл лежит во временном bucket. Когда домен
+       привязывает файл к сущности (MediaService.useFiles внутри транзакции) —
+       файл переезжает в постоянный bucket (media-public для PUBLIC visibility).
+
+  Доставка:
+    - Для изображений с указанными опциями imageProxy — URL через imgproxy
+      с подписью (формат `rs:fit:W:H`, опциональный формат вывода `@webp`).
+    - Для не-изображений или без imageProxy — прямой presigned S3 URL.
+
+  Mime-типы валидируются по RFC-формату `type/subtype`. Имя файла — 1..255 символов.
+
+specs-unit:
+  # ==================== ЗАПРОС ЗАГРУЗКИ ====================
+
+  POST /media/image/upload-request:
+    - assert: Создаёт запись файла и возвращает fileId с presigned POST данными
+      description: |
+        Body: { name, mimeType }.
+        Ответ: { fileId, uploadUrl, uploadFields }.
+        fileId — UUID v4. uploadUrl указывает на bucket media-public-temp
+        в S3. uploadFields содержит как минимум Content-Type, равный mimeType.
+        Запись в БД создаётся в статусе «загружается», файл ещё не загружен.
+    - assert: Невалидный mimeType — 400 invalid_mime_type
+      description: |
+        Mime-тип должен соответствовать формату type/subtype. Произвольные
+        строки вроде `not-a-mime` отклоняются на уровне валидации DTO.
+    - assert: Пустое имя файла — 400
+    - assert: Имя файла длиннее 255 символов — 400
+
+  # ==================== ПОДТВЕРЖДЕНИЕ ЗАГРУЗКИ ====================
+
+  POST /media/image/upload-complete:
+    - assert: Извлекает width, height и mimeType из загруженного изображения
+      description: |
+        Body: { mediaId }.
+        Сервер скачивает файл из временного bucket, прогоняет через image probe
+        и сохраняет width, height, фактический mimeType в БД.
+        Ответ: { mediaId, width, height, mimeType }.
+    - assert: Несуществующий mediaId — 404
+    - assert: Вызов на не-изображении (видео) — 400 media_not_image
+      description: |
+        upload-complete для image работает только с записями типа image.
+        Для видео-медиа (созданных через /media/video/upload-init) ручка
+        возвращает media_not_image.
+
+  # ==================== ПРЕДПРОСМОТР ====================
+
+  GET /media/preview/:mediaId:
+    - assert: Возвращает presigned URL предпросмотра для временного файла
+      description: |
+        Ответ: { url } — presigned S3 URL на файл во временном bucket.
+        Используется UI-ом до подтверждения/закрепления файла за сущностью.
+    - assert: Несуществующий mediaId — 404
+
+  # ==================== IMAGE PROXY ====================
+
+  Image Proxy (via MediaService):
+    - assert: Генерирует подписанный imgproxy URL с параметрами resize
+      description: |
+        После useFiles (перевод файла в постоянный bucket media-public)
+        getDownloadUrl с опциями imageProxy: { width, height } возвращает
+        URL вида `<MEDIA_IMAGE_PROXY_URL>/<signature>/rs:fit:W:H/.../plain/s3://media-public/...`.
+        Подпись присутствует — путь `/insecure/` не используется.
+    - assert: Генерирует разные URL для разных размеров
+      description: |
+        getDownloadUrls батчем для одного fileId с разными width/height
+        возвращает разные URL. Каждый содержит соответствующий `rs:fit:W:H`.
+    - assert: Не-изображения отдаются напрямую, минуя прокси
+      description: |
+        Для файлов с mimeType, не относящимся к image/* (например application/pdf),
+        getDownloadUrl возвращает прямой presigned S3 URL — даже если переданы
+        опции imageProxy. URL содержит S3_ENDPOINT и не содержит MEDIA_IMAGE_PROXY_URL.
+    - assert: Отдаёт ресайзнутое изображение через imgproxy
+      description: |
+        URL c опцией format: 'webp' содержит сегмент `@webp`. GET по этому URL
+        реально возвращает 200 и Content-Type image/webp — imgproxy фактически
+        обрабатывает файл и стримит результат.
+    - assert: Без опций imageProxy — presigned S3 URL напрямую
+      description: |
+        getDownloadUrl без поля imageProxy возвращает прямой presigned URL
+        к bucket'у, даже для изображений. Прокси подключается только когда
+        запрошены трансформации.
+
+definitions:
+  feature:
+    - media
+  section:
+    - media

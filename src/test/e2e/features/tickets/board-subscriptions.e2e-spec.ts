@@ -158,7 +158,7 @@ describe('Board Subscriptions', () => {
         .expect(204);
     });
 
-    it('addComment=true — при срабатывании в историю тикета добавляется комментарий', async () => {
+    it('addComment=true сохраняется в подписке закрытия', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const board = await createBoard(accessToken);
 

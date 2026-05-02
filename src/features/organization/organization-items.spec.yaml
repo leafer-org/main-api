@@ -1,0 +1,62 @@
+feature: Organization Items
+code: organization-items
+description: |
+  CRUD для items организации: создание с виджетами, список, детальная
+  карточка, обновление черновика, удаление, отправка на модерацию,
+  снятие с публикации.
+
+  Item создаётся в состоянии draft (status=draft), publication=null.
+  После approve-moderation у item появляется publication, после
+  unpublish — снова сбрасывается в null.
+
+specs-unit:
+  POST /organizations/:orgId/items:
+    - assert: создаёт item с виджетами
+      description: |
+        Создаём item с типом и виджетами (минимум base-info).
+        В ответе — itemId, organizationId, typeId, draft (status=draft,
+        widgets), publication=null.
+    - assert: возвращает 403 для не-сотрудника
+
+  GET /organizations/:orgId/items:
+    - assert: возвращает список item-ов организации
+      description: |
+        Список item'ов организации; в выдаче есть itemId, typeId,
+        hasDraft, draftStatus.
+    - assert: возвращает пустой список для организации без item-ов
+
+  GET /organizations/:orgId/items/:itemId:
+    - assert: возвращает карточку item-а
+    - assert: возвращает 404 для несуществующего item-а
+
+  PATCH /organizations/:orgId/items/:itemId:
+    - assert: обновляет виджеты draft-а
+      description: |
+        Обновление виджетов draft'а (название/описание/медиа), статус
+        draft не меняется.
+
+  DELETE /organizations/:orgId/items/:itemId:
+    - assert: удаляет draft item-а
+      description: |
+        Удалённый item не возвращается ни в детали (404), ни в списке.
+
+  POST /organizations/:orgId/items/:itemId/submit-for-moderation:
+    - assert: отправляет item на модерацию
+      description: |
+        После submit draft.status = moderation-request. Approve/reject
+        делает админ.
+    - assert: возвращает 403 для не-сотрудника
+
+  POST /organizations/:orgId/items/:itemId/unpublish:
+    - assert: возвращает ошибку если у item-а нет publication
+      description: Если у item ещё нет publication — unpublish даёт 400.
+    - assert: снимает с публикации опубликованный item
+      description: |
+        После approve-moderation у item появляется publication; unpublish
+        сбрасывает её в null, draft сохраняется.
+
+definitions:
+  feature:
+    - organization-items
+  section:
+    - organization

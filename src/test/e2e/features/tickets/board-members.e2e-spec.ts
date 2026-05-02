@@ -67,9 +67,10 @@ describe('Board Members', () => {
     return res.body;
   }
 
-  // ─── Board Members ─────────────────────────────────────────────────
+  // ─── CRUD участников ───────────────────────────────────────────────
 
-  it('POST /admin/boards/:boardId/members добавляет участника по телефону', async () => {
+  describe('CRUD участников', () => {
+  it('POST /admin/boards/:boardId/members добавляет участника по номеру телефона', async () => {
     const { userId } = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000099' });
     const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
     const board = await createBoard(accessToken);
@@ -117,7 +118,7 @@ describe('Board Members', () => {
     expect(res.body.type).toBe('member_already_exists');
   });
 
-  it('DELETE /admin/boards/:boardId/members/:userId удаляет участника, 204', async () => {
+  it('DELETE /admin/boards/:boardId/members/:userId удаляет участника, возвращает 204', async () => {
     const { userId } = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000099' });
     const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
     const board = await createBoard(accessToken);
@@ -151,5 +152,6 @@ describe('Board Members', () => {
       .expect(404);
 
     expect(res.body.type).toBe('member_not_found');
+  });
   });
 });

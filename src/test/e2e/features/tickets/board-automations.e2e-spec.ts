@@ -67,8 +67,9 @@ describe('Board Automations', () => {
     return res.body;
   }
 
-  // ─── тесты автоматизаций ───────────────────────────────────────────
+  // ─── CRUD автоматизаций ────────────────────────────────────────────
 
+  describe('CRUD автоматизаций', () => {
   it('PUT /admin/boards/:boardId/automation добавляет автоматизацию', async () => {
     const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
     const board = await createBoard(accessToken, 'Main Board');
@@ -116,7 +117,7 @@ describe('Board Automations', () => {
     expect(res.body.automations[0].onUncertain.moveToBoardId).toBeNull();
   });
 
-  it('DELETE /admin/boards/:boardId/automation/:automationId удаляет автоматизацию, 204', async () => {
+  it('DELETE /admin/boards/:boardId/automation/:automationId удаляет автоматизацию, возвращает 204', async () => {
     const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
     const board = await createBoard(accessToken);
 
@@ -155,5 +156,6 @@ describe('Board Automations', () => {
       .expect(404);
 
     expect(res.body.type).toBe('automation_not_found');
+  });
   });
 });

@@ -1,0 +1,42 @@
+feature: Discovery Item Detail HTTP
+code: discovery-item-detail
+description: |
+  Эндпоинт `GET /items/:itemId` — детальная карточка товара со всеми
+  виджетами, как они опубликованы. Виджеты возвращаются в виде массива
+  с разнотипными элементами; набор зависит от того, что было передано
+  при публикации.
+
+  Поддерживаемые виджеты: `base-info`, `owner`, `category`, `location`,
+  `age-group`, `payment`, `item-review`, `owner-review`, `event-date-time`,
+  `schedule`.
+
+specs-unit:
+  GET /items/:itemId:
+    - assert: возвращает 404 для несуществующего item
+      description: |
+        Несуществующий `itemId` — 404 с `type: 'item_not_found'`.
+    - assert: возвращает детальную карточку со всеми widgets
+      description: |
+        Полный набор виджетов виден в выдаче: base-info, owner, location,
+        age-group, payment, category, item-review, owner-review,
+        event-date-time, schedule.
+    - assert: возвращает только base-info и owner для минимального item
+      description: |
+        Минимальный item (только base-info и owner) — в виджетах нет
+        location/payment/schedule/event-date-time.
+    - assert: возвращает корректные данные widgets
+      description: |
+        Содержимое виджетов отдаётся as-is: `base-info` (title,
+        description, media), `payment` (options/strategy/price),
+        `owner` (organizationId/name/avatarId/avatarUrl), `item-review`
+        (rating, reviewCount), `schedule.entries`.
+    - assert: возвращает разные наборы widgets для разных items
+      description: |
+        Один item может иметь `event-date-time` без `schedule`, другой —
+        наоборот. Лишние виджеты не подмешиваются.
+
+definitions:
+  feature:
+    - discovery-item-detail
+  section:
+    - discovery

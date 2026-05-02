@@ -1,0 +1,93 @@
+feature: Discovery Feed HTTP
+code: discovery-feed
+description: |
+  Эндпоинт `GET /feed` — главная лента (рекомендации Gorse + фолбэк).
+
+  Режимы выдачи:
+    - анонимный пользователь → популярные товары для гео-категории (h3),
+    - авторизованный → персональные рекомендации Gorse,
+    - нет данных в Gorse → пустой список (без падений).
+
+  Гео-категория считается из (lat, lng, ageGroup); пользовательские
+  координаты пишутся в Gorse как лейблы `h3:4:*`, `h3:5:*` при регистрации
+  и обновлении профиля.
+
+specs-unit:
+  GET /feed (fallback):
+    - assert: возвращает пустой список при отсутствии items в Gorse
+      description: "Пустой Gorse — пустой ответ, `nextCursor: null`, без 5xx."
+
+  GET /feed (popular):
+    - assert: возвращает popular items для анонимного пользователя
+      description: |
+        Для анонима возвращаются популярные товары соответствующей
+        гео-категории (h3 + ageGroup).
+    - assert: возвращает items с корректной структурой
+      description: |
+        Каждый item содержит `itemId`, `title`, `description`, `typeId`,
+        `media`, `hasVideo`, `owner.name`, `owner.avatarUrl`.
+    - assert: учитывает параметр limit
+      description: Параметр `limit` ограничивает размер страницы.
+    - assert: пагинация курсором
+      description: |
+        Курсорная пагинация: следующая страница берётся по `nextCursor`.
+    - assert: возвращает 200 с дефолтным limit, если не задан
+      description: Лимит по умолчанию — выдаёт минимум 1 элемент при наличии данных.
+    - assert: возвращает пусто для ageGroup=children когда все items только adults
+      description: Изоляция возрастных групп.
+    - assert: по умолчанию ageGroup=adults, если не задан
+      description: Возрастная группа по умолчанию — `adults`.
+    - assert: возвращает пусто для координат вдали от seeded items
+      description: |
+        Координаты в другой H3-ячейке (Tokyo vs Moscow на res 3) —
+        пустой ответ.
+    - assert: возвращает пустые items, когда курсор за пределами данных
+      description: "Курсор за пределами данных — `items: []`, `nextCursor: null`."
+    - assert: не возвращает дубликаты items между страницами
+      description: Между страницами не должно быть пересечений.
+    - assert: обрабатывает items, удалённые из DB, но присутствующие в Gorse
+      description: |
+        Если Gorse знает про item, а в DB его уже нет — фильтруется
+        на этапе hydrate, не падает.
+
+  GET /feed (age groups):
+    - assert: возвращает children items при ageGroup=children
+      description: |
+        При `ageGroup=children` возвращаются товары с возрастной
+        группой `children` для соответствующей H3-категории.
+
+  GET /feed (geo fallback):
+    - assert: возвращает пусто без координат и при cityId без известных координат
+      description: |
+        Нет координат и `cityId` не зарегистрирован в `cmsCities` —
+        используется global-категория, без популярных в ней — пусто.
+    - assert: возвращает пусто для полностью неизвестного cityId без координат
+      description: Совсем неизвестный `cityId` без координат — пустой ответ.
+
+  GET /feed (personalized):
+    - assert: возвращает personalized рекомендации для авторизованного пользователя
+      description: |
+        У авторизованного пользователя на основании его лайков
+        Gorse выдаёт персональные рекомендации.
+    - assert: возвращает items с корректной структурой для авторизованного пользователя
+      description: |
+        Структура item: `itemId`, `title`, `media`, `owner.name`,
+        `owner.avatarUrl`.
+
+  User geo labels in Gorse:
+    - assert: записывает h3-лейблы в Gorse при регистрации с координатами
+      description: |
+        После регистрации с координатами в Gorse-юзере появляются
+        лейблы `h3:4:*` и `h3:5:*`.
+    - assert: обновляет h3-лейблы после PATCH /me/profile с новыми координатами
+      description: |
+        Обновление координат профиля переписывает лейблы; набор
+        отличается от исходного при смене города.
+    - assert: регистрирует без координат и без h3-лейблов
+      description: Регистрация без координат — без `h3:*` лейблов.
+
+definitions:
+  feature:
+    - discovery-feed
+  section:
+    - discovery

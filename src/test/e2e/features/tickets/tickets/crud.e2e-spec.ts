@@ -14,7 +14,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
-describe('Ticket CRUD (e2e)', () => {
+describe('ticket-management', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -110,8 +110,8 @@ describe('Ticket CRUD (e2e)', () => {
 
   // ─── POST /admin/tickets ───────────────────────────────────────────
 
-  describe('POST /admin/tickets', () => {
-    it('should create a ticket manually on a board with manualCreation', async () => {
+  describe('Создание тикета', () => {
+    it('POST /admin/tickets создаёт тикет на доске с manualCreation=true', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const { userId } = await registerUser(e2e.agent, FIXED_OTP);
 
@@ -156,7 +156,7 @@ describe('Ticket CRUD (e2e)', () => {
       expect(ticket.status).toBe('open');
     });
 
-    it('should reject ticket creation on a board without manualCreation', async () => {
+    it('Доска с manualCreation=false — ошибка 400 manual_creation_not_allowed', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Create board with manualCreation: false
@@ -181,7 +181,7 @@ describe('Ticket CRUD (e2e)', () => {
       expect(res.body.type).toBe('manual_creation_not_allowed');
     });
 
-    it('should reject ticket creation by non-member', async () => {
+    it('Создатель не является участником доски — ошибка 403 not_a_board_member', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       // Board with manualCreation but admin is NOT a member
@@ -206,14 +206,14 @@ describe('Ticket CRUD (e2e)', () => {
       expect(res.body.type).toBe('not_a_board_member');
     });
 
-    it('should return 401 without auth', async () => {
+    it('POST /admin/tickets без авторизации — 401', async () => {
       await e2e.agent
         .post('/admin/tickets')
         .send({ boardId: '00000000-0000-0000-0000-000000000000', message: 'Test', data: {} })
         .expect(401);
     });
 
-    it('should return 403 for user without TICKET.MANAGE', async () => {
+    it('POST /admin/tickets без TICKET.MANAGE — 403', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -226,8 +226,8 @@ describe('Ticket CRUD (e2e)', () => {
 
   // ─── GET /admin/tickets ────────────────────────────────────────────
 
-  describe('GET /admin/tickets', () => {
-    it('should return list of tickets', async () => {
+  describe('Список тикетов', () => {
+    it('GET /admin/tickets возвращает список с пагинацией (from, size)', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -251,7 +251,7 @@ describe('Ticket CRUD (e2e)', () => {
       expect(res.body.total).toBe(2);
     });
 
-    it('should filter tickets by boardId', async () => {
+    it('GET /admin/tickets?boardId= фильтрует по доске', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -291,7 +291,7 @@ describe('Ticket CRUD (e2e)', () => {
       expect(res.body.tickets[0].message).toBe('On A');
     });
 
-    it('should filter tickets by status', async () => {
+    it('GET /admin/tickets?status= фильтрует по статусу (open/in-progress/done)', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -325,7 +325,7 @@ describe('Ticket CRUD (e2e)', () => {
       expect(inProgressRes.body.tickets[0].ticketId).toBe(ticket2.ticketId);
     });
 
-    it('should filter tickets by assigneeId', async () => {
+    it('GET /admin/tickets?assigneeId= фильтрует по исполнителю', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -354,8 +354,8 @@ describe('Ticket CRUD (e2e)', () => {
 
   // ─── GET /admin/tickets/:ticketId ──────────────────────────────────
 
-  describe('GET /admin/tickets/:ticketId', () => {
-    it('should return ticket detail with history', async () => {
+  describe('Список тикетов', () => {
+    it('GET /admin/tickets/:ticketId возвращает полные данные тикета с историей', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const meRes = await e2e.agent
@@ -382,7 +382,7 @@ describe('Ticket CRUD (e2e)', () => {
       expect(res.body.history[0].action).toBe('created');
     });
 
-    it('should return 404 for non-existent ticket', async () => {
+    it('GET /admin/tickets/:ticketId — несуществующий тикет — 404', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       await e2e.agent

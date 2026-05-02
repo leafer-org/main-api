@@ -1,0 +1,43 @@
+feature: IDP Block User
+code: idp-block-user
+description: |
+  Админская блокировка/разблокировка пользователей.
+
+  Блокировка немедленно удаляет все активные сессии пользователя и
+  запрещает дальнейший вход: даже после успешной верификации OTP
+  /auth/verify-otp возвращает 403 user_blocked с указанной причиной
+  (data.reason). Разблокировка восстанавливает возможность логина.
+
+  Доступно владельцам права USER.MANAGE.
+
+specs-unit:
+  Block user:
+    - assert: Блокирует пользователя и запрещает логин
+      description: |
+        После POST /admin/users/:id/block { reason } пользователь не может
+        войти: verify-otp возвращает 403 с body.type=user_blocked и
+        data.reason = причина блокировки.
+    - assert: Разблокирует пользователя и разрешает логин
+      description: |
+        После POST /admin/users/:id/unblock пользователь снова может
+        пройти OTP-верификацию (body.type=authenticated).
+    - assert: Повторная блокировка заблокированного — 400
+      description: |
+        Повторный block уже заблокированного — 400,
+        body.type=user_already_blocked.
+    - assert: Разблокировка незаблокированного — 400
+      description: |
+        Unblock не заблокированного — 400, body.type=user_not_blocked.
+    - assert: Не админу — 403
+      description: Без права USER.MANAGE — 403.
+    - assert: Блокировка инвалидирует активные сессии
+      description: |
+        Блокировка удаляет активные сессии пользователя — текущий
+        access-токен сразу перестаёт работать (/me → 401).
+
+definitions:
+  feature:
+    - idp-block-user
+  section:
+    - idp
+    - admin

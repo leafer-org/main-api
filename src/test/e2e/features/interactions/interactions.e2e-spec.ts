@@ -87,6 +87,7 @@ afterAll(async () => {
 
 // ─── HTTP Endpoints ───────────────────────────────────────────────
 
+describe('interactions', () => {
 describe('POST /interactions/views', () => {
   it('записывает batch views и возвращает 204', async () => {
     const itemIds: string[] = [randomUUID(), randomUUID(), randomUUID()];
@@ -277,4 +278,5 @@ describe('review.streaming → interactions', () => {
     const rows = await getInteractionRows(deleteReviewUserId);
     expect(rows).toHaveLength(0);
   });
+});
 });

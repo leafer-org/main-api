@@ -37,7 +37,7 @@ async function uploadViaPresignedPost(
   return fetch(uploadUrl, { method: 'POST', body: formData });
 }
 
-describe('Media Controller (e2e)', () => {
+describe('media', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -76,7 +76,7 @@ describe('Media Controller (e2e)', () => {
   // ─── POST /media/image/upload-request ──────────────────────────────────
 
   describe('POST /media/image/upload-request', () => {
-    it('should create a file record and return fileId + presigned post data', async () => {
+    it('Создаёт запись файла и возвращает fileId с presigned POST данными', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       const response = await e2e.agent
@@ -100,7 +100,7 @@ describe('Media Controller (e2e)', () => {
       expect(response.body.uploadFields).toHaveProperty('Content-Type', 'image/png');
     });
 
-    it('should return 400 for invalid mimeType', async () => {
+    it('Невалидный mimeType — 400 invalid_mime_type', async () => {
       const res = await e2e.agent
         .post('/media/image/upload-request')
         .send({ name: 'file.txt', mimeType: 'not-a-mime' })
@@ -109,14 +109,14 @@ describe('Media Controller (e2e)', () => {
       expect(res.body.type).toBe('invalid_mime_type');
     });
 
-    it('should return 400 for empty file name', async () => {
+    it('Пустое имя файла — 400', async () => {
       await e2e.agent
         .post('/media/image/upload-request')
         .send({ name: '', mimeType: 'image/png' })
         .expect(400);
     });
 
-    it('should return 400 for file name exceeding 255 characters', async () => {
+    it('Имя файла длиннее 255 символов — 400', async () => {
       const longName = 'a'.repeat(256);
 
       await e2e.agent
@@ -129,7 +129,7 @@ describe('Media Controller (e2e)', () => {
   // ─── POST /media/image/upload-complete ────────────────────────────────
 
   describe('POST /media/image/upload-complete', () => {
-    it('should extract width, height and mimeType from uploaded image', async () => {
+    it('Извлекает width, height и mimeType из загруженного изображения', async () => {
       const uploadRes = await e2e.agent
         .post('/media/image/upload-request')
         .send({ name: 'complete-test.png', mimeType: 'image/png' })
@@ -151,14 +151,14 @@ describe('Media Controller (e2e)', () => {
       });
     });
 
-    it('should return 404 for non-existent mediaId', async () => {
+    it('Несуществующий mediaId — 404', async () => {
       await e2e.agent
         .post('/media/image/upload-complete')
         .send({ mediaId: '00000000-0000-0000-0000-000000000000' })
         .expect(404);
     });
 
-    it('should return 400 when called on a non-image (video) media', async () => {
+    it('Вызов на не-изображении (видео) — 400 media_not_image', async () => {
       // Create a video media record via video upload init
       const initRes = await e2e.agent
         .post('/media/video/upload-init')
@@ -177,7 +177,7 @@ describe('Media Controller (e2e)', () => {
   // ─── GET /media/preview/:mediaId ──────────────────────────────────
 
   describe('GET /media/preview/:mediaId', () => {
-    it('should return presigned preview URL for a temporary file', async () => {
+    it('Возвращает presigned URL предпросмотра для временного файла', async () => {
       const uploadRes = await e2e.agent
         .post('/media/image/upload-request')
         .send({ name: 'preview-test.png', mimeType: 'image/png' })
@@ -192,7 +192,7 @@ describe('Media Controller (e2e)', () => {
       expect(res.body.url).toContain(process.env.S3_ENDPOINT);
     });
 
-    it('should return 404 for non-existent mediaId', async () => {
+    it('Несуществующий mediaId — 404', async () => {
       await e2e.agent.get('/media/preview/00000000-0000-0000-0000-000000000000').expect(404);
     });
   });
@@ -219,7 +219,7 @@ describe('Media Controller (e2e)', () => {
       return fileId;
     }
 
-    it('should generate signed imgproxy URL with resize parameters', async () => {
+    it('Генерирует подписанный imgproxy URL с параметрами resize', async () => {
       const fileId = await uploadAndUseImage();
       const mediaService = e2e.app.get(MediaService);
 
@@ -236,7 +236,7 @@ describe('Media Controller (e2e)', () => {
       expect(url).not.toContain('/insecure/');
     });
 
-    it('should generate different URLs for different sizes', async () => {
+    it('Генерирует разные URL для разных размеров', async () => {
       const fileId = await uploadAndUseImage();
       const mediaService = e2e.app.get(MediaService);
 
@@ -256,7 +256,7 @@ describe('Media Controller (e2e)', () => {
       expect(small).not.toBe(large);
     });
 
-    it('should bypass proxy for non-image files', async () => {
+    it('Не-изображения отдаются напрямую, минуя прокси', async () => {
       const uploadRes = await e2e.agent
         .post('/media/image/upload-request')
         .send({ name: 'document.pdf', mimeType: 'application/pdf' })
@@ -286,7 +286,7 @@ describe('Media Controller (e2e)', () => {
       expect(url).not.toContain(process.env.MEDIA_IMAGE_PROXY_URL);
     });
 
-    it('should serve resized image through imgproxy', async () => {
+    it('Отдаёт ресайзнутое изображение через imgproxy', async () => {
       const fileId = await uploadAndUseImage();
       const mediaService = e2e.app.get(MediaService);
 
@@ -304,7 +304,7 @@ describe('Media Controller (e2e)', () => {
       expect(response.headers.get('content-type')).toContain('image/webp');
     });
 
-    it('should return presigned URL when no imageProxy options provided', async () => {
+    it('Без опций imageProxy — presigned S3 URL напрямую', async () => {
       const fileId = await uploadAndUseImage();
       const mediaService = e2e.app.get(MediaService);
 

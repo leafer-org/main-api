@@ -1,0 +1,70 @@
+feature: Discovery Projection Handlers
+code: discovery-handlers
+description: |
+  Kafka-обработчики, которые проецируют интеграционные события из
+  cms / organization / review в локальную read-модель Discovery
+  (`discovery_owners`, `discovery_categories`, `discovery_item_types`,
+  `discovery_items`).
+
+  Все обработки идемпотентны и поддерживают каскады (например,
+  публикация organization обновляет связанные items, отписка —
+  удаляет их).
+
+specs-unit:
+  Owner projection:
+    - assert: проецирует organization.published в discovery_owners
+      description: |
+        Создаётся запись в `discovery_owners`: `name`, `avatarId`,
+        `rating: null`, `reviewCount: 0` по умолчанию.
+    - assert: обновляет owner и каскадно items при republish
+      description: |
+        `organization.published` с `republished: true` обновляет
+        owner-запись и денормализованные поля `ownerName`/`ownerAvatarId`
+        во всех привязанных items.
+    - assert: удаляет owner и все items при unpublish
+      description: |
+        `organization.unpublished` удаляет owner и каскадно все items
+        этой организации.
+
+  Category projection:
+    - assert: проецирует category.published в discovery_categories с атрибутами
+      description: |
+        Создаётся категория со всеми атрибутами (`attributeId`, `name`,
+        `required`, `schema`).
+    - assert: удаляет category при unpublish
+      description: "`category.unpublished` удаляет запись категории."
+
+  Item Type projection:
+    - assert: проецирует item-type.created в discovery_item_types
+      description: |
+        Создаётся тип товара с `widgetSettings` (со всеми флагами,
+        в т.ч. `allowedStrategies` у payment-виджета).
+    - assert: обновляет item type при item-type.updated
+      description: |
+        `item-type.updated` обновляет `name`, `label`, `widgetSettings`.
+
+  Item projection:
+    - assert: проецирует item.published в discovery_items с widgets
+      description: |
+        Создаётся item с денормализованными полями из виджетов:
+        `title`, `description`, `media`, `cityId`, `lat/lng`, `address`,
+        `paymentOptions`, `minPrice`, `organizationId`, `ownerName`.
+    - assert: удаляет item при item.unpublished
+      description: "`item.unpublished` удаляет item-запись."
+
+  Review projection:
+    - assert: обновляет рейтинг item при review.created с target=item
+      description: |
+        `review.created` с `target.targetType=item` обновляет `itemRating`
+        и `itemReviewCount` у item.
+    - assert: обновляет рейтинг owner при review.created с target=organization
+      description: |
+        `review.created` с `target.targetType=organization` обновляет
+        рейтинг owner и каскадно `ownerRating`/`ownerReviewCount` у его
+        items.
+
+definitions:
+  feature:
+    - discovery-handlers
+  section:
+    - discovery

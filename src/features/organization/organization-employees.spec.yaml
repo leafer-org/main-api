@@ -1,0 +1,62 @@
+feature: Organization Employees
+code: organization-employees
+description: |
+  Управление сотрудниками организации: список, приглашение по телефону,
+  изменение роли, удаление, передача владения.
+
+  Лимит сотрудников задаёт подписка организации: free-план разрешает
+  только одного (владельца), поэтому invite на free-плане отдаёт 400
+  по бизнес-ошибке employee limit.
+
+  Owner защищён: его нельзя удалить и передачу владения можно делать
+  только на действующего сотрудника.
+
+specs-unit:
+  GET /organizations/:id/employees:
+    - assert: возвращает владельца после создания организации
+      description: |
+        После создания организации в employees один пользователь —
+        автор, isOwner=true.
+
+  POST /organizations/:id/employees:
+    - assert: приглашает сотрудника по телефону
+      description: |
+        На free-плане лимит maxEmployees=1, поэтому второй invite
+        отдаёт 400 (employee limit). На платных планах invite
+        проходит и нового сотрудника видно в списке.
+    - assert: возвращает 404 для неизвестного телефона
+      description: Телефон без зарегистрированного пользователя — 404.
+    - assert: возвращает 403 для не-сотрудника
+
+  DELETE /organizations/:id/employees/:userId:
+    - assert: запрещает удаление владельца
+      description: |
+        Удалить владельца нельзя — 400 owner_cannot_be_removed.
+        Перед удалением нужно сделать transfer-ownership.
+    - assert: удаляет обычного сотрудника
+      description: |
+        Сотрудник, не являющийся владельцем, удаляется автором с правом
+        manage_employees; в списке его больше нет.
+
+  PATCH /organizations/:id/employees/:userId:
+    - assert: возвращает 403 для не-сотрудника
+    - assert: меняет роль сотрудника
+      description: |
+        У владельца с manage_roles можно сменить роль другого сотрудника
+        на любую существующую в организации.
+
+  POST /organizations/:id/transfer-ownership:
+    - assert: возвращает ошибку при передаче владения не-сотруднику
+      description: |
+        Передавать владение можно только действующему сотруднику —
+        иначе 400.
+    - assert: передаёт владение другому сотруднику
+      description: |
+        После transfer-ownership isOwner переходит к новому пользователю,
+        старый владелец остаётся обычным сотрудником.
+
+definitions:
+  feature:
+    - organization-employees
+  section:
+    - organization

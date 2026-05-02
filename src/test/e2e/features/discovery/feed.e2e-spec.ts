@@ -155,6 +155,8 @@ async function ensureSeeded() {
 
 // ─── Bootstrap ────────────────────────────────────────────────────
 
+describe('discovery-feed', () => {
+
 beforeAll(async () => {
   await startContainers({ gorse: true });
   if (!process.env.DB_URL) throw new Error('DB_URL not set');
@@ -196,7 +198,7 @@ describe('GET /feed (fallback)', () => {
     await truncateAll(process.env.DB_URL);
   });
 
-  it('should return empty list when no items in Gorse', async () => {
+  it('возвращает пустой список при отсутствии items в Gorse', async () => {
     const res = await agent
       .get('/feed')
       .query({ cityId: 'city-unknown', ageGroup: 'adults' })
@@ -209,7 +211,8 @@ describe('GET /feed (fallback)', () => {
 
 // ─── Популярные товары (анонимный пользователь) ─────────────────
 
-describe('GET /feed (popular)', { timeout: 300_000 }, () => {
+describe('GET /feed (popular)', () => {
+  vi.setConfig({ testTimeout: 300_000 });
   const seededItemIds: string[] = [];
 
   beforeAll(async () => {
@@ -235,7 +238,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     await waitForGorsePopular(120_000, 2_000, feedCategory);
   }, 240_000);
 
-  it('should return popular items for anonymous user', async () => {
+  it('возвращает popular items для анонимного пользователя', async () => {
     const res = await agent
       .get('/feed')
       .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62' })
@@ -247,7 +250,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(overlap.length).toBeGreaterThan(0);
   });
 
-  it('should return items with correct shape', async () => {
+  it('возвращает items с корректной структурой', async () => {
     const res = await agent
       .get('/feed')
       .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62' })
@@ -264,7 +267,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(item.owner).toMatchObject({ name: expect.any(String), avatarUrl: null });
   });
 
-  it('should respect limit parameter', async () => {
+  it('учитывает параметр limit', async () => {
     const res = await agent
       .get('/feed')
       .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62', limit: 2 })
@@ -274,7 +277,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(res.body.nextCursor).not.toBeNull();
   });
 
-  it('should paginate with cursor', async () => {
+  it('пагинация курсором', async () => {
     const page1 = await agent
       .get('/feed')
       .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62', limit: 2 })
@@ -298,7 +301,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(page2.body).toHaveProperty('items');
   });
 
-  it('should return 200 with default limit when not specified', async () => {
+  it('возвращает 200 с дефолтным limit, если не задан', async () => {
     const res = await agent
       .get('/feed')
       .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62' })
@@ -307,7 +310,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(res.body.items.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('should return empty for ageGroup=children when all items are adults-only', async () => {
+  it('возвращает пусто для ageGroup=children когда все items только adults', async () => {
     const res = await agent
       .get('/feed')
       .query({ cityId: 'city-1', ageGroup: 'children', lat: '55.75', lng: '37.62' })
@@ -316,7 +319,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(res.body.items).toEqual([]);
   });
 
-  it('should default to ageGroup=adults when ageGroup not specified', async () => {
+  it('по умолчанию ageGroup=adults, если не задан', async () => {
     const res = await agent
       .get('/feed')
       .query({ cityId: 'city-1', lat: '55.75', lng: '37.62' })
@@ -325,7 +328,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(res.body.items.length).toBeGreaterThan(0);
   });
 
-  it('should return empty for coordinates far from seeded items', async () => {
+  it('возвращает пусто для координат вдали от seeded items', async () => {
     // Tokyo coordinates — far from Moscow (55.75, 37.62), different H3 cell at res 3
     const res = await agent
       .get('/feed')
@@ -335,7 +338,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(res.body.items).toEqual([]);
   });
 
-  it('should return empty items when cursor points beyond available data', async () => {
+  it('возвращает пустые items, когда курсор за пределами данных', async () => {
     const res = await agent
       .get('/feed')
       .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62', cursor: '999' })
@@ -345,7 +348,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(res.body.nextCursor).toBeNull();
   });
 
-  it('should not return duplicate items across pages', async () => {
+  it('не возвращает дубликаты items между страницами', async () => {
     const page1 = await agent
       .get('/feed')
       .query({ cityId: 'city-1', ageGroup: 'adults', lat: '55.75', lng: '37.62', limit: 2 })
@@ -372,7 +375,7 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
     expect(overlap).toEqual([]);
   });
 
-  it('should handle items deleted from DB but present in Gorse', async () => {
+  it('обрабатывает items, удалённые из DB, но присутствующие в Gorse', async () => {
     // Delete one seeded item directly from DB
     const deletedId = seededItemIds[0];
     expectDefined(deletedId);
@@ -393,7 +396,8 @@ describe('GET /feed (popular)', { timeout: 300_000 }, () => {
 
 // ─── Возрастные группы ───────────────────────────────────────────
 
-describe('GET /feed (age groups)', { timeout: 300_000 }, () => {
+describe('GET /feed (age groups)', () => {
+  vi.setConfig({ testTimeout: 300_000 });
   const childrenItemIds: string[] = [];
 
   beforeAll(async () => {
@@ -414,7 +418,7 @@ describe('GET /feed (age groups)', { timeout: 300_000 }, () => {
     await waitForGorsePopular(120_000, 2_000, feedCategory);
   }, 240_000);
 
-  it('should return children items when ageGroup=children', async () => {
+  it('возвращает children items при ageGroup=children', async () => {
     const res = await agent
       .get('/feed')
       .query({ cityId: 'city-1', ageGroup: 'children', lat: '55.75', lng: '37.62' })
@@ -430,7 +434,7 @@ describe('GET /feed (age groups)', { timeout: 300_000 }, () => {
 // ─── Geo fallback (без координат) ───────────────────────────────
 
 describe('GET /feed (geo fallback)', () => {
-  it('should return empty when no coordinates provided and cityId has no known coords', async () => {
+  it('возвращает пусто без координат и при cityId без известных координат', async () => {
     // city-1 не засижен в cmsCities → CityCoordinatesPort вернёт null → global категория
     // В global категории нет popular items → пустой ответ
     const res = await agent
@@ -441,7 +445,7 @@ describe('GET /feed (geo fallback)', () => {
     expect(res.body.items).toEqual([]);
   });
 
-  it('should return empty for completely unknown cityId without coordinates', async () => {
+  it('возвращает пусто для полностью неизвестного cityId без координат', async () => {
     const res = await agent
       .get('/feed')
       .query({ cityId: 'unknown-city-999', ageGroup: 'adults' })
@@ -453,7 +457,8 @@ describe('GET /feed (geo fallback)', () => {
 
 // ─── Персонализированные рекомендации (авторизованный пользователь) ──
 
-describe('GET /feed (personalized)', { timeout: 300_000 }, () => {
+describe('GET /feed (personalized)', () => {
+  vi.setConfig({ testTimeout: 300_000 });
   let accessToken: string;
   let userId: string;
   const seededItemIds: string[] = [];
@@ -481,7 +486,7 @@ describe('GET /feed (personalized)', { timeout: 300_000 }, () => {
     await waitForGorseRecommendations(userId, 180_000, 2_000, feedCategory);
   }, 240_000);
 
-  it('should return personalized recommendations for authenticated user', async () => {
+  it('возвращает personalized рекомендации для авторизованного пользователя', async () => {
     // Debug: verify items exist in DB and check Gorse response format
     const dbRows = await db.select().from(discoveryItems);
     console.log(`[personalized] DB has ${dbRows.length} items`);
@@ -504,7 +509,7 @@ describe('GET /feed (personalized)', { timeout: 300_000 }, () => {
     expect(res.body.items.length).toBeGreaterThan(0);
   });
 
-  it('should return items with correct shape for authenticated user', async () => {
+  it('возвращает items с корректной структурой для авторизованного пользователя', async () => {
     const res = await agent
       .get('/feed')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -522,12 +527,13 @@ describe('GET /feed (personalized)', { timeout: 300_000 }, () => {
 
 // ─── Geo labels при регистрации / смене города ────────────────────
 
-describe('User geo labels in Gorse', { timeout: 120_000 }, () => {
+describe('User geo labels in Gorse', () => {
+  vi.setConfig({ testTimeout: 120_000 });
   beforeAll(async () => {
     await ensureSeeded();
   });
 
-  it('should write h3 labels to Gorse on registration with coordinates', async () => {
+  it('записывает h3-лейблы в Gorse при регистрации с координатами', async () => {
     const user = await registerUser(agent, FIXED_OTP, {
       phone: '+79990000050',
       cityId: 'city-msk',
@@ -544,7 +550,7 @@ describe('User geo labels in Gorse', { timeout: 120_000 }, () => {
     }, WAIT_OPTIONS);
   });
 
-  it('should update h3 labels after PATCH /me/profile with new coordinates', async () => {
+  it('обновляет h3-лейблы после PATCH /me/profile с новыми координатами', async () => {
     const user = await registerUser(agent, FIXED_OTP, {
       phone: '+79990000051',
       cityId: 'city-msk',
@@ -583,7 +589,7 @@ describe('User geo labels in Gorse', { timeout: 120_000 }, () => {
     );
   });
 
-  it('should register without coordinates and have no h3 labels', async () => {
+  it('регистрирует без координат и без h3-лейблов', async () => {
     const user = await registerUser(agent, FIXED_OTP, {
       phone: '+79990000052',
       cityId: 'city-unknown',
@@ -596,4 +602,6 @@ describe('User geo labels in Gorse', { timeout: 120_000 }, () => {
       expect(labels.every((l: string) => !l.startsWith('h3:'))).toBe(true);
     }, WAIT_OPTIONS);
   });
+});
+
 });

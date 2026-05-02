@@ -17,7 +17,7 @@ import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 
 const FIXED_OTP = '123456';
 
-describe('Admin Organizations (e2e)', () => {
+describe('organization-admin', () => {
   let e2e: E2eApp;
 
   beforeAll(async () => {
@@ -63,7 +63,7 @@ describe('Admin Organizations (e2e)', () => {
   // ─── POST /admin/organizations ──────────────────────────────────
 
   describe('POST /admin/organizations', () => {
-    it('should create organization with claim token', async () => {
+    it('создаёт организацию с claim-токеном', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
@@ -76,7 +76,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.claimToken).toBeDefined();
     });
 
-    it('should return 403 for regular user', async () => {
+    it('возвращает 403 для обычного пользователя', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -90,7 +90,7 @@ describe('Admin Organizations (e2e)', () => {
   // ─── POST /admin/organizations/:id/regenerate-token ─────────────
 
   describe('POST /admin/organizations/:id/regenerate-token', () => {
-    it('should regenerate claim token', async () => {
+    it('перегенерирует claim-токен', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -110,7 +110,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.claimToken).not.toBe(oldToken);
     });
 
-    it('should return 403 for regular user', async () => {
+    it('возвращает 403 для обычного пользователя', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -131,7 +131,7 @@ describe('Admin Organizations (e2e)', () => {
   // ─── GET /admin/organizations/:id/claim-token ─────────────────
 
   describe('GET /admin/organizations/:id/claim-token', () => {
-    it('should return claim token for unclaimed organization', async () => {
+    it('возвращает claim-токен непривязанной организации', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -148,7 +148,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.claimToken).toBe(createRes.body.claimToken);
     });
 
-    it('should return null after organization is claimed', async () => {
+    it('возвращает null после привязки организации', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -173,7 +173,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.claimToken).toBeNull();
     });
 
-    it('should return updated token after regeneration', async () => {
+    it('возвращает обновлённый токен после регенерации', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -195,7 +195,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.claimToken).toBe(regenRes.body.claimToken);
     });
 
-    it('should return 403 for regular user', async () => {
+    it('возвращает 403 для обычного пользователя', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -212,7 +212,7 @@ describe('Admin Organizations (e2e)', () => {
         .expect(403);
     });
 
-    it('should return null for non-existent organization', async () => {
+    it('возвращает null для несуществующей организации', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const res = await e2e.agent
@@ -227,7 +227,7 @@ describe('Admin Organizations (e2e)', () => {
   // ─── POST /organizations/claim ──────────────────────────────────
 
   describe('POST /organizations/claim', () => {
-    it('should claim organization by token', async () => {
+    it('привязывает организацию по токену', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -250,7 +250,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.employees[0]).toMatchObject({ userId, isOwner: true });
     });
 
-    it('should return 400 for invalid token', async () => {
+    it('возвращает 400 при невалидном токене', async () => {
       const { accessToken } = await registerUser(e2e.agent, FIXED_OTP);
 
       await e2e.agent
@@ -260,7 +260,7 @@ describe('Admin Organizations (e2e)', () => {
         .expect(400);
     });
 
-    it('should return 400 when claiming already claimed org', async () => {
+    it('возвращает 400 при попытке привязать уже привязанную организацию', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -288,7 +288,7 @@ describe('Admin Organizations (e2e)', () => {
   // ─── Admin access to organization endpoints ─────────────────────
 
   describe('Admin access to org endpoints (ORGANIZATION.MANAGE bypass)', () => {
-    it('admin should view any organization detail without being employee', async () => {
+    it('админ читает любую организацию без членства', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -302,7 +302,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.id).toBe(org.id);
     });
 
-    it('admin should update info draft without being employee', async () => {
+    it('админ обновляет infoDraft без членства', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -317,7 +317,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.infoDraft.name).toBe('Admin Updated');
     });
 
-    it('admin should delete organization without being employee', async () => {
+    it('админ удаляет организацию без членства', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -339,7 +339,7 @@ describe('Admin Organizations (e2e)', () => {
   // ─── Moderation with admin access ───────────────────────────────
 
   describe('Moderation (ORGANIZATION.MODERATE + ORGANIZATION.MANAGE)', () => {
-    it('admin should approve info moderation', async () => {
+    it('админ approve-ит модерацию info', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -372,7 +372,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.infoPublication.name).toBe('Test Organization');
     });
 
-    it('admin should reject info moderation', async () => {
+    it('админ reject-ит модерацию info', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -398,7 +398,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.infoDraft.status).toBe('rejected');
     });
 
-    it('regular user should not be able to approve moderation', async () => {
+    it('обычный пользователь не может approve-ить модерацию', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -421,7 +421,7 @@ describe('Admin Organizations (e2e)', () => {
   // ─── POST /admin/organizations/:orgId/items ────────────────────────
 
   describe('POST /admin/organizations/:orgId/items', () => {
-    it('should create item bypassing plan limits', async () => {
+    it('создаёт item в обход лимитов плана', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -465,7 +465,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.publication).toBeNull();
     });
 
-    it('should return 403 for regular user', async () => {
+    it('возвращает 403 для обычного пользователя', async () => {
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -488,7 +488,7 @@ describe('Admin Organizations (e2e)', () => {
         .expect(403);
     });
 
-    it('should return 404 for non-existent organization', async () => {
+    it('возвращает 404 для несуществующей организации', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
       const itemType = await createItemType(e2e.agent, accessToken);
 
@@ -502,7 +502,7 @@ describe('Admin Organizations (e2e)', () => {
         .expect(404);
     });
 
-    it('should return 404 for non-existent item type', async () => {
+    it('возвращает 404 для несуществующего itemType', async () => {
       const { accessToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
 
       const createRes = await e2e.agent
@@ -539,7 +539,7 @@ describe('Admin Organizations (e2e)', () => {
       await flushOutbox(e2e.app);
     }
 
-    it('owner should unpublish organization', async () => {
+    it('владелец снимает организацию с публикации', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
@@ -569,7 +569,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.infoPublication).toBeNull();
     });
 
-    it('admin should unpublish any organization', async () => {
+    it('админ снимает с публикации любую организацию', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
       const { accessToken: adminToken } = await loginAsAdmin(e2e.agent, FIXED_OTP);
@@ -590,7 +590,7 @@ describe('Admin Organizations (e2e)', () => {
       expect(res.body.infoPublication).toBeNull();
     });
 
-    it('should return 400 when organization is not published', async () => {
+    it('возвращает 400 если организация не опубликована', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 
@@ -600,7 +600,7 @@ describe('Admin Organizations (e2e)', () => {
         .expect(400);
     });
 
-    it('should return 403 for non-employee', async () => {
+    it('возвращает 403 для не-сотрудника', async () => {
       const owner = await registerUser(e2e.agent, FIXED_OTP, { phone: '+79990000010' });
       const org = await createOrganization(e2e.agent, owner.accessToken);
 

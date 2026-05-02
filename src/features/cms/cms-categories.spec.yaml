@@ -1,0 +1,136 @@
+feature: CMS Categories
+code: cms-categories
+description: |
+  Категории каталога — иерархическая структура с привязкой к разрешённым типам товаров/услуг
+  и возрастным группам.
+
+  Категория имеет:
+    - icon (загруженное изображение из media), отдаётся как iconUrl в read-моделях;
+    - parentCategoryId (опционально) — формирует дерево;
+    - allowedTypeIds — список item-type id, которые допустимы в данной категории;
+    - ageGroups — список возрастных групп ('children', 'adults', ...);
+    - order — числовая позиция для сортировки;
+    - status — 'draft' | 'published' | 'unpublished'.
+
+  Жизненный цикл: создание (draft) → publish → опубликовано → unpublish.
+  Только опубликованные категории попадают в discovery (публичный каталог).
+
+  Иерархические инварианты:
+    - allowedTypeIds дочерней категории должен быть подмножеством родительской;
+    - ageGroups дочерней категории должен быть подмножеством родительской.
+
+  Атрибуты — отдельная сущность внутри категории, добавляются/удаляются через
+  специализированные эндпоинты.
+
+specs-unit:
+  # ==================== CRUD ====================
+
+  CRUD:
+    - assert: создаёт категорию
+      description: |
+        POST /cms/categories с body { id, parentCategoryId, name, iconId, order, allowedTypeIds, ageGroups }.
+        Ответ 201 содержит id, name, iconId, iconUrl, status='draft', parentCategoryId,
+        allowedTypeIds, ageGroups, attributes=[].
+    - assert: возвращает список категорий
+      description: |
+        GET /cms/categories возвращает массив категорий с полями iconUrl и ageGroups.
+    - assert: возвращает детали категории
+      description: |
+        GET /cms/categories/:id возвращает полную карточку категории.
+    - assert: Несуществующая категория — 404
+    - assert: обновляет категорию
+      description: |
+        PATCH /cms/categories/:id обновляет name, iconId, parentCategoryId,
+        allowedTypeIds, ageGroups.
+    - assert: отклоняет создание с пустым allowedTypeIds
+      description: allowedTypeIds не может быть пустым массивом — 400.
+    - assert: отклоняет создание с пустым ageGroups
+      description: ageGroups не может быть пустым массивом — 400.
+    - assert: отклоняет обновление с пустым allowedTypeIds
+    - assert: отклоняет обновление с пустым ageGroups
+    - assert: создаёт категорию с несколькими ageGroups
+      description: ageGroups может содержать несколько значений ('children', 'adults', ...).
+
+  # ==================== ИЕРАРХИЯ ====================
+
+  Hierarchy:
+    - assert: создаёт дочернюю категорию
+      description: |
+        Категория с parentCategoryId формирует поддерево.
+    - assert: отклоняет потомка с allowedTypeIds не из подмножества родителя
+      description: |
+        Инвариант: allowedTypeIds потомка ⊆ allowedTypeIds родителя.
+        Иначе 400.
+    - assert: отклоняет потомка с ageGroups не из подмножества родителя
+      description: |
+        Инвариант: ageGroups потомка ⊆ ageGroups родителя.
+        Иначе 400.
+    - assert: разрешает потомка с ageGroups из подмножества родителя
+      description: |
+        Подмножество допустимо: parent ['children','adults'] → child ['children'].
+
+  # ==================== ПУБЛИКАЦИЯ ====================
+
+  Publish / Unpublish:
+    - assert: публикует категорию
+      description: |
+        POST /cms/categories/:id/publish переводит статус draft → published.
+    - assert: снимает публикацию опубликованной категории
+      description: |
+        POST /cms/categories/:id/unpublish переводит published → unpublished.
+    - assert: отклоняет unpublish неопубликованной категории
+      description: |
+        Unpublish из draft невалидно — 400.
+    - assert: outbox события успешно обрабатываются после publish
+      description: |
+        Publish порождает интеграционное событие, которое должно успешно
+        процесситься через outbox.
+
+  # ==================== АТРИБУТЫ ====================
+
+  Attributes:
+    - assert: добавляет атрибут к категории
+      description: |
+        POST /cms/categories/:id/attributes с body { attributeId, name, required, schema }.
+        Атрибут появляется в detail.attributes.
+    - assert: удаляет атрибут из категории
+      description: |
+        DELETE /cms/categories/:id/attributes/:attributeId убирает атрибут.
+    - assert: отклоняет дублирующийся атрибут
+      description: |
+        Повторное добавление атрибута с тем же attributeId — 400.
+    - assert: отклоняет удаление несуществующего атрибута
+      description: |
+        Удаление несуществующего атрибута — 400.
+
+  # ==================== ПРАВА ====================
+
+  Permissions:
+    - assert: Без авторизации — 401
+    - assert: Пользователь без manageCms — 403
+      description: |
+        Все CMS-эндпоинты требуют permission manageCms.
+
+  # ==================== СОРТИРОВКА ====================
+
+  Order:
+    - assert: создаёт категорию с order=0 по умолчанию
+      description: |
+        Если order не передан — по умолчанию 0.
+    - assert: создаёт категорию с явным order
+    - assert: обновляет order категории
+      description: |
+        PATCH с новым order перезаписывает значение.
+    - assert: возвращает категории отсортированные по order ASC, затем по name ASC
+      description: |
+        Список сортируется по order ASC, при равенстве — по name ASC.
+    - assert: переносит order через publish в discovery
+      description: |
+        После публикации категории её order переносится в discovery
+        (публичный каталог GET /categories) через outbox.
+
+definitions:
+  feature:
+    - cms-categories
+  section:
+    - cms
