@@ -8,6 +8,7 @@ import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class DeleteItemDraftInteractor {
@@ -28,6 +29,7 @@ export class DeleteItemDraftInteractor {
       command.organizationId,
       command.userId,
       'edit_items',
+      { globalBypass: Permission.OrganizationItemEdit },
     );
     if (isLeft(auth)) return auth;
 

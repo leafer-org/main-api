@@ -8,6 +8,7 @@ import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 
 @Injectable()
 export class UnpublishItemInteractor {
@@ -29,6 +30,7 @@ export class UnpublishItemInteractor {
       command.organizationId,
       command.userId,
       'unpublish_items',
+      { globalBypass: Permission.OrganizationItemUnpublish },
     );
     if (isLeft(auth)) return auth;
 

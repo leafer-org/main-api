@@ -12,6 +12,7 @@ import { Clock } from '@/infra/lib/clock.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 import type { VideoMedia } from '@/kernel/domain/vo/media-item.js';
 
 @Injectable()
@@ -35,6 +36,7 @@ export class SubmitItemForModerationInteractor {
       command.organizationId,
       command.userId,
       'publish_items',
+      { globalBypass: Permission.OrganizationItemPublish },
     );
     if (isLeft(auth)) return auth;
 

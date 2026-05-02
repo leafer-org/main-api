@@ -39,7 +39,11 @@ export const Permission = {
   OrganizationClaimTokenRegenerate: 'organization.claimToken.regenerate',
   OrganizationInfoModerate: 'organization.info.moderate',
   OrganizationItemModerate: 'organization.item.moderate',
+  OrganizationInfoEdit: 'organization.info.edit',
+  OrganizationInfoPublish: 'organization.info.publish',
   OrganizationItemEdit: 'organization.item.edit',
+  OrganizationItemPublish: 'organization.item.publish',
+  OrganizationItemUnpublish: 'organization.item.unpublish',
 
   // ticket.board
   TicketBoardRead: 'ticket.board.read',
@@ -217,10 +221,35 @@ export const PERMISSION_META: Record<Permission, PermissionMeta> = {
     title: 'Модерация услуг',
     description: 'Одобрение и отклонение черновиков услуг организаций',
   },
+  [Permission.OrganizationInfoEdit]: {
+    id: Permission.OrganizationInfoEdit,
+    title: 'Редактирование описания организаций (admin)',
+    description:
+      'Редактирование черновика описания любой организации, минуя локальные роли',
+  },
+  [Permission.OrganizationInfoPublish]: {
+    id: Permission.OrganizationInfoPublish,
+    title: 'Публикация описания организаций (admin)',
+    description:
+      'Отправка описания на модерацию и снятие с публикации любой организации, минуя локальные роли',
+  },
   [Permission.OrganizationItemEdit]: {
     id: Permission.OrganizationItemEdit,
     title: 'Редактирование услуг (admin)',
-    description: 'Создание и редактирование услуг любой организации, минуя локальные роли',
+    description:
+      'Создание, изменение и удаление черновиков услуг любой организации, минуя локальные роли',
+  },
+  [Permission.OrganizationItemPublish]: {
+    id: Permission.OrganizationItemPublish,
+    title: 'Публикация услуг (admin)',
+    description:
+      'Отправка услуги на модерацию любой организации, минуя локальные роли',
+  },
+  [Permission.OrganizationItemUnpublish]: {
+    id: Permission.OrganizationItemUnpublish,
+    title: 'Снятие услуг с публикации (admin)',
+    description:
+      'Снятие услуги с публикации любой организации, минуя локальные роли',
   },
 
   [Permission.TicketBoardRead]: {

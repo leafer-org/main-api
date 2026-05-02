@@ -69,7 +69,11 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
       Permission.OrganizationClaimTokenRegenerate,
       Permission.OrganizationInfoModerate,
       Permission.OrganizationItemModerate,
+      Permission.OrganizationInfoEdit,
+      Permission.OrganizationInfoPublish,
       Permission.OrganizationItemEdit,
+      Permission.OrganizationItemPublish,
+      Permission.OrganizationItemUnpublish,
     ],
   },
   {

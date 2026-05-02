@@ -8,6 +8,7 @@ import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import { Permission } from '@/kernel/domain/permissions.js';
 import type { ContactLink, OrgTeam } from '@/kernel/domain/vo/widget.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 @Injectable()
@@ -33,6 +34,7 @@ export class UpdateInfoDraftInteractor {
       command.organizationId,
       command.userId,
       'edit_organization',
+      { globalBypass: Permission.OrganizationInfoEdit },
     );
     if (isLeft(auth)) return auth;
     const now = this.clock.now();

@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 
+import { StaticRolesSyncService } from './adapters/bootstrap/static-roles-sync.service.js';
 import { DrizzleMeQuery } from './adapters/db/queries/me.query.js';
 import { DrizzleRoleQuery } from './adapters/db/queries/role.query.js';
 import { DrizzleRolesListQuery } from './adapters/db/queries/roles-list.query.js';
@@ -83,6 +84,8 @@ import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
     AdminSessionsController,
   ],
   providers: [
+    // Bootstrap
+    StaticRolesSyncService,
     // Adapters
     { provide: LoginProcessRepository, useClass: DrizzleLoginProcessRepository },
     { provide: UserRepository, useClass: DrizzleUserRepository },
