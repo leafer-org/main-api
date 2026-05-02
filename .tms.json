@@ -1,0 +1,13 @@
+{
+  "api": {
+    "host": "http://localhost:8084/api",
+    "project": "leafer-main-api"
+  },
+  "yml": {
+    "files": ["src/**/*.spec.yaml"]
+  },
+  "jest": {
+    "reportPath": "vitest-report.json",
+    "keys": ["featureTitle", "groupTitle", "assertionTitle"]
+  }
+}

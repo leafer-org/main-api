@@ -1,5 +1,6 @@
 import type { BoardScope, BoardState } from '../domain/aggregates/board/state.js';
 import type { TicketState, TicketStatus } from '../domain/aggregates/ticket/state.js';
+import type { TicketRealtimeEvent } from '../domain/events/realtime-events.js';
 import type { TicketHistoryEntry } from '../domain/vo/history.js';
 import type { TriggerId } from '../domain/vo/triggers.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
@@ -137,6 +138,10 @@ export abstract class BoardDetailQueryPort {
 }
 
 // --- Service ports ---
+
+export abstract class TicketEventPublisher {
+  public abstract publish(event: TicketRealtimeEvent): Promise<void>;
+}
 
 export abstract class TicketIdGenerator {
   public abstract generateTicketId(): TicketId;

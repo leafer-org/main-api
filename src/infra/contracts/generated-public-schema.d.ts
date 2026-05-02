@@ -2079,6 +2079,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/admin/boards/{boardId}/stream': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * SSE-стрим изменений тикетов доски
+     * @description Server-Sent Events. Соединение остаётся открытым; сервер шлёт события вида
+     *     `event: ticket.<action>` + `data: <json>` (см. TicketRealtimeEvent ниже).
+     *     Каждые 15 секунд — heartbeat-комментарий `: keepalive`. Last-Event-ID
+     *     не используется — догона нет, на разрыв клиент переподключается и делает
+     *     обычный refetch GET /admin/tickets?boardId=.
+     */
+    get: operations['getAdminBoardStream'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/admin/boards/triggers': {
     parameters: {
       query?: never;
@@ -3208,6 +3232,103 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
+    TicketRealtimeCreatedEvent: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'TicketRealtimeCreatedEvent';
+      ticketId: string;
+      boardId: string;
+      triggerId: string | null;
+      createdBy: string;
+    };
+    TicketRealtimeAssignedEvent: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'TicketRealtimeAssignedEvent';
+      ticketId: string;
+      boardId: string;
+      assigneeId: string;
+    };
+    TicketRealtimeReassignedEvent: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'TicketRealtimeReassignedEvent';
+      ticketId: string;
+      boardId: string;
+      oldAssigneeId: string;
+      newAssigneeId: string;
+      reassignedBy: string;
+    };
+    TicketRealtimeUnassignedEvent: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'TicketRealtimeUnassignedEvent';
+      ticketId: string;
+      boardId: string;
+      oldAssigneeId: string;
+    };
+    TicketRealtimeDoneEvent: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'TicketRealtimeDoneEvent';
+      ticketId: string;
+      boardId: string;
+    };
+    TicketRealtimeReopenedEvent: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'TicketRealtimeReopenedEvent';
+      ticketId: string;
+      boardId: string;
+      reopenedBy: string;
+    };
+    TicketRealtimeCommentedEvent: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'TicketRealtimeCommentedEvent';
+      ticketId: string;
+      boardId: string;
+      authorId: string;
+    };
+    TicketRealtimeMovedEvent: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: 'TicketRealtimeMovedEvent';
+      ticketId: string;
+      fromBoardId: string;
+      toBoardId: string;
+      movedBy: string;
+    };
+    /**
+     * @description Событие SSE-стрима /admin/boards/{boardId}/stream. На проводе — формат:
+     *     `event: <type>` + `data: <json фрагмент по type>`.
+     *     Discriminator — поле `type`.
+     */
+    TicketRealtimeEvent:
+      | components['schemas']['TicketRealtimeCreatedEvent']
+      | components['schemas']['TicketRealtimeAssignedEvent']
+      | components['schemas']['TicketRealtimeReassignedEvent']
+      | components['schemas']['TicketRealtimeUnassignedEvent']
+      | components['schemas']['TicketRealtimeDoneEvent']
+      | components['schemas']['TicketRealtimeReopenedEvent']
+      | components['schemas']['TicketRealtimeCommentedEvent']
+      | components['schemas']['TicketRealtimeMovedEvent'];
     TriggerParam: {
       key: string;
       label: string;
@@ -9771,6 +9892,53 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+    };
+  };
+  getAdminBoardStream: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        boardId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SSE-поток открыт */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'text/event-stream': components['schemas']['TicketRealtimeEvent'];
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Нет прав или не участник доски */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Доска не найдена */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
         };
       };
     };

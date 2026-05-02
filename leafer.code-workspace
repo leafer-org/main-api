@@ -15,6 +15,9 @@
 		{
 			"name": "http-contracts",
 			"path": "../http-contracts"
+		},
+		{
+			"path": "../../../spec-lint"
 		}
 	],
 	"settings": {}

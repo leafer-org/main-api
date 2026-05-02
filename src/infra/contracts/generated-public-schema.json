@@ -10665,6 +10665,67 @@
         }
       }
     },
+    "/admin/boards/{boardId}/stream": {
+      "get": {
+        "operationId": "getAdminBoardStream",
+        "tags": [
+          "tickets",
+          "sse"
+        ],
+        "summary": "SSE-стрим изменений тикетов доски",
+        "description": "Server-Sent Events. Соединение остаётся открытым; сервер шлёт события вида\n`event: ticket.<action>` + `data: <json>` (см. TicketRealtimeEvent ниже).\nКаждые 15 секунд — heartbeat-комментарий `: keepalive`. Last-Event-ID\nне используется — догона нет, на разрыв клиент переподключается и делает\nобычный refetch GET /admin/tickets?boardId=.\n",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE-поток открыт",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRealtimeEvent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован"
+          },
+          "403": {
+            "description": "Нет прав или не участник доски",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Доска не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/boards/triggers": {
       "get": {
         "operationId": "getAdminTicketTriggers",
@@ -14898,6 +14959,261 @@
             "type": "string",
             "format": "date-time"
           }
+        }
+      },
+      "TicketRealtimeCreatedEvent": {
+        "type": "object",
+        "required": [
+          "type",
+          "ticketId",
+          "boardId",
+          "triggerId",
+          "createdBy"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ticket.created"
+            ]
+          },
+          "ticketId": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          },
+          "triggerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdBy": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketRealtimeAssignedEvent": {
+        "type": "object",
+        "required": [
+          "type",
+          "ticketId",
+          "boardId",
+          "assigneeId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ticket.assigned"
+            ]
+          },
+          "ticketId": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          },
+          "assigneeId": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketRealtimeReassignedEvent": {
+        "type": "object",
+        "required": [
+          "type",
+          "ticketId",
+          "boardId",
+          "oldAssigneeId",
+          "newAssigneeId",
+          "reassignedBy"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ticket.reassigned"
+            ]
+          },
+          "ticketId": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          },
+          "oldAssigneeId": {
+            "type": "string"
+          },
+          "newAssigneeId": {
+            "type": "string"
+          },
+          "reassignedBy": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketRealtimeUnassignedEvent": {
+        "type": "object",
+        "required": [
+          "type",
+          "ticketId",
+          "boardId",
+          "oldAssigneeId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ticket.unassigned"
+            ]
+          },
+          "ticketId": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          },
+          "oldAssigneeId": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketRealtimeDoneEvent": {
+        "type": "object",
+        "required": [
+          "type",
+          "ticketId",
+          "boardId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ticket.done"
+            ]
+          },
+          "ticketId": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketRealtimeReopenedEvent": {
+        "type": "object",
+        "required": [
+          "type",
+          "ticketId",
+          "boardId",
+          "reopenedBy"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ticket.reopened"
+            ]
+          },
+          "ticketId": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          },
+          "reopenedBy": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketRealtimeCommentedEvent": {
+        "type": "object",
+        "required": [
+          "type",
+          "ticketId",
+          "boardId",
+          "authorId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ticket.commented"
+            ]
+          },
+          "ticketId": {
+            "type": "string"
+          },
+          "boardId": {
+            "type": "string"
+          },
+          "authorId": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketRealtimeMovedEvent": {
+        "type": "object",
+        "required": [
+          "type",
+          "ticketId",
+          "fromBoardId",
+          "toBoardId",
+          "movedBy"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ticket.moved"
+            ]
+          },
+          "ticketId": {
+            "type": "string"
+          },
+          "fromBoardId": {
+            "type": "string"
+          },
+          "toBoardId": {
+            "type": "string"
+          },
+          "movedBy": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketRealtimeEvent": {
+        "description": "Событие SSE-стрима /admin/boards/{boardId}/stream. На проводе — формат:\n`event: <type>` + `data: <json фрагмент по type>`.\nDiscriminator — поле `type`.\n",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TicketRealtimeCreatedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/TicketRealtimeAssignedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/TicketRealtimeReassignedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/TicketRealtimeUnassignedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/TicketRealtimeDoneEvent"
+          },
+          {
+            "$ref": "#/components/schemas/TicketRealtimeReopenedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/TicketRealtimeCommentedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/TicketRealtimeMovedEvent"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type"
         }
       },
       "TriggerParam": {

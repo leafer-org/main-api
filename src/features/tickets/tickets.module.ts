@@ -6,9 +6,12 @@ import { DrizzleBoardQuery } from './adapters/db/queries/board.query.js';
 import { DrizzleTicketQuery } from './adapters/db/queries/ticket.query.js';
 import { DrizzleBoardRepository } from './adapters/db/repositories/board.repository.js';
 import { DrizzleTicketRepository } from './adapters/db/repositories/ticket.repository.js';
+import { BoardStreamController } from './adapters/http/board-stream.controller.js';
 import { BoardsController } from './adapters/http/boards.controller.js';
 import { TicketsController } from './adapters/http/tickets.controller.js';
 import { UuidTicketIdGenerator } from './adapters/id-generator.js';
+import { BoardEventsSubscriber } from './adapters/redis/board-events.subscriber.js';
+import { RedisTicketEventPublisher } from './adapters/redis/ticket-event-publisher.adapter.js';
 import {
   BoardDetailQueryPort,
   BoardListQueryPort,
@@ -16,10 +19,12 @@ import {
   MyBoardsQueryPort,
   MyTicketsQueryPort,
   TicketDetailQueryPort,
+  TicketEventPublisher,
   TicketIdGenerator,
   TicketListQueryPort,
   TicketRepository,
 } from './application/ports.js';
+import { AuthorizeBoardStreamQuery } from './application/use-cases/queries/authorize-board-stream.query.js';
 import { AddAutomationInteractor } from './application/use-cases/boards/add-automation.interactor.js';
 import { AddCloseSubscriptionInteractor } from './application/use-cases/boards/add-close-subscription.interactor.js';
 import { AddMemberInteractor } from './application/use-cases/boards/add-member.interactor.js';
@@ -55,7 +60,7 @@ import { UnassignTicketInteractor } from './application/use-cases/tickets/unassi
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 
 @Module({
-  controllers: [BoardsController, TicketsController],
+  controllers: [BoardsController, TicketsController, BoardStreamController],
   providers: [
     // Infrastructure
     { provide: Clock, useClass: SystemClock },
@@ -74,6 +79,10 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
 
     // Port → Adapter bindings (services)
     { provide: TicketIdGenerator, useClass: UuidTicketIdGenerator },
+    { provide: TicketEventPublisher, useClass: RedisTicketEventPublisher },
+
+    // Realtime infrastructure
+    BoardEventsSubscriber,
 
     // Use cases — Boards
     CreateBoardInteractor,
@@ -115,6 +124,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     GetMyBoardsQuery,
     GetTriggersQuery,
     GetFiltersQuery,
+    AuthorizeBoardStreamQuery,
   ],
 })
 export class TicketsModule {}

@@ -6,7 +6,13 @@ import type { TriggerEvent } from '../../../domain/events/trigger-events.js';
 import { matchesSubscriptionFilters } from '../../../domain/services/subscription-filter.service.js';
 import type { TicketData } from '../../../domain/vo/ticket-data.js';
 import type { TriggerId } from '../../../domain/vo/triggers.js';
-import { BoardRepository, TicketIdGenerator, TicketRepository } from '../../ports.js';
+import type { TicketRealtimeCreatedEvent } from '../../../domain/events/realtime-events.js';
+import {
+  BoardRepository,
+  TicketEventPublisher,
+  TicketIdGenerator,
+  TicketRepository,
+} from '../../ports.js';
 import { isLeft } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
@@ -28,10 +34,13 @@ export class HandleTriggerEventInteractor {
     @Inject(TicketIdGenerator) private readonly idGenerator: TicketIdGenerator,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
+    @Inject(TicketEventPublisher) private readonly publisher: TicketEventPublisher,
   ) {}
 
   public async execute(event: TriggerEvent): Promise<void> {
     const mapped = this.mapEvent(event);
+    const createdEvents: TicketRealtimeCreatedEvent[] = [];
+    const systemUser = UserId.raw('system');
 
     await this.txHost.startTransaction(async (tx) => {
       const alreadyExists = await this.ticketRepo.existsByEventId(tx, mapped.eventId);
@@ -59,17 +68,28 @@ export class HandleTriggerEventInteractor {
             data: mapped.data,
             triggerId: mapped.triggerId,
             eventId: mapped.eventId,
-            createdBy: UserId.raw('system'),
+            createdBy: systemUser,
             now,
           });
 
           if (isLeft(result)) continue;
 
           await this.ticketRepo.save(tx, result.value.state);
+          createdEvents.push({
+            type: 'ticket.created',
+            ticketId,
+            boardId: board.boardId,
+            triggerId: mapped.triggerId,
+            createdBy: systemUser,
+          });
           break; // one ticket per board
         }
       }
     });
+
+    for (const created of createdEvents) {
+      await this.publisher.publish(created);
+    }
   }
 
   private mapEvent(event: TriggerEvent): MappedEvent {

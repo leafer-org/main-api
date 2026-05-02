@@ -4,7 +4,8 @@ import { BoardNotFoundError } from '../../../domain/aggregates/board/errors.js';
 import { TicketEntity } from '../../../domain/aggregates/ticket/entity.js';
 import { TicketNotFoundError } from '../../../domain/aggregates/ticket/errors.js';
 import { NotABoardMemberError } from '../../errors.js';
-import { BoardRepository, TicketRepository } from '../../ports.js';
+import type { TicketRealtimeEvent } from '../../../domain/events/realtime-events.js';
+import { BoardRepository, TicketEventPublisher, TicketRepository } from '../../ports.js';
 import { isLeft, Left } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
@@ -20,13 +21,16 @@ export class ReassignTicketInteractor {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
+    @Inject(TicketEventPublisher) private readonly publisher: TicketEventPublisher,
   ) {}
 
   public async execute(command: { ticketId: TicketId; assigneeId: UserId; reassignedBy: UserId }) {
     const auth = await this.permissionCheck.mustCan(Permission.TicketReassign);
     if (isLeft(auth)) return auth;
 
-    return this.txHost.startTransaction(async (tx) => {
+    let eventToPublish: TicketRealtimeEvent | null = null;
+
+    const txResult = await this.txHost.startTransaction(async (tx) => {
       const ticket = await this.ticketRepo.findById(tx, command.ticketId);
       if (!ticket) return Left(new TicketNotFoundError());
 
@@ -38,6 +42,7 @@ export class ReassignTicketInteractor {
       );
       if (!isMember) return Left(new NotABoardMemberError());
 
+      const oldAssigneeId = ticket.assigneeId;
       const now = this.clock.now();
 
       const result = TicketEntity.reassign(ticket, {
@@ -51,7 +56,23 @@ export class ReassignTicketInteractor {
 
       await this.ticketRepo.save(tx, result.value.state);
 
+      if (oldAssigneeId) {
+        eventToPublish = {
+          type: 'ticket.reassigned',
+          ticketId: result.value.state.ticketId,
+          boardId: result.value.state.boardId,
+          oldAssigneeId,
+          newAssigneeId: command.assigneeId,
+          reassignedBy: command.reassignedBy,
+        };
+      }
+
       return { type: 'success' as const, value: result.value.state };
     });
+
+    if (isLeft(txResult)) return txResult;
+    if (eventToPublish) await this.publisher.publish(eventToPublish);
+
+    return txResult;
   }
 }

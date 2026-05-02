@@ -4,7 +4,12 @@ import { BoardNotFoundError } from '../../../domain/aggregates/board/errors.js';
 import { TicketEntity } from '../../../domain/aggregates/ticket/entity.js';
 import type { TicketData } from '../../../domain/vo/ticket-data.js';
 import { ManualCreationNotAllowedError, NotABoardMemberError } from '../../errors.js';
-import { BoardRepository, TicketIdGenerator, TicketRepository } from '../../ports.js';
+import {
+  BoardRepository,
+  TicketEventPublisher,
+  TicketIdGenerator,
+  TicketRepository,
+} from '../../ports.js';
 import { isLeft, Left } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
@@ -21,6 +26,7 @@ export class CreateTicketInteractor {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
+    @Inject(TicketEventPublisher) private readonly publisher: TicketEventPublisher,
   ) {}
 
   public async execute(command: {
@@ -32,7 +38,7 @@ export class CreateTicketInteractor {
     const auth = await this.permissionCheck.mustCan(Permission.TicketCreate);
     if (isLeft(auth)) return auth;
 
-    return this.txHost.startTransaction(async (tx) => {
+    const txResult = await this.txHost.startTransaction(async (tx) => {
       const board = await this.boardRepo.findById(tx, command.boardId);
       if (!board) return Left(new BoardNotFoundError());
 
@@ -64,5 +70,17 @@ export class CreateTicketInteractor {
 
       return { type: 'success' as const, value: result.value.state };
     });
+
+    if (isLeft(txResult)) return txResult;
+
+    await this.publisher.publish({
+      type: 'ticket.created',
+      ticketId: txResult.value.ticketId,
+      boardId: txResult.value.boardId,
+      triggerId: null,
+      createdBy: command.createdBy,
+    });
+
+    return txResult;
   }
 }

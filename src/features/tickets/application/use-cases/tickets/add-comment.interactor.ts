@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { TicketEntity } from '../../../domain/aggregates/ticket/entity.js';
 import { TicketNotFoundError } from '../../../domain/aggregates/ticket/errors.js';
-import { TicketRepository } from '../../ports.js';
+import { TicketEventPublisher, TicketRepository } from '../../ports.js';
 import { isLeft, Left } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
@@ -17,13 +17,14 @@ export class AddCommentInteractor {
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
     @Inject(PermissionCheckService) private readonly permissionCheck: PermissionCheckService,
+    @Inject(TicketEventPublisher) private readonly publisher: TicketEventPublisher,
   ) {}
 
   public async execute(command: { ticketId: TicketId; authorId: UserId; text: string }) {
     const auth = await this.permissionCheck.mustCan(Permission.TicketCommentAdd);
     if (isLeft(auth)) return auth;
 
-    return this.txHost.startTransaction(async (tx) => {
+    const txResult = await this.txHost.startTransaction(async (tx) => {
       const ticket = await this.ticketRepo.findById(tx, command.ticketId);
       if (!ticket) return Left(new TicketNotFoundError());
 
@@ -42,5 +43,16 @@ export class AddCommentInteractor {
 
       return { type: 'success' as const, value: result.value.state };
     });
+
+    if (isLeft(txResult)) return txResult;
+
+    await this.publisher.publish({
+      type: 'ticket.commented',
+      ticketId: txResult.value.ticketId,
+      boardId: txResult.value.boardId,
+      authorId: command.authorId,
+    });
+
+    return txResult;
   }
 }
