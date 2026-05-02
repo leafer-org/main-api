@@ -82,7 +82,10 @@ export class DrizzleTicketQuery
     userId: UserId,
     params?: { from?: number; size?: number },
   ): Promise<{ tickets: TicketListItem[]; total: number }> {
-    const condition = eq(tickets.assigneeId, userId as string);
+    const condition = and(
+      eq(tickets.assigneeId, userId as string),
+      eq(tickets.status, 'in-progress'),
+    );
 
     const [countResult, rows] = await Promise.all([
       this.db.select({ count: sql<number>`count(*)::int` }).from(tickets).where(condition),
