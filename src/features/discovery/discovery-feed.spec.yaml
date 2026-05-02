@@ -25,7 +25,9 @@ specs-unit:
     - assert: возвращает items с корректной структурой
       description: |
         Каждый item содержит `itemId`, `title`, `description`, `typeId`,
-        `media`, `hasVideo`, `owner.name`, `owner.avatarUrl`.
+        `media`, `hasVideo`, `owner.name`, `owner.avatarUrl`, плюс
+        опциональные card-enrichment-поля по `widgetSettings.showOnCard`
+        (см. `discovery-category-items` → `card-enrichment`).
     - assert: учитывает параметр limit
       description: Параметр `limit` ограничивает размер страницы.
     - assert: пагинация курсором

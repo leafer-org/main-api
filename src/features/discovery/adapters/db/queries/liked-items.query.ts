@@ -3,6 +3,7 @@ import type { SQL } from 'drizzle-orm';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import { LikedItemsQueryPort } from '../../../application/ports.js';
+import { EMPTY_CARD_ENRICHMENT } from '../../../domain/read-models/item-list-view.read-model.js';
 import type { LikedItemView } from '../../../domain/read-models/liked-item-view.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
 import { discoveryItemCategories, discoveryItems, discoveryUserLikes } from '../schema.js';
@@ -136,6 +137,7 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
         : null,
       location: row.cityId ? { cityId: row.cityId, address: row.address } : null,
       categoryIds: categoryIds.map((id) => CategoryId.raw(id)),
+      ...EMPTY_CARD_ENRICHMENT,
       likedAt: row.likedAt,
     };
   }

@@ -22,7 +22,7 @@ import { GorseSyncStub } from '@/features/discovery/adapters/gorse/gorse-sync.st
 import { RecommendationStub } from '@/features/discovery/adapters/gorse/recommendation.stub.js';
 import { RecommendationService } from '@/features/discovery/application/ports.js';
 import { CategoryProjectionPort } from '@/features/discovery/application/projection-ports.js';
-import { GorseSyncPort } from '@/features/discovery/application/sync-ports.js';
+import { GorseSyncPort, MeilisearchSyncPort } from '@/features/discovery/application/sync-ports.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
 import { categoryStreamingContract } from '@/infra/kafka-contracts/category.contract.js';
@@ -199,6 +199,19 @@ describe('discovery-categories', () => {
       expect(names).toEqual(['Root 1', 'Root 2']);
     });
 
+    it('возвращает iconUrl вместо iconId', async () => {
+      const rootId = randomUUID();
+      await seedCategory({ categoryId: rootId, parentCategoryId: null, name: 'Root' });
+
+      const res = await agent.get('/categories').expect(200);
+
+      expect(res.body).toHaveLength(1);
+      const [category] = res.body as { iconUrl: unknown; iconId?: unknown }[];
+      expectDefined(category);
+      expect(category.iconUrl).toEqual(expect.any(String));
+      expect(category).not.toHaveProperty('iconId');
+    });
+
     it('возвращает детей по parentCategoryId', async () => {
       const rootId = randomUUID();
       const childId1 = randomUUID();
@@ -296,6 +309,58 @@ describe('discovery-categories', () => {
       const categoryIds = (res.body as { categoryId: string }[]).map((c: { categoryId: string }) => c.categoryId);
 
       expect(categoryIds).toEqual([ids.first, ids.middleA, ids.middleB, ids.last]);
+    });
+
+    it('переиндексирует items в Gorse и Meilisearch при republish их категории', async () => {
+      const rootAId = randomUUID();
+      const rootBId = randomUUID();
+      const categoryId = randomUUID();
+      const typeId = randomUUID();
+      const orgId = randomUUID();
+      const itemId = randomUUID();
+
+      await seedCategory({ categoryId: rootAId, parentCategoryId: null, name: 'Root A' });
+      await seedCategory({ categoryId: rootBId, parentCategoryId: null, name: 'Root B' });
+      await seedCategory({
+        categoryId,
+        parentCategoryId: rootAId,
+        name: 'Cat',
+        ancestorIds: [rootAId],
+      });
+      await seedItem(itemId, typeId, orgId, [categoryId]);
+
+      const gorseSpy = vi.spyOn(app.get(GorseSyncPort), 'upsertItem');
+      const meiliSpy = vi.spyOn(app.get(MeilisearchSyncPort), 'upsertItems');
+      gorseSpy.mockClear();
+      meiliSpy.mockClear();
+
+      // Republish категории с новым родителем
+      await produce(categoryStreamingContract, {
+        id: uuidv7(),
+        type: 'category.published',
+        categoryId,
+        parentCategoryId: rootBId,
+        name: 'Cat',
+        iconId: randomUUID(),
+        order: 0,
+        allowedTypeIds: [],
+        ancestorIds: [rootBId],
+        attributes: [],
+        ageGroups: [],
+        republished: true,
+        publishedAt: new Date().toISOString(),
+      });
+
+      await vi.waitFor(() => {
+        expect(gorseSpy).toHaveBeenCalled();
+        expect(meiliSpy).toHaveBeenCalled();
+      }, WAIT_OPTIONS);
+
+      const gorseItemIds = gorseSpy.mock.calls.map((c) => String(c[0].itemId));
+      expect(gorseItemIds).toContain(itemId);
+
+      const meiliItemIds = meiliSpy.mock.calls.flatMap((c) => c[0].map((i) => String(i.itemId)));
+      expect(meiliItemIds).toContain(itemId);
     });
 
     it('сбрасывает счётчики после unpublish категории', async () => {

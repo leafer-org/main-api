@@ -4951,6 +4951,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Категория опубликована — обновление недоступно (нужно сначала unpublish)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -11631,7 +11641,7 @@
         "required": [
           "categoryId",
           "name",
-          "iconId",
+          "iconUrl",
           "childCount",
           "itemCount"
         ],
@@ -11642,7 +11652,7 @@
           "name": {
             "type": "string"
           },
-          "iconId": {
+          "iconUrl": {
             "type": "string"
           },
           "childCount": {
@@ -11941,6 +11951,57 @@
             "items": {
               "type": "string"
             }
+          },
+          "eventDateTime": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "nextScheduleSlot": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "dayOfWeek",
+                  "startTime",
+                  "endTime"
+                ],
+                "properties": {
+                  "dayOfWeek": {
+                    "type": "integer"
+                  },
+                  "startTime": {
+                    "type": "string"
+                  },
+                  "endTime": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "distanceKm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "cardAgeGroup": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "adults",
+              "children",
+              "all",
+              null
+            ]
           }
         }
       },
@@ -13134,6 +13195,9 @@
           "required": {
             "type": "boolean"
           },
+          "showOnCard": {
+            "type": "boolean"
+          },
           "allowedStrategies": {
             "type": "array",
             "items": {
@@ -13156,6 +13220,9 @@
             ]
           },
           "required": {
+            "type": "boolean"
+          },
+          "showOnCard": {
             "type": "boolean"
           },
           "maxDates": {
@@ -13189,6 +13256,9 @@
             ]
           },
           "required": {
+            "type": "boolean"
+          },
+          "showOnCard": {
             "type": "boolean"
           }
         }

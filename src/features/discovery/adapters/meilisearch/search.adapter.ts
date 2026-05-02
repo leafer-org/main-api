@@ -2,7 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { SearchPort } from '../../application/ports.js';
 import type { DynamicSearchFilters } from '../../application/use-cases/search/types.js';
-import type { ItemListView } from '../../domain/read-models/item-list-view.read-model.js';
+import {
+  EMPTY_CARD_ENRICHMENT,
+  type ItemListView,
+} from '../../domain/read-models/item-list-view.read-model.js';
 import type { SearchFacets } from '../../domain/read-models/search-result.read-model.js';
 import { DISCOVERY_ITEMS_INDEX, DiscoveryItemsSearchClient } from './discovery-items.index.js';
 import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
@@ -129,6 +132,7 @@ export class MeiliSearchQuery implements SearchPort {
         : null,
       location: hit.cityId ? { cityId: hit.cityId, address: hit.address || null } : null,
       categoryIds: hit.categoryIds.map((id) => CategoryId.raw(id)),
+      ...EMPTY_CARD_ENRICHMENT,
     };
   }
 }

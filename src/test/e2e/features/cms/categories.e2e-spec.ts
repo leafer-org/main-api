@@ -201,6 +201,31 @@ describe('CMS Categories', () => {
       expect(res.body.ageGroups).toEqual(['children', 'adults']);
     });
 
+    it('отклоняет обновление опубликованной категории', async () => {
+      const id = randomUUID();
+      const r = await createCategory({ id });
+      expect(r.status).toBe(201);
+
+      await e2e.agent
+        .post(`/cms/categories/${id}/publish`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const res = await e2e.agent
+        .patch(`/cms/categories/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Updated',
+          iconId: r.body.iconId,
+          parentCategoryId: null,
+          allowedTypeIds: r.body.allowedTypeIds,
+          ageGroups: r.body.ageGroups,
+        });
+
+      expect(res.status).toBe(409);
+      expect(res.body.type).toBe('category_already_published');
+    });
+
     it('отклоняет создание с пустым allowedTypeIds', async () => {
       const res = await createCategory({ allowedTypeIds: [] });
       expect(res.status).toBe(400);

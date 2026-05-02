@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import type {
   CategoryAncestorLookupPort,
+  ItemCardEnrichmentPort,
   ItemQueryPort,
   RankedListCachePort,
   RecommendationService,
@@ -39,11 +40,20 @@ function makeDeps() {
   const recommendation = ServiceMock<RecommendationService>();
   const rankedListCache = ServiceMock<RankedListCachePort>();
   const itemQuery = ServiceMock<ItemQueryPort>();
+  const cardEnrichment = ServiceMock<ItemCardEnrichmentPort>();
   const cityCoordinates = ServiceMock<CityCoordinatesPort>();
   const ancestorLookup = ServiceMock<CategoryAncestorLookupPort>();
   cityCoordinates.findCoordinates.mockResolvedValue(null);
   ancestorLookup.findRootCategoryIds.mockResolvedValue([ROOT_CATEGORY_ID]);
-  return { recommendation, rankedListCache, itemQuery, cityCoordinates, ancestorLookup };
+  cardEnrichment.enrich.mockResolvedValue(new Map());
+  return {
+    recommendation,
+    rankedListCache,
+    itemQuery,
+    cardEnrichment,
+    cityCoordinates,
+    ancestorLookup,
+  };
 }
 
 function makeInteractor(deps: ReturnType<typeof makeDeps>) {
@@ -51,6 +61,7 @@ function makeInteractor(deps: ReturnType<typeof makeDeps>) {
     deps.recommendation,
     deps.rankedListCache,
     deps.itemQuery,
+    deps.cardEnrichment,
     deps.cityCoordinates,
     deps.ancestorLookup,
   );

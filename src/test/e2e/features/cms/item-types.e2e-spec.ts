@@ -147,6 +147,78 @@ describe('CMS Item Types', () => {
     });
   });
 
+  // --- Card Display ---
+
+  describe('CardDisplay', () => {
+    it('showOnCard=true разрешён только для card-eligible виджетов', async () => {
+      const res = await createItemType({
+        widgetSettings: [
+          { type: 'base-info', required: true, showOnCard: true },
+        ],
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.body.type).toBe('card_display_not_allowed_for_widget_type');
+      expect(res.body.data?.type).toBe('base-info');
+    });
+
+    it('showOnCard=true принимается для card-eligible виджетов', async () => {
+      const id = randomUUID();
+      const res = await createItemType({
+        id,
+        widgetSettings: [
+          { type: 'base-info', required: true },
+          {
+            type: 'payment',
+            required: false,
+            showOnCard: true,
+            allowedStrategies: ['free'],
+          },
+          { type: 'event-date-time', required: false, showOnCard: true, maxDates: null },
+          { type: 'location', required: false, showOnCard: true },
+        ],
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.body.widgetSettings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ type: 'payment', showOnCard: true }),
+          expect.objectContaining({ type: 'event-date-time', showOnCard: true }),
+          expect.objectContaining({ type: 'location', showOnCard: true }),
+        ]),
+      );
+    });
+
+    it('showOnCard=false принимается для любого виджета', async () => {
+      const res = await createItemType({
+        widgetSettings: [
+          { type: 'base-info', required: true, showOnCard: false },
+          { type: 'team', required: false, showOnCard: false },
+        ],
+      });
+
+      expect(res.status).toBe(201);
+    });
+
+    it('PATCH отклоняет showOnCard=true для не-card-eligible виджетов', async () => {
+      const id = randomUUID();
+      await createItemType({ id }).expect(201);
+
+      const res = await e2e.agent
+        .patch(`/cms/item-types/${id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Updated',
+          label: 'обновлённый',
+          widgetSettings: [{ type: 'category', required: true, showOnCard: true }],
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.type).toBe('card_display_not_allowed_for_widget_type');
+      expect(res.body.data?.type).toBe('category');
+    });
+  });
+
   // --- Permissions ---
 
   describe('Permissions', () => {

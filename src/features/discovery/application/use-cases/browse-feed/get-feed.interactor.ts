@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { toListView } from '../../../domain/mappers/item-list-view.mapper.js';
-import { ItemQueryPort, RecommendationService } from '../../ports.js';
+import { ItemCardEnrichmentPort, ItemQueryPort, RecommendationService } from '../../ports.js';
 import { Right } from '@/infra/lib/box.js';
 import { userGeoCategory, userGlobalCategory } from '@/infra/lib/geo/h3-geo.js';
 import { nextOffsetCursor, parseOffsetCursor } from '@/infra/lib/pagination/index.js';
@@ -20,6 +20,7 @@ export class GetFeedInteractor {
   public constructor(
     @Inject(RecommendationService) private readonly recommendation: RecommendationService,
     @Inject(ItemQueryPort) private readonly itemQuery: ItemQueryPort,
+    @Inject(ItemCardEnrichmentPort) private readonly cardEnrichment: ItemCardEnrichmentPort,
     @Inject(CityCoordinatesPort) private readonly cityCoordinates: CityCoordinatesPort,
   ) {}
 
@@ -55,8 +56,13 @@ export class GetFeedInteractor {
       .filter((i) => i !== undefined)
       .slice(0, query.limit);
 
+    const enrichment = await this.cardEnrichment.enrich({
+      items: orderedItems.map((i) => ({ itemId: i.itemId, typeId: i.typeId })),
+      userLocation: query.coordinates,
+    });
+
     return Right({
-      items: orderedItems.map(toListView),
+      items: orderedItems.map((i) => toListView(i, enrichment.get(String(i.itemId)))),
       nextCursor: nextOffsetCursor(offset, orderedItems.length, query.limit),
     });
   }

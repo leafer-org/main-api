@@ -7,10 +7,19 @@ description: |
   Каждый тип содержит:
     - id, name, label;
     - widgetSettings — список виджетов, доступных для item-карточки этого типа,
-      с признаком required и опциональными параметрами (например, allowedStrategies
-      для виджета 'payment').
+      с признаком required, опциональными параметрами виджета (например,
+      allowedStrategies для 'payment') и опциональным флагом
+      `showOnCard: boolean` — управляет, подмешивается ли поле виджета в
+      превью-карточку публичного каталога. По умолчанию false.
+
+  Card-eligible виджеты (для них допустим `showOnCard=true`):
+    payment, event-date-time, location, schedule, age-group, owner.
+  НЕ card-eligible:
+    base-info, category, item-review, owner-review, contact-info, team.
 
   Инвариант widgetSettings: каждый type встречается не более одного раза.
+
+  Поведение публичного вывода полей карточки описано в `discovery-card-display`.
 
 specs-unit:
   # ==================== CRUD ====================
@@ -34,13 +43,33 @@ specs-unit:
       description: |
         widgetSettings не должен содержать два элемента с одинаковым type — 400.
 
+  # ==================== CARD DISPLAY (showOnCard) ====================
+
+  CardDisplay:
+    - assert: showOnCard=true разрешён только для card-eligible виджетов
+      description: |
+        Card-eligible: payment, event-date-time, location, schedule,
+        age-group, owner. Для остальных (base-info, category, item-review,
+        owner-review, contact-info, team) POST с showOnCard=true →
+        400 CardDisplayNotAllowedForWidgetType.
+    - assert: showOnCard=true принимается для card-eligible виджетов
+      description: |
+        POST с showOnCard=true на payment/event-date-time/location и т.п. —
+        201, и значение возвращается в widgetSettings ответа.
+    - assert: showOnCard=false принимается для любого виджета
+      description: |
+        Отключение валидно даже для не card-eligible (base-info, team и др.).
+    - assert: PATCH отклоняет showOnCard=true для не-card-eligible виджетов
+      description: |
+        Та же проверка, что и для POST, применяется и к PATCH /cms/item-types/:id.
+
   # ==================== ПРАВА ====================
 
   Permissions:
     - assert: Без авторизации — 401
     - assert: Пользователь без manageCms — 403
       description: |
-        Управление item-types требует permission manageCms.
+        Управление item-types (включая showOnCard) требует permission manageCms.
 
 definitions:
   feature:

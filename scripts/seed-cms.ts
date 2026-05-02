@@ -107,34 +107,73 @@ const ITEM_TYPES = [
   },
 ];
 
+const CAT_EDUCATION_ID = '00000000-0000-0000-0001-000000000001';
+const CAT_SPORT_ID = '00000000-0000-0000-0001-000000000002';
+const CAT_CREATIVITY_ID = '00000000-0000-0000-0001-000000000003';
+const CAT_ENTERTAINMENT_ID = '00000000-0000-0000-0001-000000000004';
+const CAT_YOGA_ID = '00000000-0000-0000-0001-000000000005';
+
 const CATEGORIES = [
   {
-    id: '00000000-0000-0000-0001-000000000001',
+    id: CAT_EDUCATION_ID,
+    parentCategoryId: null as string | null,
     name: 'Образование',
     allowedTypeIds: [ITEM_TYPE_SERVICE_ID, ITEM_TYPE_EVENT_ID],
     ageGroups: ['children' as const, 'adults' as const],
     fixture: 'categories/education.jpg',
   },
   {
-    id: '00000000-0000-0000-0001-000000000002',
+    id: CAT_SPORT_ID,
+    parentCategoryId: null as string | null,
     name: 'Спорт',
     allowedTypeIds: [ITEM_TYPE_SERVICE_ID, ITEM_TYPE_EVENT_ID],
     ageGroups: ['children' as const, 'adults' as const],
     fixture: 'categories/sport.jpg',
   },
   {
-    id: '00000000-0000-0000-0001-000000000003',
+    id: CAT_CREATIVITY_ID,
+    parentCategoryId: null as string | null,
     name: 'Творчество',
     allowedTypeIds: [ITEM_TYPE_SERVICE_ID],
     ageGroups: ['children' as const, 'adults' as const],
     fixture: 'categories/creativity.jpg',
   },
   {
-    id: '00000000-0000-0000-0001-000000000004',
+    id: CAT_ENTERTAINMENT_ID,
+    parentCategoryId: null as string | null,
     name: 'Развлечения',
     allowedTypeIds: [ITEM_TYPE_EVENT_ID],
     ageGroups: ['children' as const, 'adults' as const],
     fixture: 'categories/entertainment.jpg',
+  },
+  {
+    id: CAT_YOGA_ID,
+    parentCategoryId: CAT_SPORT_ID,
+    name: 'Йога',
+    allowedTypeIds: [ITEM_TYPE_SERVICE_ID, ITEM_TYPE_EVENT_ID],
+    ageGroups: ['children' as const, 'adults' as const],
+    fixture: 'categories/sport.jpg',
+  },
+];
+
+// Attributes — assigned BEFORE publish so they propagate to ancestors/items via published event.
+const ATTR_LEVEL_ID = '00000000-0000-0000-0002-000000000001';
+const ATTR_STYLE_ID = '00000000-0000-0000-0002-000000000002';
+
+const CATEGORY_ATTRIBUTES = [
+  {
+    categoryId: CAT_SPORT_ID,
+    attributeId: ATTR_LEVEL_ID,
+    name: 'Уровень',
+    required: true,
+    schema: { type: 'enum' as const, options: ['Начинающий', 'Средний', 'Продвинутый'] },
+  },
+  {
+    categoryId: CAT_YOGA_ID,
+    attributeId: ATTR_STYLE_ID,
+    name: 'Стиль',
+    required: true,
+    schema: { type: 'enum' as const, options: ['Хатха', 'Виньяса', 'Инь', 'Аштанга'] },
   },
 ];
 
@@ -171,7 +210,7 @@ const ITEMS: ItemSeed[] = [
   {
     orgIndex: 0,
     typeId: ITEM_TYPE_SERVICE_ID,
-    categoryId: CATEGORIES[0].id, // Образование
+    categoryId: CAT_EDUCATION_ID,
     title: 'Персональное занятие по йоге',
     description: 'Индивидуальная практика с опытным инструктором. Подходит для любого уровня подготовки.',
     fixture: 'items/personal-yoga.jpg',
@@ -194,7 +233,8 @@ const ITEMS: ItemSeed[] = [
   {
     orgIndex: 0,
     typeId: ITEM_TYPE_SERVICE_ID,
-    categoryId: CATEGORIES[1].id, // Спорт
+    categoryId: CAT_SPORT_ID,
+    attributes: [{ attributeId: ATTR_LEVEL_ID, value: 'Начинающий' }],
     title: 'Групповая хатха-йога',
     description: 'Мягкая практика для начинающих. Работа с дыханием, растяжкой и балансом.',
     fixture: 'items/group-hatha.jpg',
@@ -220,7 +260,8 @@ const ITEMS: ItemSeed[] = [
   {
     orgIndex: 1,
     typeId: ITEM_TYPE_SERVICE_ID,
-    categoryId: CATEGORIES[1].id, // Спорт
+    categoryId: CAT_SPORT_ID,
+    attributes: [{ attributeId: ATTR_LEVEL_ID, value: 'Начинающий' }],
     title: 'Групповое занятие по сальсе',
     description: 'Зажигательные танцы в дружной компании. Партнёр не требуется.',
     fixture: 'items/salsa-class.jpg',
@@ -241,7 +282,7 @@ const ITEMS: ItemSeed[] = [
   {
     orgIndex: 1,
     typeId: ITEM_TYPE_SERVICE_ID,
-    categoryId: CATEGORIES[0].id, // Образование
+    categoryId: CAT_EDUCATION_ID,
     title: 'Танцы для детей 5–10 лет',
     description: 'Развитие координации, чувства ритма и пластики через игровые танцевальные занятия.',
     fixture: 'items/kids-dance.jpg',
@@ -266,7 +307,7 @@ const ITEMS: ItemSeed[] = [
   {
     orgIndex: 1,
     typeId: ITEM_TYPE_EVENT_ID,
-    categoryId: CATEGORIES[3].id, // Развлечения
+    categoryId: CAT_ENTERTAINMENT_ID,
     title: 'Танцевальный вечер',
     description: 'Открытый вечер социальных танцев — бачата, сальса, кизомба.',
     fixture: 'items/dance-evening.jpg',
@@ -284,7 +325,7 @@ const ITEMS: ItemSeed[] = [
   {
     orgIndex: 2,
     typeId: ITEM_TYPE_EVENT_ID,
-    categoryId: CATEGORIES[0].id, // Образование (Творчество не допускает Event)
+    categoryId: CAT_EDUCATION_ID, // (Творчество не допускает Event)
     title: 'Мастер-класс по латте-арту',
     description: 'Научитесь рисовать на кофе под руководством нашего бариста.',
     fixture: 'items/latte-art.jpg',
@@ -304,7 +345,7 @@ const ITEMS: ItemSeed[] = [
   {
     orgIndex: 2,
     typeId: ITEM_TYPE_SERVICE_ID,
-    categoryId: CATEGORIES[2].id, // Творчество
+    categoryId: CAT_CREATIVITY_ID,
     title: 'Кофейная дегустация',
     description: 'Попробуйте 5 сортов кофе из разных стран и узнайте разницу между способами обработки.',
     fixture: 'items/coffee-tasting.jpg',
@@ -325,7 +366,7 @@ const ITEMS: ItemSeed[] = [
   {
     orgIndex: 2,
     typeId: ITEM_TYPE_EVENT_ID,
-    categoryId: CATEGORIES[3].id, // Развлечения
+    categoryId: CAT_ENTERTAINMENT_ID,
     title: 'Поэтический вечер',
     description: 'Открытый микрофон для поэтов и слушателей. Тёплая атмосфера и живая музыка.',
     fixture: 'items/poetry-evening.jpg',
@@ -339,7 +380,63 @@ const ITEMS: ItemSeed[] = [
       { type: 'email', value: 'zerno.events@example.com', label: 'Заявка на выступление' },
     ],
   },
+  // --- Bulk: Йога подкатегория, Архангельск, разные районы ---
+  ...buildYogaItems(),
 ];
+
+// Generates ~30 items in the "Йога" subcategory across Arkhangelsk districts.
+// Diversity не важна — нужны объёмы для тестирования каталога/поиска/ленты.
+function buildYogaItems(): ItemSeed[] {
+  const styles = ['Хатха', 'Виньяса', 'Инь', 'Аштанга'];
+  const levels = ['Начинающий', 'Средний', 'Продвинутый'];
+  const districts = [
+    { lat: 64.5400, lng: 40.5150, address: 'ул. Поморская, 5' },        // Центр
+    { lat: 64.5605, lng: 40.4790, address: 'ул. Никольская, 31' },       // Соломбала
+    { lat: 64.5210, lng: 40.5820, address: 'ул. Галушина, 21' },         // Майская горка
+    { lat: 64.5510, lng: 40.4220, address: 'ул. Лесная, 8' },            // Левый берег
+    { lat: 64.5120, lng: 40.5510, address: 'ул. Воронина, 14' },         // Варавино
+  ];
+  const fixtures = ['items/personal-yoga.jpg', 'items/group-hatha.jpg'];
+
+  const items: ItemSeed[] = [];
+  for (let i = 0; i < 30; i++) {
+    const style = styles[i % styles.length];
+    const level = levels[i % levels.length];
+    const district = districts[i % districts.length];
+    const fixture = fixtures[i % fixtures.length];
+    const orgIndex = i % 3;
+    const isEvent = i % 7 === 0;
+
+    const base: ItemSeed = {
+      orgIndex,
+      typeId: isEvent ? ITEM_TYPE_EVENT_ID : ITEM_TYPE_SERVICE_ID,
+      categoryId: CAT_YOGA_ID,
+      attributes: [
+        { attributeId: ATTR_LEVEL_ID, value: level },
+        { attributeId: ATTR_STYLE_ID, value: style },
+      ],
+      title: `${style}-йога #${i + 1} (${level})`,
+      description: `Практика ${style.toLowerCase()}-йоги для уровня «${level.toLowerCase()}». Архангельск.`,
+      fixture,
+      location: { cityId: 'arkhangelsk', lat: district.lat, lng: district.lng, address: district.address },
+      ageGroup: 'adults',
+      payment: [
+        { name: 'Разовое', description: null, strategy: 'one-time', price: 500 + (i % 5) * 200 },
+      ],
+    };
+
+    if (isEvent) {
+      base.eventDaysFromNow = [3 + (i % 14)];
+    } else {
+      base.schedule = [
+        { dayOfWeek: 1 + (i % 6), startTime: '18:00', endTime: '19:30' },
+      ];
+    }
+
+    items.push(base);
+  }
+  return items;
+}
 
 // --- Main ---
 
@@ -379,13 +476,35 @@ export async function seedCms(baseUrl: string, otpCode: string) {
     console.log(`  → Item type: ${itemType.name}`);
   }
 
-  // Categories
+  // Categories (parent-first ordering — CATEGORIES уже отсортирован: корневые перед дочерними)
   for (const cat of CATEGORIES) {
     const iconId = await uploadImage(api, cat.fixture);
     await api.POST('/cms/categories', {
-      body: { id: cat.id, name: cat.name, allowedTypeIds: cat.allowedTypeIds, ageGroups: cat.ageGroups, iconId, order: 0 },
+      body: {
+        id: cat.id,
+        parentCategoryId: cat.parentCategoryId,
+        name: cat.name,
+        allowedTypeIds: cat.allowedTypeIds,
+        ageGroups: cat.ageGroups,
+        iconId,
+        order: 0,
+      },
     });
-    console.log(`  → Category: ${cat.name}`);
+    console.log(`  → Category: ${cat.name}${cat.parentCategoryId ? ' (sub)' : ''}`);
+  }
+
+  // Attributes — добавляем ДО publish, иначе они не попадут в category.published event
+  for (const attr of CATEGORY_ATTRIBUTES) {
+    await api.POST('/cms/categories/{id}/attributes', {
+      params: { path: { id: attr.categoryId } },
+      body: {
+        attributeId: attr.attributeId,
+        name: attr.name,
+        required: attr.required,
+        schema: attr.schema,
+      },
+    });
+    console.log(`  → Attribute: ${attr.name} → ${attr.categoryId}`);
   }
 
   // Publish categories
@@ -471,6 +590,7 @@ interface ItemSeed {
   orgIndex: number;
   typeId: string;
   categoryId: string;
+  attributes?: { attributeId: string; value: string }[];
   title: string;
   description: string;
   fixture: string;
@@ -486,7 +606,7 @@ interface ItemSeed {
 function buildItemWidgets(item: ItemSeed, coverMediaId: string, teamMediaIds: Map<string, string>): ItemWidgetInput[] {
   const widgets: ItemWidgetInput[] = [
     { type: 'base-info', title: item.title, description: item.description, media: [{ type: 'image', mediaId: coverMediaId }] },
-    { type: 'category', categoryIds: [item.categoryId], attributes: [] },
+    { type: 'category', categoryIds: [item.categoryId], attributes: item.attributes ?? [] },
     { type: 'payment', options: item.payment },
   ];
 

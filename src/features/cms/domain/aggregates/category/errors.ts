@@ -6,6 +6,11 @@ export class CategoryNotFoundError extends CreateDomainError('category_not_found
 
 export class CategoryNotPublishedError extends CreateDomainError('category_not_published', 400) {}
 
+export class CategoryAlreadyPublishedError extends CreateDomainError(
+  'category_already_published',
+  409,
+) {}
+
 export class AttributeAlreadyAssignedError extends CreateDomainError(
   'attribute_already_assigned',
   400,

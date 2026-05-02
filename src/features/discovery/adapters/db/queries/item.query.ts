@@ -10,6 +10,7 @@ import type {
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
 import {
+  discoveryCategories,
   discoveryItemAttributes,
   discoveryItemCategories,
   discoveryItemEventDates,
@@ -68,7 +69,17 @@ export class DrizzleItemQuery implements ItemQueryPort {
     limit: number;
   }): Promise<{ items: ItemReadModel[]; nextCursor: string | null }> {
     const conditions: SQL[] = [
-      sql`EXISTS (SELECT 1 FROM ${discoveryItemCategories} WHERE ${discoveryItemCategories.itemId} = ${discoveryItems.id} AND ${discoveryItemCategories.categoryId} = ${params.categoryId as string})`,
+      // Принадлежность к категории или любому её потомку. Поддерево резолвится
+      // через `discovery_categories.ancestor_ids` (jsonb-массив id предков).
+      sql`EXISTS (
+        SELECT 1 FROM ${discoveryItemCategories}
+        WHERE ${discoveryItemCategories.itemId} = ${discoveryItems.id}
+          AND ${discoveryItemCategories.categoryId} IN (
+            SELECT ${discoveryCategories.id}::text FROM ${discoveryCategories}
+            WHERE ${discoveryCategories.id} = ${params.categoryId as string}::uuid
+               OR jsonb_exists(${discoveryCategories.ancestorIds}, ${params.categoryId as string})
+          )
+      )`,
       eq(discoveryItems.cityId, params.cityId),
       sql`(${discoveryItems.ageGroup} = ${params.ageGroup} OR ${discoveryItems.ageGroup} = 'all')`,
     ];

@@ -2378,7 +2378,7 @@ export interface components {
     CategoryListItem: {
       categoryId: string;
       name: string;
-      iconId: string;
+      iconUrl: string;
       childCount: number;
       itemCount: number;
     };
@@ -2451,6 +2451,16 @@ export interface components {
       owner?: components['schemas']['ItemOwnerSummary'] | null;
       location?: components['schemas']['ItemLocationSummary'] | null;
       categoryIds: string[];
+      /** Format: date-time */
+      eventDateTime?: string | null;
+      nextScheduleSlot?: {
+        dayOfWeek: number;
+        startTime: string;
+        endTime: string;
+      } | null;
+      distanceKm?: number | null;
+      /** @enum {string|null} */
+      cardAgeGroup?: 'adults' | 'children' | 'all' | null;
     };
     CursorPaginatedItems: {
       items: components['schemas']['ItemListView'][];
@@ -2739,6 +2749,7 @@ export interface components {
        */
       type: 'payment';
       required: boolean;
+      showOnCard?: boolean;
       allowedStrategies: components['schemas']['PaymentStrategy'][];
     };
     EventDateTimeWidgetSettings: {
@@ -2748,6 +2759,7 @@ export interface components {
        */
       type: 'event-date-time';
       required: boolean;
+      showOnCard?: boolean;
       maxDates?: number | null;
     };
     BaseWidgetSettings: {
@@ -2767,6 +2779,7 @@ export interface components {
         | 'contact-info'
         | 'team';
       required: boolean;
+      showOnCard?: boolean;
     };
     WidgetSettings:
       | components['schemas']['PaymentWidgetSettings']
@@ -6336,6 +6349,15 @@ export interface operations {
       };
       /** @description Категория не найдена */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+      /** @description Категория опубликована — обновление недоступно (нужно сначала unpublish) */
+      409: {
         headers: {
           [name: string]: unknown;
         };

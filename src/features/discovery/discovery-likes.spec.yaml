@@ -35,7 +35,9 @@ specs-unit:
         Пустой список — `items: []`, `nextCursor: null`.
     - assert: возвращает liked items с likedAt как ISO-строкой
       description: |
-        Каждый item содержит `itemId` и `likedAt` (ISO-строка).
+        Каждый item содержит `itemId` и `likedAt` (ISO-строка), а также
+        стандартные поля ItemListView и опциональные card-enrichment-поля
+        по `widgetSettings.showOnCard` (см. `discovery-feed` → `card-enrichment`).
     - assert: не возвращает items без лайка
       description: После снятия лайка item исчезает из `liked-items`.
     - assert: учитывает query-параметр limit

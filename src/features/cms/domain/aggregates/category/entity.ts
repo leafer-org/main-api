@@ -9,6 +9,7 @@ import type {
 import {
   AttributeAlreadyAssignedError,
   AttributeNotAssignedError,
+  CategoryAlreadyPublishedError,
   CategoryNotPublishedError,
   EmptyAgeGroupsError,
   EmptyAllowedTypeIdsError,
@@ -134,9 +135,14 @@ export const CategoryEntity = {
     state: CategoryEntity,
     cmd: UpdateCategoryCommand,
   ): Either<
-    InvalidAllowedTypeIdsError | InvalidAgeGroupsError | EmptyAllowedTypeIdsError | EmptyAgeGroupsError,
+    | InvalidAllowedTypeIdsError
+    | InvalidAgeGroupsError
+    | EmptyAllowedTypeIdsError
+    | EmptyAgeGroupsError
+    | CategoryAlreadyPublishedError,
     { state: CategoryEntity; event: CategoryUpdatedEvent }
   > {
+    if (state.status === 'published') return Left(new CategoryAlreadyPublishedError());
     if (cmd.allowedTypeIds.length === 0) return Left(new EmptyAllowedTypeIdsError());
     if (cmd.ageGroups.length === 0) return Left(new EmptyAgeGroupsError());
 

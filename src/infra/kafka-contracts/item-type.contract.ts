@@ -16,6 +16,7 @@ const BaseWidgetSettingsSchema = Type.Object({
     Type.Literal('team'),
   ]),
   required: Type.Boolean(),
+  showOnCard: Type.Optional(Type.Boolean()),
 });
 
 const PaymentWidgetSettingsSchema = Type.Object({
@@ -24,12 +25,14 @@ const PaymentWidgetSettingsSchema = Type.Object({
   allowedStrategies: Type.Array(
     Type.Union([Type.Literal('free'), Type.Literal('one-time'), Type.Literal('subscription')]),
   ),
+  showOnCard: Type.Optional(Type.Boolean()),
 });
 
 const EventDateTimeWidgetSettingsSchema = Type.Object({
   type: Type.Literal('event-date-time'),
   required: Type.Boolean(),
   maxDates: Type.Union([Type.Number(), Type.Null()]),
+  showOnCard: Type.Optional(Type.Boolean()),
 });
 
 const WidgetSettingsSchema = Type.Union([

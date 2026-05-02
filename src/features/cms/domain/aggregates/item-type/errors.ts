@@ -11,3 +11,8 @@ export class DuplicateWidgetSettingsError extends CreateDomainError(
   'duplicate_widget_settings',
   400,
 ).withData<{ duplicateTypes: string[] }>() {}
+
+export class CardDisplayNotAllowedForWidgetTypeError extends CreateDomainError(
+  'card_display_not_allowed_for_widget_type',
+  400,
+).withData<{ type: string }>() {}

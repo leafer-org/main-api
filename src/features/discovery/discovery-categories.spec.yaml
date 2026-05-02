@@ -16,6 +16,11 @@ specs-unit:
       description: Пустой каталог — пустой массив, без 404.
     - assert: возвращает корневые категории
       description: Без `parentCategoryId` отдаются только корневые категории.
+    - assert: возвращает iconUrl вместо iconId
+      description: |
+        Каждая категория содержит резолвнутый `iconUrl` (строка), а не сырой
+        `iconId`. URL получается через `MediaService.createDownloadUrlsLoader`
+        с `imageProxy` 64x64 webp.
     - assert: возвращает детей по parentCategoryId
       description: Передача `parentCategoryId` фильтрует выдачу прямыми детьми.
     - assert: возвращает корректный childCount после recalc
@@ -38,6 +43,16 @@ specs-unit:
       description: |
         После `category.unpublished` запись удаляется и пересчёт
         возвращает корректные значения (childCount = 0).
+
+  Projection cascade:
+    - assert: переиндексирует items при republish их категории
+      description: |
+        После `category.published(republished: true)` все items, привязанные
+        напрямую к категории, синкаются заново в Gorse и Meilisearch — иначе
+        `rootCategoryIds` и фасеты остаются вычисленными по старой иерархии.
+        Каскад на потомков не нужен: смена parent требует unpublish, а unpublish
+        каскадно валит поддерево, и последующий republish каждой категории
+        несёт свежие ancestorIds сам по себе.
 
   GET /categories/:id/filters:
     - assert: возвращает 404 для несуществующей категории

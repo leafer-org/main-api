@@ -2,8 +2,10 @@ import * as crypto from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { toListView } from '../../../domain/mappers/item-list-view.mapper.js';
+import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import {
   CategoryAncestorLookupPort,
+  ItemCardEnrichmentPort,
   ItemQueryPort,
   RankedListCachePort,
   RecommendationService,
@@ -36,6 +38,7 @@ export class GetCategoryItemsInteractor {
     @Inject(RecommendationService) private readonly recommendation: RecommendationService,
     @Inject(RankedListCachePort) private readonly rankedListCache: RankedListCachePort,
     @Inject(ItemQueryPort) private readonly itemQuery: ItemQueryPort,
+    @Inject(ItemCardEnrichmentPort) private readonly cardEnrichment: ItemCardEnrichmentPort,
     @Inject(CityCoordinatesPort) private readonly cityCoordinates: CityCoordinatesPort,
     @Inject(CategoryAncestorLookupPort) private readonly ancestorLookup: CategoryAncestorLookupPort,
   ) {}
@@ -62,12 +65,23 @@ export class GetCategoryItemsInteractor {
         limit: query.limit,
       });
       return Right({
-        items: result.items.map(toListView),
+        items: await this.enrichListViews(result.items, query.coordinates),
         nextCursor: result.nextCursor,
       });
     }
 
     return this.executePersonalSort(query);
+  }
+
+  private async enrichListViews(
+    items: ItemReadModel[],
+    userLocation?: { lat: number; lng: number },
+  ) {
+    const enrichment = await this.cardEnrichment.enrich({
+      items: items.map((i) => ({ itemId: i.itemId, typeId: i.typeId })),
+      userLocation,
+    });
+    return items.map((i) => toListView(i, enrichment.get(String(i.itemId))));
   }
 
   private async executePersonalSort(query: {
@@ -120,7 +134,10 @@ export class GetCategoryItemsInteractor {
       const orderedGorse = gorsePageIds.map((id) => itemMap.get(id)).filter((i) => i !== undefined);
 
       return Right({
-        items: [...orderedGorse, ...newestResult.items].map(toListView),
+        items: await this.enrichListViews(
+          [...orderedGorse, ...newestResult.items],
+          query.coordinates,
+        ),
         nextCursor: null,
       });
     }
@@ -130,7 +147,7 @@ export class GetCategoryItemsInteractor {
     const orderedItems = gorsePageIds.map((id) => itemMap.get(id)).filter((i) => i !== undefined);
 
     return Right({
-      items: orderedItems.map(toListView),
+      items: await this.enrichListViews(orderedItems, query.coordinates),
       nextCursor: nextOffsetCursor(offset, orderedItems.length, query.limit, rankedIds.length),
     });
   }
@@ -183,6 +200,7 @@ export class GetCategoryItemsInteractor {
     query: {
       categoryId: CategoryId;
       cityId: string;
+      coordinates?: { lat: number; lng: number };
       ageGroup: AgeGroupOption;
       filters: CategoryItemFilters;
       cursor?: string;
@@ -201,7 +219,7 @@ export class GetCategoryItemsInteractor {
       limit: query.limit,
     });
     return Right({
-      items: result.items.map(toListView),
+      items: await this.enrichListViews(result.items, query.coordinates),
       nextCursor: result.nextCursor,
     });
   }

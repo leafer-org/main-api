@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { LikedItemsQueryPort } from '../../ports.js';
+import { ItemCardEnrichmentPort, LikedItemsQueryPort } from '../../ports.js';
 import { Right } from '@/infra/lib/box.js';
 import type { UserId } from '@/kernel/domain/ids.js';
 
@@ -9,10 +9,28 @@ import type { UserId } from '@/kernel/domain/ids.js';
 export class GetLikedItemsInteractor {
   public constructor(
     @Inject(LikedItemsQueryPort) private readonly likedItemsQuery: LikedItemsQueryPort,
+    @Inject(ItemCardEnrichmentPort) private readonly cardEnrichment: ItemCardEnrichmentPort,
   ) {}
 
-  public async execute(query: { userId: UserId; search?: string; cursor?: string; limit: number }) {
+  public async execute(query: {
+    userId: UserId;
+    coordinates?: { lat: number; lng: number };
+    search?: string;
+    cursor?: string;
+    limit: number;
+  }) {
     const result = await this.likedItemsQuery.findLikedItems(query);
-    return Right(result);
+
+    const enrichment = await this.cardEnrichment.enrich({
+      items: result.items.map((i) => ({ itemId: i.itemId, typeId: i.typeId })),
+      userLocation: query.coordinates,
+    });
+
+    const items = result.items.map((i) => {
+      const e = enrichment.get(String(i.itemId));
+      return e === undefined ? i : { ...i, ...e };
+    });
+
+    return Right({ items, nextCursor: result.nextCursor });
   }
 }

@@ -1,6 +1,9 @@
 import type { CategoryListReadModel } from '../domain/read-models/category-list.read-model.js';
 import type { ItemReadModel } from '../domain/read-models/item.read-model.js';
-import type { ItemListView } from '../domain/read-models/item-list-view.read-model.js';
+import type {
+  ItemCardEnrichment,
+  ItemListView,
+} from '../domain/read-models/item-list-view.read-model.js';
 import type { LikedItemView } from '../domain/read-models/liked-item-view.read-model.js';
 import type { SearchFacets } from '../domain/read-models/search-result.read-model.js';
 import type { CategoryItemFilters, SortOption } from './use-cases/browse-category/types.js';
@@ -67,6 +70,21 @@ export abstract class CategoryFiltersQueryPort {
   public abstract findById(categoryId: CategoryId): Promise<CategoryWithAttributes | null>;
 
   public abstract findTypesByIds(typeIds: TypeId[]): Promise<{ typeId: TypeId; name: string }[]>;
+}
+
+/**
+ * Подмешивание card-enrichment-полей в ItemListView по `widgetSettings.showOnCard` ItemType.
+ * Источник истины — `discoveryItemTypes.widgetSettings`. Читается батчем по уникальным typeIds.
+ * Если ни один тип в выборке не требует distance/schedule/eventDate/ageGroup —
+ * соответствующие запросы не выполняются.
+ *
+ * См. discovery-feed.spec → card-enrichment.
+ */
+export abstract class ItemCardEnrichmentPort {
+  public abstract enrich(input: {
+    items: { itemId: ItemId; typeId: TypeId }[];
+    userLocation?: { lat: number; lng: number };
+  }): Promise<Map<string, ItemCardEnrichment>>;
 }
 
 // --- Lookup Ports ---

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { eq, inArray } from 'drizzle-orm';
 
 import { ItemProjectionPort } from '../../../application/projection-ports.js';
+import { projectItemFromEvent } from '../../../domain/read-models/item.read-model.js';
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
 import {
@@ -11,7 +12,14 @@ import {
   discoveryItemSchedules,
   discoveryItems,
 } from '../schema.js';
-import type { MediaId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
+import type {
+  CategoryId,
+  ItemId,
+  MediaId,
+  OrganizationId,
+  TypeId,
+} from '@/kernel/domain/ids.js';
+import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
 import type { ItemPayment } from '../../../domain/read-models/item.read-model.js';
 
 function computeMinPrice(payment: ItemPayment | undefined): string | null {
@@ -161,6 +169,58 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
         ownerReviewCount: reviewCount,
       })
       .where(eq(discoveryItems.organizationId, organizationId as string));
+  }
+
+  public async findReadModelsByCategoryIds(categoryIds: CategoryId[]): Promise<ItemReadModel[]> {
+    if (categoryIds.length === 0) return [];
+
+    const ids = categoryIds as string[];
+    const itemIdRows = await this.dbClient.db
+      .selectDistinct({ itemId: discoveryItemCategories.itemId })
+      .from(discoveryItemCategories)
+      .where(inArray(discoveryItemCategories.categoryId, ids));
+
+    if (itemIdRows.length === 0) return [];
+    const itemIds = itemIdRows.map((r) => r.itemId);
+
+    const rows = await this.dbClient.db
+      .select()
+      .from(discoveryItems)
+      .where(inArray(discoveryItems.id, itemIds));
+
+    return rows.map((row) => {
+      const widgets = row.widgets as ItemWidget[];
+      const model = projectItemFromEvent({
+        id: '',
+        type: 'item.published',
+        itemId: row.id as ItemId,
+        typeId: row.typeId as TypeId,
+        organizationId: (row.organizationId ?? '') as OrganizationId,
+        widgets,
+        republished: true,
+        publishedAt: row.publishedAt,
+      });
+      // override fields that могут отставать от widgets
+      // (review/owner обновляются точечными `update*` без перезаписи widgets)
+      if (row.itemRating !== null || row.itemReviewCount > 0) {
+        model.itemReview = {
+          rating: row.itemRating !== null ? Number(row.itemRating) : null,
+          reviewCount: row.itemReviewCount,
+        };
+      }
+      if (row.ownerRating !== null || row.ownerReviewCount > 0) {
+        model.ownerReview = {
+          rating: row.ownerRating !== null ? Number(row.ownerRating) : null,
+          reviewCount: row.ownerReviewCount,
+        };
+      }
+      if (model.owner) {
+        if (row.ownerName) model.owner.name = row.ownerName;
+        model.owner.avatarId = (row.ownerAvatarId ?? null) as MediaId | null;
+      }
+      model.updatedAt = row.updatedAt;
+      return model;
+    });
   }
 
   private async syncJunctionTables(itemId: string, item: ItemReadModel): Promise<void> {

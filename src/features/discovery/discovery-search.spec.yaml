@@ -44,7 +44,9 @@ specs-unit:
         Ответ содержит `items`, `facets`, `nextCursor`, `total`. Каждый
         item: `itemId`, `title`, `description`, `media`, `hasVideo`,
         `owner` (`name`/`avatarId`/`avatarUrl`), `location`
-        (`cityId`/`address`), `typeId`, `price`, `categoryIds`.
+        (`cityId`/`address`), `typeId`, `price`, `categoryIds`, плюс
+        опциональные card-enrichment-поля по `widgetSettings.showOnCard`
+        (см. `discovery-feed` → `card-enrichment`).
 
 definitions:
   feature:

@@ -6,6 +6,7 @@ import { CategoryCountsCron } from './adapters/cron/category-counts.cron.js';
 import { DrizzleCategoryAncestorLookupQuery } from './adapters/db/queries/category-ancestor-lookup.query.js';
 import { DrizzleCategoryFiltersQuery } from './adapters/db/queries/category-filters.query.js';
 import { DrizzleCategoryListQuery } from './adapters/db/queries/category-list.query.js';
+import { DrizzleItemCardEnrichmentQuery } from './adapters/db/queries/item-card-enrichment.query.js';
 import { DrizzleItemQuery } from './adapters/db/queries/item.query.js';
 // --- DB Adapters ---
 import { DrizzleLikedItemsQuery } from './adapters/db/queries/liked-items.query.js';
@@ -43,6 +44,7 @@ import {
   CategoryAncestorLookupPort,
   CategoryFiltersQueryPort,
   CategoryListQueryPort,
+  ItemCardEnrichmentPort,
   ItemQueryPort,
   LikedItemsQueryPort,
   LikeWritePort,
@@ -115,6 +117,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
 
     // Query port → adapter bindings
     { provide: ItemQueryPort, useClass: DrizzleItemQuery },
+    { provide: ItemCardEnrichmentPort, useClass: DrizzleItemCardEnrichmentQuery },
     { provide: CategoryFiltersQueryPort, useClass: DrizzleCategoryFiltersQuery },
     { provide: CategoryListQueryPort, useClass: DrizzleCategoryListQuery },
     { provide: CategoryAncestorLookupPort, useClass: DrizzleCategoryAncestorLookupQuery },

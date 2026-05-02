@@ -41,7 +41,13 @@ specs-unit:
     - assert: обновляет категорию
       description: |
         PATCH /cms/categories/:id обновляет name, iconId, parentCategoryId,
-        allowedTypeIds, ageGroups.
+        allowedTypeIds, ageGroups. Доступно только для категорий в статусе
+        draft / unpublished.
+    - assert: отклоняет обновление опубликованной категории
+      description: |
+        PATCH /cms/categories/:id для категории в статусе published — 409
+        (`category_already_published`). Чтобы отредактировать опубликованную
+        категорию, её нужно сначала unpublish.
     - assert: отклоняет создание с пустым allowedTypeIds
       description: allowedTypeIds не может быть пустым массивом — 400.
     - assert: отклоняет создание с пустым ageGroups

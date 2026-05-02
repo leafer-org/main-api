@@ -1,8 +1,12 @@
 import type { ItemReadModel } from '../read-models/item.read-model.js';
-import type { ItemListView } from '../read-models/item-list-view.read-model.js';
+import {
+  EMPTY_CARD_ENRICHMENT,
+  type ItemCardEnrichment,
+  type ItemListView,
+} from '../read-models/item-list-view.read-model.js';
 
 /** ItemReadModel → ItemListView. Переиспользуется всеми interactors, возвращающими списки товаров. */
-export function toListView(item: ItemReadModel): ItemListView {
+export function toListView(item: ItemReadModel, enrichment?: ItemCardEnrichment): ItemListView {
   const media = item.baseInfo?.media ?? [];
   return {
     itemId: item.itemId,
@@ -19,5 +23,6 @@ export function toListView(item: ItemReadModel): ItemListView {
       ? { cityId: item.location.cityId, address: item.location.address }
       : null,
     categoryIds: item.category?.categoryIds ?? [],
+    ...(enrichment ?? EMPTY_CARD_ENRICHMENT),
   };
 }

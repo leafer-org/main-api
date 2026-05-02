@@ -26,6 +26,9 @@ export abstract class ItemProjectionPort {
     rating: number | null,
     reviewCount: number,
   ): Promise<void>;
+
+  /** Загружает ItemReadModel для всех items, привязанных хотя бы к одной из categoryIds. */
+  public abstract findReadModelsByCategoryIds(categoryIds: CategoryId[]): Promise<ItemReadModel[]>;
 }
 
 export abstract class CategoryProjectionPort {
