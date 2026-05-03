@@ -1,13 +1,17 @@
 import type { MediaId, OrganizationId } from '../ids.js';
 import type { MediaItem } from '../vo/media-item.js';
+import type { ContactLink, OrgTeam } from '../vo/widget.js';
 
 export type OrganizationPublishedEvent = {
   id: string;
   type: 'organization.published';
   organizationId: OrganizationId;
   name: string;
+  description: string;
   avatarId: MediaId | null;
   media: MediaItem[];
+  contacts: ContactLink[];
+  team: OrgTeam | null;
   republished: boolean;
   publishedAt: Date;
 };

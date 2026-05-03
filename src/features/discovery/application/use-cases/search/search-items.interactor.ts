@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { ItemCardEnrichmentPort, SearchPort } from '../../ports.js';
+import { ItemCardEnrichmentPort, SearchLogPort, SearchPort } from '../../ports.js';
 import type { DynamicSearchFilters } from './types.js';
 import { Right } from '@/infra/lib/box.js';
+import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 /** Полнотекстовый поиск через Meilisearch с динамическими фасетными фильтрами. */
@@ -11,6 +12,7 @@ export class SearchItemsInteractor {
   public constructor(
     @Inject(SearchPort) private readonly searchPort: SearchPort,
     @Inject(ItemCardEnrichmentPort) private readonly cardEnrichment: ItemCardEnrichmentPort,
+    @Inject(SearchLogPort) private readonly searchLog: SearchLogPort,
   ) {}
 
   public async execute(query: {
@@ -22,6 +24,12 @@ export class SearchItemsInteractor {
     limit: number;
   }) {
     const result = await this.searchPort.search(query);
+
+    if (!query.cursor) {
+      await this.searchLog
+        .logQuery(NO_TRANSACTION, query.cityId, query.query)
+        .catch(() => undefined);
+    }
 
     const enrichment = await this.cardEnrichment.enrich({
       items: result.items.map((i) => ({ itemId: i.itemId, typeId: i.typeId })),

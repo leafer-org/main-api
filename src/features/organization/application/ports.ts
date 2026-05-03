@@ -5,6 +5,7 @@ import type { EmployeeListReadModel } from '../domain/read-models/employee-list.
 import type { EmployeeRoleListReadModel } from '../domain/read-models/employee-role-list.read-model.js';
 import type { ItemDetailReadModel } from '../domain/read-models/item-detail.read-model.js';
 import type { ItemListQuery, ItemListReadModel } from '../domain/read-models/item-list.read-model.js';
+import type { MyOrganizationsListReadModel } from '../domain/read-models/my-organizations-list.read-model.js';
 import type { OrganizationDetailReadModel } from '../domain/read-models/organization-detail.read-model.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type {
@@ -17,7 +18,7 @@ import type {
   OrganizationPublishedEvent,
   OrganizationUnpublishedEvent,
 } from '@/kernel/domain/events/organization.events.js';
-import type { ItemId, OrganizationId } from '@/kernel/domain/ids.js';
+import type { ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 
 // --- Organization repository ---
 
@@ -113,6 +114,7 @@ export abstract class OrganizationQueryPort {
   public abstract findEmployees(id: OrganizationId): Promise<EmployeeListReadModel>;
   public abstract findRoles(id: OrganizationId): Promise<EmployeeRoleListReadModel>;
   public abstract findClaimToken(id: OrganizationId): Promise<string | null>;
+  public abstract findByEmployeeUserId(userId: UserId): Promise<MyOrganizationsListReadModel>;
 }
 
 export abstract class ItemQueryPort {

@@ -646,6 +646,31 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/search/suggestions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * @description Подсказки автокомплита поиска. Возвращает 4 секции:
+     *     - `categories` — категории по совпадению имени (LIKE).
+     *     - `itemTypes` — типы товаров по совпадению имени (LIKE).
+     *     - `items` — топ-N товаров через MeiliSearch (полная карточка).
+     *     - `popularQueries` — самые частые запросы по этому городу.
+     *
+     *     При пустом `query` секции `categories`/`itemTypes`/`items` пустые, отдаются только `popularQueries`.
+     */
+    get: operations['searchSuggestions'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/liked-items': {
     parameters: {
       query?: never;
@@ -672,6 +697,27 @@ export interface paths {
     };
     /** @description Детальная страница товара — полные данные всех виджетов */
     get: operations['getDiscoveryItemDetail'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/orgs/{orgId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * @description Публичная страница организации в discovery: профиль (имя, аватар,
+     *     рейтинг, число отзывов) + до 50 последних товаров организации,
+     *     отсортированных по `publishedAt` DESC. Пагинации пока нет.
+     */
+    get: operations['getDiscoveryOrganizationDetail'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1265,6 +1311,26 @@ export interface paths {
      * @description Создаёт новую организацию. Текущий пользователь становится владельцем с ролью ADMIN.
      */
     post: operations['createOrganization'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/organizations/my': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Список моих организаций
+     * @description Возвращает все организации, в которых текущий пользователь является сотрудником (включая владельца).
+     */
+    get: operations['listMyOrganizations'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2441,6 +2507,7 @@ export interface components {
     ItemListView: {
       itemId: string;
       typeId: string;
+      typeName: string;
       title: string;
       description?: string | null;
       media?: components['schemas']['ResolvedMediaItem'][];
@@ -2651,6 +2718,33 @@ export interface components {
       hasVideo: boolean;
       /** Format: date-time */
       publishedAt: string;
+    };
+    OrganizationProfile: {
+      organizationId: string;
+      name: string;
+      description: string;
+      avatarId?: string | null;
+      /** Format: uri */
+      avatarUrl?: string | null;
+      media: components['schemas']['ResolvedMediaItem'][];
+      contacts: {
+        /** @enum {string} */
+        type: 'phone' | 'email' | 'link';
+        value: string;
+        label?: string | null;
+      }[];
+      team?: {
+        title: string;
+        members: {
+          name: string;
+          description?: string | null;
+          /** Format: uri */
+          avatarUrl?: string | null;
+          employeeUserId?: string | null;
+        }[];
+      } | null;
+      rating?: number | null;
+      reviewCount: number;
     };
     ReviewListItem: {
       reviewId: string;
@@ -3061,6 +3155,17 @@ export interface components {
       subscription: components['schemas']['Subscription'];
       /** Format: date-time */
       createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    OrganizationListItem: {
+      id: string;
+      name: string;
+      description: string;
+      avatarUrl: string | null;
+      isOwner: boolean;
+      isPublished: boolean;
+      draftStatus: components['schemas']['InfoDraftStatus'];
       /** Format: date-time */
       updatedAt: string;
     };
@@ -5160,8 +5265,14 @@ export interface operations {
         priceMax?: number;
         /** @description Минимальный рейтинг */
         minRating?: number;
-        /** @description JSON-массив фильтров по атрибутам [{"attributeId":"...","value":"..."}] */
-        attributeValues?: string;
+        /**
+         * @description JSON-массив фильтров по атрибутам с дискриминантом по `type`:
+         *     `[{"attributeId":"...","type":"enum","values":["a","b"]}
+         *     | {"attributeId":"...","type":"number","min":1,"max":10}
+         *     | {"attributeId":"...","type":"boolean","value":true}
+         *     | {"attributeId":"...","type":"text","value":"foo"}]`
+         */
+        attributeFilters?: string;
         /** @description Широта для гео-фильтрации (требуется вместе с lng и radiusKm) */
         lat?: number;
         /** @description Долгота для гео-фильтрации (требуется вместе с lat и radiusKm) */
@@ -5317,6 +5428,57 @@ export interface operations {
       };
     };
   };
+  searchSuggestions: {
+    parameters: {
+      query: {
+        /** @description Поисковый запрос. Если не указан или пустой — возвращаются только популярные запросы. */
+        query?: string;
+        /** @description ID города (для фильтрации товаров и популярных запросов) */
+        cityId: string;
+        /** @description Возрастная группа (для фильтрации товаров-подсказок) */
+        ageGroup?: 'adults' | 'children' | 'all';
+      };
+      header?: {
+        /** @description Device pixel ratio (1–4). Используется для вычисления размеров изображений через imgproxy. По умолчанию 3. */
+        'X-Device-DPR'?: components['parameters']['DeviceDprHeader'];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Подсказки по секциям */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            categories: {
+              categoryId: string;
+              name: string;
+            }[];
+            itemTypes: {
+              typeId: string;
+              name: string;
+              parentCategoryId?: string | null;
+            }[];
+            organizations: {
+              organizationId: string;
+              name: string;
+              avatarId?: string | null;
+              /** Format: uri */
+              avatarUrl?: string | null;
+            }[];
+            items: components['schemas']['ItemListView'][];
+            popularQueries: {
+              text: string;
+            }[];
+          };
+        };
+      };
+    };
+  };
   getLikedItems: {
     parameters: {
       query?: {
@@ -5373,6 +5535,44 @@ export interface operations {
         };
       };
       /** @description Товар не найден */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DomainErrorResponse'];
+        };
+      };
+    };
+  };
+  getDiscoveryOrganizationDetail: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Device pixel ratio (1–4). Используется для вычисления размеров изображений через imgproxy. По умолчанию 3. */
+        'X-Device-DPR'?: components['parameters']['DeviceDprHeader'];
+      };
+      path: {
+        /** @description ID организации */
+        orgId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Профиль и товары организации */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            profile: components['schemas']['OrganizationProfile'];
+            items: components['schemas']['ItemListView'][];
+          };
+        };
+      };
+      /** @description Организация не найдена */
       404: {
         headers: {
           [name: string]: unknown;
@@ -7000,6 +7200,29 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['OpenApiValidationError'];
+        };
+      };
+      401: components['responses']['UnauthorizedError'];
+    };
+  };
+  listMyOrganizations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список организаций пользователя */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            organizations: components['schemas']['OrganizationListItem'][];
+          };
         };
       };
       401: components['responses']['UnauthorizedError'];

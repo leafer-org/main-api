@@ -1,0 +1,38 @@
+feature: Discovery Organization Detail HTTP
+code: discovery-organization-detail
+description: |
+  Эндпоинт `GET /orgs/{orgId}` — публичная страница организации в discovery.
+  Возвращает профиль организации (имя, аватар, рейтинг, число отзывов) +
+  до 50 последних товаров организации (сортировка по `publishedAt` DESC).
+
+  Источник профиля: `discovery_owners` (проекция от `organization.streaming`
+  + reviews-агрегаты). Источник товаров: `discovery_items` с фильтром по
+  `organization_id`. Пагинации товаров пока нет.
+
+specs-unit:
+  GET /orgs/:orgId:
+    - assert: возвращает профиль и товары организации
+      description: |
+        Ответ содержит `profile` (organizationId, name, description,
+        avatarId/avatarUrl, media, contacts, team, rating, reviewCount)
+        и `items` — массив `ItemListView` товаров этой организации,
+        отсортированных по `publishedAt` DESC.
+    - assert: возвращает 404 для несуществующей организации
+      description: |
+        Если организации нет в `discovery_owners` — 404 с кодом
+        `organization_not_found`.
+    - assert: items пустые если у организации нет товаров
+      description: |
+        Если организация существует, но товаров нет — `items: []`,
+        профиль возвращается.
+    - assert: возвращает пустые опциональные поля по умолчанию
+      description: |
+        Если у организации не заполнены description/contacts/team/media
+        — возвращаются `description: ''`, `media: []`, `contacts: []`,
+        `team: null`.
+
+definitions:
+  feature:
+    - discovery-organization-detail
+  section:
+    - discovery

@@ -31,8 +31,27 @@ export class OwnerProjectionKafkaHandler {
         type: 'organization.published',
         organizationId: OrganizationId.raw(payload.organizationId),
         name: payload.name!,
+        description: payload.description ?? '',
         avatarId: payload.avatarId ? MediaId.raw(payload.avatarId) : null,
-        media: (payload.media ?? []).map((m) => ({ type: m.type as 'image' | 'video', mediaId: MediaId.raw(m.mediaId) })),
+        media: (payload.media ?? []).map((m) => ({
+          type: m.type as 'image' | 'video',
+          mediaId: MediaId.raw(m.mediaId),
+        })),
+        contacts: payload.contacts ?? [],
+        team: payload.team
+          ? {
+              title: payload.team.title,
+              members: payload.team.members.map((m) => ({
+                name: m.name,
+                description: m.description,
+                media: m.media.map((mm) => ({
+                  type: mm.type as 'image' | 'video',
+                  mediaId: MediaId.raw(mm.mediaId),
+                })),
+                employeeUserId: m.employeeUserId,
+              })),
+            }
+          : null,
         republished: payload.republished ?? false,
         publishedAt: new Date(payload.publishedAt!),
       } satisfies OrganizationPublishedEvent);

@@ -5,7 +5,14 @@ import type {
   ItemListView,
 } from '../domain/read-models/item-list-view.read-model.js';
 import type { LikedItemView } from '../domain/read-models/liked-item-view.read-model.js';
+import type { OrganizationProfileReadModel } from '../domain/read-models/organization-profile.read-model.js';
 import type { SearchFacets } from '../domain/read-models/search-result.read-model.js';
+import type {
+  CategorySuggestion,
+  ItemTypeSuggestion,
+  OrganizationSuggestion,
+  QuerySuggestion,
+} from '../domain/read-models/search-suggestion.read-model.js';
 import type { CategoryItemFilters, SortOption } from './use-cases/browse-category/types.js';
 import type { DynamicSearchFilters } from './use-cases/search/types.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
@@ -35,6 +42,16 @@ export abstract class ItemQueryPort {
     cursor?: string;
     limit: number;
   }): Promise<{ items: ItemReadModel[]; nextCursor: string | null }>;
+
+  public abstract findByOrganization(params: {
+    organizationId: string;
+    limit: number;
+  }): Promise<ItemReadModel[]>;
+}
+
+/** Публичный профиль организации (имя/аватар/рейтинг). Источник — `discovery_owners`. */
+export abstract class OrganizationProfileQueryPort {
+  public abstract findById(organizationId: string): Promise<OrganizationProfileReadModel | null>;
 }
 
 /** Лайкнутые товары пользователя. Сортировка по likedAt DESC, cursor по likedAt, ILIKE по title. */
@@ -129,6 +146,30 @@ export abstract class RecommendationService {
 export abstract class RankedListCachePort {
   public abstract get(key: string): Promise<ItemId[] | null>;
   public abstract set(key: string, itemIds: ItemId[], ttlMs: number): Promise<void>;
+}
+
+/**
+ * Подсказки автокомплита. Категории, типы и популярные запросы — все фильтруются
+ * по подстроке `query` (ILIKE). Товары для подсказок не здесь — они приходят через
+ * {@link SearchPort.search} с маленьким limit.
+ */
+export abstract class SearchSuggestionsQueryPort {
+  public abstract findCategoriesByName(query: string, limit: number): Promise<CategorySuggestion[]>;
+  public abstract findItemTypesByName(query: string, limit: number): Promise<ItemTypeSuggestion[]>;
+  public abstract findOrganizationsByName(
+    query: string,
+    limit: number,
+  ): Promise<OrganizationSuggestion[]>;
+  public abstract findPopularQueries(
+    cityId: string,
+    query: string,
+    limit: number,
+  ): Promise<QuerySuggestion[]>;
+}
+
+/** Запись поисковых запросов в лог (инкремент count + обновление lastUsedAt). */
+export abstract class SearchLogPort {
+  public abstract logQuery(tx: Transaction, cityId: string, query: string): Promise<void>;
 }
 
 /** Meilisearch полнотекстовый поиск с динамическими фасетными фильтрами. */

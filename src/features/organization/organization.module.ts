@@ -56,6 +56,7 @@ import { CreateOrganizationInteractor } from './application/use-cases/manage-org
 import { DeleteOrganizationInteractor } from './application/use-cases/manage-org/delete-organization.interactor.js';
 import { DiscardInfoDraftChangesInteractor } from './application/use-cases/manage-org/discard-info-draft-changes.interactor.js';
 import { GetOrganizationDetailInteractor } from './application/use-cases/manage-org/get-organization-detail.interactor.js';
+import { ListMyOrganizationsInteractor } from './application/use-cases/manage-org/list-my-organizations.interactor.js';
 import { RegenerateClaimTokenInteractor } from './application/use-cases/create-and-claim-organization/regenerate-claim-token.interactor.js';
 import { RejectInfoModerationInteractor } from './application/use-cases/moderation/reject-info-moderation.interactor.js';
 import { SubmitInfoForModerationInteractor } from './application/use-cases/moderation/submit-info-for-moderation.interactor.js';
@@ -107,6 +108,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     UpdateInfoDraftInteractor,
     DiscardInfoDraftChangesInteractor,
     GetOrganizationDetailInteractor,
+    ListMyOrganizationsInteractor,
     UnpublishOrganizationInteractor,
 
     // Use cases — Employees

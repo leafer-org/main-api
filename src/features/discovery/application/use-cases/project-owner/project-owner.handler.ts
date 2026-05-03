@@ -46,7 +46,11 @@ export class ProjectOwnerHandler {
     if (payload.republished) {
       await this.ownerProjection.updateData(ownerId, {
         name: payload.name,
+        description: payload.description,
         avatarId: payload.avatarId,
+        media: payload.media,
+        contacts: payload.contacts,
+        team: payload.team,
         updatedAt: payload.publishedAt,
       });
 

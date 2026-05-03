@@ -142,7 +142,22 @@ export const discoveryItemTypes = pgTable('discovery_item_types', {
 export const discoveryOwners = pgTable('discovery_owners', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+  description: text('description').notNull().default(''),
   avatarId: text('avatar_id'),
+  media: jsonb('media').$type<{ type: string; mediaId: string }[]>().notNull().default([]),
+  contacts: jsonb('contacts')
+    .$type<{ type: 'phone' | 'email' | 'link'; value: string; label?: string }[]>()
+    .notNull()
+    .default([]),
+  team: jsonb('team').$type<{
+    title: string;
+    members: {
+      name: string;
+      description?: string;
+      media: { type: string; mediaId: string }[];
+      employeeUserId?: string;
+    }[];
+  } | null>(),
   rating: numeric('rating'),
   reviewCount: integer('review_count').notNull().default(0),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
@@ -166,3 +181,20 @@ export const discoveryProcessedEvents = pgTable('discovery_processed_events', {
   eventId: text('event_id').primaryKey(),
   processedAt: timestamp('processed_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// --- Search Log (popular queries) ---
+
+export const discoverySearchLog = pgTable(
+  'discovery_search_log',
+  {
+    cityId: text('city_id').notNull(),
+    query: text('query').notNull(),
+    count: integer('count').notNull().default(1),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.cityId, table.query] }),
+    index('discovery_search_log_city_count_idx').on(table.cityId, table.count),
+    index('discovery_search_log_last_used_idx').on(table.lastUsedAt),
+  ],
+);

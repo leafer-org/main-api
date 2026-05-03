@@ -8,12 +8,14 @@ import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
  * Все опциональные/nullable. См. discovery-category-items.spec → card-enrichment.
  */
 export type ItemCardEnrichment = {
+  typeName: string;
   eventDateTime: string | null;
   nextScheduleSlot: { dayOfWeek: number; startTime: string; endTime: string } | null;
   cardAgeGroup: AgeGroupOption | null;
 };
 
 export const EMPTY_CARD_ENRICHMENT: ItemCardEnrichment = {
+  typeName: '',
   eventDateTime: null,
   nextScheduleSlot: null,
   cardAgeGroup: null,

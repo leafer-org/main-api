@@ -57,6 +57,20 @@ export class DrizzleItemQuery implements ItemQueryPort {
     return this.hydrateReadModels(rows);
   }
 
+  public async findByOrganization(params: {
+    organizationId: string;
+    limit: number;
+  }): Promise<ItemReadModel[]> {
+    const rows = await this.dbClient.db
+      .select()
+      .from(discoveryItems)
+      .where(eq(discoveryItems.organizationId, params.organizationId))
+      .orderBy(desc(discoveryItems.publishedAt), asc(discoveryItems.id))
+      .limit(params.limit);
+
+    return this.hydrateReadModels(rows);
+  }
+
   public async findCategoryItemsSorted(params: {
     categoryId: CategoryId;
     cityId: string;

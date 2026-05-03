@@ -80,11 +80,16 @@ export class DrizzleItemCardEnrichmentQuery implements ItemCardEnrichmentPort {
     const uniqueTypeIds = [...new Set(input.items.map((i) => String(i.typeId)))];
 
     const typeRows = await this.dbClient.db
-      .select({ id: discoveryItemTypes.id, widgetSettings: discoveryItemTypes.widgetSettings })
+      .select({
+        id: discoveryItemTypes.id,
+        name: discoveryItemTypes.name,
+        widgetSettings: discoveryItemTypes.widgetSettings,
+      })
       .from(discoveryItemTypes)
       .where(inArray(discoveryItemTypes.id, uniqueTypeIds));
 
     const cardWidgetsByType = new Map<string, Set<WidgetSettings['type']>>();
+    const typeNameById = new Map<string, string>();
     for (const row of typeRows) {
       const settings = (row.widgetSettings ?? []) as WidgetSettings[];
       const enabled = new Set<WidgetSettings['type']>();
@@ -92,6 +97,7 @@ export class DrizzleItemCardEnrichmentQuery implements ItemCardEnrichmentPort {
         if (isShownOnCard(s)) enabled.add(s.type);
       }
       cardWidgetsByType.set(row.id, enabled);
+      typeNameById.set(row.id, row.name);
     }
 
     // Дочитываем widgets только для тех item-ов, у которых их нет в памяти (likes/search)
@@ -129,7 +135,8 @@ export class DrizzleItemCardEnrichmentQuery implements ItemCardEnrichmentPort {
         }
       }
 
-      result.set(itemIdStr, { eventDateTime, nextScheduleSlot, cardAgeGroup });
+      const typeName = typeNameById.get(String(item.typeId)) ?? '';
+      result.set(itemIdStr, { typeName, eventDateTime, nextScheduleSlot, cardAgeGroup });
     }
 
     return result;

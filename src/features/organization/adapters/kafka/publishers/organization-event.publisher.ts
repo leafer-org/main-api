@@ -34,8 +34,21 @@ export class OutboxOrganizationEventPublisher extends OrganizationEventPublisher
         type: 'organization.published',
         organizationId: event.organizationId as string,
         name: event.name,
+        description: event.description,
         avatarId: event.avatarId as string | null,
         media: event.media.map((m) => ({ type: m.type, mediaId: m.mediaId as string })),
+        contacts: event.contacts.map((c) => ({ type: c.type, value: c.value, label: c.label })),
+        team: event.team
+          ? {
+              title: event.team.title,
+              members: event.team.members.map((m) => ({
+                name: m.name,
+                description: m.description,
+                media: m.media.map((mm) => ({ type: mm.type, mediaId: mm.mediaId as string })),
+                employeeUserId: m.employeeUserId,
+              })),
+            }
+          : null,
         republished: event.republished,
         publishedAt: event.publishedAt.toISOString(),
       },

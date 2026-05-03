@@ -14,10 +14,11 @@ specs-unit:
       description: "Категория без привязанных товаров — пустой `items`, `nextCursor: null`."
     - assert: возвращает items категории с корректной структурой
       description: |
-        Структура item: `itemId`, `typeId`, `title`, `price`, `rating`,
-        `reviewCount`, `media`, `hasVideo`, `owner`, `categoryIds`, плюс
-        опциональные card-enrichment-поля по `widgetSettings.showOnCard`
-        (см. секцию `card-enrichment`).
+        Структура item: `itemId`, `typeId`, `typeName`, `title`, `price`,
+        `rating`, `reviewCount`, `media`, `hasVideo`, `owner`, `categoryIds`,
+        плюс опциональные card-enrichment-поля по `widgetSettings.showOnCard`
+        (см. секцию `card-enrichment`). `typeName` — название типа товара
+        (`discovery_item_types.name`), резолвится батчем по уникальным typeId.
     - assert: включает items из дочерних категорий (поддерево)
       description: |
         Запрос по категории X возвращает items, привязанные напрямую к X

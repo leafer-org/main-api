@@ -45,7 +45,9 @@ export abstract class OwnerProjectionPort {
   public abstract upsert(owner: OwnerReadModel): Promise<void>;
   public abstract updateData(
     ownerId: OrganizationId,
-    data: { name: string; avatarId: MediaId | null; updatedAt: Date },
+    data: Pick<OwnerReadModel, 'name' | 'description' | 'avatarId' | 'media' | 'contacts' | 'team'> & {
+      updatedAt: Date;
+    },
   ): Promise<void>;
   public abstract updateReview(
     ownerId: OrganizationId,

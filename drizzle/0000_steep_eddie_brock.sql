@@ -108,7 +108,11 @@ CREATE TABLE "discovery_items" (
 CREATE TABLE "discovery_owners" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
+	"description" text DEFAULT '' NOT NULL,
 	"avatar_id" text,
+	"media" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"contacts" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"team" jsonb,
 	"rating" numeric,
 	"review_count" integer DEFAULT 0 NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL
@@ -117,6 +121,14 @@ CREATE TABLE "discovery_owners" (
 CREATE TABLE "discovery_processed_events" (
 	"event_id" text PRIMARY KEY NOT NULL,
 	"processed_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "discovery_search_log" (
+	"city_id" text NOT NULL,
+	"query" text NOT NULL,
+	"count" integer DEFAULT 1 NOT NULL,
+	"last_used_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "discovery_search_log_city_id_query_pk" PRIMARY KEY("city_id","query")
 );
 --> statement-breakpoint
 CREATE TABLE "discovery_user_likes" (
@@ -281,6 +293,8 @@ CREATE INDEX "discovery_items_org_idx" ON "discovery_items" USING btree ("organi
 CREATE INDEX "discovery_items_price_idx" ON "discovery_items" USING btree ("min_price");--> statement-breakpoint
 CREATE INDEX "discovery_items_rating_idx" ON "discovery_items" USING btree ("item_rating");--> statement-breakpoint
 CREATE INDEX "discovery_items_published_at_idx" ON "discovery_items" USING btree ("published_at");--> statement-breakpoint
+CREATE INDEX "discovery_search_log_city_count_idx" ON "discovery_search_log" USING btree ("city_id","count");--> statement-breakpoint
+CREATE INDEX "discovery_search_log_last_used_idx" ON "discovery_search_log" USING btree ("last_used_at");--> statement-breakpoint
 CREATE INDEX "login_processes_phone_ip_requested_idx" ON "login_processes" USING btree ("phone_number","ip","requested_at");--> statement-breakpoint
 CREATE INDEX "login_processes_reg_session_idx" ON "login_processes" USING btree ("registration_session_id");--> statement-breakpoint
 CREATE INDEX "sessions_user_created_idx" ON "sessions" USING btree ("user_id","created_at");--> statement-breakpoint

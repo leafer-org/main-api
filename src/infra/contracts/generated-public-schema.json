@@ -2826,13 +2826,13 @@
             "description": "Минимальный рейтинг"
           },
           {
-            "name": "attributeValues",
+            "name": "attributeFilters",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string"
             },
-            "description": "JSON-массив фильтров по атрибутам [{\"attributeId\":\"...\",\"value\":\"...\"}]"
+            "description": "JSON-массив фильтров по атрибутам с дискриминантом по `type`:\n`[{\"attributeId\":\"...\",\"type\":\"enum\",\"values\":[\"a\",\"b\"]}\n| {\"attributeId\":\"...\",\"type\":\"number\",\"min\":1,\"max\":10}\n| {\"attributeId\":\"...\",\"type\":\"boolean\",\"value\":true}\n| {\"attributeId\":\"...\",\"type\":\"text\",\"value\":\"foo\"}]`\n"
           },
           {
             "name": "lat",
@@ -3198,6 +3198,167 @@
         }
       }
     },
+    "/search/suggestions": {
+      "get": {
+        "operationId": "searchSuggestions",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Подсказки автокомплита поиска. Возвращает 4 секции:\n- `categories` — категории по совпадению имени (LIKE).\n- `itemTypes` — типы товаров по совпадению имени (LIKE).\n- `items` — топ-N товаров через MeiliSearch (полная карточка).\n- `popularQueries` — самые частые запросы по этому городу.\n\nПри пустом `query` секции `categories`/`itemTypes`/`items` пустые, отдаются только `popularQueries`.\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DeviceDprHeader"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Поисковый запрос. Если не указан или пустой — возвращаются только популярные запросы."
+          },
+          {
+            "name": "cityId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID города (для фильтрации товаров и популярных запросов)"
+          },
+          {
+            "name": "ageGroup",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "adults",
+                "children",
+                "all"
+              ],
+              "default": "adults"
+            },
+            "description": "Возрастная группа (для фильтрации товаров-подсказок)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Подсказки по секциям",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "categories",
+                    "itemTypes",
+                    "organizations",
+                    "items",
+                    "popularQueries"
+                  ],
+                  "properties": {
+                    "categories": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "categoryId",
+                          "name"
+                        ],
+                        "properties": {
+                          "categoryId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "itemTypes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "typeId",
+                          "name"
+                        ],
+                        "properties": {
+                          "typeId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "parentCategoryId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "organizations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "organizationId",
+                          "name"
+                        ],
+                        "properties": {
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "avatarId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "avatarUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "uri"
+                          }
+                        }
+                      }
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ItemListView"
+                      }
+                    },
+                    "popularQueries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "text"
+                        ],
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/liked-items": {
       "get": {
         "operationId": "getLikedItems",
@@ -3296,6 +3457,66 @@
           },
           "404": {
             "description": "Товар не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orgs/{orgId}": {
+      "get": {
+        "operationId": "getDiscoveryOrganizationDetail",
+        "tags": [
+          "Discovery"
+        ],
+        "description": "Публичная страница организации в discovery: профиль (имя, аватар,\nрейтинг, число отзывов) + до 50 последних товаров организации,\nотсортированных по `publishedAt` DESC. Пагинации пока нет.\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DeviceDprHeader"
+          },
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID организации"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Профиль и товары организации",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "profile",
+                    "items"
+                  ],
+                  "properties": {
+                    "profile": {
+                      "$ref": "#/components/schemas/OrganizationProfile"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ItemListView"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Организация не найдена",
             "content": {
               "application/json": {
                 "schema": {
@@ -6085,6 +6306,47 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OpenApiValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/organizations/my": {
+      "get": {
+        "operationId": "listMyOrganizations",
+        "tags": [
+          "organizations"
+        ],
+        "summary": "Список моих организаций",
+        "description": "Возвращает все организации, в которых текущий пользователь является сотрудником (включая владельца).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список организаций пользователя",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "organizations"
+                  ],
+                  "properties": {
+                    "organizations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OrganizationListItem"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -11877,6 +12139,7 @@
         "required": [
           "itemId",
           "typeId",
+          "typeName",
           "title",
           "hasVideo",
           "reviewCount",
@@ -11887,6 +12150,9 @@
             "type": "string"
           },
           "typeId": {
+            "type": "string"
+          },
+          "typeName": {
             "type": "string"
           },
           "title": {
@@ -12777,6 +13043,137 @@
           "publishedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "OrganizationProfile": {
+        "type": "object",
+        "required": [
+          "organizationId",
+          "name",
+          "description",
+          "media",
+          "contacts",
+          "reviewCount"
+        ],
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "avatarId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResolvedMediaItem"
+            }
+          },
+          "contacts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "type",
+                "value"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "phone",
+                    "email",
+                    "link"
+                  ]
+                },
+                "value": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "team": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "title",
+                  "members"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "members": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "avatarUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "uri"
+                        },
+                        "employeeUserId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rating": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "reviewCount": {
+            "type": "integer"
           }
         }
       },
@@ -14340,6 +14737,49 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OrganizationListItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "avatarUrl",
+          "isOwner",
+          "isPublished",
+          "draftStatus",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "isPublished": {
+            "type": "boolean"
+          },
+          "draftStatus": {
+            "$ref": "#/components/schemas/InfoDraftStatus"
           },
           "updatedAt": {
             "type": "string",

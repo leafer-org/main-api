@@ -1,6 +1,12 @@
 import { config } from '@dotenvx/dotenvx';
 
-import { seedAdminUser, seedCities, seedStaticRoles, truncateAll } from './seeds.js';
+import {
+  seedAdminUser,
+  seedCities,
+  seedSearchLog,
+  seedStaticRoles,
+  truncateAll,
+} from './seeds.js';
 
 config({ convention: 'nextjs' });
 
@@ -22,6 +28,9 @@ async function main() {
 
   await seedCities(dbUrl);
   console.log('✓ Seeded cities');
+
+  await seedSearchLog(dbUrl);
+  console.log('✓ Seeded search log (popular queries)');
 }
 
 main().catch((err) => {

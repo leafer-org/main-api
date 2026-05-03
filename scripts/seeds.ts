@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 
 import { cmsCities } from '../src/features/cms/adapters/db/schema.js';
+import { discoverySearchLog } from '../src/features/discovery/adapters/db/schema.js';
 import { roles } from '../src/features/idp/adapters/db/schema.js';
 import { users } from '../src/features/idp/adapters/db/schema.js';
 import { ALL_PERMISSIONS } from '../src/kernel/domain/permissions.js';
@@ -91,6 +92,56 @@ export async function seedAdminUser(connectionUri: string) {
       lng: 37.6173,
     })
     .onConflictDoNothing({ target: users.phoneNumber });
+
+  await pool.end();
+}
+
+/**
+ * Популярные запросы по умолчанию — для секции «Часто ищут» в автокомплите поиска.
+ * Сидим во все города, в Москве/СПб счётчики выше — чтобы топ выглядел естественно.
+ */
+const POPULAR_QUERIES: { query: string; count: number }[] = [
+  { query: 'йога', count: 120 },
+  { query: 'танцы', count: 95 },
+  { query: 'английский', count: 80 },
+  { query: 'плавание', count: 70 },
+  { query: 'фитнес', count: 65 },
+  { query: 'детский сад', count: 55 },
+  { query: 'рисование', count: 50 },
+  { query: 'программирование для детей', count: 42 },
+  { query: 'бокс', count: 38 },
+  { query: 'логопед', count: 30 },
+  { query: 'кофейня', count: 25 },
+  { query: 'мастер-класс', count: 22 },
+];
+
+const HIGH_TRAFFIC_CITIES = new Set(['moscow', 'spb']);
+
+export async function seedSearchLog(connectionUri: string) {
+  const pool = new pg.Pool({ connectionString: connectionUri });
+  const db = drizzle({ client: pool });
+
+  const now = new Date();
+  const rows = CITIES.flatMap((city) => {
+    const multiplier = HIGH_TRAFFIC_CITIES.has(city.id) ? 1 : 0.3;
+    return POPULAR_QUERIES.map((q) => ({
+      cityId: city.id,
+      query: q.query,
+      count: Math.max(1, Math.round(q.count * multiplier)),
+      lastUsedAt: now,
+    }));
+  });
+
+  await db
+    .insert(discoverySearchLog)
+    .values(rows)
+    .onConflictDoUpdate({
+      target: [discoverySearchLog.cityId, discoverySearchLog.query],
+      set: {
+        count: sql`excluded.count`,
+        lastUsedAt: sql`excluded.last_used_at`,
+      },
+    });
 
   await pool.end();
 }

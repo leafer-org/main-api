@@ -1,15 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { OrganizationQueryPort } from '../../../application/ports.js';
 import type { EmployeeListReadModel } from '../../../domain/read-models/employee-list.read-model.js';
 import type { EmployeeRoleListReadModel } from '../../../domain/read-models/employee-role-list.read-model.js';
+import type { MyOrganizationsListReadModel } from '../../../domain/read-models/my-organizations-list.read-model.js';
+import type { InfoDraftStatus } from '../../../domain/aggregates/organization/entities/info-draft.entity.js';
 import type { OrganizationDetailReadModel } from '../../../domain/read-models/organization-detail.read-model.js';
 import { InfoDraftEntity } from '../../../domain/aggregates/organization/entities/info-draft.entity.js';
 import { OrganizationDatabaseClient } from '../client.js';
 import type { OrganizationJsonState } from '../json-state.js';
 import { organizations } from '../schema.js';
-import type { OrganizationId } from '@/kernel/domain/ids.js';
+import type { MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class DrizzleOrganizationQuery implements OrganizationQueryPort {
@@ -107,6 +109,35 @@ export class DrizzleOrganizationQuery implements OrganizationQueryPort {
       .where(eq(organizations.id, id))
       .limit(1);
     return rows[0]?.claimToken ?? null;
+  }
+
+  public async findByEmployeeUserId(userId: UserId): Promise<MyOrganizationsListReadModel> {
+    const rows = await this.db
+      .select()
+      .from(organizations)
+      .where(
+        sql`${organizations.state} -> 'employees' @> ${JSON.stringify([{ userId }])}::jsonb`,
+      );
+
+    return {
+      organizations: rows.map((row) => {
+        const s = row.state as OrganizationJsonState;
+        const me = s.employees.find((e) => e.userId === userId);
+        const pub = s.infoPublication;
+        const draft = s.infoDraft;
+
+        return {
+          id: s.id as OrganizationId,
+          name: pub?.name ?? draft.name,
+          description: pub?.description ?? draft.description,
+          avatarId: ((pub?.avatarId ?? draft.avatarId) ?? null) as MediaId | null,
+          isOwner: me?.isOwner ?? false,
+          isPublished: pub !== null,
+          draftStatus: draft.status as InfoDraftStatus,
+          updatedAt: new Date(s.updatedAt),
+        };
+      }),
+    };
   }
 
   public async findRoles(id: OrganizationId): Promise<EmployeeRoleListReadModel> {

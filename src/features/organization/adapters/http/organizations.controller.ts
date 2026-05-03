@@ -7,6 +7,7 @@ import { CreateOrganizationInteractor } from '../../application/use-cases/manage
 import { DeleteOrganizationInteractor } from '../../application/use-cases/manage-org/delete-organization.interactor.js';
 import { DiscardInfoDraftChangesInteractor } from '../../application/use-cases/manage-org/discard-info-draft-changes.interactor.js';
 import { GetOrganizationDetailInteractor } from '../../application/use-cases/manage-org/get-organization-detail.interactor.js';
+import { ListMyOrganizationsInteractor } from '../../application/use-cases/manage-org/list-my-organizations.interactor.js';
 import { RejectInfoModerationInteractor } from '../../application/use-cases/moderation/reject-info-moderation.interactor.js';
 import { SubmitInfoForModerationInteractor } from '../../application/use-cases/moderation/submit-info-for-moderation.interactor.js';
 import { UnpublishOrganizationInteractor } from '../../application/use-cases/manage-org/unpublish-organization.interactor.js';
@@ -27,6 +28,7 @@ export class OrganizationsController {
     private readonly discardInfoDraftChanges: DiscardInfoDraftChangesInteractor,
     private readonly claimOrganization: ClaimOrganizationInteractor,
     private readonly getOrganizationDetail: GetOrganizationDetailInteractor,
+    private readonly listMyOrganizations: ListMyOrganizationsInteractor,
     private readonly updateInfoDraft: UpdateInfoDraftInteractor,
     private readonly submitInfoForModeration: SubmitInfoForModerationInteractor,
     private readonly approveInfoModeration: ApproveInfoModerationInteractor,
@@ -92,6 +94,33 @@ export class OrganizationsController {
     const roles = await this.organizationQuery.findRoles(orgId);
 
     return this.toOrganizationDetailResponse(detail!, employees, roles);
+  }
+
+  @Get('my')
+  public async listMy(
+    @CurrentUser() user: JwtUserPayload,
+  ): Promise<PublicResponse['listMyOrganizations']> {
+    const result = await this.listMyOrganizations.execute({ userId: user.userId });
+
+    const avatarLoader = this.mediaService.createDownloadUrlsLoader({
+      visibility: 'PUBLIC',
+      imageProxy: { width: 128, height: 128, format: 'webp' },
+    });
+
+    return {
+      organizations: await Promise.all(
+        result.organizations.map(async (o) => ({
+          id: o.id,
+          name: o.name,
+          description: o.description,
+          avatarUrl: o.avatarId ? await avatarLoader.get(o.avatarId) : null,
+          isOwner: o.isOwner,
+          isPublished: o.isPublished,
+          draftStatus: o.draftStatus,
+          updatedAt: o.updatedAt.toISOString(),
+        })),
+      ),
+    };
   }
 
   @Delete(':id')

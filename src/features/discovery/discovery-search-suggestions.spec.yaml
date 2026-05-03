@@ -1,0 +1,66 @@
+feature: Discovery Search Suggestions HTTP
+code: discovery-search-suggestions
+description: |
+  Эндпоинт `GET /search/suggestions` — подсказки автокомплита поиска.
+  Возвращает 5 секций, все фильтруются по подстроке `query` (ILIKE):
+    - `categories` — категории по совпадению имени.
+    - `itemTypes` — типы товаров по совпадению имени.
+    - `organizations` — организации по совпадению имени (источник: `discovery_owners`).
+    - `items` — топ-N товаров через MeiliSearch (полная карточка).
+    - `popularQueries` — частые запросы по этому городу, содержащие
+      подстроку `query` (точное совпадение исключается, отсортировано
+      по убыванию `count`).
+
+  При пустом `query` все секции пустые — секция «часто ищут» имеет
+  смысл только в контексте набираемого текста.
+
+  Лог запросов ведётся `SearchItemsInteractor` — каждое обращение к
+  `GET /search` без курсора инкрементит `(cityId, query)` в
+  `discovery_search_log`. Курсорные follow-up запросы не логируются.
+
+specs-unit:
+  GET /search/suggestions:
+    - assert: возвращает категории по имени (LIKE)
+      description: |
+        Подсказки `categories` содержат категории, у которых имя
+        соответствует подстроке `query` (case-insensitive).
+    - assert: возвращает типы товаров по имени (LIKE)
+      description: |
+        Подсказки `itemTypes` содержат типы товаров, у которых имя
+        соответствует подстроке `query` (case-insensitive).
+    - assert: возвращает организации по имени (LIKE)
+      description: |
+        Подсказки `organizations` содержат организации (из
+        `discovery_owners`), у которых имя соответствует подстроке
+        `query` (case-insensitive).
+    - assert: возвращает товары через MeiliSearch
+      description: |
+        Подсказки `items` приходят через ту же `SearchPort.search` (Meilisearch),
+        что и `GET /search`, с маленьким лимитом и без фильтров.
+    - assert: при пустом query возвращает все секции пустыми
+      description: |
+        При `query=''` все массивы — `categories`/`itemTypes`/`items`/`popularQueries`
+        — пустые: подсказки имеют смысл только в контексте набираемого текста.
+    - assert: популярные запросы фильтруются по подстроке и сортируются по count
+      description: |
+        В `popularQueries` попадают только запросы, содержащие
+        подстроку `query`; сортировка — по убыванию `count`,
+        tiebreaker — по убыванию `lastUsedAt`.
+    - assert: популярные запросы фильтруются по cityId
+      description: |
+        Лог запросов изолирован по городу: `popularQueries` для
+        `cityId=A` не содержит запросов из `cityId=B`.
+    - assert: исключает точное совпадение из популярных запросов
+      description: |
+        Если в логе есть запись, точно совпадающая с `query`, она
+        не попадает в `popularQueries` — пользователь и так его ввёл.
+    - assert: возвращает корректную структуру ответа
+      description: |
+        Ответ содержит массивы `categories`, `itemTypes`, `organizations`,
+        `items`, `popularQueries` (даже если пустые).
+
+definitions:
+  feature:
+    - discovery-search-suggestions
+  section:
+    - discovery

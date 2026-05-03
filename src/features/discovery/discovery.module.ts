@@ -10,12 +10,15 @@ import { DrizzleItemCardEnrichmentQuery } from './adapters/db/queries/item-card-
 import { DrizzleItemQuery } from './adapters/db/queries/item.query.js';
 // --- DB Adapters ---
 import { DrizzleLikedItemsQuery } from './adapters/db/queries/liked-items.query.js';
+import { DrizzleOrganizationProfileQuery } from './adapters/db/queries/organization-profile.query.js';
+import { DrizzleSearchSuggestionsQuery } from './adapters/db/queries/search-suggestions.query.js';
 import { DrizzleCategoryProjectionRepository } from './adapters/db/repositories/category-projection.repository.js';
 import { DrizzleIdempotencyRepository } from './adapters/db/repositories/idempotency.repository.js';
 import { DrizzleItemProjectionRepository } from './adapters/db/repositories/item-projection.repository.js';
 import { DrizzleItemTypeProjectionRepository } from './adapters/db/repositories/item-type-projection.repository.js';
 import { DrizzleLikeWriteRepository } from './adapters/db/repositories/like-write.repository.js';
 import { DrizzleOwnerProjectionRepository } from './adapters/db/repositories/owner-projection.repository.js';
+import { DrizzleSearchLogRepository } from './adapters/db/repositories/search-log.repository.js';
 // --- Gorse Adapters ---
 import { GorseSyncAdapter } from './adapters/gorse/gorse-sync.adapter.js';
 import { GorseRecommendationAdapter } from './adapters/gorse/recommendation.adapter.js';
@@ -24,9 +27,11 @@ import { CategoriesController } from './adapters/http/categories.controller.js';
 import { CategoryItemsController } from './adapters/http/category-items.controller.js';
 import { FeedController } from './adapters/http/feed.controller.js';
 import { ItemDetailController } from './adapters/http/item-detail.controller.js';
+import { OrganizationDetailController } from './adapters/http/organization-detail.controller.js';
 import { LikedItemsController } from './adapters/http/liked-items.controller.js';
 import { LikesController } from './adapters/http/likes.controller.js';
 import { SearchController } from './adapters/http/search.controller.js';
+import { SearchSuggestionsController } from './adapters/http/search-suggestions.controller.js';
 import { CategoryProjectionKafkaHandler } from './adapters/kafka/category-projection.handler.js';
 import { InteractionProjectionKafkaHandler } from './adapters/kafka/interaction-projection.handler.js';
 // --- Kafka Handlers ---
@@ -48,9 +53,12 @@ import {
   ItemQueryPort,
   LikedItemsQueryPort,
   LikeWritePort,
+  OrganizationProfileQueryPort,
   RankedListCachePort,
   RecommendationService,
+  SearchLogPort,
   SearchPort,
+  SearchSuggestionsQueryPort,
 } from './application/ports.js';
 import {
   CategoryProjectionPort,
@@ -74,8 +82,10 @@ import { ProjectItemTypeHandler } from './application/use-cases/project-item-typ
 import { ProjectOwnerHandler } from './application/use-cases/project-owner/project-owner.handler.js';
 import { ProjectReviewHandler } from './application/use-cases/project-review/project-review.handler.js';
 import { ProjectUserHandler } from './application/use-cases/project-user/project-user.handler.js';
+import { GetSearchSuggestionsInteractor } from './application/use-cases/search/get-search-suggestions.interactor.js';
 import { SearchItemsInteractor } from './application/use-cases/search/search-items.interactor.js';
 import { GetItemDetailInteractor } from './application/use-cases/view-item/get-item-detail.interactor.js';
+import { GetOrganizationDetailInteractor } from './application/use-cases/view-organization/get-organization-detail.interactor.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 
 @Module({
@@ -86,7 +96,9 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     ItemDetailController,
     LikedItemsController,
     LikesController,
+    OrganizationDetailController,
     SearchController,
+    SearchSuggestionsController,
   ],
   providers: [
     // Infrastructure
@@ -98,7 +110,9 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     GetCategoryFiltersInteractor,
     GetCategoryListInteractor,
     SearchItemsInteractor,
+    GetSearchSuggestionsInteractor,
     GetItemDetailInteractor,
+    GetOrganizationDetailInteractor,
     GetLikedItemsInteractor,
     LikeItemInteractor,
     UnlikeItemInteractor,
@@ -121,6 +135,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     { provide: CategoryFiltersQueryPort, useClass: DrizzleCategoryFiltersQuery },
     { provide: CategoryListQueryPort, useClass: DrizzleCategoryListQuery },
     { provide: CategoryAncestorLookupPort, useClass: DrizzleCategoryAncestorLookupQuery },
+    { provide: OrganizationProfileQueryPort, useClass: DrizzleOrganizationProfileQuery },
 
     // Projection port → adapter bindings
     { provide: ItemProjectionPort, useClass: DrizzleItemProjectionRepository },
@@ -135,6 +150,8 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     // Real adapters
     { provide: MeilisearchSyncPort, useClass: MeilisearchSyncAdapter },
     { provide: SearchPort, useClass: MeiliSearchQuery },
+    { provide: SearchSuggestionsQueryPort, useClass: DrizzleSearchSuggestionsQuery },
+    { provide: SearchLogPort, useClass: DrizzleSearchLogRepository },
     { provide: RankedListCachePort, useClass: RedisRankedListCache },
     { provide: LikedItemsQueryPort, useClass: DrizzleLikedItemsQuery },
 
