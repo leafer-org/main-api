@@ -71,6 +71,7 @@ async function uploadImage(api: Api, fixturePath: string): Promise<string> {
 
 const ITEM_TYPE_SERVICE_ID = '00000000-0000-0000-0000-000000000001';
 const ITEM_TYPE_EVENT_ID = '00000000-0000-0000-0000-000000000002';
+const ITEM_TYPE_FULL_ID = '00000000-0000-0000-0000-000000000003';
 
 const ITEM_TYPES = [
   {
@@ -81,10 +82,10 @@ const ITEM_TYPES = [
       { type: 'base-info' as const, required: true },
       { type: 'category' as const, required: true },
       { type: 'owner' as const, required: true },
-      { type: 'age-group' as const, required: false },
+      { type: 'age-group' as const, required: false, showOnCard: true },
       { type: 'location' as const, required: false },
       { type: 'payment' as const, required: true, allowedStrategies: ['free' as const, 'one-time' as const, 'subscription' as const] },
-      { type: 'schedule' as const, required: false },
+      { type: 'schedule' as const, required: false, showOnCard: true },
       { type: 'contact-info' as const, required: false },
       { type: 'team' as const, required: false },
     ],
@@ -97,10 +98,31 @@ const ITEM_TYPES = [
       { type: 'base-info' as const, required: true },
       { type: 'category' as const, required: true },
       { type: 'owner' as const, required: true },
-      { type: 'age-group' as const, required: true },
+      { type: 'age-group' as const, required: true, showOnCard: true },
       { type: 'location' as const, required: true },
       { type: 'payment' as const, required: true, allowedStrategies: ['free' as const, 'one-time' as const] },
-      { type: 'event-date-time' as const, required: true, maxDates: null },
+      { type: 'event-date-time' as const, required: true, maxDates: null, showOnCard: true },
+      { type: 'contact-info' as const, required: false },
+      { type: 'team' as const, required: false },
+    ],
+  },
+  {
+    // Универсальный тип «Активность» — все виджеты, все card-toggleable полей включены.
+    // Используется для тестирования enrichment, отображения карточки, фильтров и т.д.
+    id: ITEM_TYPE_FULL_ID,
+    name: 'Активность',
+    label: 'активность',
+    widgetSettings: [
+      { type: 'base-info' as const, required: true },
+      { type: 'category' as const, required: true },
+      { type: 'owner' as const, required: true },
+      { type: 'age-group' as const, required: true, showOnCard: true },
+      { type: 'location' as const, required: true },
+      { type: 'payment' as const, required: true, allowedStrategies: ['free' as const, 'one-time' as const, 'subscription' as const] },
+      { type: 'item-review' as const, required: false },
+      { type: 'owner-review' as const, required: false },
+      { type: 'event-date-time' as const, required: false, maxDates: null, showOnCard: true },
+      { type: 'schedule' as const, required: false, showOnCard: true },
       { type: 'contact-info' as const, required: false },
       { type: 'team' as const, required: false },
     ],
@@ -118,7 +140,7 @@ const CATEGORIES = [
     id: CAT_EDUCATION_ID,
     parentCategoryId: null as string | null,
     name: 'Образование',
-    allowedTypeIds: [ITEM_TYPE_SERVICE_ID, ITEM_TYPE_EVENT_ID],
+    allowedTypeIds: [ITEM_TYPE_SERVICE_ID, ITEM_TYPE_EVENT_ID, ITEM_TYPE_FULL_ID],
     ageGroups: ['children' as const, 'adults' as const],
     fixture: 'categories/education.jpg',
   },
@@ -126,7 +148,7 @@ const CATEGORIES = [
     id: CAT_SPORT_ID,
     parentCategoryId: null as string | null,
     name: 'Спорт',
-    allowedTypeIds: [ITEM_TYPE_SERVICE_ID, ITEM_TYPE_EVENT_ID],
+    allowedTypeIds: [ITEM_TYPE_SERVICE_ID, ITEM_TYPE_EVENT_ID, ITEM_TYPE_FULL_ID],
     ageGroups: ['children' as const, 'adults' as const],
     fixture: 'categories/sport.jpg',
   },
@@ -134,7 +156,7 @@ const CATEGORIES = [
     id: CAT_CREATIVITY_ID,
     parentCategoryId: null as string | null,
     name: 'Творчество',
-    allowedTypeIds: [ITEM_TYPE_SERVICE_ID],
+    allowedTypeIds: [ITEM_TYPE_SERVICE_ID, ITEM_TYPE_FULL_ID],
     ageGroups: ['children' as const, 'adults' as const],
     fixture: 'categories/creativity.jpg',
   },
@@ -142,7 +164,7 @@ const CATEGORIES = [
     id: CAT_ENTERTAINMENT_ID,
     parentCategoryId: null as string | null,
     name: 'Развлечения',
-    allowedTypeIds: [ITEM_TYPE_EVENT_ID],
+    allowedTypeIds: [ITEM_TYPE_EVENT_ID, ITEM_TYPE_FULL_ID],
     ageGroups: ['children' as const, 'adults' as const],
     fixture: 'categories/entertainment.jpg',
   },
@@ -150,7 +172,7 @@ const CATEGORIES = [
     id: CAT_YOGA_ID,
     parentCategoryId: CAT_SPORT_ID,
     name: 'Йога',
-    allowedTypeIds: [ITEM_TYPE_SERVICE_ID, ITEM_TYPE_EVENT_ID],
+    allowedTypeIds: [ITEM_TYPE_SERVICE_ID, ITEM_TYPE_EVENT_ID, ITEM_TYPE_FULL_ID],
     ageGroups: ['children' as const, 'adults' as const],
     fixture: 'categories/sport.jpg',
   },
@@ -382,6 +404,10 @@ const ITEMS: ItemSeed[] = [
   },
   // --- Bulk: Йога подкатегория, Архангельск, разные районы ---
   ...buildYogaItems(),
+
+  // --- Bulk: Полнофункциональные «Активности» (ITEM_TYPE_FULL) ---
+  // Содержат все виджеты сразу: schedule + event-date-time + age-group + team + contacts
+  ...buildFullActivityItems(),
 ];
 
 // Generates ~30 items in the "Йога" subcategory across Arkhangelsk districts.
@@ -434,6 +460,76 @@ function buildYogaItems(): ItemSeed[] {
     }
 
     items.push(base);
+  }
+  return items;
+}
+
+/**
+ * Полнофункциональные «Активности» — все виджеты включены, для тестов карточки/enrichment.
+ * Часть с расписанием, часть с датами событий — у одного и того же типа разные комбинации
+ * (showOnCard для event-date-time/schedule/age-group → все три флажка проявляются на UI).
+ */
+function buildFullActivityItems(): ItemSeed[] {
+  const districts = [
+    { lat: 64.5402, lng: 40.5160, address: 'пр. Троицкий, 73' },           // Центр
+    { lat: 64.5598, lng: 40.4810, address: 'ул. Партизанская, 7' },         // Соломбала
+    { lat: 64.5215, lng: 40.5810, address: 'ул. Октябрят, 35' },            // Майская горка
+    { lat: 64.5505, lng: 40.4250, address: 'ул. Мостостроителей, 4' },      // Левый берег
+    { lat: 64.5125, lng: 40.5530, address: 'ул. Стрелковая, 19' },          // Варавино
+  ];
+  const fixtures = ['items/personal-yoga.jpg', 'items/group-hatha.jpg', 'items/dance-evening.jpg'];
+  const ageGroups: ('children' | 'adults' | 'all')[] = ['adults', 'children', 'all'];
+  const titles = [
+    'Семейный квест с расписанием',
+    'Творческая мастерская выходного дня',
+    'Фестиваль уличного спорта',
+    'Открытая лекция о космосе',
+    'Турнир по настольным играм',
+    'Мастер-класс по керамике',
+    'Вечер настольных игр',
+    'Ярмарка локальных ремёсел',
+  ];
+
+  const items: ItemSeed[] = [];
+  for (let i = 0; i < titles.length; i++) {
+    const district = districts[i % districts.length]!;
+    const fixture = fixtures[i % fixtures.length]!;
+    const ageGroup = ageGroups[i % ageGroups.length]!;
+    const orgIndex = i % 3;
+    const categoryId = i % 2 === 0 ? CAT_EDUCATION_ID : CAT_ENTERTAINMENT_ID;
+
+    items.push({
+      orgIndex,
+      typeId: ITEM_TYPE_FULL_ID,
+      categoryId,
+      title: titles[i]!,
+      description: 'Полная карточка: расписание, ближайшие даты, возрастной бейдж, команда, контакты.',
+      fixture,
+      location: { cityId: 'arkhangelsk', lat: district.lat, lng: district.lng, address: district.address },
+      ageGroup,
+      payment: [
+        { name: 'Бесплатное пробное', description: 'Первый визит', strategy: 'free', price: null },
+        { name: 'Разовое посещение', description: null, strategy: 'one-time', price: 800 + (i % 4) * 200 },
+        { name: 'Абонемент', description: '4 занятия', strategy: 'subscription', price: 3000 + (i % 3) * 500 },
+      ],
+      schedule: [
+        { dayOfWeek: 1 + (i % 5), startTime: '18:00', endTime: '19:30' },
+        { dayOfWeek: 6, startTime: '11:00', endTime: '12:30' },
+      ],
+      eventDaysFromNow: [2 + (i % 5), 9 + (i % 7), 16 + (i % 7)],
+      contacts: [
+        { type: 'phone', value: `+7900123${1000 + i}` },
+        { type: 'email', value: `activity${i}@example.com`, label: 'Запись' },
+        { type: 'link', value: 'https://example.com', label: 'Сайт' },
+      ],
+      team: {
+        title: 'Ведущие',
+        members: [
+          { name: 'Ольга Сидорова', description: 'Куратор', fixture: 'team/olga.jpg' },
+          { name: 'Игорь Морозов', description: 'Помощник', fixture: 'team/igor.jpg' },
+        ],
+      },
+    });
   }
   return items;
 }
