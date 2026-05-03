@@ -10,12 +10,18 @@ description: |
       с признаком required, опциональными параметрами виджета (например,
       allowedStrategies для 'payment') и опциональным флагом
       `showOnCard: boolean` — управляет, подмешивается ли поле виджета в
-      превью-карточку публичного каталога. По умолчанию false.
+      превью-карточку публичного каталога.
 
-  Card-eligible виджеты (для них допустим `showOnCard=true`):
-    payment, event-date-time, location, schedule, age-group, owner.
+  Card-eligible виджеты (можно ставить `showOnCard=true`):
+    base-info, owner, payment, item-review, location, event-date-time,
+    schedule, age-group.
+  Always-on-card (всегда показываются на карточке, нельзя ставить
+    `showOnCard=false`; UI рендерит чекбокс locked-checked):
+    base-info, owner, payment, item-review, location.
+  Опционально-на-карточке (toggleable showOnCard, default false):
+    event-date-time, schedule, age-group.
   НЕ card-eligible:
-    base-info, category, item-review, owner-review, contact-info, team.
+    category, owner-review, contact-info, team.
 
   Инвариант widgetSettings: каждый type встречается не более одного раза.
 
@@ -48,17 +54,23 @@ specs-unit:
   CardDisplay:
     - assert: showOnCard=true разрешён только для card-eligible виджетов
       description: |
-        Card-eligible: payment, event-date-time, location, schedule,
-        age-group, owner. Для остальных (base-info, category, item-review,
-        owner-review, contact-info, team) POST с showOnCard=true →
+        Card-eligible: base-info, owner, payment, item-review, location,
+        event-date-time, schedule, age-group.
+        Для остальных (category, owner-review, contact-info, team) —
         400 CardDisplayNotAllowedForWidgetType.
     - assert: showOnCard=true принимается для card-eligible виджетов
       description: |
         POST с showOnCard=true на payment/event-date-time/location и т.п. —
         201, и значение возвращается в widgetSettings ответа.
-    - assert: showOnCard=false принимается для любого виджета
+    - assert: showOnCard=false принимается для не always-on виджетов
       description: |
-        Отключение валидно даже для не card-eligible (base-info, team и др.).
+        Опционально-на-карточке (event-date-time, schedule, age-group) и
+        не card-eligible (team и др.) — showOnCard=false валидно.
+    - assert: showOnCard=false запрещён для always-on виджетов
+      description: |
+        Always-on (base-info, owner, payment, item-review, location) —
+        показ на карточке нельзя выключить. POST/PATCH с showOnCard=false
+        для них → 400 CardDisplayCannotBeDisabled.
     - assert: PATCH отклоняет showOnCard=true для не-card-eligible виджетов
       description: |
         Та же проверка, что и для POST, применяется и к PATCH /cms/item-types/:id.

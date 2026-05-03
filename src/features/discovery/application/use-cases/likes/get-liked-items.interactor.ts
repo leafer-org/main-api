@@ -14,7 +14,6 @@ export class GetLikedItemsInteractor {
 
   public async execute(query: {
     userId: UserId;
-    coordinates?: { lat: number; lng: number };
     search?: string;
     cursor?: string;
     limit: number;
@@ -23,7 +22,6 @@ export class GetLikedItemsInteractor {
 
     const enrichment = await this.cardEnrichment.enrich({
       items: result.items.map((i) => ({ itemId: i.itemId, typeId: i.typeId })),
-      userLocation: query.coordinates,
     });
 
     const items = result.items.map((i) => {

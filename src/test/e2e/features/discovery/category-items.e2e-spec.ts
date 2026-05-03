@@ -853,7 +853,6 @@ describe('discovery-category-items', () => {
             { type: 'base-info', required: true },
             { type: 'event-date-time', required: false, showOnCard: true, maxDates: null },
             { type: 'schedule', required: false, showOnCard: true },
-            { type: 'location', required: false, showOnCard: true },
             { type: 'age-group', required: false, showOnCard: true },
           ],
         });
@@ -865,21 +864,13 @@ describe('discovery-category-items', () => {
           orgId,
           categoryIds: [categoryId],
           ageGroup: 'adults',
-          lat: 55.75,
-          lng: 37.62,
           eventDates: [{ date: futureDate }],
           schedule: [{ dayOfWeek: 1, startTime: '09:00', endTime: '18:00' }],
         });
 
         const res = await agent
           .get(`/categories/${categoryId}/items`)
-          .query({
-            sort: 'newest',
-            cityId: CITY_ID,
-            ageGroup: AGE_GROUP,
-            lat: '55.76',
-            lng: '37.63',
-          })
+          .query({ sort: 'newest', cityId: CITY_ID, ageGroup: AGE_GROUP })
           .expect(200);
 
         const item = res.body.items[0];
@@ -889,7 +880,6 @@ describe('discovery-category-items', () => {
           startTime: '09:00',
           endTime: '18:00',
         });
-        expect(typeof item.distanceKm).toBe('number');
         expect(item.cardAgeGroup).toBe('adults');
       });
 
@@ -1024,70 +1014,6 @@ describe('discovery-category-items', () => {
         expect(res.body.items[0].cardAgeGroup).toBe('adults');
       });
 
-      it('distanceKm подмешивается при наличии user-location и showOnCard на location', async () => {
-        const categoryId = randomUUID();
-        const typeId = randomUUID();
-        const orgId = randomUUID();
-        const itemId = randomUUID();
-
-        await seedCategory({ categoryId });
-        await seedItemType({
-          typeId,
-          widgetSettings: [
-            { type: 'base-info', required: true },
-            { type: 'location', required: false, showOnCard: true },
-          ],
-        });
-
-        await seedItem({
-          itemId,
-          typeId,
-          orgId,
-          categoryIds: [categoryId],
-          lat: 55.75,
-          lng: 37.62,
-        });
-
-        const res = await agent
-          .get(`/categories/${categoryId}/items`)
-          .query({
-            sort: 'newest',
-            cityId: CITY_ID,
-            ageGroup: AGE_GROUP,
-            lat: '55.76',
-            lng: '37.63',
-          })
-          .expect(200);
-
-        expect(res.body.items[0].distanceKm).toBeGreaterThan(0);
-        expect(res.body.items[0].distanceKm).toBeLessThan(5);
-      });
-
-      it('distanceKm=null без user-location', async () => {
-        const categoryId = randomUUID();
-        const typeId = randomUUID();
-        const orgId = randomUUID();
-        const itemId = randomUUID();
-
-        await seedCategory({ categoryId });
-        await seedItemType({
-          typeId,
-          widgetSettings: [
-            { type: 'base-info', required: true },
-            { type: 'location', required: false, showOnCard: true },
-          ],
-        });
-
-        await seedItem({ itemId, typeId, orgId, categoryIds: [categoryId] });
-
-        const res = await agent
-          .get(`/categories/${categoryId}/items`)
-          .query({ sort: 'newest', cityId: CITY_ID, ageGroup: AGE_GROUP })
-          .expect(200);
-
-        expect(res.body.items[0].distanceKm).toBeNull();
-      });
-
       it('все enrichment-поля null при отсутствии showOnCard', async () => {
         const categoryId = randomUUID();
         const typeId = randomUUID();
@@ -1121,7 +1047,6 @@ describe('discovery-category-items', () => {
         const item = res.body.items[0];
         expect(item.eventDateTime).toBeNull();
         expect(item.nextScheduleSlot).toBeNull();
-        expect(item.distanceKm).toBeNull();
         expect(item.cardAgeGroup).toBeNull();
       });
     });

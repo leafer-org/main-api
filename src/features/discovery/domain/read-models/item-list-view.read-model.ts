@@ -5,19 +5,17 @@ import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
 
 /**
  * Card-enrichment-поля — подмешиваются по `widgetSettings.showOnCard` в ItemType.
- * Все опциональные/nullable. См. discovery-feed.spec → card-enrichment.
+ * Все опциональные/nullable. См. discovery-category-items.spec → card-enrichment.
  */
 export type ItemCardEnrichment = {
   eventDateTime: string | null;
   nextScheduleSlot: { dayOfWeek: number; startTime: string; endTime: string } | null;
-  distanceKm: number | null;
   cardAgeGroup: AgeGroupOption | null;
 };
 
 export const EMPTY_CARD_ENRICHMENT: ItemCardEnrichment = {
   eventDateTime: null,
   nextScheduleSlot: null,
-  distanceKm: null,
   cardAgeGroup: null,
 };
 

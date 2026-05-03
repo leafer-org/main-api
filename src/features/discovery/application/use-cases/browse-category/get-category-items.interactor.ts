@@ -65,7 +65,7 @@ export class GetCategoryItemsInteractor {
         limit: query.limit,
       });
       return Right({
-        items: await this.enrichListViews(result.items, query.coordinates),
+        items: await this.enrichListViews(result.items),
         nextCursor: result.nextCursor,
       });
     }
@@ -73,13 +73,9 @@ export class GetCategoryItemsInteractor {
     return this.executePersonalSort(query);
   }
 
-  private async enrichListViews(
-    items: ItemReadModel[],
-    userLocation?: { lat: number; lng: number },
-  ) {
+  private async enrichListViews(items: ItemReadModel[]) {
     const enrichment = await this.cardEnrichment.enrich({
-      items: items.map((i) => ({ itemId: i.itemId, typeId: i.typeId })),
-      userLocation,
+      items: items.map((i) => ({ itemId: i.itemId, typeId: i.typeId, widgets: i.widgets })),
     });
     return items.map((i) => toListView(i, enrichment.get(String(i.itemId))));
   }
@@ -134,10 +130,7 @@ export class GetCategoryItemsInteractor {
       const orderedGorse = gorsePageIds.map((id) => itemMap.get(id)).filter((i) => i !== undefined);
 
       return Right({
-        items: await this.enrichListViews(
-          [...orderedGorse, ...newestResult.items],
-          query.coordinates,
-        ),
+        items: await this.enrichListViews([...orderedGorse, ...newestResult.items]),
         nextCursor: null,
       });
     }
@@ -147,7 +140,7 @@ export class GetCategoryItemsInteractor {
     const orderedItems = gorsePageIds.map((id) => itemMap.get(id)).filter((i) => i !== undefined);
 
     return Right({
-      items: await this.enrichListViews(orderedItems, query.coordinates),
+      items: await this.enrichListViews(orderedItems),
       nextCursor: nextOffsetCursor(offset, orderedItems.length, query.limit, rankedIds.length),
     });
   }
@@ -219,7 +212,7 @@ export class GetCategoryItemsInteractor {
       limit: query.limit,
     });
     return Right({
-      items: await this.enrichListViews(result.items, query.coordinates),
+      items: await this.enrichListViews(result.items),
       nextCursor: result.nextCursor,
     });
   }

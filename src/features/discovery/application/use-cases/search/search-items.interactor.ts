@@ -16,7 +16,6 @@ export class SearchItemsInteractor {
   public async execute(query: {
     query: string;
     cityId: string;
-    coordinates?: { lat: number; lng: number };
     ageGroup: AgeGroupOption;
     filters?: DynamicSearchFilters;
     cursor?: string;
@@ -26,7 +25,6 @@ export class SearchItemsInteractor {
 
     const enrichment = await this.cardEnrichment.enrich({
       items: result.items.map((i) => ({ itemId: i.itemId, typeId: i.typeId })),
-      userLocation: query.coordinates,
     });
 
     return Right({

@@ -65,17 +65,16 @@ specs-unit:
     - assert: ItemListView включает поля от виджетов с showOnCard=true
       description: |
         Источник истины — `widgetSettings[].showOnCard` на ItemType item-а
-        (см. `cms-item-types`). Если виджет card-eligible включён —
-        соответствующее поле подмешивается в ItemListView, иначе null:
+        (см. `cms-item-types`). Базовые поля карточки (title/media/owner/
+        price/rating/location.address) идут от always-on-card виджетов и
+        присутствуют всегда. Опциональные toggleable enrichment-поля:
           event-date-time → eventDateTime: string | null
                             (ISO ближайшей будущей даты)
           schedule        → nextScheduleSlot: { dayOfWeek, startTime, endTime } | null
-                            (первый upcoming slot)
-          location        → distanceKm: number | null
-                            (требует lat/lng в запросе; без них null)
           age-group       → cardAgeGroup: 'adults'|'children'|'all'|null
         Контракт един для feed/category-items/liked-items/search.
-        Per-type widgetSettings читается батчем по уникальным typeId.
+        widgetSettings читается батчем по уникальным typeId, содержимое
+        виджетов — из widgets jsonb item-а.
     - assert: eventDateTime подмешивается, если виджет включён
       description: |
         Тип имеет event-date-time с showOnCard=true и у item-а есть
@@ -92,18 +91,10 @@ specs-unit:
       description: |
         age-group с showOnCard=true → cardAgeGroup = значение возраста
         item-а ('adults'|'children'|'all').
-    - assert: distanceKm подмешивается при наличии user-location и showOnCard на location
-      description: |
-        location с showOnCard=true + lat/lng в запросе + у item-а есть
-        координаты → distanceKm = расстояние в км (haversine, до 0.1 км).
-    - assert: distanceKm=null без user-location
-      description: |
-        Запрос без lat/lng → distanceKm=null, даже если виджет location
-        включён на карточке.
     - assert: все enrichment-поля null при отсутствии showOnCard
       description: |
-        ItemType без card-eligible виджетов с showOnCard=true →
-        eventDateTime/nextScheduleSlot/distanceKm/cardAgeGroup всё null.
+        ItemType без toggleable card-eligible виджетов с showOnCard=true →
+        eventDateTime/nextScheduleSlot/cardAgeGroup всё null.
 
   defaults:
     - assert: работает с дефолтным sort (personal) с fallback на SQL

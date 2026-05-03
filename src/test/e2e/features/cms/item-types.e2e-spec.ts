@@ -153,13 +153,14 @@ describe('CMS Item Types', () => {
     it('showOnCard=true разрешён только для card-eligible виджетов', async () => {
       const res = await createItemType({
         widgetSettings: [
-          { type: 'base-info', required: true, showOnCard: true },
+          { type: 'base-info', required: true },
+          { type: 'team', required: false, showOnCard: true },
         ],
       });
 
       expect(res.status).toBe(400);
       expect(res.body.type).toBe('card_display_not_allowed_for_widget_type');
-      expect(res.body.data?.type).toBe('base-info');
+      expect(res.body.data?.type).toBe('team');
     });
 
     it('showOnCard=true принимается для card-eligible виджетов', async () => {
@@ -189,15 +190,28 @@ describe('CMS Item Types', () => {
       );
     });
 
-    it('showOnCard=false принимается для любого виджета', async () => {
+    it('showOnCard=false принимается для не always-on виджетов', async () => {
       const res = await createItemType({
         widgetSettings: [
-          { type: 'base-info', required: true, showOnCard: false },
+          { type: 'base-info', required: true },
           { type: 'team', required: false, showOnCard: false },
+          { type: 'event-date-time', required: false, showOnCard: false, maxDates: null },
         ],
       });
 
       expect(res.status).toBe(201);
+    });
+
+    it('showOnCard=false запрещён для always-on виджетов', async () => {
+      const res = await createItemType({
+        widgetSettings: [
+          { type: 'base-info', required: true, showOnCard: false },
+        ],
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.body.type).toBe('card_display_cannot_be_disabled');
+      expect(res.body.data?.type).toBe('base-info');
     });
 
     it('PATCH отклоняет showOnCard=true для не-card-eligible виджетов', async () => {

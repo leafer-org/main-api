@@ -59,20 +59,41 @@ export function findWidgetSettings<T extends WidgetSettings['type']>(
   return (found as Extract<WidgetSettings, { type: T }>) ?? null;
 }
 
-/** Виджеты, для которых допустим showOnCard=true (рендерятся на карточке списка). */
-export const CARD_ELIGIBLE_WIDGET_TYPES: ReadonlySet<WidgetSettingsType> = new Set([
+/**
+ * Виджеты, чьё содержимое всегда показывается на карточке списка (когда виджет включён в типе).
+ * Их `showOnCard` не редактируется — UI запрещает менять, бэкенд валидирует на false.
+ * Ровно эти виджеты дают «базовые» поля карточки (title/media/owner/price/rating/location.address).
+ */
+export const ALWAYS_ON_CARD_WIDGET_TYPES: ReadonlySet<WidgetSettingsType> = new Set([
+  'base-info',
+  'owner',
   'payment',
-  'event-date-time',
+  'item-review',
   'location',
+]);
+
+/** Виджеты, для которых допустим showOnCard (фактически или по принуждению). */
+export const CARD_ELIGIBLE_WIDGET_TYPES: ReadonlySet<WidgetSettingsType> = new Set([
+  ...ALWAYS_ON_CARD_WIDGET_TYPES,
+  'event-date-time',
   'schedule',
   'age-group',
-  'owner',
 ]);
 
 export function isCardEligibleWidgetType(type: WidgetSettingsType): boolean {
   return CARD_ELIGIBLE_WIDGET_TYPES.has(type);
 }
 
+export function isAlwaysOnCardWidgetType(type: WidgetSettingsType): boolean {
+  return ALWAYS_ON_CARD_WIDGET_TYPES.has(type);
+}
+
+/**
+ * Виджет показывается на карточке если:
+ *  - его тип в ALWAYS_ON_CARD (showOnCard=true forced, независимо от хранимого значения), или
+ *  - тип card-eligible и явно showOnCard=true.
+ */
 export function isShownOnCard(settings: WidgetSettings): boolean {
+  if (isAlwaysOnCardWidgetType(settings.type)) return true;
   return settings.showOnCard === true && isCardEligibleWidgetType(settings.type);
 }

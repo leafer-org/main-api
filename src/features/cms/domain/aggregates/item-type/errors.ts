@@ -16,3 +16,8 @@ export class CardDisplayNotAllowedForWidgetTypeError extends CreateDomainError(
   'card_display_not_allowed_for_widget_type',
   400,
 ).withData<{ type: string }>() {}
+
+export class CardDisplayCannotBeDisabledError extends CreateDomainError(
+  'card_display_cannot_be_disabled',
+  400,
+).withData<{ type: string }>() {}

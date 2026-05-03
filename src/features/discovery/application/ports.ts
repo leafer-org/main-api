@@ -12,6 +12,7 @@ import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type { AttributeId, CategoryId, ItemId, TypeId, UserId } from '@/kernel/domain/ids.js';
 import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
+import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
 
 // --- Query Ports ---
 
@@ -74,16 +75,19 @@ export abstract class CategoryFiltersQueryPort {
 
 /**
  * Подмешивание card-enrichment-полей в ItemListView по `widgetSettings.showOnCard` ItemType.
- * Источник истины — `discoveryItemTypes.widgetSettings`. Читается батчем по уникальным typeIds.
- * Если ни один тип в выборке не требует distance/schedule/eventDate/ageGroup —
- * соответствующие запросы не выполняются.
  *
- * См. discovery-feed.spec → card-enrichment.
+ * Источник истины:
+ *   - widgetSettings — `discoveryItemTypes` (батч по уникальным typeIds, 1 запрос)
+ *   - содержимое виджетов (даты, расписание, age-group) — `widgets` каждого item-а
+ *
+ * Caller передаёт widgets, если они уже в памяти (feed/category-items имеют ItemReadModel.widgets).
+ * Если widgets не переданы — адаптер дочитывает их одним запросом из discoveryItems.widgets.
+ *
+ * См. discovery-category-items.spec → card-enrichment.
  */
 export abstract class ItemCardEnrichmentPort {
   public abstract enrich(input: {
-    items: { itemId: ItemId; typeId: TypeId }[];
-    userLocation?: { lat: number; lng: number };
+    items: { itemId: ItemId; typeId: TypeId; widgets?: ItemWidget[] }[];
   }): Promise<Map<string, ItemCardEnrichment>>;
 }
 

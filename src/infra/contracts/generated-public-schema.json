@@ -11985,12 +11985,6 @@
               }
             ]
           },
-          "distanceKm": {
-            "type": [
-              "number",
-              "null"
-            ]
-          },
           "cardAgeGroup": {
             "type": [
               "string",

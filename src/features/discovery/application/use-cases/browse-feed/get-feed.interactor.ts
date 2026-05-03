@@ -57,8 +57,7 @@ export class GetFeedInteractor {
       .slice(0, query.limit);
 
     const enrichment = await this.cardEnrichment.enrich({
-      items: orderedItems.map((i) => ({ itemId: i.itemId, typeId: i.typeId })),
-      userLocation: query.coordinates,
+      items: orderedItems.map((i) => ({ itemId: i.itemId, typeId: i.typeId, widgets: i.widgets })),
     });
 
     return Right({

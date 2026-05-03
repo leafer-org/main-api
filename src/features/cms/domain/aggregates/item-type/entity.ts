@@ -1,5 +1,6 @@
 import type { CreateItemTypeCommand, UpdateItemTypeCommand } from './commands.js';
 import {
+  CardDisplayCannotBeDisabledError,
   CardDisplayNotAllowedForWidgetTypeError,
   DuplicateWidgetSettingsError,
   ItemTypeAlreadyExistsError,
@@ -8,7 +9,10 @@ import type { ItemTypeCreatedEvent, ItemTypeUpdatedEvent } from './events.js';
 import type { EntityState } from '@/infra/ddd/entity-state.js';
 import { type Either, Left, Right } from '@/infra/lib/box.js';
 import type { TypeId } from '@/kernel/domain/ids.js';
-import { isCardEligibleWidgetType } from '@/kernel/domain/vo/widget-settings.js';
+import {
+  isAlwaysOnCardWidgetType,
+  isCardEligibleWidgetType,
+} from '@/kernel/domain/vo/widget-settings.js';
 import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 export type ItemTypeEntity = EntityState<{
@@ -22,7 +26,12 @@ export type ItemTypeEntity = EntityState<{
 
 function validateWidgetSettings(
   settings: WidgetSettings[],
-): Either<DuplicateWidgetSettingsError | CardDisplayNotAllowedForWidgetTypeError, void> {
+): Either<
+  | DuplicateWidgetSettingsError
+  | CardDisplayNotAllowedForWidgetTypeError
+  | CardDisplayCannotBeDisabledError,
+  void
+> {
   const seen = new Set<string>();
   const duplicates: string[] = [];
 
@@ -39,6 +48,9 @@ function validateWidgetSettings(
     if (s.showOnCard === true && !isCardEligibleWidgetType(s.type)) {
       return Left(new CardDisplayNotAllowedForWidgetTypeError({ type: s.type }));
     }
+    if (s.showOnCard === false && isAlwaysOnCardWidgetType(s.type)) {
+      return Left(new CardDisplayCannotBeDisabledError({ type: s.type }));
+    }
   }
 
   return Right(undefined);
@@ -47,7 +59,8 @@ function validateWidgetSettings(
 type ItemTypeDecideError =
   | ItemTypeAlreadyExistsError
   | DuplicateWidgetSettingsError
-  | CardDisplayNotAllowedForWidgetTypeError;
+  | CardDisplayNotAllowedForWidgetTypeError
+  | CardDisplayCannotBeDisabledError;
 
 export const ItemTypeEntity = {
   create(

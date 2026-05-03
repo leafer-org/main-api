@@ -2458,7 +2458,6 @@ export interface components {
         startTime: string;
         endTime: string;
       } | null;
-      distanceKm?: number | null;
       /** @enum {string|null} */
       cardAgeGroup?: 'adults' | 'children' | 'all' | null;
     };
