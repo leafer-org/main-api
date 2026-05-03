@@ -107,8 +107,9 @@ const ITEM_TYPES = [
     ],
   },
   {
-    // Универсальный тип «Активность» — все виджеты, все card-toggleable полей включены.
-    // Используется для тестирования enrichment, отображения карточки, фильтров и т.д.
+    // Универсальный тип «Активность» — фикстура для тестирования любых виджетов:
+    // card-enrichment, item-detail, фильтры, рендер team/contacts/payment-стратегий.
+    // Все виджеты включены, все card-toggleable showOnCard=true.
     id: ITEM_TYPE_FULL_ID,
     name: 'Активность',
     label: 'активность',
@@ -405,8 +406,9 @@ const ITEMS: ItemSeed[] = [
   // --- Bulk: Йога подкатегория, Архангельск, разные районы ---
   ...buildYogaItems(),
 
-  // --- Bulk: Полнофункциональные «Активности» (ITEM_TYPE_FULL) ---
-  // Содержат все виджеты сразу: schedule + event-date-time + age-group + team + contacts
+  // --- Bulk: «Активности» — фикстура для тестов любых виджетов ---
+  // Разные комбинации: всё-сразу, только расписание, только события, разные ageGroup,
+  // разные стратегии оплаты, длинные/короткие списки команды и контактов.
   ...buildFullActivityItems(),
 ];
 
@@ -465,73 +467,236 @@ function buildYogaItems(): ItemSeed[] {
 }
 
 /**
- * Полнофункциональные «Активности» — все виджеты включены, для тестов карточки/enrichment.
- * Часть с расписанием, часть с датами событий — у одного и того же типа разные комбинации
- * (showOnCard для event-date-time/schedule/age-group → все три флажка проявляются на UI).
+ * «Активности» — универсальный тип-фикстура для тестирования любых виджетов:
+ * card-enrichment, item-detail, фильтры, рендер team/contacts/payment-стратегий и т.д.
+ *
+ * Каждый item демонстрирует свою комбинацию виджетов, чтобы покрыть разные сценарии:
+ *   - комплект всё-сразу (расписание+события+команда+контакты+три страт. оплаты)
+ *   - только расписание (без событий)
+ *   - только события (без расписания)
+ *   - только free / только subscription / только one-time
+ *   - разные ageGroup (adults / children / all)
+ *   - с/без team, с/без contacts
+ *   - длинная команда / много контактов / много дат
  */
 function buildFullActivityItems(): ItemSeed[] {
-  const districts = [
-    { lat: 64.5402, lng: 40.5160, address: 'пр. Троицкий, 73' },           // Центр
-    { lat: 64.5598, lng: 40.4810, address: 'ул. Партизанская, 7' },         // Соломбала
-    { lat: 64.5215, lng: 40.5810, address: 'ул. Октябрят, 35' },            // Майская горка
-    { lat: 64.5505, lng: 40.4250, address: 'ул. Мостостроителей, 4' },      // Левый берег
-    { lat: 64.5125, lng: 40.5530, address: 'ул. Стрелковая, 19' },          // Варавино
-  ];
-  const fixtures = ['items/personal-yoga.jpg', 'items/group-hatha.jpg', 'items/dance-evening.jpg'];
-  const ageGroups: ('children' | 'adults' | 'all')[] = ['adults', 'children', 'all'];
-  const titles = [
-    'Семейный квест с расписанием',
-    'Творческая мастерская выходного дня',
-    'Фестиваль уличного спорта',
-    'Открытая лекция о космосе',
-    'Турнир по настольным играм',
-    'Мастер-класс по керамике',
-    'Вечер настольных игр',
-    'Ярмарка локальных ремёсел',
-  ];
+  const D = {
+    centre: { lat: 64.5402, lng: 40.5160, address: 'пр. Троицкий, 73' },
+    solombala: { lat: 64.5598, lng: 40.4810, address: 'ул. Партизанская, 7' },
+    mayskaya: { lat: 64.5215, lng: 40.5810, address: 'ул. Октябрят, 35' },
+    levberezh: { lat: 64.5505, lng: 40.4250, address: 'ул. Мостостроителей, 4' },
+    varavino: { lat: 64.5125, lng: 40.5530, address: 'ул. Стрелковая, 19' },
+  };
+  const loc = (d: { lat: number; lng: number; address: string }) => ({
+    cityId: 'arkhangelsk',
+    ...d,
+  });
 
-  const items: ItemSeed[] = [];
-  for (let i = 0; i < titles.length; i++) {
-    const district = districts[i % districts.length]!;
-    const fixture = fixtures[i % fixtures.length]!;
-    const ageGroup = ageGroups[i % ageGroups.length]!;
-    const orgIndex = i % 3;
-    const categoryId = i % 2 === 0 ? CAT_EDUCATION_ID : CAT_ENTERTAINMENT_ID;
-
-    items.push({
-      orgIndex,
+  return [
+    // 0. Всё-сразу: events + schedule + team + contacts + 3 стратегии оплаты
+    {
+      orgIndex: 0,
       typeId: ITEM_TYPE_FULL_ID,
-      categoryId,
-      title: titles[i]!,
-      description: 'Полная карточка: расписание, ближайшие даты, возрастной бейдж, команда, контакты.',
-      fixture,
-      location: { cityId: 'arkhangelsk', lat: district.lat, lng: district.lng, address: district.address },
-      ageGroup,
+      categoryId: CAT_EDUCATION_ID,
+      title: 'Школа единоборств: всё-в-одном',
+      description: 'Регулярные тренировки + ивенты-турниры + бесплатное пробное.',
+      fixture: 'items/group-hatha.jpg',
+      location: loc(D.centre),
+      ageGroup: 'all',
       payment: [
         { name: 'Бесплатное пробное', description: 'Первый визит', strategy: 'free', price: null },
-        { name: 'Разовое посещение', description: null, strategy: 'one-time', price: 800 + (i % 4) * 200 },
-        { name: 'Абонемент', description: '4 занятия', strategy: 'subscription', price: 3000 + (i % 3) * 500 },
+        { name: 'Разовое', description: null, strategy: 'one-time', price: 800 },
+        { name: 'Абонемент', description: '8 занятий, 30 дней', strategy: 'subscription', price: 5000 },
       ],
       schedule: [
-        { dayOfWeek: 1 + (i % 5), startTime: '18:00', endTime: '19:30' },
+        { dayOfWeek: 1, startTime: '18:00', endTime: '19:30' },
+        { dayOfWeek: 3, startTime: '18:00', endTime: '19:30' },
         { dayOfWeek: 6, startTime: '11:00', endTime: '12:30' },
       ],
-      eventDaysFromNow: [2 + (i % 5), 9 + (i % 7), 16 + (i % 7)],
+      eventDaysFromNow: [3, 10, 17],
       contacts: [
-        { type: 'phone', value: `+7900123${1000 + i}` },
-        { type: 'email', value: `activity${i}@example.com`, label: 'Запись' },
-        { type: 'link', value: 'https://example.com', label: 'Сайт' },
+        { type: 'phone', value: '+79001231001', label: 'Запись' },
+        { type: 'email', value: 'all-in@example.com' },
+        { type: 'link', value: 'https://example.com/all-in', label: 'Сайт' },
       ],
       team: {
-        title: 'Ведущие',
+        title: 'Тренеры',
         members: [
-          { name: 'Ольга Сидорова', description: 'Куратор', fixture: 'team/olga.jpg' },
-          { name: 'Игорь Морозов', description: 'Помощник', fixture: 'team/igor.jpg' },
+          { name: 'Ольга Сидорова', description: 'Старший тренер', fixture: 'team/olga.jpg' },
+          { name: 'Игорь Морозов', description: 'Тренер', fixture: 'team/igor.jpg' },
         ],
       },
-    });
-  }
-  return items;
+    },
+
+    // 1. Только расписание (повторяющаяся практика, нет событий)
+    {
+      orgIndex: 1,
+      typeId: ITEM_TYPE_FULL_ID,
+      categoryId: CAT_SPORT_ID,
+      attributes: [{ attributeId: ATTR_LEVEL_ID, value: 'Средний' }],
+      title: 'Бассейн: групповые заплывы',
+      description: 'Только регулярные занятия — расписание стабильное круглый год.',
+      fixture: 'items/personal-yoga.jpg',
+      location: loc(D.solombala),
+      ageGroup: 'adults',
+      payment: [
+        { name: 'Абонемент', description: '12 занятий', strategy: 'subscription', price: 6000 },
+      ],
+      schedule: [
+        { dayOfWeek: 2, startTime: '07:00', endTime: '08:00' },
+        { dayOfWeek: 4, startTime: '07:00', endTime: '08:00' },
+        { dayOfWeek: 5, startTime: '20:00', endTime: '21:00' },
+      ],
+      contacts: [{ type: 'phone', value: '+79001231002' }],
+    },
+
+    // 2. Только события (фестиваль, разовая серия дат, без расписания)
+    {
+      orgIndex: 2,
+      typeId: ITEM_TYPE_FULL_ID,
+      categoryId: CAT_ENTERTAINMENT_ID,
+      title: 'Фестиваль уличной еды',
+      description: 'Серия фестивальных дней на набережной.',
+      fixture: 'items/dance-evening.jpg',
+      location: loc(D.centre),
+      ageGroup: 'all',
+      payment: [
+        { name: 'Вход', description: null, strategy: 'free', price: null },
+      ],
+      eventDaysFromNow: [5, 12, 19, 26],
+      team: {
+        title: 'Организаторы',
+        members: [
+          { name: 'Виктор Чернов', description: 'Главный куратор', fixture: 'team/viktor.jpg' },
+        ],
+      },
+    },
+
+    // 3. Только бесплатно (free), для детей
+    {
+      orgIndex: 1,
+      typeId: ITEM_TYPE_FULL_ID,
+      categoryId: CAT_EDUCATION_ID,
+      title: 'Детская площадка: открытые игры',
+      description: 'Бесплатные игровые сессии для детей 5–10 лет.',
+      fixture: 'items/kids-dance.jpg',
+      location: loc(D.mayskaya),
+      ageGroup: 'children',
+      payment: [
+        { name: 'Бесплатно', description: null, strategy: 'free', price: null },
+      ],
+      schedule: [
+        { dayOfWeek: 6, startTime: '10:00', endTime: '12:00' },
+        { dayOfWeek: 7, startTime: '10:00', endTime: '12:00' },
+      ],
+      contacts: [{ type: 'email', value: 'kids@example.com' }],
+    },
+
+    // 4. Только подписка (subscription), без событий и контактов
+    {
+      orgIndex: 0,
+      typeId: ITEM_TYPE_FULL_ID,
+      categoryId: CAT_CREATIVITY_ID,
+      title: 'Клуб медитации: подписка',
+      description: 'Доступ ко всем сессиям клуба по абонементу. Без разовых посещений.',
+      fixture: 'items/personal-yoga.jpg',
+      location: loc(D.levberezh),
+      ageGroup: 'adults',
+      payment: [
+        { name: 'Месячный абонемент', description: 'Все сессии месяца', strategy: 'subscription', price: 4500 },
+      ],
+      schedule: [
+        { dayOfWeek: 1, startTime: '20:00', endTime: '21:00' },
+        { dayOfWeek: 4, startTime: '20:00', endTime: '21:00' },
+      ],
+    },
+
+    // 5. Большая команда + много контактов + много дат — стресс-тест на длинные списки
+    {
+      orgIndex: 1,
+      typeId: ITEM_TYPE_FULL_ID,
+      categoryId: CAT_ENTERTAINMENT_ID,
+      title: 'Городской квест: серия большая',
+      description: 'Несколько туров, большая команда ведущих, разнообразные точки контакта.',
+      fixture: 'items/dance-evening.jpg',
+      location: loc(D.varavino),
+      ageGroup: 'all',
+      payment: [
+        { name: 'Команда до 4 человек', description: null, strategy: 'one-time', price: 2400 },
+        { name: 'Команда до 8 человек', description: null, strategy: 'one-time', price: 4000 },
+      ],
+      eventDaysFromNow: [2, 4, 6, 9, 13, 18, 25, 31],
+      contacts: [
+        { type: 'phone', value: '+79001231003', label: 'Запись' },
+        { type: 'phone', value: '+79001231004', label: 'Поддержка' },
+        { type: 'email', value: 'quest@example.com' },
+        { type: 'email', value: 'quest-press@example.com', label: 'СМИ' },
+        { type: 'link', value: 'https://example.com/quest', label: 'Сайт' },
+        { type: 'link', value: 'https://t.me/quest', label: 'Telegram' },
+      ],
+      team: {
+        title: 'Ведущие квеста',
+        members: [
+          { name: 'Ольга Сидорова', description: 'Главный мастер', fixture: 'team/olga.jpg' },
+          { name: 'Анна Белова', description: 'Мастер', fixture: 'team/anna.jpg' },
+          { name: 'Игорь Морозов', description: 'Помощник', fixture: 'team/igor.jpg' },
+          { name: 'Виктор Чернов', description: 'Помощник', fixture: 'team/viktor.jpg' },
+        ],
+      },
+    },
+
+    // 6. Платно one-time, без team и contacts (минимум — проверка пустых блоков)
+    {
+      orgIndex: 2,
+      typeId: ITEM_TYPE_FULL_ID,
+      categoryId: CAT_CREATIVITY_ID,
+      title: 'Лекция о современном искусстве',
+      description: 'Одиночное событие без команды и публичных контактов.',
+      fixture: 'items/coffee-tasting.jpg',
+      location: loc(D.centre),
+      ageGroup: 'adults',
+      payment: [
+        { name: 'Билет', description: null, strategy: 'one-time', price: 700 },
+      ],
+      eventDaysFromNow: [4],
+    },
+
+    // 7. Все виджеты + дорогая цена + длинное описание для текстовых тестов
+    {
+      orgIndex: 0,
+      typeId: ITEM_TYPE_FULL_ID,
+      categoryId: CAT_EDUCATION_ID,
+      title: 'Интенсив: погружение в профессию (расширенная программа)',
+      description:
+        'Полный программный интенсив с теоретической базой, практикой, домашними заданиями ' +
+        'и индивидуальным куратором. Включает доступ к закрытым материалам и пожизненной ' +
+        'базе выпускников. Подходит для тех, кто хочет сменить специальность.',
+      fixture: 'items/group-hatha.jpg',
+      location: loc(D.solombala),
+      ageGroup: 'adults',
+      payment: [
+        { name: 'Базовый', description: 'Без куратора', strategy: 'one-time', price: 35000 },
+        { name: 'С куратором', description: 'Индивидуальная поддержка', strategy: 'one-time', price: 60000 },
+        { name: 'Premium', description: 'Куратор + закрытые материалы', strategy: 'subscription', price: 12000 },
+      ],
+      schedule: [
+        { dayOfWeek: 6, startTime: '10:00', endTime: '13:00' },
+        { dayOfWeek: 7, startTime: '10:00', endTime: '13:00' },
+      ],
+      eventDaysFromNow: [14, 28, 42],
+      contacts: [
+        { type: 'phone', value: '+79001231005', label: 'Запись' },
+        { type: 'email', value: 'intensive@example.com' },
+      ],
+      team: {
+        title: 'Кураторы',
+        members: [
+          { name: 'Ольга Сидорова', description: 'Главный куратор', fixture: 'team/olga.jpg' },
+          { name: 'Игорь Морозов', description: 'Преподаватель', fixture: 'team/igor.jpg' },
+        ],
+      },
+    },
+  ];
 }
 
 // --- Main ---
