@@ -2203,6 +2203,384 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/chats/centrifugo-token': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Получить connection JWT для Centrifugo */
+    get: operations['getCentrifugoToken'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/chats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Мои чаты (клиент) */
+    get: operations['listMyChats'];
+    put?: never;
+    /** Создать или продолжить чат с организацией */
+    post: operations['openChatWithOrganization'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/chats/support': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Создать или продолжить чат с поддержкой */
+    post: operations['openChatWithSupport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/chats/unread-summary': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Сводка непрочитанных */
+    get: operations['getUnreadSummary'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/chats/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Полнотекстовый поиск по моим чатам (глобальный) */
+    get: operations['searchInMyChats'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/chats/{chatId}/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Поиск в пределах одного чата (клиент) */
+    get: operations['searchInChat'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/chats/{chatId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Детали чата */
+    get: operations['getChatDetail'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/chats/{chatId}/messages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** История сообщений чата */
+    get: operations['getChatMessages'];
+    put?: never;
+    /** Отправить сообщение в существующий чат (со стороны клиента) */
+    post: operations['sendMessageInChat'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/chats/{chatId}/messages/{messageId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Удалить (soft) своё сообщение */
+    delete: operations['deleteMessageInChat'];
+    options?: never;
+    head?: never;
+    /** Отредактировать своё сообщение */
+    patch: operations['editMessageInChat'];
+    trace?: never;
+  };
+  '/chats/{chatId}/messages/{messageId}/report': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Пожаловаться на сообщение */
+    post: operations['reportMessage'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/chats/{chatId}/report': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Пожаловаться на чат целиком */
+    post: operations['reportChat'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/chats/{chatId}/read': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Отметить чат прочитанным до сообщения */
+    post: operations['markChatRead'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/chats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Чаты оператора (admin/employee) */
+    get: operations['listAdminChats'];
+    put?: never;
+    /** Админ инициирует чат с user или организацией */
+    post: operations['openChatAsSupport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/chats/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Полнотекстовый поиск для оператора по доступным чатам */
+    get: operations['operatorSearchAll'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/chats/{chatId}/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Поиск в пределах одного чата (оператор) */
+    get: operations['operatorSearchInChat'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/chats/{chatId}/messages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Оператор отправляет сообщение в чат */
+    post: operations['sendMessageAsOperator'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/chats/{chatId}/participants/{participantId}/claim': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Взять (claim) слот участника */
+    post: operations['claimChatSlot'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/chats/{chatId}/participants/{participantId}/release': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Снять claim со слота */
+    post: operations['releaseChatSlot'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/chats/{chatId}/participants/{participantId}/reassign': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Переназначить слот другому оператору */
+    post: operations['reassignChatSlot'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/chats/{chatId}/block': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Блокировать чат */
+    post: operations['blockChat'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/chats/{chatId}/unblock': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Разблокировать чат */
+    post: operations['unblockChat'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/admin/chats/{chatId}/close': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Закрыть чат */
+    post: operations['closeChat'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2727,12 +3105,7 @@ export interface components {
       /** Format: uri */
       avatarUrl?: string | null;
       media: components['schemas']['ResolvedMediaItem'][];
-      contacts: {
-        /** @enum {string} */
-        type: 'phone' | 'email' | 'link';
-        value: string;
-        label?: string | null;
-      }[];
+      contacts: components['schemas']['ContactLink'][];
       team?: {
         title: string;
         members: {
@@ -3464,6 +3837,89 @@ export interface components {
       categories: ('open' | 'close' | 'redirect')[];
       params: components['schemas']['TriggerParam'][];
     };
+    ChatListItem: {
+      chatId: string;
+      /** @enum {string} */
+      status: 'open' | 'closed' | 'blocked';
+      participants: {
+        id: string;
+        /** @enum {string} */
+        kind: 'user' | 'organization' | 'support';
+        subjectId: string | null;
+        assignedUserId: string | null;
+      }[];
+      contextItemId?: string | null;
+      lastMessage: {
+        messageId: string;
+        preview: string;
+        senderParticipantId: string | null;
+        /** Format: date-time */
+        createdAt: string;
+      } | null;
+      myUnreadCount: number;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    ChatList: {
+      chats: components['schemas']['ChatListItem'][];
+      total: number;
+    };
+    ChatOpenResponse: {
+      chatId: string;
+      reused: boolean;
+      reopened: boolean;
+    };
+    SearchHit: {
+      messageId: string;
+      chatId: string;
+      snippet: string;
+      highlightedText: string;
+      senderParticipantId?: string | null;
+      senderUserId?: string | null;
+      /** @enum {string|null} */
+      senderKind?: 'user' | 'organization' | 'support' | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    ChatPreview: {
+      partyOther: {
+        /** @enum {string} */
+        kind: 'user' | 'organization' | 'support';
+        subjectId: string | null;
+      };
+      contextItemId: string | null;
+    };
+    SearchResultsGlobal: {
+      results: (components['schemas']['SearchHit'] & {
+        chatPreview?: components['schemas']['ChatPreview'] | null;
+      })[];
+      nextCursor: string | null;
+    };
+    SearchResultsInChat: {
+      results: components['schemas']['SearchHit'][];
+      nextCursor: string | null;
+    };
+    ChatMessage: {
+      messageId: string;
+      chatId: string;
+      senderParticipantId?: string | null;
+      /** @enum {string} */
+      kind: 'text' | 'media' | 'system';
+      text?: string | null;
+      mediaIds: string[];
+      systemEvent?: {
+        type?: string;
+        payload?: {
+          [key: string]: unknown;
+        };
+      } | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      editedAt?: string | null;
+      /** Format: date-time */
+      deletedAt?: string | null;
+    };
   };
   responses: {
     /** @description Unauthorized */
@@ -3482,6 +3938,15 @@ export interface components {
       };
       content: {
         'application/json': components['schemas']['Error'];
+      };
+    };
+    /** @description Доменная ошибка */
+    DomainError: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        'application/json': components['schemas']['DomainErrorResponse'];
       };
     };
   };
@@ -10269,6 +10734,784 @@ export interface operations {
           'application/json': components['schemas']['OpenApiValidationError'];
         };
       };
+    };
+  };
+  getCentrifugoToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connection token */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            token: string;
+            /** Format: date-time */
+            expiresAt: string;
+          };
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listMyChats: {
+    parameters: {
+      query?: {
+        from?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ChatList'];
+        };
+      };
+    };
+  };
+  openChatWithOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          organizationId: string;
+          contextItemId?: string | null;
+          message: {
+            text: string | null;
+            mediaIds: string[];
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Чат создан или продолжён */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ChatOpenResponse'];
+        };
+      };
+      400: components['responses']['DomainError'];
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components['responses']['DomainError'];
+      409: components['responses']['DomainError'];
+    };
+  };
+  openChatWithSupport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          message: {
+            text: string | null;
+            mediaIds: string[];
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Чат создан или продолжён */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ChatOpenResponse'];
+        };
+      };
+      400: components['responses']['DomainError'];
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      409: components['responses']['DomainError'];
+    };
+  };
+  getUnreadSummary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            totalUnreadCount: number;
+            perChat: {
+              chatId: string;
+              count: number;
+            }[];
+          };
+        };
+      };
+    };
+  };
+  searchInMyChats: {
+    parameters: {
+      query: {
+        q: string;
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Результаты */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchResultsGlobal'];
+        };
+      };
+      400: components['responses']['DomainError'];
+    };
+  };
+  searchInChat: {
+    parameters: {
+      query: {
+        q: string;
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Результаты */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchResultsInChat'];
+        };
+      };
+      400: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  getChatDetail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Детали */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ChatListItem'];
+        };
+      };
+      404: components['responses']['DomainError'];
+    };
+  };
+  getChatMessages: {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Страница */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            messages: components['schemas']['ChatMessage'][];
+            nextCursor: string | null;
+          };
+        };
+      };
+      400: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  sendMessageInChat: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          text: string | null;
+          mediaIds: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description Отправлено */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            messageId: string;
+            reopened: boolean;
+          };
+        };
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  deleteMessageInChat: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+        messageId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  editMessageInChat: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+        messageId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          text: string | null;
+          mediaIds: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  reportMessage: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+        messageId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          reason: string;
+          /** @enum {string|null} */
+          category?: 'spam' | 'abuse' | 'illegal' | 'other' | null;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+      409: components['responses']['DomainError'];
+    };
+  };
+  reportChat: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          reason: string;
+          /** @enum {string|null} */
+          category?: 'spam' | 'abuse' | 'illegal' | 'other' | null;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  markChatRead: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          upToMessageId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  listAdminChats: {
+    parameters: {
+      query?: {
+        slotKind?: 'organization' | 'support';
+        orgId?: string;
+        status?: 'open' | 'closed' | 'blocked';
+        assignedToMe?: boolean;
+        unassigned?: boolean;
+        from?: number;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ChatList'];
+        };
+      };
+    };
+  };
+  openChatAsSupport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          target:
+            | {
+                /** @enum {string} */
+                kind: 'user';
+                userId: string;
+              }
+            | {
+                /** @enum {string} */
+                kind: 'organization';
+                organizationId: string;
+              };
+          message: {
+            text: string | null;
+            mediaIds: string[];
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ChatOpenResponse'];
+        };
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+      409: components['responses']['DomainError'];
+    };
+  };
+  operatorSearchAll: {
+    parameters: {
+      query: {
+        q: string;
+        cursor?: string;
+        limit?: number;
+        slotKind?: 'organization' | 'support';
+        orgId?: string;
+        status?: 'open' | 'closed' | 'blocked';
+        from?: string;
+        to?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Результаты */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchResultsGlobal'];
+        };
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+    };
+  };
+  operatorSearchInChat: {
+    parameters: {
+      query: {
+        q: string;
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Результаты */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchResultsInChat'];
+        };
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  sendMessageAsOperator: {
+    parameters: {
+      query?: {
+        claim?: boolean;
+      };
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          text: string | null;
+          mediaIds: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description Отправлено */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            messageId: string;
+            claimed: boolean;
+            reopened: boolean;
+          };
+        };
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+      409: components['responses']['DomainError'];
+    };
+  };
+  claimChatSlot: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+        participantId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+      409: components['responses']['DomainError'];
+    };
+  };
+  releaseChatSlot: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+        participantId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+      409: components['responses']['DomainError'];
+    };
+  };
+  reassignChatSlot: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+        participantId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          assignedUserId: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['DomainError'];
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  blockChat: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          reason?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+      409: components['responses']['DomainError'];
+    };
+  };
+  unblockChat: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+      409: components['responses']['DomainError'];
+    };
+  };
+  closeChat: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        chatId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          reason?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+      409: components['responses']['DomainError'];
     };
   };
 }

@@ -1,0 +1,291 @@
+feature: Chat — Aggregate, Participants & Lifecycle
+code: chat-chats
+description: |
+  Чат и его участники — расширяемая модель.
+
+  Сущности:
+    Chat                — агрегат, метаданные диалога (status, blocked, context, …).
+    ChatParticipant     — слот участника. НЕ конкретный пользователь, а слот,
+                          к которому может быть привязан конкретный userId
+                          (assignedUserId). Это позволяет «передавать» чат
+                          между сотрудниками/админами без пересоздания участника.
+
+  Виды слотов (ChatParticipant.kind) — расширяемое перечисление, MVP:
+    - 'user'         subjectId = UserId,  assignedUserId всегда = subjectId
+                     (клиентский слот, claim не применим — слот «прирос» к юзеру)
+    - 'organization' subjectId = OrgId,   assignedUserId = userId сотрудника или null
+                     (organisation slot, claim'ится сотрудником с правом chat.respond)
+    - 'support'      subjectId = null,    assignedUserId = userId админа или null
+                     (support pool, claim'ится админом с правом chat.support)
+
+  Будущие kinds могут быть добавлены без переделки модели — например, 'bot',
+  'employee-group', 'guest'. Каждое расширение приносит свою политику
+  «кто может занять слот» через slot-pool resolver (см. раздел Permissions).
+
+  Тип чата выводится из набора participants:
+    {(user,U), (organization,O)}    → user↔organization
+    {(user,U), (support,null)}      → user↔support
+    {(support,null), (organization,O)} → support↔organization
+
+  Инициация (initiator → responder):
+    user        → organization   ✅
+    user        → support        ✅
+    support     → user           ✅
+    support     → organization   ✅
+    organization→ *              ❌  (org не может писать первой)
+    *           → user-from-user ❌  (user↔user запрещён)
+    *           → org-from-org   ❌  (org↔org запрещён)
+    *           → support-from-support ❌  (support↔support запрещён)
+
+  Lifecycle статусов чата:
+    open → closed            (close оператором; reopen новым сообщением)
+    open → blocked           (block оператором; unblock возвращает в open)
+    blocked → open           (unblock)
+    closed → open            (reopen новым сообщением от любой стороны
+                              — кроме user в blocked)
+
+  Инвариант — нет пустого чата:
+    Chat существует только если у него ≥ 1 сообщения. Открытие чата всегда
+    атомарно совмещено с отправкой первого сообщения (одна транзакция: insert
+    Chat + insert ChatParticipant×N + insert Message). Нет endpoint'а «открыть
+    пустой чат». Reopen closed-чата происходит ТОЛЬКО через входящее сообщение.
+
+  Уникальность чата:
+    Между набором участников (мультимножество (kind, subjectId) пар) ≤ 1 чата.
+    В MVP участников всегда 2, поэтому уникальные пары:
+      (user, U) + (organization, O)
+      (user, U) + (support, null)
+      (support, null) + (organization, O)
+
+  Контекст услуги: при инициации user→organization можно передать contextItemId.
+  Сохраняется на чате (Chat.contextItemId), используется для тикета и UI.
+
+  Slot-pool resolver (концепция, реализуется в kernel или в feature):
+    Для каждого kind определена пара функций:
+      canAssign(slot, userId): boolean
+      pool(slot): Set<UserId>
+    Например, для kind='organization' с subjectId=O: canAssign возвращает true,
+    если userId — employee O с правом chat.respond. Для kind='support': если
+    userId — admin с правом chat.support.
+
+specs-unit:
+  # ==================== ИНИЦИАЦИЯ И NO-EMPTY-CHAT ====================
+
+  Инвариант «нет пустого чата»:
+    - assert: Endpoint'а для создания пустого чата без сообщения не существует
+      description: |
+        Все пути инициации требуют поле message в body. Попытка POST /chats
+        с пустым body или без message — 400 message_required.
+    - assert: Создание Chat и Message происходит в одной транзакции
+      description: |
+        Откат вставки Message откатывает создание Chat и ChatParticipant'ов.
+        Не должно быть состояния, в котором Chat существует без сообщений.
+    - assert: Reopen closed-чата происходит только через входящее сообщение
+      description: |
+        Нет endpoint'а POST /chats/:id/reopen. Любое новое сообщение в closed-чат
+        переводит его в open в той же транзакции, что и MessageSent.
+
+  Инициация User → Organization:
+    - assert: POST /chats создаёт чат с participants [(user,me), (organization,O)] и первым сообщением
+      description: |
+        Body: { participants: [{ kind: 'organization', subjectId: orgId }],
+                contextItemId?, message: { text?, mediaIds? } }.
+        Сторона инициатора (user) подставляется автоматически из auth-контекста
+        (нет нужды дублировать в body).
+        Ответ: { chatId, participants: [{ id, kind, subjectId, assignedUserId,
+                                         role }],
+                 firstMessageId, status: 'open' }.
+        Транзакция: insert Chat + insert 2 ChatParticipant + insert Message
+        + outbox(chat.opened, chat.message.created).
+        Слот organization создаётся с assignedUserId=null (unclaimed).
+    - assert: Идемпотентность по набору участников при существующем open чате
+      description: |
+        Если у инициатора уже есть open-чат с теми же participants — новый чат
+        не создаётся, message добавляется в существующий, возвращается тот же
+        chatId. participants и contextItemId из body игнорируются (контекст
+        у чата уже зафиксирован).
+    - assert: Идемпотентность с переоткрытием при closed чате
+      description: |
+        Тот же chatId, status переводится в open, публикуется ChatReopened,
+        message добавляется. contextItemId в body игнорируется.
+    - assert: Несуществующая или неопубликованная organization — 404 organization_not_found
+    - assert: Несуществующий contextItemId — 400 context_item_not_found
+    - assert: contextItemId не принадлежит указанной orgId — 400 context_item_mismatch
+    - assert: Без авторизации — 401
+    - assert: Чат blocked — POST /chats возвращает 409 chat_blocked
+      description: User не переоткрывает blocked через инициацию.
+
+  Инициация User → Support:
+    - assert: POST /chats создаёт чат [(user,me), (support,null)]
+      description: |
+        Body: { participants: [{ kind: 'support' }], message }.
+        Слот support создаётся с subjectId=null, assignedUserId=null.
+        Идемпотентность по паре (userId, support).
+    - assert: Идемпотентный reopen для closed support-чата
+
+  Инициация Support → User (proactive admin):
+    - assert: POST /admin/chats создаёт чат [(support,null assigned=me), (user,U)]
+      description: |
+        Body: { participants: [{ kind: 'user', subjectId: userId }], message }.
+        Слот support создаётся сразу с assignedUserId = current admin
+        (proactive — это явное действие конкретного оператора, claim
+        совмещён с инициацией).
+        Слот user создаётся с subjectId=userId, assignedUserId=userId.
+    - assert: Если у user уже есть open support-чат — admin попадает в него
+      description: |
+        Idempotent по паре (userId, support). Возвращается существующий chatId.
+        Если support-слот не был claim'нут — claim'ится текущим admin'ом.
+        Если был claim'нут другим — assignedUserId не меняется. Сообщение всё
+        равно добавляется (текущий admin — не assignee, см. правила отправки
+        в chat-messages.spec.yaml).
+
+  Инициация Support → Organization:
+    - assert: POST /admin/chats создаёт чат [(support,null assigned=me), (organization,O)]
+      description: |
+        Body: { participants: [{ kind: 'organization', subjectId: orgId }], message }.
+        Поведение по claim — как в Support→User.
+        Слот organization создаётся с assignedUserId=null (unclaimed
+        со стороны организации).
+
+  Запрещённые комбинации участников:
+    - assert: participants содержит kind 'user' с subjectId инициатора — 400 invalid_participants
+      description: |
+        Свой слот добавляется автоматически, в body передаётся только
+        контр-сторона. Дублирование запрещено.
+    - assert: Любая комбинация {(user,A),(user,B)} — 400 forbidden_pair_user_user
+    - assert: Любая комбинация {(organization,A),(organization,B)} — 400 forbidden_pair_org_org
+    - assert: Любая комбинация {(support,null),(support,null)} — 400 forbidden_pair_support_support
+    - assert: Инициатор organization (любой kind контр-стороны) — 403 organization_cannot_initiate
+      description: |
+        Сотрудник орг попытался дёрнуть POST /chats и попасть в роль инициатора —
+        403. Org может только отвечать в чатах, открытых другой стороной.
+
+  # ==================== ЧТЕНИЕ И СПИСКИ ====================
+
+  Списки чатов:
+    - assert: GET /chats — чаты, в которых текущий user является participant kind='user'
+      description: |
+        Пагинация: { from, size }, дефолт size=20.
+        Сортировка: по lastMessageAt desc.
+        Поля: chatId, otherParticipants[], status, contextItem?, lastMessage,
+              myUnreadCount.
+        otherParticipants — все participants кроме my (для MVP это один: либо
+        organization, либо support).
+    - assert: GET /admin/chats — чаты, доступные текущему сотруднику/админу
+      description: |
+        Доступ определяется через slot-pool resolver: чат виден, если хотя бы
+        для одного из его participants canAssign(slot, currentUser)=true.
+          - employee организации O с chat.respond → видит чаты с participant
+            (organization, O), включая claim'нутые коллегами.
+          - admin с chat.support → видит чаты с participant (support, null).
+        Фильтры: ?slotKind=organization|support, ?orgId=, ?status=, ?assignedToMe=,
+                 ?unassigned=, ?q=.
+        Сортировка: unassigned (assignedUserId=null на моём слоте) → сверху,
+        дальше по lastMessageAt desc.
+    - assert: GET /chats/:chatId — детали чата
+      description: |
+        Поля: chatId, status, participants[], contextItem?, blockedBy?, blockedAt?,
+              createdAt, updatedAt, lastMessage, myUnreadCount.
+        participants[i]: { id, kind, subjectId, assignedUserId, claimedAt,
+                           role, displayName, avatar, isMe }.
+        isMe — флаг для UI «это мой слот».
+    - assert: Доступ к чужому чату без права — 404 chat_not_found
+      description: Не 403, чтобы не раскрывать существование.
+
+  # ==================== CLAIM / RELEASE / REASSIGN ====================
+
+  Claim слота (org / support):
+    - assert: POST /admin/chats/:chatId/participants/:participantId/claim
+      description: |
+        Берёт unclaimed слот (assignedUserId=null) текущему оператору.
+        Доступно только если canAssign(slot, currentUser)=true.
+        Ответ: { participantId, assignedUserId, claimedAt }.
+        Публикуется ParticipantClaimed; в чат добавляется системное сообщение
+        kind=system, systemEvent.type='participant.claimed', payload содержит
+        participantId и assignedUserId.
+    - assert: Claim чужого slot kind (нет прав на этот pool) — 403 cannot_assign_slot
+    - assert: Claim уже claim'нутого slot'а — 409 slot_already_claimed
+    - assert: Claim слота kind='user' — 400 user_slot_not_claimable
+      description: |
+        У 'user' слота нет понятия claim — assignedUserId всегда subjectId.
+    - assert: Claim в чате closed/blocked — 409 chat_not_open
+
+  Release (бывший unclaim):
+    - assert: POST /admin/chats/:chatId/participants/:participantId/release
+      description: |
+        Снимает claim — assignedUserId → null. Доступно текущему assignee.
+        Чат возвращается в shared pool. Системное сообщение
+        type='participant.released'.
+    - assert: Release чужого слота без права chat.reassign-any — 403
+
+  Reassign:
+    - assert: POST /admin/chats/:chatId/participants/:participantId/reassign
+      description: |
+        Body: { assignedUserId }.
+        Меняет assignedUserId на новый. canAssign(slot, newUserId) обязан быть true.
+        Доступно текущему assignee (или с правом chat.reassign-any в той же
+        стороне).
+        Системное сообщение type='participant.reassigned' с payload
+        { oldAssigneeId, newAssigneeId }.
+    - assert: Reassign в пользу того, у кого нет права на slot — 400 reassign_target_invalid
+    - assert: Reassign не-владельцем без права chat.reassign-any — 403
+    - assert: Reassign на слот kind='user' — 400 user_slot_not_reassignable
+
+  # ==================== БЛОКИРОВКА ====================
+
+  Block / Unblock:
+    - assert: POST /admin/chats/:chatId/block — оператор блокирует чат
+      description: |
+        Body: { reason? }. Доступно participant'у operator-стороны (org или
+        support) с claim'ом. User-сторона не блокирует (нет endpoint'а).
+        Status → blocked, blockedBy = participantId оператора, blockedAt = now.
+        Системное сообщение, ChatBlocked event.
+    - assert: User шлёт сообщение в blocked — 403 chat_blocked
+    - assert: Operator-сторона шлёт сообщение в blocked — разрешено
+    - assert: POST /admin/chats/:chatId/unblock
+      description: |
+        Доступно тому же оператору (или с правом chat.unblock-any).
+        Status → open, blockedBy/blockedAt = null. ChatUnblocked event.
+    - assert: Block чата в closed — 409 chat_not_open
+
+  # ==================== ЗАКРЫТИЕ ====================
+
+  Close / Reopen:
+    - assert: POST /admin/chats/:chatId/close — оператор закрывает чат
+      description: |
+        Status → closed. ChatClosed event + системное сообщение.
+        Доступно participant'у operator-стороны с claim'ом.
+    - assert: Close чата в blocked — 409 chat_blocked (сначала unblock)
+    - assert: Reopen происходит только через новое сообщение
+      description: |
+        Любое сообщение в closed-чат от разрешённой стороны → ChatReopened
+        + MessageSent в одной транзакции. Прямого reopen-endpoint'а нет.
+
+  # ==================== ПОЛНЫЙ ФЛОУ ====================
+
+  Полный жизненный цикл:
+    - assert: open(by user) → claim(by employee) → messages → release → claim(другой employee) → close → reopen → block → unblock → close
+      description: |
+        Все переходы записывают системные сообщения с соответствующими
+        systemEvent.type. ChatParticipant.assignedUserId меняется без
+        пересоздания участника.
+
+  # ==================== РАСШИРЯЕМОСТЬ ====================
+
+  Расширяемость модели:
+    - assert: Добавление нового slot.kind не требует миграции схемы
+      description: |
+        ChatParticipant.kind — строковый enum, расширяется в коде. Новый kind
+        приносит свою реализацию slot-pool resolver (canAssign / pool) и
+        правила инициации. Storage остаётся неизменным.
+    - assert: Поддержка >2 participants — out of scope MVP
+      description: |
+        Schema позволяет N participants на чат. Семантика (group chat,
+        broadcast) — отдельная итерация. В MVP application-level валидация
+        требует ровно 2 participants на новый чат.
+
+definitions:
+  feature:
+    - chat-chats
+  section:
+    - chat

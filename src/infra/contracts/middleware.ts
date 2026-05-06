@@ -11,6 +11,10 @@ export const publicContractsMiddleware = (app: INestApplication) => {
     apiSpec: generatedPublicSchema as never,
     validateRequests: true,
     validateResponses: true,
+    // Internal-callback и realtime-handshake эндпоинты не входят в публичный
+    // OpenAPI-контракт — пропускаем валидатор (Nest роутит сам).
+    ignorePaths:
+      /^\/internal\/centrifugo\/subscribe$|^\/chats\/centrifugo-token$/,
   });
 
   app.use(publicMiddleware);

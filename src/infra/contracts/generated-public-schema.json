@@ -11133,6 +11133,1698 @@
           }
         }
       }
+    },
+    "/chats/centrifugo-token": {
+      "get": {
+        "operationId": "getCentrifugoToken",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Получить connection JWT для Centrifugo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connection token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "token",
+                    "expiresAt"
+                  ],
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Не авторизован"
+          }
+        }
+      }
+    },
+    "/chats": {
+      "post": {
+        "operationId": "openChatWithOrganization",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Создать или продолжить чат с организацией",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "organizationId",
+                  "message"
+                ],
+                "properties": {
+                  "organizationId": {
+                    "type": "string"
+                  },
+                  "contextItemId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "message": {
+                    "type": "object",
+                    "required": [
+                      "text",
+                      "mediaIds"
+                    ],
+                    "properties": {
+                      "text": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "mediaIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Чат создан или продолжён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatOpenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "401": {
+            "description": "Не авторизован"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "409": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      },
+      "get": {
+        "operationId": "listMyChats",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Мои чаты (клиент)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chats/support": {
+      "post": {
+        "operationId": "openChatWithSupport",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Создать или продолжить чат с поддержкой",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "message"
+                ],
+                "properties": {
+                  "message": {
+                    "type": "object",
+                    "required": [
+                      "text",
+                      "mediaIds"
+                    ],
+                    "properties": {
+                      "text": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "mediaIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Чат создан или продолжён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatOpenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "401": {
+            "description": "Не авторизован"
+          },
+          "409": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/chats/unread-summary": {
+      "get": {
+        "operationId": "getUnreadSummary",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Сводка непрочитанных",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "totalUnreadCount",
+                    "perChat"
+                  ],
+                  "properties": {
+                    "totalUnreadCount": {
+                      "type": "integer"
+                    },
+                    "perChat": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "chatId",
+                          "count"
+                        ],
+                        "properties": {
+                          "chatId": {
+                            "type": "string"
+                          },
+                          "count": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chats/search": {
+      "get": {
+        "operationId": "searchInMyChats",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Полнотекстовый поиск по моим чатам (глобальный)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Результаты",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultsGlobal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/chats/{chatId}/search": {
+      "get": {
+        "operationId": "searchInChat",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Поиск в пределах одного чата (клиент)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Результаты",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultsInChat"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/chats/{chatId}": {
+      "get": {
+        "operationId": "getChatDetail",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Детали чата",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Детали",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatListItem"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/chats/{chatId}/messages": {
+      "get": {
+        "operationId": "getChatMessages",
+        "tags": [
+          "chat"
+        ],
+        "summary": "История сообщений чата",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Страница",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "messages",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ChatMessage"
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "sendMessageInChat",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Отправить сообщение в существующий чат (со стороны клиента)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "text",
+                  "mediaIds"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "mediaIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Отправлено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "messageId",
+                    "reopened"
+                  ],
+                  "properties": {
+                    "messageId": {
+                      "type": "string"
+                    },
+                    "reopened": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "patch": {
+        "operationId": "editMessageInChat",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Отредактировать своё сообщение",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "text",
+                  "mediaIds"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "mediaIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteMessageInChat",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Удалить (soft) своё сообщение",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/chats/{chatId}/messages/{messageId}/report": {
+      "post": {
+        "operationId": "reportMessage",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Пожаловаться на сообщение",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string",
+                    "nullable": true,
+                    "enum": [
+                      "spam",
+                      "abuse",
+                      "illegal",
+                      "other",
+                      null
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "409": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/chats/{chatId}/report": {
+      "post": {
+        "operationId": "reportChat",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Пожаловаться на чат целиком",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string",
+                    "nullable": true,
+                    "enum": [
+                      "spam",
+                      "abuse",
+                      "illegal",
+                      "other",
+                      null
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/chats/{chatId}/read": {
+      "post": {
+        "operationId": "markChatRead",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Отметить чат прочитанным до сообщения",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "upToMessageId"
+                ],
+                "properties": {
+                  "upToMessageId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/admin/chats": {
+      "get": {
+        "operationId": "listAdminChats",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Чаты оператора (admin/employee)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slotKind",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "organization",
+                "support"
+              ]
+            }
+          },
+          {
+            "name": "orgId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "closed",
+                "blocked"
+              ]
+            }
+          },
+          {
+            "name": "assignedToMe",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "unassigned",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "openChatAsSupport",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Админ инициирует чат с user или организацией",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "target",
+                  "message"
+                ],
+                "properties": {
+                  "target": {
+                    "type": "object",
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "userId"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "user"
+                            ]
+                          },
+                          "userId": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "organizationId"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "organization"
+                            ]
+                          },
+                          "organizationId": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "message": {
+                    "type": "object",
+                    "required": [
+                      "text",
+                      "mediaIds"
+                    ],
+                    "properties": {
+                      "text": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "mediaIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatOpenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "409": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/admin/chats/search": {
+      "get": {
+        "operationId": "operatorSearchAll",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Полнотекстовый поиск для оператора по доступным чатам",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          {
+            "name": "slotKind",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "organization",
+                "support"
+              ]
+            }
+          },
+          {
+            "name": "orgId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "closed",
+                "blocked"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Результаты",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultsGlobal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/admin/chats/{chatId}/search": {
+      "get": {
+        "operationId": "operatorSearchInChat",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Поиск в пределах одного чата (оператор)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Результаты",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultsInChat"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/admin/chats/{chatId}/messages": {
+      "post": {
+        "operationId": "sendMessageAsOperator",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Оператор отправляет сообщение в чат",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "claim",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "text",
+                  "mediaIds"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "mediaIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Отправлено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "messageId",
+                    "claimed",
+                    "reopened"
+                  ],
+                  "properties": {
+                    "messageId": {
+                      "type": "string"
+                    },
+                    "claimed": {
+                      "type": "boolean"
+                    },
+                    "reopened": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "409": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/admin/chats/{chatId}/participants/{participantId}/claim": {
+      "post": {
+        "operationId": "claimChatSlot",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Взять (claim) слот участника",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "participantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "409": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/admin/chats/{chatId}/participants/{participantId}/release": {
+      "post": {
+        "operationId": "releaseChatSlot",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Снять claim со слота",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "participantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "409": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/admin/chats/{chatId}/participants/{participantId}/reassign": {
+      "post": {
+        "operationId": "reassignChatSlot",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Переназначить слот другому оператору",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "participantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "assignedUserId"
+                ],
+                "properties": {
+                  "assignedUserId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/admin/chats/{chatId}/block": {
+      "post": {
+        "operationId": "blockChat",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Блокировать чат",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "409": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/admin/chats/{chatId}/unblock": {
+      "post": {
+        "operationId": "unblockChat",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Разблокировать чат",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "409": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/admin/chats/{chatId}/close": {
+      "post": {
+        "operationId": "closeChat",
+        "tags": [
+          "chat"
+        ],
+        "summary": "Закрыть чат",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "403": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "409": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -13088,30 +14780,7 @@
           "contacts": {
             "type": "array",
             "items": {
-              "type": "object",
-              "required": [
-                "type",
-                "value"
-              ],
-              "properties": {
-                "type": {
-                  "type": "string",
-                  "enum": [
-                    "phone",
-                    "email",
-                    "link"
-                  ]
-                },
-                "value": {
-                  "type": "string"
-                },
-                "label": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                }
-              }
+              "$ref": "#/components/schemas/ContactLink"
             }
           },
           "team": {
@@ -15810,6 +17479,340 @@
             }
           }
         }
+      },
+      "ChatListItem": {
+        "type": "object",
+        "required": [
+          "chatId",
+          "status",
+          "participants",
+          "lastMessage",
+          "myUnreadCount",
+          "updatedAt"
+        ],
+        "properties": {
+          "chatId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed",
+              "blocked"
+            ]
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "kind",
+                "subjectId",
+                "assignedUserId"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "user",
+                    "organization",
+                    "support"
+                  ]
+                },
+                "subjectId": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "assignedUserId": {
+                  "type": "string",
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "contextItemId": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastMessage": {
+            "nullable": true,
+            "type": "object",
+            "required": [
+              "messageId",
+              "preview",
+              "senderParticipantId",
+              "createdAt"
+            ],
+            "properties": {
+              "messageId": {
+                "type": "string"
+              },
+              "preview": {
+                "type": "string"
+              },
+              "senderParticipantId": {
+                "type": "string",
+                "nullable": true
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "myUnreadCount": {
+            "type": "integer"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChatList": {
+        "type": "object",
+        "required": [
+          "chats",
+          "total"
+        ],
+        "properties": {
+          "chats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatListItem"
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "ChatOpenResponse": {
+        "type": "object",
+        "required": [
+          "chatId",
+          "reused",
+          "reopened"
+        ],
+        "properties": {
+          "chatId": {
+            "type": "string"
+          },
+          "reused": {
+            "type": "boolean"
+          },
+          "reopened": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SearchHit": {
+        "type": "object",
+        "required": [
+          "messageId",
+          "chatId",
+          "snippet",
+          "highlightedText",
+          "createdAt"
+        ],
+        "properties": {
+          "messageId": {
+            "type": "string"
+          },
+          "chatId": {
+            "type": "string"
+          },
+          "snippet": {
+            "type": "string"
+          },
+          "highlightedText": {
+            "type": "string"
+          },
+          "senderParticipantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "senderUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "senderKind": {
+            "type": "string",
+            "enum": [
+              "user",
+              "organization",
+              "support"
+            ],
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChatPreview": {
+        "type": "object",
+        "required": [
+          "partyOther",
+          "contextItemId"
+        ],
+        "properties": {
+          "partyOther": {
+            "type": "object",
+            "required": [
+              "kind",
+              "subjectId"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "user",
+                  "organization",
+                  "support"
+                ]
+              },
+              "subjectId": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "contextItemId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SearchResultsGlobal": {
+        "type": "object",
+        "required": [
+          "results",
+          "nextCursor"
+        ],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SearchHit"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "chatPreview": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/ChatPreview"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SearchResultsInChat": {
+        "type": "object",
+        "required": [
+          "results",
+          "nextCursor"
+        ],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ChatMessage": {
+        "type": "object",
+        "required": [
+          "messageId",
+          "chatId",
+          "kind",
+          "mediaIds",
+          "createdAt"
+        ],
+        "properties": {
+          "messageId": {
+            "type": "string"
+          },
+          "chatId": {
+            "type": "string"
+          },
+          "senderParticipantId": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "media",
+              "system"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          },
+          "mediaIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "systemEvent": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "editedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
       }
     },
     "parameters": {
@@ -15843,6 +17846,16 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "DomainError": {
+        "description": "Доменная ошибка",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/DomainErrorResponse"
             }
           }
         }

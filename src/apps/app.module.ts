@@ -4,6 +4,8 @@ import { ClsModule } from 'nestjs-cls';
 
 import { TestModule } from './test/test.module.js';
 
+import { CHAT_CONSUMER_ID } from '../features/chat/adapters/kafka/consumer-ids.js';
+import { ChatModule } from '../features/chat/chat.module.js';
 import { CmsModule } from '../features/cms/cms.module.js';
 import { DISCOVERY_CONSUMER_ID } from '../features/discovery/adapters/kafka/consumer-ids.js';
 import { DiscoveryModule } from '../features/discovery/discovery.module.js';
@@ -22,6 +24,7 @@ import { MainGorseModule } from './gorse.module.js';
 import { MainRedisModule } from './redis.module.js';
 import { MainSearchModule } from './search.module.js';
 import { AuthModule } from '@/infra/auth/auth.module.js';
+import { CentrifugoModule } from '@/infra/centrifugo/centrifugo.module.js';
 import { MainConfigModule } from '@/infra/config/module.js';
 import { MainConfigService } from '@/infra/config/service.js';
 import { KafkaConsumerModule } from '@/infra/lib/nest-kafka/index.js';
@@ -39,6 +42,7 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
     MainSearchModule,
     MainConfigModule,
     AuthModule,
+    CentrifugoModule,
     OutboxModule.register({ isGlobal: true }),
     KafkaProducerModule.registerAsync({
       isGlobal: true,
@@ -111,6 +115,18 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
       }),
       inject: [MainConfigService],
     }),
+    KafkaConsumerModule.registerAsync({
+      consumerId: CHAT_CONSUMER_ID,
+      mode: { type: 'single' },
+      imports: [MainConfigModule],
+      useFactory: (config: MainConfigService) => ({
+        consumerConfig: {
+          'metadata.broker.list': config.get('KAFKA_BROKER'),
+          'group.id': 'chat-consumer',
+        },
+      }),
+      inject: [MainConfigService],
+    }),
     OutboxRelayModule,
     ...(process.env.NODE_ENV !== 'production' ? [TestModule] : []),
     IdpModule,
@@ -121,6 +137,7 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
     ReviewsModule,
     InteractionsModule,
     TicketsModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

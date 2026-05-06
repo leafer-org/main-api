@@ -1,0 +1,115 @@
+feature: Chat — Search
+code: chat-search
+description: |
+  Полнотекстовый поиск по сообщениям в пределах доступных пользователю чатов.
+
+  Хранилище индекса — Postgres tsvector (русский + английский конфиг). Отдельная
+  колонка messages.search_tsv пересчитывается через триггер на INSERT/UPDATE
+  text-поля. Системные сообщения не индексируются. Удалённые сообщения
+  исключаются из индекса (триггер очищает search_tsv при deletedAt IS NOT NULL).
+
+  Полнотекстовый движок выбран Postgres-нативный, чтобы избежать новой инфры.
+  При росте нагрузки и требований к качеству ranking'а — миграция на
+  Elasticsearch/OpenSearch (out of scope MVP).
+
+  Видимость основана на slot-pool resolver (см. chat-chats.spec.yaml):
+    Чат виден current user'у, если current user является assignee хотя бы
+    одного ChatParticipant'а чата, ИЛИ canAssign(slot, currentUser)=true для
+    одного из operator-слотов. Это даёт автоматическую расширяемость на
+    новые slot.kinds — никакой логики «if kind == 'organization' then …».
+
+  Поиск работает в двух режимах:
+    1. Глобальный по всем доступным чатам — список найденных сообщений с превью
+       чата.
+    2. Внутри одного чата (?chatId=) — список сообщений конкретного чата.
+
+specs-unit:
+  # ==================== ГЛОБАЛЬНЫЙ ПОИСК ====================
+
+  Глобальный поиск (клиент):
+    - assert: GET /chats/search?q=<query> возвращает совпадения по моим чатам
+      description: |
+        Query: ?q (обязателен, ≥ 2 символа), ?cursor, ?limit (max 50, default 20).
+        Ответ: { results: [{ messageId, chatId, snippet, highlightedText,
+                              senderUserId, senderRole, createdAt,
+                              chatPreview: { partyOther, contextItem? } }],
+                 nextCursor }.
+        snippet — это ts_headline вырезка ±50 символов вокруг совпадения.
+        Сортировка: ts_rank desc, createdAt desc.
+    - assert: q < 2 символов — 400 query_too_short
+    - assert: q > 200 символов — клампится до 200, не ошибка
+    - assert: Невалидный cursor — 400 invalid_cursor
+    - assert: Без авторизации — 401
+    - assert: Совпадения в чатах, к которым потерян доступ, не возвращаются
+      description: |
+        Видимость пересчитывается на каждый запрос. Историческая принадлежность
+        к чату не даёт права на поиск в нём.
+    - assert: Удалённые сообщения не попадают в результаты
+    - assert: Системные сообщения не попадают в результаты
+
+  Глобальный поиск (оператор):
+    - assert: GET /admin/chats/search?q=<query> — совпадения в доступных операторам чатах
+      description: |
+        Доп. фильтры: ?slotKind=organization|support, ?orgId=, ?status=,
+        ?from=<ISO>, ?to=<ISO>.
+        slotKind=organization — только чаты с ChatParticipant kind='organization',
+        в пуле которого состоит current user.
+        slotKind=support — только чаты с ChatParticipant kind='support', если
+        current user в pool('support').
+        Без slotKind — все доступные пулы (определяется resolver'ом).
+    - assert: Оператор не входит ни в один operator-pool — 403 no_chat_access
+    - assert: Фильтр orgId, к чьему пулу нет доступа — пустой список (не 403, не раскрываем)
+
+  # ==================== ПОИСК В ЧАТЕ ====================
+
+  Поиск в пределах чата:
+    - assert: GET /chats/:chatId/search?q=<query> — поиск только в указанном чате
+      description: |
+        Те же query-параметры что у глобального + scope ограничен chatId.
+        Ответ: { results: [{ messageId, snippet, highlightedText, senderUserId,
+                              senderRole, createdAt }], nextCursor }.
+        chatPreview не включается — клиент уже знает чат.
+    - assert: chatId недоступен пользователю — 404 chat_not_found
+    - assert: GET /admin/chats/:chatId/search — admin/operator вариант
+      description: Те же права видимости что в chat-chats.spec.yaml.
+
+  # ==================== РАНЖИРОВАНИЕ И HIGHLIGHT ====================
+
+  Качество выдачи:
+    - assert: Ранжирование через ts_rank_cd с весами по полям
+      description: |
+        Один индексируемый источник — text сообщения (kind in ('text','media')).
+        Веса по умолчанию (Postgres). Тонкий tuning не делаем — out of scope.
+    - assert: Highlight через ts_headline в snippet и highlightedText
+      description: |
+        snippet — без HTML, plain (для уведомлений/превью).
+        highlightedText — с тегами <mark>...</mark>, для рендера в UI.
+        Параметры: MaxFragments=1, FragmentDelimiter=" … ".
+
+  # ==================== СПЕЦСЛУЧАИ ====================
+
+  Edge cases:
+    - assert: Пустая выдача — { results: [], nextCursor: null }, статус 200
+    - assert: Запрос со спецсимволами (! & | : *) — экранируются перед to_tsquery
+      description: |
+        Используем websearch_to_tsquery (Postgres 11+) — он сам обрабатывает
+        кавычки и операторы как «человеческий» поиск.
+    - assert: Многоязычный запрос (ru + en) — обе формы находятся
+      description: |
+        Конфиг на уровне колонки — simple, либо специальный мульти-конфиг.
+        Уточнить выбор при имплементации (ru-en stem-конфиг или unaccent+simple).
+        Open question — фиксируется в коде.
+
+  # ==================== СКВОЗНЫЕ СЦЕНАРИИ ====================
+
+  Полный поток:
+    - assert: User ищет «доставка» — находит совпадения в своих 2 чатах с разными орг
+    - assert: Оператор ищет в support-инбоксе по фильтру from/to — получает совпадения только в этом окне
+    - assert: User ищет в чате, где сообщение было удалено — результат не содержит удалённое
+
+definitions:
+  feature:
+    - chat-search
+  section:
+    - chat
+    - search

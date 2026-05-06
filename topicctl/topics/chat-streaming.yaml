@@ -1,0 +1,9 @@
+meta:
+  name: chat.streaming
+  cluster: local-cluster
+  environment: local
+  description: chat domain events stream (events → Centrifugo bridge)
+
+spec:
+  partitions: 1
+  replicationFactor: 1

@@ -1,0 +1,194 @@
+feature: Chat — Integration Events
+code: chat-integration
+description: |
+  Интеграционные события чата для других фич (tickets, notifications,
+  аналитика). Доставка через Outbox (transactional outbox) → Kafka. Реализация
+  Outbox'а — общая обвязка проекта (architecture/4-infra.md).
+
+  Гарантии: at-least-once, идемпотентность по eventId на стороне consumer'ов.
+  Outbox-row создаётся в той же транзакции, что и доменные изменения, поэтому
+  откат транзакции исключает публикацию.
+
+  Топик Kafka: chat.events (один топик, partition по chatId).
+  Тип события несётся в поле type. Получатели фильтруют по type.
+  Партиционирование по chatId сохраняет порядок событий в пределах одного чата.
+
+  Слушатели:
+    - tickets        — chat.opened, chat.closed, chat.reopened
+    - notifications  — chat.message.created, chat.message.edited
+    - analytics      — все события
+
+specs-unit:
+  # ==================== ФОРМАТ ====================
+
+  Конверт события:
+    - assert: Каждое событие содержит обязательные поля type, eventId, occurredAt, chatId, payload
+      description: |
+        type — строковый идентификатор (chat.opened, chat.message.created, …)
+        eventId — UUID v4, уникален; consumer'ы дедуплицируют по нему
+        occurredAt — ISO timestamp
+        chatId — UUID, Kafka message key (для партиционирования и ordering)
+        payload — type-specific объект
+    - assert: Headers Kafka — x-event-type, x-correlation-id, x-source='main-api'
+
+  # ==================== ПУБЛИКАЦИЯ ====================
+
+  Outbox publication:
+    - assert: Запись в Outbox — в той же транзакции, что и доменное изменение
+    - assert: Откат транзакции не оставляет осиротевших записей в Outbox
+    - assert: Outbox-publisher шлёт в Kafka и помечает publishedAt
+    - assert: Сбой Kafka — запись в Outbox с retry, событие не теряется
+    - assert: Один Outbox-row → одно сообщение в Kafka (eventId — ключ дедупа)
+      description: |
+        Если publisher отправил, но не успел пометить publishedAt и
+        перезапустился — повторная отправка с тем же eventId. Consumer
+        обязан быть идемпотентным.
+
+  # ==================== СПИСОК СОБЫТИЙ ====================
+
+  chat.opened:
+    - assert: Публикуется при создании нового чата (status=open впервые)
+      description: |
+        Payload:
+          chatId
+          participants: [{ participantId, kind, subjectId | null,
+                           assignedUserId | null, role }]
+          contextItemId?: ItemId
+          initiatorParticipantId
+          initiatorUserId
+        Тип чата выводится получателем из набора participants.
+    - assert: Reopen существующего closed чата НЕ публикует chat.opened
+      description: Для reopen есть отдельное событие chat.reopened.
+
+  chat.message.created:
+    - assert: Публикуется при отправке любого сообщения, включая системные
+      description: |
+        Payload: { chatId, messageId, senderParticipantId, actorUserId,
+                   kind: 'text'|'media'|'system', text?, mediaIds?,
+                   systemEvent?, createdAt }.
+
+  chat.message.edited / chat.message.deleted:
+    - assert: chat.message.edited
+      description: |
+        Payload: { chatId, messageId, text?, mediaIds?, editedAt }.
+    - assert: chat.message.deleted
+      description: Payload: { chatId, messageId, deletedAt }.
+
+  chat.read:
+    - assert: chat.read — движение курсора прочтения
+      description: |
+        Payload: { chatId, readerParticipantId, readerUserId, upToMessageId,
+                   readAt }.
+        Высокочастотное; consumer должен быть готов к нагрузке либо
+        агрегировать.
+
+  participant.claimed / participant.released / participant.reassigned:
+    - assert: participant.claimed
+      description: |
+        Payload: { chatId, participantId, kind, subjectId | null,
+                   assignedUserId, claimedAt }.
+    - assert: participant.released
+      description: |
+        Payload: { chatId, participantId, oldAssigneeId, releasedAt }.
+    - assert: participant.reassigned
+      description: |
+        Payload: { chatId, participantId, oldAssigneeId, newAssigneeId,
+                   reassignedBy, at }.
+
+  chat.blocked / chat.unblocked:
+    - assert: chat.blocked
+      description: |
+        Payload: { chatId, blockedByParticipantId, blockedByUserId, reason?,
+                   blockedAt }.
+    - assert: chat.unblocked
+      description: |
+        Payload: { chatId, unblockedByParticipantId, unblockedByUserId, at }.
+
+  chat.closed / chat.reopened:
+    - assert: chat.closed
+      description: |
+        Payload: { chatId, closedByParticipantId, closedByUserId, reason?,
+                   closedAt }.
+    - assert: chat.reopened
+      description: |
+        Payload: { chatId, reopenedByParticipantId, reopenedByUserId, at }.
+
+  chat.message.reported / chat.reported:
+    - assert: chat.message.reported
+      description: |
+        Payload: { chatId, messageId, reporterParticipantId, reporterUserId,
+                   category, reason, at }.
+    - assert: chat.reported
+      description: |
+        Payload: { chatId, reporterParticipantId, reporterUserId,
+                   category, reason, at }.
+
+  # ==================== ИНТЕГРАЦИЯ С TICKETS ====================
+
+  Связь с фичей tickets:
+    - assert: tickets-feature слушает chat.opened и создаёт тикет по комбинации participants
+      description: |
+        Маппинг (kinds в participants) → board:
+          [user, organization]   → board орг (отдельная подписка)
+          [user, support]        → support-board
+          [support, organization]→ support-board
+        Тикет содержит chatId и contextItemId (если был).
+        Идемпотентность по chatId: повторный chat.opened (например, retry
+        publish) не создаёт второй тикет на тот же chatId.
+        Точное соответствие board'ов и подписок — отдельная задача расширения
+        в tickets-subscriptions.spec.yaml.
+    - assert: tickets-feature слушает chat.closed и переводит связанный тикет в done
+      description: Идемпотентно: если тикет уже done — игнор.
+    - assert: tickets-feature слушает chat.reopened и переоткрывает связанный тикет
+    - assert: chat.message.created в активном чате — тикет получает обновление updatedAt
+
+  # ==================== ИНТЕГРАЦИЯ С NOTIFICATIONS ====================
+
+  Связь с фичей notifications:
+    - assert: notifications-feature слушает chat.message.created
+      description: |
+        Получатели — все participants чата, кроме senderParticipantId.
+        Для каждого participant маппинг → канал доставки:
+          kind='user',         subjectId=U → push токенам user'а U
+          kind='organization', subjectId=O → push в pool('organization', O)
+                                              если слот claim'нут — только assignee,
+                                              иначе всем в пуле
+          kind='support',      subjectId=null → push в pool('support')
+                                              если claim'нут — только assignee,
+                                              иначе всем в пуле
+        Контракт notifications-feature — отдельная спека.
+    - assert: presence-aware delivery — notifications опрашивает Centrifugo presence
+      description: |
+        Если получатель онлайн в chat:#{chatId} — push не шлётся (in-app достаточно).
+        Если только в inbox:* — push шлётся.
+    - assert: chat.message.edited / chat.message.deleted не триггерят push
+      description: Только in-app (через Centrifugo).
+
+  # ==================== СКВОЗНЫЕ СЦЕНАРИИ ====================
+
+  End-to-end интеграция:
+    - assert: User инициирует чат с org → создан Chat + ChatParticipant×2 + Message → Ticket → notification
+      description: |
+        Цепочка из одного POST /chats:
+        1. Транзакция main-api: insert Chat + insert ChatParticipant×2
+           + insert Message + 2 outbox rows (chat.opened, chat.message.created)
+        2. Outbox-publisher шлёт оба в Kafka chat.events
+        3. tickets-consumer ловит chat.opened → создаёт Ticket с chatId
+        4. notifications-consumer ловит chat.message.created → шлёт push
+           в pool slot.kind='organization', subjectId=O
+        5. main-api публикует в Centrifugo chat:* и inbox:* (afterCommit)
+    - assert: Идемпотентность — повторная доставка chat.opened не создаёт второй тикет
+    - assert: Идемпотентность — повторная доставка chat.message.created не создаёт второй пуш
+    - assert: claim+send атомарно → события participant.claimed и chat.message.created публикуются в одном commit'е
+      description: |
+        Outbox-rows для обоих событий вставляются в одну транзакцию,
+        publisher шлёт их последовательно (порядок сохраняется в пределах
+        partition'а chatId).
+
+definitions:
+  feature:
+    - chat-integration
+  section:
+    - chat
+    - integration
+    - kafka

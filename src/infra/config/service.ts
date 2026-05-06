@@ -56,4 +56,10 @@ export class MainConfigService extends CreateConfigService({
   REDIS_URL: Type.String({ default: 'redis://localhost:6379' }),
   // GeoIP
   MAXMIND_DB_PATH: Type.Optional(Type.String()),
+  // Centrifugo
+  CENTRIFUGO_API_URL: Type.String({ default: 'http://localhost:8000/api' }),
+  CENTRIFUGO_API_KEY: Type.String({ default: 'devApiKey' }),
+  CENTRIFUGO_TOKEN_HMAC_SECRET: Type.String({ default: 'devTokenSecret' }),
+  CENTRIFUGO_PROXY_SECRET: Type.String({ default: 'devProxySecret' }),
+  CENTRIFUGO_TOKEN_TTL_SEC: Type.Decode(Type.String({ default: '900' }), toInt),
 }) {}

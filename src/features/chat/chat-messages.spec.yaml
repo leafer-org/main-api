@@ -1,0 +1,218 @@
+feature: Chat — Messages
+code: chat-messages
+description: |
+  Сообщения в чате. См. chat-chats.spec.yaml для аггрегата Chat и сущности
+  ChatParticipant.
+
+  Sender'ом сообщения является ChatParticipant (а не userId напрямую). Это даёт
+  чистую расширяемость: при reassign / claim слот сохраняется, а authorActorId
+  фиксируется отдельно для аудита.
+
+  Поля Message:
+    - id, chatId
+    - senderParticipantId  — слот, от которого пришло сообщение
+    - actorUserId          — реальный userId, написавший в момент отправки
+                             (= ChatParticipant.assignedUserId на момент send)
+    - kind: 'text' | 'media' | 'system'
+    - text: string | null     (≤ 4000 после trim)
+    - mediaIds: MediaId[]     (≤ 10)
+    - systemEvent: { type, payload } | null
+    - editedAt | null
+    - deletedAt | null
+    - createdAt
+
+  Кто может отправить сообщение:
+    - От слота kind='user' пишет только subjectId слота (сам user).
+    - От слота kind='organization'/'support' пишет тот, чей userId = assignedUserId
+      слота (claim'нувший оператор). Если слот unclaimed — отправка запрещена,
+      сначала нужен claim. Атомарный claim+send доступен через ?claim=true.
+
+  Лимиты:
+    - text ≤ 4000 символов (после trim; пустой text при kind=text — ошибка)
+    - mediaIds ≤ 10
+    - Edit / delete окно: 15 минут от createdAt
+    - Soft-delete: text=null, mediaIds=[], deletedAt=now; запись остаётся
+    - Edit history не хранится (MVP)
+
+  Read receipts:
+    - Курсор lastReadMessageId хранится на ChatParticipant.
+    - Unread count (для participant P) = count messages where
+        chatId = P.chatId
+        AND senderParticipantId ≠ P.id
+        AND kind ≠ 'system'
+        AND id > P.lastReadMessageId
+        AND deletedAt IS NULL
+
+specs-unit:
+  # ==================== ОТПРАВКА ====================
+
+  Отправка сообщения от user-слота:
+    - assert: POST /chats/:chatId/messages — клиентская сторона отправляет
+      description: |
+        Body: { text?, mediaIds? }. Хотя бы одно из полей непустое.
+        senderParticipantId резолвится как participant с kind='user' и
+        subjectId=currentUserId; actorUserId=currentUserId.
+        Ответ: { messageId, chatId, senderParticipantId, kind, text, mediaIds,
+                 createdAt }.
+        Обновляются lastMessageAt/lastMessageId/lastMessagePreview на Chat.
+        Публикуются MessageSent + outbox(chat.message.created).
+    - assert: Текущий user не имеет user-слота в этом чате — 404 chat_not_found
+    - assert: Чат blocked — 403 chat_blocked
+    - assert: Чат closed — auto-reopen + send в одной транзакции
+      description: |
+        Сначала ChatReopened, затем MessageSent. Status → open.
+
+  Отправка сообщения от operator-слота (org/support):
+    - assert: POST /admin/chats/:chatId/messages
+      description: |
+        Body: { text?, mediaIds? }, query: ?claim=true|false (default false).
+        senderParticipantId резолвится как слот, в котором assignedUserId
+        совпадает с currentUserId. actorUserId=currentUserId.
+        Если ни один слот не assign'ен на текущего user'а:
+          claim=false → 400 claim_required
+          claim=true  → атомарный claim релевантного слота + send (1 транзакция)
+        Если current user не в pool ни одного слота — 403 not_a_chat_responder.
+    - assert: ?claim=true на уже claim'нутый другим — 409 slot_already_claimed
+    - assert: ?claim=true на closed чат — auto-reopen + claim + send
+      description: |
+        Заблокированный остаётся blocked'нутым: blocked доступ к send для
+        operator-стороны не отнимает.
+
+  Системные сообщения:
+    - assert: Системные сообщения создаются только аггрегатом, не через API
+      description: |
+        Триггеры (kind='system', systemEvent.type):
+          chat.opened, chat.reopened, chat.closed, chat.blocked, chat.unblocked,
+          participant.claimed, participant.released, participant.reassigned.
+        senderParticipantId — null (или специальный системный participant —
+        выбрать при имплементации). Для read-counts эти сообщения не учитываются
+        у любой стороны.
+    - assert: PATCH/DELETE на kind='system' — 400 cannot_modify_system_message
+
+  # ==================== ЛИМИТЫ И ВАЛИДАЦИЯ ====================
+
+  Лимиты содержимого:
+    - assert: text > 4000 символов — 400 message_text_too_long
+    - assert: mediaIds.length > 10 — 400 message_too_many_media
+    - assert: text пустой и mediaIds пустой — 400 empty_message
+    - assert: text=null + mediaIds.length>0 — kind=media
+    - assert: text задан + mediaIds.length>0 — kind=text
+    - assert: media не существует или не принадлежит actorUserId — 400 media_not_accessible
+      description: |
+        Sender должен быть владельцем медиа (загрузил через feature media).
+        Защита от hot-linking чужих медиа.
+
+  # ==================== ИСТОРИЯ ====================
+
+  История сообщений:
+    - assert: GET /chats/:chatId/messages — курсорная пагинация
+      description: |
+        Query: ?cursor=<opaque>, ?limit=50 (max 100).
+        Сортировка: createdAt desc, id desc (новые сверху).
+        Cursor — base64 от { lastSeenCreatedAt, lastSeenId }, opaque.
+        Ответ: { messages, nextCursor: <opaque>|null }.
+        Поля сообщения: messageId, senderParticipantId, kind, text|null,
+        mediaIds, createdAt, editedAt|null, deletedAt|null, systemEvent|null.
+    - assert: Удалённые возвращаются с deletedAt и пустыми text/mediaIds
+    - assert: limit > 100 — клампится до 100
+    - assert: Невалидный cursor — 400 invalid_cursor
+    - assert: Доступ к истории — только если current user — assignee одного из
+        participants чата
+      description: |
+        Resolve через slot-pool: либо kind='user' с subjectId=currentUser,
+        либо canAssign(slot, currentUser)=true для одного из operator-слотов.
+
+  # ==================== READ RECEIPTS ====================
+
+  Прочтение:
+    - assert: POST /chats/:chatId/read — отметить прочитанным до сообщения
+      description: |
+        Body: { upToMessageId }. Двигает lastReadMessageId на ChatParticipant
+        текущего user'а (резолвится как описано выше).
+        Идемпотентно: повторный read с тем же upToMessageId — 204.
+        Публикуется MessagesRead + outbox(chat.read).
+    - assert: upToMessageId меньше текущего — игнор (no-op)
+    - assert: upToMessageId не существует или из другого чата — 400 invalid_message_id
+    - assert: GET /chats/:chatId — возвращает myUnreadCount по правилу выше
+    - assert: GET /chats/unread-summary — суммарно по всем доступным чатам user'а
+      description: |
+        Ответ: { totalUnreadCount, perChat: [{ chatId, count }] }.
+    - assert: Если у current user несколько ролей в системе (одновременно user
+        и admin), counters не смешиваются
+      description: |
+        В пределах одного чата у одного user'а ≤ 1 слота, и unread считается
+        по этому слоту. Если user — клиент в одном чате и admin в другом,
+        unread считается независимо.
+
+  # ==================== РЕДАКТИРОВАНИЕ ====================
+
+  Редактирование:
+    - assert: PATCH /chats/:chatId/messages/:messageId — отредактировать своё
+      description: |
+        Своё определяется по actorUserId == currentUserId. Slot не должен быть
+        переназначен — но это всё равно «своё» сообщение конкретного человека.
+        kind ≠ 'system', deletedAt=null.
+        В пределах 15 минут от createdAt.
+        editedAt = now. Публикуется MessageEdited.
+    - assert: Редактирование чужого — 403 not_message_author
+      description: |
+        Если admin reassign'нул слот другому, новый assignee НЕ может править
+        старые сообщения (actorUserId старого — другой человек).
+    - assert: Редактирование после 15 минут — 400 edit_window_expired
+    - assert: Редактирование удалённого — 400 message_deleted
+    - assert: Редактирование системного — 400 cannot_modify_system_message
+    - assert: User в blocked чате — 403 chat_blocked
+    - assert: Пустое body — 400 empty_message
+
+  # ==================== УДАЛЕНИЕ ====================
+
+  Удаление:
+    - assert: DELETE /chats/:chatId/messages/:messageId — soft-delete своего
+      description: |
+        deletedAt=now, text=null, mediaIds=[]. 204.
+        Публикуется MessageDeleted.
+        Если удаляемое = lastMessage чата — Chat.lastMessagePreview
+        пересчитывается на предыдущее non-deleted (или null).
+    - assert: Удаление чужого — 403 not_message_author (по actorUserId)
+    - assert: Удаление после 15 минут — 400 delete_window_expired
+    - assert: Повторное удаление — 400 message_already_deleted
+    - assert: Удаление системного — 400 cannot_modify_system_message
+    - assert: При delete медиа-файлы НЕ удаляются из S3
+      description: Retention job — отдельная задача (см. Open Questions).
+
+  # ==================== ЖАЛОБЫ ====================
+
+  Жалоба на сообщение:
+    - assert: POST /chats/:chatId/messages/:messageId/report
+      description: |
+        Body: { reason, category?: 'spam'|'abuse'|'illegal'|'other' }.
+        Доступно любой стороне, кроме автора (actorUserId ≠ currentUserId).
+        Создаётся MessageReport(messageId, reporterParticipantId, reporterUserId,
+                                category, reason, createdAt).
+        Публикуется MessageReported + outbox.
+    - assert: Жалоба на своё — 400 cannot_report_own_message
+    - assert: Повторная от того же reporter'а на то же сообщение — 409 already_reported
+    - assert: Жалоба на удалённое — разрешено
+
+  Жалоба на чат:
+    - assert: POST /chats/:chatId/report — пожаловаться на чат
+      description: |
+        Body: { reason, category? }. Создаётся ChatReport. ChatReported event.
+
+  # ==================== ПОЛНЫЙ ФЛОУ ====================
+
+  Полный поток:
+    - assert: send → edit (в окне) → read → edit (за окном — fail) → delete (в окне)
+      description: |
+        После delete сообщение в истории помечено удалённым; lastMessage
+        пересчитан; unread не считается.
+    - assert: claim+send атомарно через ?claim=true
+      description: |
+        Один запрос делает claim слота и send. Транзакция: ParticipantClaimed
+        + MessageSent в одном commit'е.
+
+definitions:
+  feature:
+    - chat-messages
+  section:
+    - chat

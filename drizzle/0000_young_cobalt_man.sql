@@ -1,3 +1,62 @@
+CREATE TABLE "chat_messages" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"chat_id" uuid NOT NULL,
+	"sender_participant_id" uuid,
+	"actor_user_id" text,
+	"kind" text NOT NULL,
+	"text" text,
+	"media_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"system_event" jsonb,
+	"created_at" timestamp with time zone NOT NULL,
+	"edited_at" timestamp with time zone,
+	"deleted_at" timestamp with time zone
+);
+--> statement-breakpoint
+CREATE TABLE "chat_organization_members" (
+	"organization_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"joined_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "chat_organization_members_organization_id_user_id_pk" PRIMARY KEY("organization_id","user_id")
+);
+--> statement-breakpoint
+CREATE TABLE "chat_participants" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"chat_id" uuid NOT NULL,
+	"kind" text NOT NULL,
+	"subject_id" text,
+	"assigned_user_id" text,
+	"claimed_at" timestamp with time zone,
+	"last_read_message_id" uuid,
+	"created_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "chat_reports" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"chat_id" uuid NOT NULL,
+	"message_id" uuid,
+	"reporter_user_id" text NOT NULL,
+	"reporter_participant_id" uuid NOT NULL,
+	"category" text,
+	"reason" text NOT NULL,
+	"created_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "chats" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"pair_key" text NOT NULL,
+	"status" text NOT NULL,
+	"blocked_by_participant_id" uuid,
+	"blocked_at" timestamp with time zone,
+	"context_item_id" text,
+	"last_message_id" uuid,
+	"last_message_at" timestamp with time zone,
+	"last_message_preview" text,
+	"last_message_sender_participant_id" uuid,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "chats_pair_key_unique" UNIQUE("pair_key")
+);
+--> statement-breakpoint
 CREATE TABLE "cms_categories" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"parent_category_id" uuid,
@@ -283,6 +342,17 @@ CREATE TABLE "outbox" (
 --> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "video_details" ADD CONSTRAINT "video_details_media_id_media_id_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "chat_messages_chat_id_created_idx" ON "chat_messages" USING btree ("chat_id","created_at");--> statement-breakpoint
+CREATE INDEX "chat_messages_actor_user_idx" ON "chat_messages" USING btree ("actor_user_id");--> statement-breakpoint
+CREATE INDEX "chat_org_members_user_idx" ON "chat_organization_members" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "chat_participants_chat_id_idx" ON "chat_participants" USING btree ("chat_id");--> statement-breakpoint
+CREATE INDEX "chat_participants_kind_subject_idx" ON "chat_participants" USING btree ("kind","subject_id");--> statement-breakpoint
+CREATE INDEX "chat_participants_assigned_user_idx" ON "chat_participants" USING btree ("assigned_user_id");--> statement-breakpoint
+CREATE INDEX "chat_reports_chat_id_idx" ON "chat_reports" USING btree ("chat_id");--> statement-breakpoint
+CREATE INDEX "chat_reports_message_id_idx" ON "chat_reports" USING btree ("message_id");--> statement-breakpoint
+CREATE INDEX "chat_reports_reporter_idx" ON "chat_reports" USING btree ("reporter_user_id");--> statement-breakpoint
+CREATE INDEX "chats_status_idx" ON "chats" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "chats_last_message_at_idx" ON "chats" USING btree ("last_message_at");--> statement-breakpoint
 CREATE INDEX "discovery_item_attributes_attr_value_idx" ON "discovery_item_attributes" USING btree ("attribute_id","value");--> statement-breakpoint
 CREATE INDEX "discovery_item_categories_category_idx" ON "discovery_item_categories" USING btree ("category_id");--> statement-breakpoint
 CREATE INDEX "discovery_item_event_dates_date_idx" ON "discovery_item_event_dates" USING btree ("event_date");--> statement-breakpoint

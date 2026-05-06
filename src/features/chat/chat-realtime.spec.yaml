@@ -1,0 +1,226 @@
+feature: Chat — Realtime (Centrifugo)
+code: chat-realtime
+description: |
+  Realtime-доставка через Centrifugo. См. chat-chats.spec.yaml для модели
+  Chat + ChatParticipant и chat-messages.spec.yaml для отправки.
+
+  Архитектура:
+    Client → WS → Centrifugo
+                     ↑ subscribe-proxy → API (permission check)
+                     ↑ publish (HTTP)  ← API (after commit)
+    Engine: Redis (тот же что используется для tickets-realtime).
+
+  Аутентификация: connection-JWT.
+    GET /chats/centrifugo-token → { token, expiresAt }.
+    JWT.sub = userId, exp = +15min, info = { role: 'user' | 'admin' }.
+    HS256, секрет общий с Centrifugo.
+
+  Permission-модель основана на ChatParticipant slot-pool resolver
+  (см. chat-chats.spec.yaml). API не хранит «кто на каком чате» в realtime —
+  при subscribe резолвит через resolver.
+
+  Каналы (namespace'ы Centrifugo):
+    - chat:#{chatId}              — события одного чата
+    - inbox:user:#{userId}        — личный inbox клиента
+    - inbox:org:#{orgId}          — shared inbox орг (видят все сотрудники с правом)
+    - inbox:support               — shared inbox поддержки
+
+  Inbox-каналы соответствуют пулу слотов (slot.kind + subjectId):
+    inbox:user:#{userId}   — пул слота { kind: 'user', subjectId: userId }
+                             (всегда один владелец)
+    inbox:org:#{orgId}     — пул слота { kind: 'organization', subjectId: orgId }
+                             (все сотрудники с chat.respond)
+    inbox:support          — пул слота { kind: 'support', subjectId: null }
+                             (все админы с chat.support)
+
+  Расширяемость: новый slot.kind с собственным pool resolver автоматически
+  получает свой inbox:* namespace.
+
+  Catch-up: Centrifugo history включён для chat:* каналов с буфером 100 сообщений
+  и TTL 5 минут. Inbox-каналы без history (восстановление через REST).
+
+specs-unit:
+  # ==================== CONNECTION TOKEN ====================
+
+  Connection token:
+    - assert: GET /chats/centrifugo-token возвращает JWT
+      description: |
+        Ответ: { token, expiresAt: ISO }.
+        JWT.sub=userId, exp=+15min.
+        Без auth в API — 401.
+    - assert: Просроченный token — Centrifugo рвёт соединение
+    - assert: Clock skew >30s между API и Centrifugo — connection не устанавливается
+
+  # ==================== SUBSCRIBE-PROXY ====================
+
+  Subscribe-proxy permissions:
+    - assert: POST /internal/centrifugo/subscribe — endpoint для callback от Centrifugo
+      description: |
+        Body: { client, transport, protocol, encoding, user, channel }.
+        Header X-Internal-Secret = shared secret. Без секрета — 401.
+        Allow: { result: { } }. Deny: { error: { code, message } }.
+    - assert: chat:#{chatId} — allow если canParticipantWatch(chat, currentUser)
+      description: |
+        canParticipantWatch = current user является assignee хотя бы одного
+        participant'а чата ИЛИ входит в pool хотя бы одного operator-слота
+        (canAssign(slot, currentUser)=true). Это даёт возможность видеть
+        unclaimed чат до claim'а.
+    - assert: inbox:user:#{channelUserId} — allow только если user.userId == channelUserId
+      description: Multi-device — несколько коннектов одного userId допустимы.
+    - assert: inbox:org:#{orgId} — allow если currentUser ∈ pool('organization', orgId)
+      description: |
+        Используется тот же resolver canAssign / pool, что в chat-chats.
+    - assert: inbox:support — allow если currentUser ∈ pool('support', null)
+    - assert: Канал не из известных namespace'ов — deny 403
+    - assert: Активная подписка не разрывается при потере прав
+      description: |
+        Права чекаются только при subscribe. Реактивный disconnect — out of
+        scope MVP (см. Open Questions).
+
+  # ==================== ФОРМАТ СОБЫТИЙ ====================
+
+  Format published events:
+    - assert: Каждое событие — JSON { type, payload }
+      description: |
+        type — строковый идентификатор (snake-case с точкой).
+        payload — структура, специфичная для type.
+
+  События в канале chat:#{chatId}:
+    - assert: message.new
+      description: |
+        Payload: { messageId, chatId, senderParticipantId, kind, text, mediaIds,
+                   systemEvent?, createdAt }.
+    - assert: message.edited
+      description: Payload: { messageId, chatId, text, mediaIds, editedAt }.
+    - assert: message.deleted
+      description: Payload: { messageId, chatId, deletedAt }.
+    - assert: chat.read
+      description: |
+        Payload: { chatId, readerParticipantId, upToMessageId, readAt }.
+    - assert: chat.typing — клиент-publish
+      description: |
+        Publish инициируется КЛИЕНТОМ напрямую в Centrifugo (allow_publish=true
+        в namespace chat:* для участников).
+        Payload: { chatId, participantId, kind: 'start' | 'stop' }.
+        Не сохраняется в БД, не идёт через API.
+    - assert: participant.claimed / participant.released / participant.reassigned
+      description: |
+        Payload: { chatId, participantId, assignedUserId | null, byUserId, at }.
+        Для reassigned дополнительно: { oldAssigneeId, newAssigneeId }.
+    - assert: chat.blocked / chat.unblocked
+      description: |
+        Payload: { chatId, blockedBy?: ParticipantId, blockedAt?, reason? }.
+    - assert: chat.closed / chat.reopened
+      description: Payload: { chatId, byParticipantId, at }.
+
+  События в канале inbox:user:#{userId}:
+    - assert: chat.opened — для клиента появился новый чат
+      description: |
+        Payload: { chatId, participants[], contextItem?, status, lastMessage }.
+        participants публикуются в полном виде (kind, subjectId, assignedUserId,
+        displayName).
+    - assert: chat.preview-updated — изменился last message / unread
+      description: |
+        Payload: { chatId, lastMessage, myUnreadCount }.
+        Триггеры: входящее сообщение, edit/delete lastMessage, локальный read.
+    - assert: chat.status-changed
+      description: |
+        Payload: { chatId, status, blockedBy?: ParticipantId }.
+
+  События в канале inbox:org:#{orgId}:
+    - assert: chat.opened — новый чат пришёл в shared inbox
+      description: |
+        Payload: { chatId, participants[], contextItem?, lastMessage, createdAt }.
+    - assert: participant.claimed — operator-слот claim'нут (чат уходит из shared)
+      description: |
+        Payload: { chatId, participantId, assignedUserId, claimedAt }.
+        UI оператора с открытым inbox видит, что чат пропал из shared-фильтра
+        (или переместился в «свои» если claim'нул он сам).
+    - assert: participant.released — claim снят, чат возвращается в shared
+    - assert: chat.preview-updated — апдейт превью
+    - assert: chat.closed / chat.reopened — статус изменился
+
+  События в канале inbox:support:
+    - assert: Аналогично inbox:org:#{orgId}, но публикуется на любой чат с
+        participant kind='support'
+
+  # ==================== AFTER-COMMIT ПУБЛИКАЦИЯ ====================
+
+  Гарантии:
+    - assert: Публикация в Centrifugo — после commit'а транзакции
+      description: |
+        afterCommit-хук TransactionHost (как в tickets-realtime).
+        Откат транзакции = публикация не происходит.
+    - assert: Сбой Centrifugo HTTP API — лог + игнор (fire-and-forget)
+      description: |
+        Транзакция не откатывается. Reconnect + history покрывает gap;
+        unrecoverable — REST refetch.
+    - assert: Одно доменное событие → batch-publish во все релевантные каналы
+      description: |
+        Например, message.new → chat:#{chatId} + inbox:#{user-side} +
+        inbox:#{operator-side}. Centrifugo поддерживает batch одной HTTP-командой.
+    - assert: Каналы для inbox получаются из participants чата
+      description: |
+        Для каждого participant строится inbox-channel:
+          kind='user', subjectId=U  → inbox:user:#{U}
+          kind='organization', subjectId=O → inbox:org:#{O}
+          kind='support'            → inbox:support
+        Расширение под новый kind прозрачно: добавляется branch в маппинге.
+
+  # ==================== HISTORY И CATCH-UP ====================
+
+  History buffer:
+    - assert: chat:* настроены history_size=100, history_ttl=5min
+    - assert: inbox:* без history
+    - assert: Reconnect клиента с offset — Centrifugo доставляет пропущенные
+    - assert: unrecoverable=true — клиент делает REST refetch GET /chats и /chats/:id/messages
+
+  # ==================== PRESENCE ====================
+
+  Presence в chat:#{chatId}:
+    - assert: chat:* настроен presence=true
+    - assert: GET /chats/:chatId/presence — возвращает онлайн participants
+      description: |
+        API дёргает Centrifugo presence API.
+        Ответ: { participants: [{ participantId, userId, since }] }.
+        Маппинг userId→participantId делает API (через kind+subjectId+assignedUserId).
+        Используется для UI «оператор онлайн».
+
+  # ==================== MULTI-POD ====================
+
+  Centrifugo cluster:
+    - assert: Несколько подов API публикуют через один Centrifugo (HTTP API)
+    - assert: Падение пода Centrifugo → клиенты переподключаются на другой
+
+  # ==================== СКВОЗНЫЕ СЦЕНАРИИ ====================
+
+  End-to-end:
+    - assert: User шлёт сообщение → клиент видит message.new в chat:#{id}, оператор — preview-updated в inbox:org:#{O}
+    - assert: Оператор claim'ит слот — participant.claimed уходит в chat:* + в inbox:org:* (пропадает из shared)
+    - assert: Reassign на другого employee — participant.reassigned уходит в chat:*; в inbox:org:* — preview-updated с новым assignedUserId
+    - assert: User в blocked публикует typing — Centrifugo deny
+      description: |
+        publish-permission на chat:* для слота kind='user' зависит от
+        chat.status: при blocked allow_publish=false для user-стороны.
+        Реализуется через subscribe-proxy при подписке (info из subscribe-time)
+        или через publish-proxy (точнее, но дороже).
+
+  # ==================== OPEN QUESTIONS ====================
+
+  Open questions:
+    - assert: Решить — typing через client-publish с проверкой в subscribe-proxy
+        или через publish-proxy
+      description: |
+        Client-publish проще и быстрее, но статус blocked может измениться после
+        subscribe. Для MVP — client-publish, blocked-проверка только при subscribe.
+    - assert: Решить — реактивный disconnect при потере прав или ленивая проверка
+      description: |
+        Сейчас права на канал чекаются только при subscribe. После увольнения
+        employee остаётся подписан до reconnect. Не блокер MVP.
+
+definitions:
+  feature:
+    - chat-realtime
+  section:
+    - chat
+    - centrifugo

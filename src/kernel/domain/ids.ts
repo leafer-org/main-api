@@ -27,6 +27,9 @@ export type BoardCloseSubscriptionId = EntityId<'BoardCloseSubscription'>;
 export type BoardRedirectSubscriptionId = EntityId<'BoardRedirectSubscription'>;
 export type BoardAutomationId = EntityId<'BoardAutomation'>;
 export type ReviewId = EntityId<'Review'>;
+export type ChatId = EntityId<'Chat'>;
+export type ChatParticipantId = EntityId<'ChatParticipant'>;
+export type ChatMessageId = EntityId<'ChatMessage'>;
 
 export const MediaId = createEntityId<MediaId>();
 export const UserId = createEntityId<UserId>();
@@ -47,3 +50,6 @@ export const BoardCloseSubscriptionId = createEntityId<BoardCloseSubscriptionId>
 export const BoardRedirectSubscriptionId = createEntityId<BoardRedirectSubscriptionId>();
 export const BoardAutomationId = createEntityId<BoardAutomationId>();
 export const ReviewId = createEntityId<ReviewId>();
+export const ChatId = createEntityId<ChatId>();
+export const ChatParticipantId = createEntityId<ChatParticipantId>();
+export const ChatMessageId = createEntityId<ChatMessageId>();

@@ -67,6 +67,11 @@ export const Permission = {
   TicketMarkDone: 'ticket.markDone',
   TicketReopen: 'ticket.reopen',
   TicketCommentAdd: 'ticket.comment.add',
+
+  // chat
+  ChatRespondAsSupport: 'chat.respond.support',
+  ChatInitiateAsSupport: 'chat.initiate.support',
+  ChatReassignAny: 'chat.reassign.any',
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];
@@ -347,5 +352,21 @@ export const PERMISSION_META: Record<Permission, PermissionMeta> = {
     id: Permission.TicketCommentAdd,
     title: 'Комментирование тикетов',
     description: 'Добавление комментариев к тикетам',
+  },
+
+  [Permission.ChatRespondAsSupport]: {
+    id: Permission.ChatRespondAsSupport,
+    title: 'Ответ в чатах от лица поддержки',
+    description: 'Админ может взять support-чат и отвечать в нём',
+  },
+  [Permission.ChatInitiateAsSupport]: {
+    id: Permission.ChatInitiateAsSupport,
+    title: 'Инициация чата от лица поддержки',
+    description: 'Админ может proactive открыть чат с пользователем или организацией',
+  },
+  [Permission.ChatReassignAny]: {
+    id: Permission.ChatReassignAny,
+    title: 'Переназначение любого чата',
+    description: 'Переназначение чата, взятого другим оператором',
   },
 };

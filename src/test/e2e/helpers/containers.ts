@@ -13,6 +13,7 @@ const IMGPROXY_SALT = '11223344aabbccdd11223344aabbccdd11223344aabbccdd11223344a
 export type ContainerOptions = {
   gorse?: boolean;
   imgproxy?: boolean;
+  centrifugo?: boolean;
 };
 
 let network: StartedNetwork | null = null;
@@ -23,6 +24,7 @@ let meiliContainer: StartedTestContainer | null = null;
 let redisContainer: StartedTestContainer | null = null;
 let gorseContainer: StartedTestContainer | null = null;
 let imgproxyContainer: StartedTestContainer | null = null;
+let centrifugoContainer: StartedTestContainer | null = null;
 
 export async function startContainers(options?: ContainerOptions) {
   if (pgContainer && minioContainer && redpandaContainer && meiliContainer && redisContainer)
@@ -109,6 +111,35 @@ export async function startContainers(options?: ContainerOptions) {
     process.env.GORSE_API_KEY = 'e2e-test-gorse-key';
   }
 
+  if (options?.centrifugo && !centrifugoContainer) {
+    // Configure via env vars (CENTRIFUGO_* convention).
+    // Namespaces передаются как JSON-строка — Centrifugo парсит JSON-значения env vars.
+    const namespaces = JSON.stringify([
+      { name: 'chat', history_size: 100, history_ttl: '5m', presence: true, publish: true },
+      { name: 'inbox', history_size: 100, history_ttl: '5m', publish: true },
+    ]);
+    centrifugoContainer = await new GenericContainer('centrifugo/centrifugo:v5')
+      .withExposedPorts(8000)
+      .withEnvironment({
+        CENTRIFUGO_TOKEN_HMAC_SECRET_KEY: 'e2e-test-centrifugo-token-secret',
+        CENTRIFUGO_API_KEY: 'e2e-test-centrifugo-api-key',
+        CENTRIFUGO_HEALTH: 'true',
+        CENTRIFUGO_ALLOWED_ORIGINS: '*',
+        CENTRIFUGO_LOG_LEVEL: 'info',
+        CENTRIFUGO_NAMESPACES: namespaces,
+      })
+      .withWaitStrategy(Wait.forHttp('/health', 8000).forStatusCode(200))
+      .withStartupTimeout(60_000)
+      .start();
+
+    const cHost = centrifugoContainer.getHost();
+    const cPort = centrifugoContainer.getMappedPort(8000);
+    process.env.CENTRIFUGO_API_URL = `http://${cHost}:${cPort}/api`;
+    process.env.CENTRIFUGO_API_KEY = 'e2e-test-centrifugo-api-key';
+    process.env.CENTRIFUGO_TOKEN_HMAC_SECRET = 'e2e-test-centrifugo-token-secret';
+    process.env.CENTRIFUGO_PROXY_SECRET = 'e2e-test-centrifugo-proxy-secret';
+  }
+
   if (options?.imgproxy && !imgproxyContainer) {
     imgproxyContainer = await new GenericContainer('darthsim/imgproxy:latest')
       .withNetwork(network)
@@ -143,6 +174,7 @@ export async function stopContainers() {
     redisContainer?.stop(),
     gorseContainer?.stop(),
     imgproxyContainer?.stop(),
+    centrifugoContainer?.stop(),
   ]);
   pgContainer = null;
   minioContainer = null;
@@ -151,6 +183,7 @@ export async function stopContainers() {
   redisContainer = null;
   gorseContainer = null;
   imgproxyContainer = null;
+  centrifugoContainer = null;
   await network?.stop();
   network = null;
 }
