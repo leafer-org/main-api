@@ -1,0 +1,263 @@
+feature: Tickets — Organization Scope (in design)
+code: tickets-organization-scope
+description: |
+  Расширение фичи tickets: открытие фичи для сотрудников организации.
+  Сотрудники получают shared inbox задач (модерация контента, жалобы, в будущем
+  — поддержка) и разбирают тикеты параллельно через тот же claim-цикл, который
+  уже работает для admin'ов.
+
+  ВАЖНО: эта спека описывает дизайн будущей итерации. Реализация ещё не начата.
+  Цель — зафиксировать архитектурное решение до того, как фича начнёт писаться,
+  чтобы не возвращаться к нерешённым вопросам по ходу имплементации.
+
+  ## Стартовая точка — что уже есть
+
+  Доменная модель в tickets уже архитектурно поддерживает org-scope:
+    Board.scope: 'platform' | 'organization'
+    Board.organizationId: OrganizationId | null
+
+  Но текущая реализация ограничена:
+    - Все эндпоинты под /admin/* и гейтятся глобальным правом TICKET.MANAGE.
+    - Нет HTTP-surface для сотрудников орг.
+    - matchesSubscriptionFilters не учитывает org-scope при роутинге событий.
+    - Нет default-провижининга досок при создании организации.
+
+  Эта итерация закрывает все четыре пункта.
+
+  ## Авторизация — единый kernel-порт OrganizationActorPort
+
+  Вводится унифицированный порт для всех write-path проверок «действую от лица
+  организации». Заменяет существующий OrganizationRespondabilityPort и будущий
+  OrganizationPostingPort (последний так и не материализуется в коде — его
+  capability-ы сразу ложатся в общий порт).
+
+    abstract class OrganizationActorPort {
+      canActAs(orgId: OrganizationId, userId: UserId, capability: OrgCapability): Promise<boolean>
+    }
+
+    type OrgCapability =
+      | 'chat.respond'                    // ответ в чатах от лица орг (мигрировано из OrganizationRespondabilityPort)
+      | 'posts.publish'                   // публикация / редактирование / удаление постов как орг
+      | 'posts.moderate-comments'         // модерация комментов на своих постах
+      | 'tickets.handle'                  // claim/done/reassign тикетов в досках своей орг
+      | 'tickets.manage-boards'           // создание/редактирование досок и members своей орг
+    // расширяется по мере появления новых capability — без миграции схемы.
+
+  Адаптер живёт в feature/organization/adapters/kernel-ports/. Читает org-таблицы
+  напрямую (sync, fresh) — на write-path не годится eventually-consistent проекция.
+
+  Существующий OrganizationRespondabilityPort.canRespondAsOrganization
+  заменяется вызовом canActAs(orgId, userId, 'chat.respond'). Slot-pool resolver
+  в чатах переписывается на новый порт в одной итерации с этой фичей.
+
+  ## Default boards при создании организации
+
+  При создании организации транзакционно создаётся набор дефолтных досок.
+  Список дефолтных досок — расширяемый через конфиг/код, v1 минимум:
+
+    "Жалобы на контент"
+      scope=organization, organizationId=newOrgId, isDefault=true,
+      manualCreation=false (только из триггеров),
+      open-подписки на:
+        - comment-moderation.report-received
+        - post-moderation.report-received
+
+  В схеме Board появляется новое поле isDefault: boolean (default false).
+
+  Org-owner добавляется первым members (через тот же транзакционный путь, что
+  и создание самой организации). Дальше owner управляет members через
+  org-эндпоинты.
+
+  Default-доску нельзя удалить (DELETE → 409 default_board_cannot_be_deleted).
+  Можно: убирать/добавлять members, менять name/description, добавлять/удалять
+  свои подписки. Default-конфигурацию подписок при этом сохранять как baseline
+  не требуется — owner может её отключить, если хочет (по умолчанию ему виднее).
+
+  Org-owner с capability tickets.manage-boards может создавать дополнительные
+  доски своей организации — они isDefault=false, удаляются свободно.
+
+  ## Routing trigger events на правильную доску
+
+  В контракт TriggerEvent добавляется опциональное поле:
+    targetOrganizationId?: OrganizationId
+
+  Правило матчинга в HandleTriggerEventInteractor:
+    - platform-scope board: матчит event независимо от targetOrganizationId
+      (как сейчас — для escalation-досок и глобальной аналитики).
+    - organization-scope board: матчит event ТОЛЬКО если
+      board.organizationId == event.targetOrganizationId.
+
+  События comment-moderation.* и post-moderation.* всегда несут
+  targetOrganizationId = orgId владельца поста. Существующие events
+  (item-moderation, organization-moderation) на v1 могут не нести
+  targetOrganizationId — тогда они идут только в platform-доски (как сейчас).
+  Если позднее их захотят роутить на org — добавляется заполнение поля
+  без изменения роутинг-логики.
+
+  Идемпотентность по eventId сохраняется per board (одно событие =
+  максимум один тикет в каждой подписавшейся доске).
+
+  ## Каскад / эскалация неразобранных тикетов
+
+  Используется уже существующий timer.since-created на platform-board: если
+  org не закрыла тикет за N дней → redirect-подписка перемещает его на
+  platform-board "Эскалация модерации" для финального admin-разбора.
+  Никакого нового кода — только конфигурация подписок при provisioning'е
+  платформенных досок.
+
+  ## Что НЕ входит в итерацию
+
+  - Свой /admin-surface для эскалационных досок (он уже есть).
+  - Изменения в чат-фиче (slot-pool resolver мигрируется на OrganizationActorPort
+    в этой же итерации, но это рефакторинг существующего, не новая
+    функциональность).
+  - Метрики SLA / time-to-respond per org (выводимы из ticket.history,
+    но отдельный read-model не делаем).
+
+specs-e2e:
+  # ==================== DEFAULT BOARDS ====================
+
+  Default-доски автопровижятся при создании организации:
+    - assert: При создании организации создаётся default board "Жалобы на контент"
+      description: |
+        Транзакционно вместе с созданием организации (одна БД-транзакция):
+        insert board scope=organization, organizationId=newOrgId, isDefault=true,
+        manualCreation=false, open-подписки на comment-moderation.report-received
+        и post-moderation.report-received. Org-owner добавляется первым members.
+        Откат создания орг откатывает создание board.
+    - assert: GET /organizations/:orgId/boards возвращает default board владельцу
+    - assert: DELETE /organizations/:orgId/boards/:boardId на default board → 409 default_board_cannot_be_deleted
+    - assert: PATCH /organizations/:orgId/boards/:boardId на default — name/description можно поменять, isDefault не меняется через API
+    - assert: Список default-досок расширяемый — добавление новой default-доски в код провижится для всех новых орг
+      description: |
+        Существующие орг при добавлении новой default-доски в код НЕ получают
+        её ретроактивно автоматически (отдельный backfill-job по запросу).
+        Это решение — чтобы добавление дефолтной доски не приводило к массовой
+        миграции данных непредсказуемо.
+
+  # ==================== ORG-SCOPED BOARD CRUD ====================
+
+  Создание дополнительных досок org-owner'ом:
+    - assert: POST /organizations/:orgId/boards создаёт board scope=organization, isDefault=false
+      description: |
+        Body: { name, description, manualCreation }.
+        scope и organizationId подставляются автоматически из path :orgId.
+        Право: OrganizationActorPort.canActAs(orgId, userId, 'tickets.manage-boards').
+        Не сотрудник орг с этим правом → 403 cannot_act_as_organization.
+    - assert: GET /organizations/:orgId/boards возвращает все доски орг (default + custom)
+    - assert: PATCH /organizations/:orgId/boards/:boardId обновляет name, description, manualCreation, allowedTransferBoardIds
+    - assert: DELETE /organizations/:orgId/boards/:boardId на кастомную доску → 204
+    - assert: Чужой orgId в path (user не сотрудник этой орг) → 403
+    - assert: orgId в path не совпадает с board.organizationId → 404 (доска не принадлежит орг)
+
+  # ==================== ORG-SCOPED BOARD MEMBERS ====================
+
+  Управление участниками org-доски:
+    - assert: POST /organizations/:orgId/boards/:boardId/members добавляет сотрудника
+      description: |
+        Body: { userId } или { phone } (определить при имплементации; phone — для
+        согласованности с admin-эндпоинтом, userId — проще для UI с автокомплитом
+        сотрудников из своей орг).
+        Право: tickets.manage-boards. Кандидат должен быть сотрудником орг —
+        иначе 400 not_an_employee. Уже member → 409.
+    - assert: DELETE /organizations/:orgId/boards/:boardId/members/:userId
+      description: |
+        Снимает сотрудника. Если у него были тикеты в in-progress в этой доске —
+        переводятся в open (assigneeId=null), история тикетов фиксирует unassigned
+        с reason='member_removed'.
+    - assert: Сотрудник уволен из орг → автоматически удаляется из members всех досок этой орг
+      description: |
+        Реактивно через integration event organization.employee.removed.
+        Тикеты в in-progress переоткрываются (см. правило выше).
+
+  # ==================== ORG-SCOPED TICKET WORKFLOW ====================
+
+  Claim/работа сотрудника орг с тикетами:
+    - assert: GET /organizations/:orgId/tickets возвращает тикеты на досках орг
+      description: |
+        Фильтры: ?boardId=, ?status=, ?assigneeId=, ?assignedToMe=, ?unassigned=.
+        Сортировка: unassigned первыми → дальше по updatedAt desc.
+        Доступ: tickets.handle AND user — member хотя бы одной доски этой орг.
+    - assert: GET /organizations/:orgId/tickets/my возвращает тикеты в in-progress, assignee=me
+    - assert: GET /organizations/:orgId/tickets/:ticketId возвращает детали с history[]
+    - assert: POST /organizations/:orgId/tickets/:ticketId/assign — claim тикета
+      description: |
+        Body: { assigneeId? }. Опущен → self-claim текущим user.
+        Указан другой userId → должен быть member той же доски.
+        Тикет переходит в in-progress.
+        Право: tickets.handle + member борда этого тикета.
+    - assert: POST /organizations/:orgId/tickets/:ticketId/done — закрытие in-progress тикета
+    - assert: POST /organizations/:orgId/tickets/:ticketId/reopen — done → open, assigneeId=null
+    - assert: POST /organizations/:orgId/tickets/:ticketId/reassign — переназначение на другого member'а
+    - assert: POST /organizations/:orgId/tickets/:ticketId/unassign — снятие назначения, in-progress → open
+    - assert: Параллельный claim одного тикета — первый успех, второй 409 ticket_already_assigned
+      description: |
+        Race-condition защита: проверка assigneeId IS NULL внутри транзакции
+        с UPDATE WHERE assigneeId IS NULL. Это уже встроено в текущий
+        claim-flow (см. AssignTicketInteractor admin-версии); org-эндпоинт
+        переиспользует ту же логику.
+    - assert: Тикет не из этой орг (board.organizationId != :orgId в path) → 404
+      description: Не 403, чтобы не раскрывать существование чужих тикетов.
+
+  # ==================== TRIGGER EVENT ROUTING ====================
+
+  Маршрутизация trigger events с targetOrganizationId:
+    - assert: Event с targetOrganizationId=A создаёт тикет на org-board орг A
+      description: |
+        comment-moderation.report-received с targetOrganizationId=orgA →
+        тикет на default board орг A "Жалобы на контент" (если есть подписка
+        на trigger). НЕ создаёт тикет на org-board орг B.
+    - assert: Event с targetOrganizationId=A создаёт тикет на platform-board с подпиской
+      description: |
+        Platform-scope board с подпиской на тот же trigger получает тикет
+        независимо от targetOrganizationId. Это позволяет глобальной модерации
+        видеть весь поток (для escalation / аудита).
+    - assert: Event без targetOrganizationId матчит только platform-scope доски
+      description: |
+        Существующие events (item-moderation, organization-moderation) без поля
+        targetOrganizationId работают как раньше — только platform-доски.
+        Backwards-compat для уже работающего кода.
+    - assert: Идемпотентность по eventId сохраняется per board
+      description: |
+        Одно событие → максимум один тикет в каждой подписавшейся доске.
+        targetOrganizationId не меняет инвариант — просто фильтрует множество
+        кандидатных досок.
+    - assert: Org-доска получает event только если она имеет подписку на этот trigger
+      description: |
+        Совпадение targetOrganizationId недостаточно — board.subscriptions
+        должны включать данный triggerId. Default-доска по умолчанию подписана
+        на comment-moderation.report-received и post-moderation.report-received,
+        но если owner снял подписку — events перестают создавать тикеты.
+
+  # ==================== АВТОРИЗАЦИЯ ====================
+
+  Унифицированная проверка через OrganizationActorPort:
+    - assert: tickets.handle гейтит claim/done/reassign/reopen/unassign
+    - assert: tickets.manage-boards гейтит CRUD досок и CRUD members
+    - assert: Запрос на /organizations/:orgId/* без членства в орг → 403 cannot_act_as_organization
+    - assert: Платформенный admin не имеет доступа к /organizations/:orgId/* эндпоинтам автоматически
+      description: |
+        Admin использует /admin/* surface со своими permissions. Org-эндпоинты
+        — только для сотрудников орг (даже если admin технически имеет более
+        широкие права). Это разные surface'ы, чтобы не путать UX и аудит-лог.
+    - assert: chat.respond capability через OrganizationActorPort заменяет старый OrganizationRespondabilityPort
+      description: |
+        Slot-pool resolver в chat-фиче мигрируется на canActAs(orgId, userId, 'chat.respond')
+        в этой же итерации. Старый порт удаляется. Поведение чатов не меняется.
+
+  # ==================== ЭСКАЛАЦИЯ (через существующие тайм-триггеры) ====================
+
+  Backstop эскалация неразобранных тикетов:
+    - assert: Тикет в org-доске не закрыт за N дней — redirect на platform-board "Эскалация"
+      description: |
+        Конфигурация: platform-board "Эскалация модерации" имеет
+        redirect-subscription с triggerId=timer.since-created, duration=N*24*60.
+        Никакого нового кода — только default-конфиг при provisioning платформы.
+        После redirect тикет в platform-board, виден админам, оригинальная орг
+        теряет к нему доступ через org-эндпоинты.
+
+definitions:
+  feature:
+    - tickets-organization-scope
+  section:
+    - tickets

@@ -12,6 +12,26 @@ description: |
   координаты пишутся в Gorse как лейблы `h3:4:*`, `h3:5:*` при регистрации
   и обновлении профиля.
 
+  ## Owner block в карточке товара (расширение, in design)
+
+  Карточка товара содержит блок `owner` с атрибуцией организации-владельца.
+  Эволюция (см. project_org_social.md в auto-memory):
+
+    v1 текущий:    owner: { name, avatarUrl }
+    v2 запланирован: owner: { name, avatarId, hasUnreadFreshPosts: boolean }
+
+  Поле hasUnreadFreshPosts говорит UI рисовать кружочек свежести вокруг
+  аватара (как Stories в Instagram) — сигнал «у этой орг есть свежий
+  непрочитанный контент». Клик по аватару → переход на ленту постов орг.
+
+  Условие флага (вычисляется на стороне discovery, см. posts-views.spec.yaml):
+    org.last_post_id IS NOT NULL
+    AND org.last_post_id NOT IN viewed_last_posts_of_user
+    AND org.last_post_at > now() - 7d
+
+  Реализация — один батч-запрос за viewed last posts на всю страницу feed.
+  Без N+1.
+
 specs-unit:
   GET /feed (fallback):
     - assert: возвращает пустой список при отсутствии items в Gorse
@@ -75,6 +95,34 @@ specs-unit:
       description: |
         Структура item: `itemId`, `title`, `media`, `owner.name`,
         `owner.avatarUrl`.
+
+  # ==================== OWNER BLOCK (расширение, in design) ====================
+
+  GET /feed (owner with freshness ring):
+    - assert: каждый item в ответе содержит owner с avatarId (не avatarUrl)
+      description: |
+        Эволюция: avatarUrl → avatarId. URL вычисляется на клиенте через
+        imgproxy / media-url-builder. Согласует API с другими местами,
+        где орг отдаётся через avatarId.
+    - assert: для авторизованного user owner содержит hasUnreadFreshPosts boolean
+      description: |
+        true → у орг есть пост, непрочитанный текущим user, не старше 7d.
+        false → нет такого поста (либо просмотрен, либо старше 7d, либо орг
+        вообще не публиковала постов).
+    - assert: для анонима owner.hasUnreadFreshPosts всегда false
+      description: |
+        Аноним не имеет post_views; кружочек анониму не показывается.
+    - assert: один батч-запрос за viewed last posts на всю страницу feed
+      description: |
+        Реализация: SELECT post_id FROM post_views WHERE user_id=$1 AND
+        post_id = ANY($lastPostIds). lastPostIds собирается из org metadata
+        для всех ownerOrgId-шников страницы. Один JOIN, не N+1.
+    - assert: hasUnreadFreshPosts становится false после фиксации view последнего поста
+      description: |
+        После POST /post-views с last_post_id орг — следующий GET /feed
+        возвращает hasUnreadFreshPosts=false для этой орг.
+    - assert: hasUnreadFreshPosts=false для орг с last_post_at старше 7 дней
+    - assert: hasUnreadFreshPosts=false для орг без постов
 
   User geo labels in Gorse:
     - assert: записывает h3-лейблы в Gorse при регистрации с координатами
