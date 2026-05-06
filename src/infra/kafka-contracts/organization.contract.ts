@@ -25,6 +25,7 @@ const OrganizationStreamingMessage = Type.Object({
   type: Type.Union([
     Type.Literal('organization.published'),
     Type.Literal('organization.unpublished'),
+    Type.Literal('organization.respondability-changed'),
   ]),
   organizationId: Type.String(),
   name: Type.Optional(Type.String()),
@@ -36,6 +37,8 @@ const OrganizationStreamingMessage = Type.Object({
   republished: Type.Optional(Type.Boolean()),
   publishedAt: Type.Optional(Type.String()),
   unpublishedAt: Type.Optional(Type.String()),
+  userId: Type.Optional(Type.String()),
+  changedAt: Type.Optional(Type.String()),
 });
 
 export const organizationStreamingContract = createTypeboxContract({

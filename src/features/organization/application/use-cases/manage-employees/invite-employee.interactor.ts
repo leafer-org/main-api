@@ -3,13 +3,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import { OrganizationEntity } from '../../../domain/aggregates/organization/entity.js';
 import { OrganizationNotFoundError } from '../../../domain/aggregates/organization/errors.js';
 import { OrganizationPermissionCheckService } from '../../organization-permission.js';
-import { OrganizationRepository } from '../../ports.js';
+import { OrganizationEventPublisher, OrganizationRepository } from '../../ports.js';
 import { CreateDomainError } from '@/infra/ddd/error.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
 import type { EmployeeRoleId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import { randomUUID } from 'node:crypto';
 
 export class UserNotFoundByPhoneError extends CreateDomainError('user_not_found_by_phone', 404) {}
 
@@ -19,6 +20,8 @@ export class InviteEmployeeInteractor {
     @Inject(OrganizationRepository) private readonly organizationRepository: OrganizationRepository,
     @Inject(OrganizationPermissionCheckService)
     private readonly permissionCheck: OrganizationPermissionCheckService,
+    @Inject(OrganizationEventPublisher)
+    private readonly eventPublisher: OrganizationEventPublisher,
     @Inject(UserLookupPort) private readonly userLookup: UserLookupPort,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
@@ -55,6 +58,14 @@ export class InviteEmployeeInteractor {
       if (isLeft(result)) return result;
 
       await this.organizationRepository.save(tx, result.value.state);
+
+      await this.eventPublisher.publishRespondabilityChanged(tx, {
+        id: randomUUID(),
+        type: 'organization.respondability-changed',
+        organizationId: command.organizationId,
+        userId: userResult.userId,
+        changedAt: now,
+      });
 
       return Right(undefined);
     });

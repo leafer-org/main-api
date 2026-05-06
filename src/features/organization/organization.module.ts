@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 
 import { OrganizationDatabaseClient } from './adapters/db/client.js';
 import { DrizzleOrganizationPermissionCheckService } from './adapters/db/organization-permission-check.service.js';
+import { DrizzleOrganizationRespondabilityService } from './adapters/db/organization-respondability.service.js';
 import { DrizzleClaimTokenQuery } from './adapters/db/queries/claim-token.query.js';
 import { DrizzleItemQuery } from './adapters/db/queries/item.query.js';
 import { DrizzleOrganizationQuery } from './adapters/db/queries/organization.query.js';
@@ -67,7 +68,9 @@ import { DeleteEmployeeRoleInteractor } from './application/use-cases/manage-rol
 import { GetOrganizationRolesInteractor } from './application/use-cases/manage-roles/get-organization-roles.interactor.js';
 import { UpdateEmployeeRoleInteractor } from './application/use-cases/manage-roles/update-employee-role.interactor.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
+import { OrganizationRespondabilityPort } from '@/kernel/application/ports/organization-respondability.js';
 
+@Global()
 @Module({
   controllers: [
     OrganizationsController,
@@ -92,6 +95,10 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     {
       provide: OrganizationPermissionCheckService,
       useClass: DrizzleOrganizationPermissionCheckService,
+    },
+    {
+      provide: OrganizationRespondabilityPort,
+      useClass: DrizzleOrganizationRespondabilityService,
     },
     { provide: AdminOrganizationsListRepository, useClass: MeiliAdminOrganizationsListRepository },
     { provide: AdminOrganizationsListQueryPort, useClass: MeiliAdminOrganizationsListQuery },
@@ -144,5 +151,6 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     UnpublishExcessItemsHandler,
     RepublishItemsOnOrgUpdateHandler,
   ],
+  exports: [OrganizationRespondabilityPort],
 })
 export class OrganizationModule {}

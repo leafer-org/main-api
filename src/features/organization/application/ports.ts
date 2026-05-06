@@ -16,6 +16,7 @@ import type {
 import type {
   OrganizationModerationRequestedEvent,
   OrganizationPublishedEvent,
+  OrganizationRespondabilityChangedEvent,
   OrganizationUnpublishedEvent,
 } from '@/kernel/domain/events/organization.events.js';
 import type { ItemId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
@@ -68,6 +69,11 @@ export abstract class OrganizationEventPublisher {
   public abstract publishModerationRequested(
     tx: Transaction,
     event: OrganizationModerationRequestedEvent,
+  ): Promise<void>;
+
+  public abstract publishRespondabilityChanged(
+    tx: Transaction,
+    event: OrganizationRespondabilityChangedEvent,
   ): Promise<void>;
 }
 

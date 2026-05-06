@@ -9,6 +9,7 @@ import type { Transaction } from '@/kernel/application/ports/tx-host.js';
 import type {
   OrganizationModerationRequestedEvent,
   OrganizationPublishedEvent,
+  OrganizationRespondabilityChangedEvent,
   OrganizationUnpublishedEvent,
 } from '@/kernel/domain/events/organization.events.js';
 
@@ -69,6 +70,25 @@ export class OutboxOrganizationEventPublisher extends OrganizationEventPublisher
         type: 'organization.unpublished',
         organizationId: event.organizationId as string,
         unpublishedAt: event.unpublishedAt.toISOString(),
+      },
+      { key: event.organizationId as string },
+    );
+  }
+
+  public async publishRespondabilityChanged(
+    tx: Transaction,
+    event: OrganizationRespondabilityChangedEvent,
+  ): Promise<void> {
+    const db = this.txHost.get(tx);
+    await this.outbox.enqueue(
+      db,
+      organizationStreamingContract,
+      {
+        id: event.id,
+        type: 'organization.respondability-changed',
+        organizationId: event.organizationId as string,
+        userId: event.userId as string,
+        changedAt: event.changedAt.toISOString(),
       },
       { key: event.organizationId as string },
     );

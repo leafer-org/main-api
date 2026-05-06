@@ -1,17 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { OrganizationEntity } from '../../../domain/aggregates/organization/entity.js';
-import { OrganizationRepository } from '../../ports.js';
+import { OrganizationEventPublisher, OrganizationRepository } from '../../ports.js';
 import { isLeft, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { EmployeeRoleId, MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 import type { ContactLink, OrgTeam } from '@/kernel/domain/vo/widget.js';
 import type { MediaItem } from '@/kernel/domain/vo/media-item.js';
+import { randomUUID } from 'node:crypto';
 @Injectable()
 export class CreateOrganizationInteractor {
   public constructor(
     @Inject(OrganizationRepository) private readonly organizationRepository: OrganizationRepository,
+    @Inject(OrganizationEventPublisher)
+    private readonly eventPublisher: OrganizationEventPublisher,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
   ) {}
@@ -44,6 +47,13 @@ export class CreateOrganizationInteractor {
       if (isLeft(result)) return result;
       const { state } = result.value;
       await this.organizationRepository.save(tx, state);
+      await this.eventPublisher.publishRespondabilityChanged(tx, {
+        id: randomUUID(),
+        type: 'organization.respondability-changed',
+        organizationId: state.id,
+        userId: command.creatorUserId,
+        changedAt: now,
+      });
       return Right(state);
     });
   }

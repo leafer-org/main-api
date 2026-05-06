@@ -62,7 +62,7 @@ export class OrganizationDetailController {
         contacts: profile.contacts.map((c) => ({
           type: c.type,
           value: c.value,
-          label: c.label ?? null,
+          label: c.label ?? undefined,
         })),
         team:
           profile.team && resolvedTeam

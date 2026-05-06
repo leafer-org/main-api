@@ -2,17 +2,24 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { OrganizationEntity } from '../../../domain/aggregates/organization/entity.js';
 import { InvalidClaimTokenError } from '../../../domain/aggregates/organization/errors.js';
-import { ClaimTokenQueryPort, OrganizationRepository } from '../../ports.js';
+import {
+  ClaimTokenQueryPort,
+  OrganizationEventPublisher,
+  OrganizationRepository,
+} from '../../ports.js';
 import { isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
 import type { UserId } from '@/kernel/domain/ids.js';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class ClaimOrganizationInteractor {
   public constructor(
     @Inject(ClaimTokenQueryPort) private readonly claimTokenQuery: ClaimTokenQueryPort,
     @Inject(OrganizationRepository) private readonly organizationRepository: OrganizationRepository,
+    @Inject(OrganizationEventPublisher)
+    private readonly eventPublisher: OrganizationEventPublisher,
     @Inject(TransactionHost) private readonly txHost: TransactionHost,
     @Inject(Clock) private readonly clock: Clock,
   ) {}
@@ -33,6 +40,14 @@ export class ClaimOrganizationInteractor {
       if (isLeft(result)) return result;
 
       await this.organizationRepository.save(tx, result.value.state);
+
+      await this.eventPublisher.publishRespondabilityChanged(tx, {
+        id: randomUUID(),
+        type: 'organization.respondability-changed',
+        organizationId: result.value.state.id,
+        userId: command.userId,
+        changedAt: now,
+      });
 
       return Right(result.value.state);
     });
