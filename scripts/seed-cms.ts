@@ -710,7 +710,9 @@ export async function seedCms(baseUrl: string, otpCode: string) {
   const token = await loginAdmin(publicApi, otpCode);
   const api = createAuthedApi(baseUrl, token);
 
-  // Users
+  // Users — регистрация + повторный логин для получения accessToken
+  // (complete-profile не возвращает токен, нужен для последующего claim орг).
+  const userTokens = new Map<string, string>();
   for (const user of USERS) {
     await publicApi.POST('/auth/request-otp', { body: { phoneNumber: user.phone } });
     const { data: verifyData } = await publicApi.POST('/auth/verify-otp', {
@@ -728,6 +730,17 @@ export async function seedCms(baseUrl: string, otpCode: string) {
         lng: user.lng,
       },
     });
+
+    // Повторно логинимся, чтобы получить токен (нужен для claim орг).
+    await publicApi.POST('/auth/request-otp', { body: { phoneNumber: user.phone } });
+    const { data: loginData } = await publicApi.POST('/auth/verify-otp', {
+      body: { phoneNumber: user.phone, code: otpCode },
+    });
+    if (!loginData || loginData.type !== 'authenticated') {
+      throw new Error(`Login failed for ${user.fullName}: ${JSON.stringify(loginData)}`);
+    }
+    userTokens.set(user.phone, loginData.accessToken);
+
     console.log(`  → User: ${user.fullName}`);
   }
 
@@ -792,6 +805,35 @@ export async function seedCms(baseUrl: string, otpCode: string) {
     await api.POST('/organizations/{id}/approve-moderation', { params: { path: { id: orgId } } });
   }
   console.log('  → Organizations published');
+
+  // Owner assignment: первые 3 USERS клеймят соответствующие орг по claim-токену.
+  // Это нужно чтобы из мобилы было видно «свои» орг и можно было руками
+  // проверить чат user → org (employee/owner отвечает с другой стороны).
+  const OWNER_ASSIGNMENTS = [
+    { phone: USERS[0].phone, orgIndex: 0 }, // Алексей Петров   → Студия йоги «Прана»
+    { phone: USERS[1].phone, orgIndex: 1 }, // Мария Иванова    → Школа танцев «Ритм»
+    { phone: USERS[2].phone, orgIndex: 2 }, // Дмитрий Козлов   → Кофейня «Зерно»
+  ];
+  for (const { phone, orgIndex } of OWNER_ASSIGNMENTS) {
+    const orgId = orgIds[orgIndex];
+    if (!orgId) throw new Error(`Missing orgId for index ${orgIndex}`);
+    const ownerToken = userTokens.get(phone);
+    if (!ownerToken) throw new Error(`Missing token for owner ${phone}`);
+
+    const { data: tokenData } = await api.GET('/admin/organizations/{id}/claim-token', {
+      params: { path: { id: orgId } },
+    });
+    if (!tokenData?.claimToken) throw new Error(`No claim token for org ${orgId}`);
+
+    const ownerApi = createAuthedApi(baseUrl, ownerToken);
+    const { error: claimErr } = await ownerApi.POST('/organizations/claim', {
+      body: { token: tokenData.claimToken },
+    });
+    if (claimErr) {
+      throw new Error(`Failed to claim org ${ORGANIZATIONS[orgIndex]?.name}: ${JSON.stringify(claimErr)}`);
+    }
+    console.log(`  → Owner: ${USERS[orgIndex]?.fullName} → ${ORGANIZATIONS[orgIndex]?.name}`);
+  }
 
   // Items
   const createdItemIds: { orgId: string; itemId: string }[] = [];
