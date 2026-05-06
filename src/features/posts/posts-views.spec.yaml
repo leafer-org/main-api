@@ -1,0 +1,190 @@
+feature: Posts — View Tracking & Freshness Ring
+code: posts-views
+description: |
+  Трекинг просмотров постов per-user и вычисление сигнала «у орг есть свежий
+  непрочитанный контент» для кружочка свежести в карточке товара ленты
+  discovery.
+
+  ## Главная UX-фича
+
+  В ленте товаров (discovery feed) карточка товара содержит блок owner —
+  атрибуцию организации (name, avatarId). Если у орг есть **непрочитанные
+  пользователем посты не старше 7 дней**, в owner-блоке поднимается флаг
+  hasUnreadFreshPosts=true, и UI рисует кружочек вокруг аватара (как Stories
+  в Instagram). Клик по аватару → лента постов организации, после просмотра
+  кружочек гаснет.
+
+  Подробное описание UX и архитектурных решений см. project_org_social.md
+  в auto-memory.
+
+  ## Условие флага
+
+    hasUnreadFreshPosts = (последний пост организации не просмотрен user'ом)
+                          AND (last_post_at > now() - 7d)
+
+  Оба условия обязательны. Старый непрочитанный пост сам по себе кружок не
+  зажигает — иначе сигнал «залипает» у редко заходящих и теряет смысл.
+
+  ## Модель — отдельный датасет post_views
+
+  Таблица post_views:
+    (user_id, post_id) — composite primary key,
+    viewed_at — timestamp первого просмотра.
+    FK post_id → posts(id) ON DELETE CASCADE.
+    FK user_id → users(id) ON DELETE CASCADE.
+
+  Это **намеренно отдельная сущность**, не приватный кэш кружочка:
+    - Растёт как O(viewed_posts), а НЕ O(users × all_posts).
+    - Переиспользуется: аналитика постов («сколько раз пост был просмотрен»),
+      «вы это уже видели» в подсказках, recommendations.
+    - НЕ хранить (user_id, org_id, last_seen_at) timestamp-курсор — этот
+      вариант рассматривался и отвергнут (теряет точность при выборочных
+      просмотрах, не переиспользуется).
+
+  Денормализация на post.view_count — атомарный инкремент при insert
+  (только при реальной вставке через ON CONFLICT DO NOTHING).
+
+  ## Момент фиксации view
+
+  Intersection Observer на клиенте → батч-эндпоинт POST /post-views с
+  body { postIds: PostId[] }. Клиент батчит id-шники постов, появившихся
+  в viewport, и шлёт каждые N секунд / при leave-screen.
+
+  НЕ фиксируем при клике и не при «дочитал до конца» — viewport-based
+  единственно надёжный сигнал «пост был фактически на экране пользователя».
+
+  Идемпотентность: повторный POST с тем же (user, post) — no-op (ON CONFLICT
+  DO NOTHING). view_count не растёт повторно от того же user.
+
+  ## Запрос discovery feed с hasUnreadFreshPosts
+
+  Шаги при формировании ответа GET /feed (см. discovery-feed.spec.yaml):
+    1. Собрать список товаров (как сейчас, через Gorse + h3).
+    2. Собрать список ownerOrgId-шников (DISTINCT по items).
+    3. Получить org metadata (name, avatarId, last_post_id, last_post_at)
+       для всех ownerOrgId — один батч SELECT.
+    4. Для авторизованного user — один батч-запрос:
+         SELECT post_id FROM post_views
+         WHERE user_id = $1 AND post_id = ANY($lastPostIds)
+       — список просмотренных last_post'ов.
+    5. Вычислить hasUnreadFreshPosts per org:
+         org.last_post_id IS NOT NULL
+         AND org.last_post_id NOT IN viewed_last_posts_of_user
+         AND org.last_post_at > now() - 7d
+    6. Прокинуть флаг в owner-объект каждой карточки товара:
+         { owner: { name, avatarId, hasUnreadFreshPosts } }
+
+  Для анонима hasUnreadFreshPosts всегда false (посты «не просмотрены», но
+  показывать кружочек анониму не имеет смысла — ему не куда «прогреваться»
+  до момента авторизации; решение можно пересмотреть позже).
+
+specs-e2e:
+  # ==================== ФИКСАЦИЯ VIEW ====================
+
+  POST /post-views — батч-фиксация просмотров:
+    - assert: POST /post-views с { postIds: [id1, id2, id3] } фиксирует просмотры
+      description: |
+        Body: { postIds: PostId[] } — массив ID постов, появившихся в viewport.
+        Авторизованный user обязателен.
+        Реализация: INSERT ... ON CONFLICT (user_id, post_id) DO NOTHING для
+        каждого id; view_count поста инкрементируется только при реальной
+        вставке.
+        Ответ: 204 (без тела — клиенту не нужны детали).
+    - assert: Повторный POST с теми же postIds — no-op, view_count не растёт
+    - assert: POST с пустым массивом postIds → 200 (no-op, без ошибки)
+    - assert: POST содержит несуществующий postId — игнорируется, остальные обрабатываются
+      description: |
+        Не валим весь батч из-за одного несуществующего id (race-condition:
+        пост мог быть удалён между формированием батча на клиенте и приходом
+        на сервер). FK constraint просто не вставит этот id, остальные пройдут.
+    - assert: POST на hidden пост (user не видит) — игнорируется
+      description: |
+        View не фиксируется для постов, которые user не имеет права видеть.
+        Защита от подмены id-шников клиентом.
+    - assert: POST без авторизации → 401
+    - assert: POST с массивом >N (например, 200) → 400 batch_too_large
+      description: Защита от DoS. Лимит, например, 100 ids за запрос.
+
+  # ==================== view_count ====================
+
+  Денормализация view_count на посте:
+    - assert: view_count=0 у свежего поста
+    - assert: view_count растёт на 1 при первом просмотре каждого user'а
+    - assert: Повторный просмотр тем же user — view_count не растёт
+    - assert: view_count синхронизирован с COUNT(DISTINCT user_id) FROM post_views
+    - assert: view_count поля API ответа постов (для аналитики автору/орг)
+      description: |
+        В GET /posts/:id и GET /organizations/:orgId/posts поле viewCount
+        возвращается всегда (публичная статистика, как лайки).
+
+  # ==================== HAS_UNREAD_FRESH_POSTS — ВЫЧИСЛЕНИЕ ====================
+
+  Флаг hasUnreadFreshPosts в discovery feed:
+    - assert: Орг без постов → hasUnreadFreshPosts=false
+    - assert: Орг с last_post_at < now()-7d → hasUnreadFreshPosts=false
+      description: |
+        Старый пост, даже непрочитанный, не зажигает кружочек.
+        Сигнал свежести требует обоих условий.
+    - assert: Свежий пост (last_post_at > now()-7d), не просмотрен user'ом → hasUnreadFreshPosts=true
+    - assert: Свежий пост, user его уже просмотрел (есть строка в post_views) → hasUnreadFreshPosts=false
+    - assert: Свежий пост, user просмотрел НЕ последний а предыдущий — hasUnreadFreshPosts=true
+      description: |
+        Условие проверяет именно last_post_id, а не «все ли посты просмотрены».
+        Если user видел старые посты этой орг, но НЕ видел самый свежий —
+        кружочек должен гореть.
+    - assert: Аноним → hasUnreadFreshPosts=false для всех орг
+    - assert: Hidden пост не считается last_post_id (через денормализацию на org)
+      description: |
+        Если последний пост стал hidden — last_post_id переключился на ближайший
+        visible (см. posts-posts.spec.yaml). Соответственно hasUnreadFreshPosts
+        ориентируется на visible пост.
+
+  # ==================== INTEGRATION С DISCOVERY FEED ====================
+
+  Прокидывание флага в карточку товара:
+    - assert: GET /feed для авторизованного user возвращает owner.hasUnreadFreshPosts per item
+      description: |
+        Каждый item в ответе содержит owner: { name, avatarId, hasUnreadFreshPosts }.
+        Поле avatarId добавляется одновременно (раньше был avatarUrl, см.
+        discovery-feed.spec.yaml расширение).
+    - assert: Один батч-запрос за viewed last posts на всю страницу feed
+      description: |
+        Не должно быть N+1 — один SELECT post_id FROM post_views WHERE
+        user_id=$1 AND post_id = ANY($lastPostIds). lastPostIds собирается
+        из шага 3 (org metadata batch).
+    - assert: hasUnreadFreshPosts корректен на следующей странице feed
+      description: |
+        Та же логика применяется ко второй и последующим страницам — расчёт
+        per-page, кэшировать между страницами не нужно (объёмы малые).
+    - assert: После фиксации view последнего поста через POST /post-views — следующий GET /feed возвращает hasUnreadFreshPosts=false для этой орг
+
+  # ==================== CASCADE ====================
+
+  Удаление поста / пользователя удаляет post_views:
+    - assert: DELETE /posts/:postId — все строки post_views для этого поста удалены (FK CASCADE)
+    - assert: Удаление user'а каскадно удаляет его post_views
+    - assert: После удаления просмотренного last_post_id и появления нового свежего поста — кружочек загорается
+      description: |
+        Сценарий: user видел post A (последний). Орг удаляет post A.
+        last_post_id переключается на post B (предпоследний visible).
+        Если post B не просмотрен user'ом и < 7d → кружочек загорается.
+        Это **корректное поведение** — для пользователя ничего нового
+        с точки зрения «есть ли что почитать», но это редкий edge case
+        и не стоит добавлять отдельную логику «не зажигай если только
+        что что-то удалили».
+
+  # ==================== АНАЛИТИКА (переиспользование датасета) ====================
+
+  post_views как переиспользуемый датасет:
+    - assert: GET /posts/:postId возвращает viewCount публично
+    - assert: post_views можно использовать для «вы это уже видели» индикатора
+      description: |
+        Не реализуется в v1, но датасет специально не приватный — будущие
+        фичи (recommendations, «вы видели» в ленте товаров для повтора)
+        читают post_views напрямую без введения дублирующих таблиц.
+
+definitions:
+  feature:
+    - posts-views
+  section:
+    - posts

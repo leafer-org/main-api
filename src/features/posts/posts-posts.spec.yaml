@@ -1,0 +1,196 @@
+feature: Posts — Post Aggregate (CRUD & Lifecycle)
+code: posts-posts
+description: |
+  Пост организации — единица социальной ленты на витрине орг. Заменяет
+  существующее поле `organization.media` (deprecate) — витрина = посты,
+  отдельной галереи нет.
+
+  Пост = текст + media[] + author (userId сотрудника, опубликовавшего пост) +
+  owner (organizationId). Время публикации — createdAt; время последнего
+  редактирования — editedAt (nullable).
+
+  Эта спека описывает ЖЦ агрегата Post: создание, редактирование, удаление,
+  чтение списком и по id. Лайки см. posts-likes.spec.yaml, комменты —
+  posts-comments.spec.yaml, просмотры (view tracking + freshness ring) —
+  posts-views.spec.yaml.
+
+  ## Авторизация — единый OrganizationActorPort
+
+  Все write-операции гейтятся через kernel-порт OrganizationActorPort
+  (см. tickets-organization-scope.spec.yaml для контракта):
+    - publish: canActAs(orgId, userId, 'posts.publish')
+    - edit/delete поста: author == currentUser
+                         OR canActAs(post.organizationId, userId, 'posts.publish')
+                         (org-owner override на любой пост своей орг)
+
+  Чтение (GET /posts/:id, GET /organizations/:orgId/posts) — публичный surface,
+  без авторизации (посты — открытая витрина). viewerLiked в ответе только
+  для авторизованного запроса; для анонима — false.
+
+  ## moderationStatus
+
+  Поле moderationStatus: 'visible' | 'hidden' зашивается в схему сразу.
+  В v1 пост создаётся с visible и логика hide-on-N-reports НЕ реализуется
+  (всегда visible до решения модератора через ticket workflow). Это
+  позволяет добавить ratchet в v1.5 без миграции схемы.
+
+  Hidden пост:
+    - Виден автору и сотрудникам орг с posts.publish.
+    - НЕ виден остальным (404 для них).
+    - НЕ участвует в денормализации last_post_id / last_post_at.
+    - Лайки/комменты/views на нём существуют, но новые попытки лайка/коммента
+      от других пользователей возвращают 404 (потому что они не видят пост).
+
+  ## Hard delete + cascade
+
+  При удалении поста:
+    - Hard delete row из posts.
+    - FK ON DELETE CASCADE удаляет: post_likes, post_comments, post_views,
+      post_reports, comment_reports (через комменты).
+    - Эмитится integration event PostDeleted с organizationId, postId.
+    - Org-проекция пересчитывает last_post_id / last_post_at: ищет ближайший
+      по createdAt visible пост этой орг, или ставит null.
+
+  Soft delete не используется — см. project_org_social.md в auto-memory.
+  Корневая причина: post_views рос бы как O(viewed_posts ever).
+
+  ## Edited flag — поведение
+
+  При PATCH-редактировании:
+    - editedAt = now().
+    - View state (post_views) НЕ сбрасывается — иначе любая опечатка
+      повторно зажигала бы кружочки у всех пользователей.
+    - last_post_at НЕ обновляется — это «время публикации», не «время
+      изменения». Иначе автор мог бы искусственно поднимать орг в свежесть
+      редактированиями.
+
+  ## Денормализация на организации
+
+  Read model организации обновляется реактивно через integration events:
+    - PostPublished → если createdAt > last_post_at, обновить last_post_id
+                      и last_post_at.
+    - PostDeleted   → если postId == last_post_id, пересчитать на ближайший
+                      по createdAt visible пост (запросом), либо null.
+    - PostHidden    → симметрично PostDeleted (исключаем из видимых).
+    - PostUnhidden  → если createdAt > last_post_at текущего, обновить.
+
+  Проекция живёт в feature/organization (так как обновляет org-таблицы),
+  слушает события из kafka-publisher'а posts.
+
+specs-e2e:
+  # ==================== СОЗДАНИЕ ====================
+
+  Публикация поста:
+    - assert: POST /organizations/:orgId/posts создаёт пост от лица орг
+      description: |
+        Body: { text?: string, mediaIds?: MediaId[] }.
+        Минимум один из text/mediaIds должен быть непуст — иначе 400 empty_post.
+        author подставляется из auth-контекста (currentUserId).
+        owner = orgId из path.
+        Ответ: { postId, organizationId, authorUserId, text, mediaIds, likeCount=0,
+                 commentCount=0, viewerLiked=false, moderationStatus='visible',
+                 editedAt=null, createdAt }.
+        Транзакционно: insert post + emit PostPublished в outbox.
+    - assert: Без права posts.publish на эту орг → 403 cannot_act_as_organization
+    - assert: Несуществующий orgId → 404 organization_not_found
+    - assert: Пустые text и mediaIds → 400 empty_post
+    - assert: mediaIds содержит несуществующие медиа → 400 media_not_found
+    - assert: mediaIds содержит чужие media (не загруженные текущим user/орг) → 400 media_not_owned
+    - assert: Без авторизации → 401
+    - assert: PostPublished event эмитится с organizationId, postId, createdAt
+      description: |
+        Org-проекция получает event и обновляет last_post_id, last_post_at
+        для denormalization. Это проверяется через состояние organization
+        read model после публикации.
+
+  # ==================== ЧТЕНИЕ ====================
+
+  Список постов организации:
+    - assert: GET /organizations/:orgId/posts возвращает посты с курсорной пагинацией
+      description: |
+        Query: ?cursor=&limit= (default limit=20, max 50).
+        Сортировка: createdAt desc.
+        Только visible посты для анонима/обычного user'а.
+        Поля каждого поста: postId, organizationId, authorUserId, text, mediaIds,
+        likeCount, commentCount, viewerLiked, editedAt, createdAt.
+        Ответ: { posts: [...], nextCursor: string | null }.
+    - assert: GET /posts/:postId возвращает один пост
+    - assert: Несуществующий postId → 404
+    - assert: Hidden post виден автору
+    - assert: Hidden post виден сотруднику орг с posts.publish
+    - assert: Hidden post НЕ виден остальным (404)
+    - assert: viewerLiked=true когда текущий user лайкнул пост
+    - assert: viewerLiked=false для неавторизованного запроса
+    - assert: viewerLiked=false когда user не лайкал
+    - assert: likeCount и commentCount в ответе соответствуют реальным
+      description: |
+        Денормализованные счётчики на posts.like_count и posts.comment_count.
+        Обновляются реактивно при like/unlike/comment-create/comment-delete.
+
+  # ==================== РЕДАКТИРОВАНИЕ ====================
+
+  Редактирование поста:
+    - assert: PATCH /posts/:postId редактирует text и/или mediaIds
+      description: |
+        Body: { text?, mediaIds? } — любое подмножество, но итоговое состояние
+        должно содержать хотя бы одно непустое поле.
+        editedAt = now() в ответе.
+        last_post_at в org НЕ обновляется.
+        post_views у других пользователей НЕ сбрасываются.
+        Эмитится PostEdited event для логирования (org-проекция его игнорирует
+        в плане last_post_at).
+    - assert: Редактирование автором — разрешено
+    - assert: Редактирование сотрудником орг с posts.publish (не автором) — разрешено
+      description: org-owner override над постами своей орг.
+    - assert: Редактирование чужим (не автор и не сотрудник орг) → 403
+    - assert: Итоговый пост пустой (text='' и mediaIds=[]) → 400 empty_post
+    - assert: Редактирование hidden поста разрешено (с теми же правами)
+      description: |
+        Автор/сотрудник орг могут редактировать hidden пост — например,
+        чтобы убрать нарушающий контент и подать на повторную модерацию.
+        Редактирование само по себе НЕ возвращает в visible.
+
+  # ==================== УДАЛЕНИЕ ====================
+
+  Удаление поста:
+    - assert: DELETE /posts/:postId автором — пост удаляется
+      description: |
+        Hard delete + FK cascade (likes, comments, post_views, post_reports).
+        Эмитится PostDeleted event.
+        Ответ 204.
+    - assert: DELETE сотрудником орг с posts.publish — удаляется (org-owner override)
+    - assert: DELETE не автором и не сотрудником орг → 403
+    - assert: DELETE несуществующего postId → 404
+    - assert: Лайки удалённого поста удалены из БД
+    - assert: Комменты удалённого поста удалены из БД
+    - assert: post_views удалённого поста удалены
+    - assert: После удаления единственного поста орг — last_post_id и last_post_at становятся null
+    - assert: После удаления последнего по createdAt поста — last_post_id переключается на предпоследний visible
+    - assert: После удаления НЕ-последнего по createdAt поста — last_post_id не меняется
+      description: |
+        Если удалён пост, который не является current last_post_id — проекция
+        не делает ничего (оптимизация: проверка postId == last_post_id перед
+        пересчётом).
+
+  # ==================== ДЕНОРМАЛИЗАЦИЯ НА ОРГАНИЗАЦИИ ====================
+
+  last_post_id / last_post_at реактивно обновляются:
+    - assert: Публикация первого поста — last_post_id и last_post_at заполняются
+    - assert: Публикация второго поста — last_post_id переключается, last_post_at = createdAt нового
+    - assert: Редактирование поста НЕ меняет last_post_at
+    - assert: Перевод поста в hidden — last_post_id пересчитывается на ближайший visible
+      description: |
+        Если hidden ставится последнему посту — last_post_id переключается
+        на предпоследний visible (или null если visible нет).
+    - assert: Возврат поста в visible — last_post_id может обновиться, если этот пост свежее текущего
+    - assert: Eventual consistency допустима — проекция асинхронна
+      description: |
+        Между PostPublished event и обновлением last_post_id может быть
+        короткий лаг (kafka delivery + projection apply). Тесты должны
+        ожидать стабильного состояния (await event processing).
+
+definitions:
+  feature:
+    - posts-posts
+  section:
+    - posts

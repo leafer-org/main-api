@@ -1,0 +1,113 @@
+feature: Posts — Likes
+code: posts-likes
+description: |
+  Лайки на посты. Идемпотентный toggle через PUT/DELETE по принципу REST
+  (state-based, не action-based). Идемпотентность позволяет клиенту
+  безопасно повторять запросы при ретраях.
+
+  ## Модель
+
+  Таблица post_likes:
+    (post_id, user_id) — composite primary key (естественная уникальность
+    «один user — один лайк на пост»).
+    created_at — для аналитики (самые свежие лайки и т.п.).
+    FK post_id → posts(id) ON DELETE CASCADE.
+    FK user_id → users(id) ON DELETE CASCADE.
+
+  Денормализация на post.like_count: счётчик обновляется атомарно при
+  insert/delete лайка в той же транзакции (UPDATE posts SET like_count =
+  like_count + 1 WHERE id = ?). Без отдельной проекции — счётчик локальный
+  для фичи posts.
+
+  ## Авторизация
+
+  Like/unlike доступны любому **авторизованному** пользователю. Никаких
+  ролей или org-membership проверок не требуется. Анонимный запрос → 401.
+
+  Hidden posts: лайк на hidden пост доступен только тем, кто пост видит
+  (автор + сотрудники орг с posts.publish). Остальные получают 404
+  (как при чтении hidden поста).
+
+  ## viewerLiked в ответах
+
+  В ответах GET /posts/:id и GET /organizations/:orgId/posts поле
+  viewerLiked: boolean — лайкнул ли currentUser этот пост. Для анонима
+  всегда false. Реализуется одним батч-LEFT JOIN'ом post_likes по
+  user_id=currentUser в read-side query.
+
+specs-e2e:
+  # ==================== LIKE / UNLIKE ====================
+
+  Лайк поста:
+    - assert: PUT /posts/:postId/like — авторизованный user лайкает пост
+      description: |
+        Idempotent: повторный PUT не создаёт дубликат, возвращает текущее
+        состояние { liked: true, likeCount }. Реализация: INSERT ... ON
+        CONFLICT (post_id, user_id) DO NOTHING. like_count увеличивается
+        на 1 только при реальной вставке (через RETURNING / matched count).
+        Ответ: { liked: true, likeCount }.
+    - assert: Повторный PUT тем же user — не увеличивает likeCount
+    - assert: PUT без авторизации → 401
+    - assert: PUT на несуществующий postId → 404
+    - assert: PUT на hidden пост, который user не видит → 404
+    - assert: PUT на hidden пост автором — разрешено
+    - assert: PUT на hidden пост сотрудником орг с posts.publish — разрешено
+
+  Анлайк поста:
+    - assert: DELETE /posts/:postId/like убирает лайк, likeCount уменьшается
+      description: |
+        Idempotent: повторный DELETE на пост, который user не лайкал — 200
+        с { liked: false, likeCount } без изменения счётчика.
+        Реализация: DELETE FROM post_likes WHERE ... ; like_count уменьшается
+        на 1 только при реальном удалении.
+    - assert: Повторный DELETE тем же user — не уменьшает likeCount
+    - assert: DELETE без авторизации → 401
+    - assert: DELETE на несуществующий postId → 404
+    - assert: DELETE на пост, который user НЕ лайкал — 200 с liked=false, likeCount без изменения
+
+  # ==================== СЧЁТЧИК ====================
+
+  likeCount денормализован на post:
+    - assert: likeCount=0 у свежесозданного поста
+    - assert: likeCount растёт на 1 при первом like от каждого user
+    - assert: likeCount уменьшается на 1 при unlike, не уходит в минус
+    - assert: likeCount синхронизирован с реальным числом строк в post_likes
+      description: |
+        Счётчик не должен расходиться с COUNT(*) FROM post_likes WHERE
+        post_id = ?. Любая операция like/unlike — в одной транзакции
+        с обновлением счётчика.
+    - assert: Атомарность like + counter под параллельной нагрузкой
+      description: |
+        Два user'а одновременно лайкают один пост — оба получают +1 в счётчике,
+        нет race condition. Использовать UPDATE ... SET like_count =
+        like_count + 1 (атомарный инкремент через SQL), не SELECT-then-UPDATE.
+
+  # ==================== viewerLiked В ОТВЕТАХ ПОСТОВ ====================
+
+  viewerLiked корректно вычисляется:
+    - assert: GET /posts/:id для лайкнувшего user — viewerLiked=true
+    - assert: GET /posts/:id для нелайкнувшего user — viewerLiked=false
+    - assert: GET /posts/:id анонимом — viewerLiked=false
+    - assert: GET /organizations/:orgId/posts — viewerLiked корректен для каждого поста в списке
+      description: |
+        Реализация через LEFT JOIN post_likes по user_id=currentUser:
+        EXISTS-результат превращается в viewerLiked. Один JOIN на запрос,
+        не N+1.
+
+  # ==================== CASCADE ====================
+
+  Удаление поста удаляет лайки:
+    - assert: DELETE /posts/:postId — все строки post_likes для этого поста удалены
+    - assert: like_count поста удалён вместе с постом (нет dangling счётчика — пост удалён hard delete)
+    - assert: Удаление user'а каскадно удаляет его лайки (FK ON DELETE CASCADE)
+      description: |
+        При удалении user'а через idp — все его лайки на любых постах
+        удаляются, like_count постов уменьшается соответственно.
+        Реактивно через trigger или application-level handler — определить
+        при имплементации в зависимости от существующего user-deletion flow.
+
+definitions:
+  feature:
+    - posts-likes
+  section:
+    - posts

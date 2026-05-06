@@ -1,0 +1,193 @@
+feature: Posts — Comments & Reports
+code: posts-comments
+description: |
+  Комментарии к постам и система жалоб (reports) на посты и комменты.
+
+  ## Модель
+
+  Таблица post_comments:
+    id, post_id, author_user_id, text, moderationStatus ('visible' | 'hidden'),
+    created_at, edited_at NULL.
+    FK post_id → posts(id) ON DELETE CASCADE.
+
+  Денормализация post.comment_count — атомарно при insert/delete коммента
+  в той же транзакции (как like_count).
+
+  Hidden comment:
+    - Виден автору и сотрудникам орг с posts.moderate-comments.
+    - Не виден остальным (404 для них при попытке доступа).
+    - В commentCount поста — НЕ учитывается (счётчик считает только visible).
+
+  Edit комментов в v1 НЕ поддерживается (только delete + recreate если нужно
+  изменить). Решение продиктовано простотой UX и чтобы не плодить editedAt
+  логику в комментах. Если потом понадобится — добавится без миграции
+  (поле edited_at NULL в схеме изначально, но эндпоинт не открывается).
+
+  ## Авторизация
+
+  Создание коммента: любой авторизованный user.
+  Удаление коммента:
+    - Author == currentUser, ИЛИ
+    - canActAs(post.organizationId, userId, 'posts.moderate-comments') —
+      сотрудник орг владельца поста модерирует комменты на своих постах.
+
+  Чтение: публично, anонимам тоже доступно.
+
+  ## Reports — глобальная модерация через triggers/tickets
+
+  Жалобы на посты и комменты — переиспользуют существующий ticket-pipeline
+  (см. tickets-organization-scope.spec.yaml для модели org-досок).
+
+  Таблицы:
+    post_reports     (id, post_id, reporter_user_id, reason, created_at)
+    comment_reports  (id, comment_id, reporter_user_id, reason, created_at)
+
+  Не используем полиморфный content_reports — отдельные таблицы дают индексы
+  и понятные FK без лишней сложности (см. project_org_social.md).
+
+  Дедупликация: уникальный индекс (post_id, reporter_user_id) — один user
+  не может репортить один пост дважды (для коммента — аналогично).
+  Повторный POST → 409 already_reported.
+
+  Trigger events:
+    post-moderation.report-received
+      — на первый репорт от любого user'а на конкретный пост.
+    comment-moderation.report-received
+      — аналогично для коммента.
+
+  Каждое событие несёт targetOrganizationId = post.organizationId. Это поле
+  обязательно — оно роутит event в org-доску владельца поста (см. правила
+  routing'а в tickets-organization-scope.spec.yaml).
+
+  Резолюция модератором через ticket workflow:
+    *-moderation.approved → пост/коммент остаётся visible (жалоба отклонена).
+    *-moderation.rejected → пост/коммент удаляется hard delete (как обычное
+                            удаление, через тот же interactor, но с system
+                            actor authorization).
+
+specs-e2e:
+  # ==================== СОЗДАНИЕ КОММЕНТА ====================
+
+  Создание коммента:
+    - assert: POST /posts/:postId/comments создаёт коммент авторизованным user
+      description: |
+        Body: { text: string } (text обязателен, не пустой).
+        author = currentUserId, post_id из path.
+        moderationStatus='visible' изначально.
+        commentCount поста увеличивается на 1.
+        Ответ: { commentId, postId, authorUserId, text, moderationStatus,
+                 createdAt, editedAt=null }.
+    - assert: Без авторизации → 401
+    - assert: Пустой text → 400 empty_comment
+    - assert: text слишком длинный (>N символов) → 400 comment_too_long
+      description: N — параметр, например 2000.
+    - assert: Несуществующий postId → 404
+    - assert: Hidden post (для не-автора и не-сотрудника орг) → 404 при попытке коммента
+    - assert: Создание коммента на собственный hidden пост автором — разрешено
+      description: Автор всё ещё видит свой пост, может оставить пометку.
+
+  # ==================== ЧТЕНИЕ КОММЕНТОВ ====================
+
+  Список комментов поста:
+    - assert: GET /posts/:postId/comments возвращает комменты с курсорной пагинацией
+      description: |
+        Query: ?cursor=&limit= (default 20, max 100).
+        Сортировка: createdAt asc (старые сверху, как в Instagram/youtube).
+        Только visible комменты для обычного user'а.
+        Hidden комменты возвращаются автору коммента и сотрудникам орг
+        владельца поста с posts.moderate-comments.
+        Поля: commentId, postId, authorUserId, text, moderationStatus, createdAt.
+        Ответ: { comments: [...], nextCursor }.
+    - assert: GET /posts/:postId/comments на hidden пост → 404 (если user пост не видит)
+    - assert: commentCount поста соответствует реальному числу visible комментов
+    - assert: Анонимам доступно чтение visible комментов
+
+  # ==================== УДАЛЕНИЕ КОММЕНТА ====================
+
+  Удаление коммента:
+    - assert: DELETE /comments/:commentId автором — коммент удаляется
+      description: |
+        Hard delete. commentCount поста уменьшается на 1 (если коммент был
+        visible).
+        FK ON DELETE CASCADE удаляет comment_reports.
+        Ответ 204.
+    - assert: DELETE сотрудником орг с posts.moderate-comments на пост этой орг — удаляется
+    - assert: DELETE не автором и не сотрудником орг владельца поста → 403
+    - assert: DELETE несуществующего commentId → 404
+    - assert: DELETE hidden коммента автором — разрешено, commentCount не меняется (он уже не считал hidden)
+
+  # ==================== REPORTS НА ПОСТЫ ====================
+
+  Жалобы на посты:
+    - assert: POST /posts/:postId/reports создаёт жалобу
+      description: |
+        Body: { reason: 'spam' | 'abuse' | 'illegal' | 'other', comment? }.
+        reporter_user_id = currentUserId.
+        Уникальность (post_id, reporter_user_id) — повторная жалоба тем же user → 409 already_reported.
+        Эмитится trigger event post-moderation.report-received с
+        targetOrganizationId = post.organizationId, payload содержит
+        postId, reportId, reason.
+        Ответ 201 { reportId }.
+    - assert: Без авторизации → 401
+    - assert: Жалоба автора на свой пост → 400 cannot_report_own_post
+    - assert: Жалоба на hidden пост (не виден user'у) → 404
+    - assert: Только первая жалоба от первого user'а эмитит trigger event
+      description: |
+        Дальнейшие жалобы от других user'ов сохраняются в post_reports
+        (для аналитики и потенциального ratchet-механизма), но trigger event
+        НЕ эмитится повторно — иначе одна доска получит N тикетов на один
+        пост. Реализация: эмит только если COUNT(post_reports) was 0
+        перед insert (или через UPSERT с RETURNING). Альтернатива: эмитить
+        каждый раз, но с дедупликацией eventId по post_id (тогда tickets
+        идемпотентен сам). Выбор оставляем на имплементацию.
+
+  # ==================== REPORTS НА КОММЕНТЫ ====================
+
+  Жалобы на комменты:
+    - assert: POST /comments/:commentId/reports создаёт жалобу
+      description: |
+        Аналогично постам. Эмитится comment-moderation.report-received
+        с targetOrganizationId = post.organizationId владельца коммента
+        (берётся через JOIN comments → posts).
+    - assert: Жалоба автора на свой коммент → 400 cannot_report_own_comment
+    - assert: Жалоба на hidden коммент → 404 (если user не видит коммент)
+
+  # ==================== РЕАКЦИЯ НА TRIGGER EVENTS ОТ МОДЕРАЦИИ ====================
+
+  Резолюция жалобы через ticket workflow:
+    - assert: post-moderation.rejected → пост удаляется (hard delete)
+      description: |
+        Когда модератор закрывает ticket с действием reject, эмитится
+        trigger event post-moderation.rejected. Posts-фича слушает event
+        и вызывает delete-post с system-actor авторизацией.
+        Cascade: лайки, комменты, post_views, reports — удаляются.
+        org last_post_id пересчитывается.
+    - assert: post-moderation.approved → пост остаётся visible
+      description: Жалоба отклонена. На посте никаких изменений.
+    - assert: comment-moderation.rejected → коммент удаляется (hard delete)
+    - assert: comment-moderation.approved → коммент остаётся visible
+    - assert: Идемпотентность — повторный rejected на уже удалённый пост → no-op
+      description: |
+        Tickets-система может прислать дубликат event (at-least-once delivery).
+        Posts handler должен корректно обрабатывать «пост уже удалён» без
+        ошибки.
+
+  # ==================== ПОДГОТОВКА К FUTURE RATCHET ====================
+
+  moderationStatus как точка расширения:
+    - assert: Поле moderationStatus присутствует в схеме и в API ответах
+      description: |
+        Схема post_comments и posts имеет колонку moderationStatus.
+        В v1 значение всегда 'visible' до явного действия модератора
+        (нет логики автоматического перевода в hidden по N reports).
+        Поле существует, чтобы добавить ratchet в v1.5 без миграции.
+    - assert: API не возвращает hidden объекты не-уполномоченным user'ам
+      description: |
+        Проверяется заранее, чтобы при включении ratchet не пришлось
+        проверять каждое место чтения отдельно.
+
+definitions:
+  feature:
+    - posts-comments
+  section:
+    - posts
