@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { eq, inArray } from 'drizzle-orm';
 
 import { ItemProjectionPort } from '../../../application/projection-ports.js';
-import { projectItemFromEvent } from '../../../domain/read-models/item.read-model.js';
+import { projectItemFromState } from '../../../domain/read-models/item.read-model.js';
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
 import {
@@ -190,15 +190,12 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
 
     return rows.map((row) => {
       const widgets = row.widgets as ItemWidget[];
-      const model = projectItemFromEvent({
-        id: '',
-        type: 'item.published',
+      const model = projectItemFromState({
         itemId: row.id as ItemId,
         typeId: row.typeId as TypeId,
-        organizationId: (row.organizationId ?? '') as OrganizationId,
         widgets,
-        republished: true,
         publishedAt: row.publishedAt,
+        updatedAt: row.updatedAt,
       });
       // override fields that могут отставать от widgets
       // (review/owner обновляются точечными `update*` без перезаписи widgets)
@@ -227,12 +224,13 @@ export class DrizzleItemProjectionRepository implements ItemProjectionPort {
     // Delete old junction rows
     await this.deleteJunctionRows([itemId]);
 
-    // Insert categories
-    const categoryIds = (item.category?.categoryIds as string[]) ?? [];
-    if (categoryIds.length > 0) {
+    // Insert categories: closure (direct ∪ ancestors) — позволяет фильтровать
+    // items по категории X или любому её потомку одним B-tree lookup'ом.
+    const closureIds = (item.category?.closureCategoryIds as string[]) ?? [];
+    if (closureIds.length > 0) {
       await this.dbClient.db
         .insert(discoveryItemCategories)
-        .values(categoryIds.map((categoryId) => ({ itemId, categoryId })));
+        .values(closureIds.map((categoryId) => ({ itemId, categoryId })));
     }
 
     // Insert attribute values

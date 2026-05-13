@@ -3,29 +3,38 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { UserStreamingMessage } from '../../../adapters/kafka/topics.js';
 import type { AdminUsersListReadModel } from '../../../domain/read-models/admin-users-list/admin-users-list.read-model.js';
 import { AdminUsersListRepository } from '../../ports.js';
+import { UserDirectoryPort } from '@/kernel/application/ports/user-directory.js';
+import { UserId } from '@/kernel/domain/ids.js';
 
 @Injectable()
 export class OnUserEventHandler {
   public constructor(
     @Inject(AdminUsersListRepository)
     private readonly repo: AdminUsersListRepository,
+    @Inject(UserDirectoryPort)
+    private readonly userDirectory: UserDirectoryPort,
   ) {}
 
   public async handleBatch(events: UserStreamingMessage[]): Promise<void> {
-    const latest = new Map<string, UserStreamingMessage>();
+    const latestIds = new Set<string>();
     for (const event of events) {
-      latest.set(event.userId, event);
+      latestIds.add(event.userId);
     }
+    if (latestIds.size === 0) return;
 
-    const models: AdminUsersListReadModel[] = [...latest.values()].map((e) => ({
-      userId: e.userId,
-      phoneNumber: e.phoneNumber,
-      fullName: e.fullName,
-      role: e.role,
-      blockedAt: e.blockedAt ?? null,
-      blockReason: e.blockReason ?? null,
-      createdAt: e.createdAt,
-      updatedAt: e.updatedAt,
+    const users = await this.userDirectory.findByIds(
+      [...latestIds].map((id) => UserId.raw(id)),
+    );
+
+    const models: AdminUsersListReadModel[] = users.map((u) => ({
+      userId: u.userId as string,
+      phoneNumber: u.phoneNumber,
+      fullName: u.fullName,
+      role: u.role,
+      blockedAt: u.blockedAt ? u.blockedAt.toISOString() : null,
+      blockReason: u.blockReason,
+      createdAt: u.createdAt.toISOString(),
+      updatedAt: u.updatedAt.toISOString(),
     }));
 
     await this.repo.saveBatch(models);

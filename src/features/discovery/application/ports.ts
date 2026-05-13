@@ -1,4 +1,3 @@
-import type { CategoryListReadModel } from '../domain/read-models/category-list.read-model.js';
 import type { ItemReadModel } from '../domain/read-models/item.read-model.js';
 import type {
   ItemCardEnrichment,
@@ -16,8 +15,7 @@ import type {
 import type { CategoryItemFilters, SortOption } from './use-cases/browse-category/types.js';
 import type { DynamicSearchFilters } from './use-cases/search/types.js';
 import type { Transaction } from '@/kernel/application/ports/tx-host.js';
-import type { AttributeId, CategoryId, ItemId, TypeId, UserId } from '@/kernel/domain/ids.js';
-import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
+import type { CategoryId, ItemId, TypeId, UserId } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
 
@@ -67,29 +65,6 @@ export abstract class LikedItemsQueryPort {
   public abstract checkLikedStatus(userId: UserId, itemIds: ItemId[]): Promise<Set<ItemId>>;
 }
 
-export abstract class CategoryListQueryPort {
-  public abstract findByParentId(
-    parentCategoryId: CategoryId | null,
-  ): Promise<CategoryListReadModel[]>;
-}
-
-export type CategoryWithAttributes = {
-  categoryId: CategoryId;
-  allowedTypeIds: TypeId[];
-  attributes: {
-    attributeId: AttributeId;
-    name: string;
-    required: boolean;
-    schema: AttributeSchema;
-  }[];
-};
-
-export abstract class CategoryFiltersQueryPort {
-  public abstract findById(categoryId: CategoryId): Promise<CategoryWithAttributes | null>;
-
-  public abstract findTypesByIds(typeIds: TypeId[]): Promise<{ typeId: TypeId; name: string }[]>;
-}
-
 /**
  * Подмешивание card-enrichment-полей в ItemListView по `widgetSettings.showOnCard` ItemType.
  *
@@ -106,15 +81,6 @@ export abstract class ItemCardEnrichmentPort {
   public abstract enrich(input: {
     items: { itemId: ItemId; typeId: TypeId; widgets?: ItemWidget[] }[];
   }): Promise<Map<string, ItemCardEnrichment>>;
-}
-
-// --- Lookup Ports ---
-
-/** Резолв ancestorIds для набора категорий. Используется Gorse-адаптером при синке items. */
-export abstract class CategoryAncestorLookupPort {
-  public abstract findAncestorIds(categoryIds: CategoryId[]): Promise<CategoryId[]>;
-  public abstract findRootCategoryIds(categoryIds: CategoryId[]): Promise<CategoryId[]>;
-  public abstract clearCache(): void;
 }
 
 // --- Write Ports ---

@@ -36,8 +36,6 @@ export class CategoriesController {
         categoryId: c.categoryId,
         name: c.name,
         iconUrl: await loader.get(c.iconId),
-        childCount: c.childCount,
-        itemCount: c.itemCount,
       })),
     );
   }

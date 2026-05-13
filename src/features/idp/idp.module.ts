@@ -10,6 +10,7 @@ import { DrizzleRoleRepository } from './adapters/db/repositories/role.repositor
 import { DrizzleSessionRepository } from './adapters/db/repositories/session.repository.js';
 import { DrizzleSessionValidation } from './adapters/db/repositories/session-validation.adapter.js';
 import { DrizzleUserRepository } from './adapters/db/repositories/user.repository.js';
+import { DrizzleUserDirectoryAdapter } from './adapters/db/user-directory.adapter.js';
 import { DrizzleUserLookupAdapter } from './adapters/db/user-lookup.adapter.js';
 import { AdminSessionsController } from './adapters/http/admin-sessions.controller.js';
 import { AdminUsersController } from './adapters/http/admin-users.controller.js';
@@ -70,6 +71,7 @@ import { GetUserSessionsInteractor } from './application/use-cases/user-sessions
 import { MainConfigModule } from '@/infra/config/module.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 import { SessionValidationPort } from '@/kernel/application/ports/session-validation.js';
+import { UserDirectoryPort } from '@/kernel/application/ports/user-directory.js';
 import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
 
 @Global()
@@ -93,6 +95,7 @@ import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
     { provide: RoleRepository, useClass: DrizzleRoleRepository },
     { provide: SessionValidationPort, useClass: DrizzleSessionValidation },
     { provide: UserLookupPort, useClass: DrizzleUserLookupAdapter },
+    { provide: UserDirectoryPort, useClass: DrizzleUserDirectoryAdapter },
     { provide: MeQueryPort, useClass: DrizzleMeQuery },
     { provide: UserSessionsQueryPort, useClass: DrizzleUserSessionsQuery },
     { provide: RoleQueryPort, useClass: DrizzleRoleQuery },
@@ -134,6 +137,6 @@ import { UserLookupPort } from '@/kernel/application/ports/user-lookup.js';
     BlockUserInteractor,
     UnblockUserInteractor,
   ],
-  exports: [SessionValidationPort, UserLookupPort],
+  exports: [SessionValidationPort, UserLookupPort, UserDirectoryPort],
 })
 export class IdpModule {}

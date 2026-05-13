@@ -27,18 +27,18 @@ import { Type } from 'typebox';
 import type { ContractMessage } from '@/infra/lib/nest-kafka/contract/contract.js';
 import { createTypeboxContract } from '@/infra/lib/nest-kafka/contract/create-typebox-contract.js';
 
-const UserSnapshotMessage = Type.Object({
+// Тонкое событие-сигнал: payload — только идентификатор + момент изменения.
+// Свежее состояние consumer'ы читают через kernel-port `UserDirectoryPort`
+// (write-side owner — feature `idp`).
+const UserProfileChangedMessage = Type.Object({
   userId: Type.String(),
-  phoneNumber: Type.String(),
-  fullName: Type.String(),
-  role: Type.String(),
-  createdAt: Type.String(),
-  updatedAt: Type.String(),
+  type: Type.Literal('user.profile-changed'),
+  changedAt: Type.String(),
 });
 
 export const userStreamingContract = createTypeboxContract({
   topic: 'user.streaming',
-  schema: UserSnapshotMessage,
+  schema: UserProfileChangedMessage,
 });
 
 export type UserStreamingMessage = ContractMessage<typeof userStreamingContract>;

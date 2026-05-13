@@ -23,4 +23,11 @@ export abstract class OrganizationRespondabilityPort {
     orgId: OrganizationId,
     userId: UserId,
   ): Promise<boolean>;
+
+  /**
+   * Список userId, которые сейчас имеют право отвечать в чатах от лица этой
+   * организации. Используется консьюмерами тонкого `organization.changed`
+   * для ре-синка локальных проекций членства (chat slot-pool).
+   */
+  public abstract findRespondableUserIds(orgId: OrganizationId): Promise<UserId[]>;
 }

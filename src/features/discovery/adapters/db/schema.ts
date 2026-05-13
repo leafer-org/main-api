@@ -107,36 +107,6 @@ export const discoveryItemSchedules = pgTable(
   ],
 );
 
-// --- Categories ---
-
-export const discoveryCategories = pgTable('discovery_categories', {
-  id: uuid('id').primaryKey(),
-  parentCategoryId: text('parent_category_id'),
-  name: text('name').notNull(),
-  iconId: text('icon_id').notNull(),
-  order: integer('order').notNull().default(0),
-  allowedTypeIds: jsonb('allowed_type_ids').$type<string[]>().notNull().default([]),
-  ancestorIds: jsonb('ancestor_ids').$type<string[]>().notNull().default([]),
-  attributes: jsonb('attributes')
-    .$type<{ attributeId: string; name: string; required: boolean; schema: object }[]>()
-    .notNull()
-    .default([]),
-  childCount: integer('child_count').notNull().default(0),
-  itemCount: integer('item_count').notNull().default(0),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
-});
-
-// --- Item Types ---
-
-export const discoveryItemTypes = pgTable('discovery_item_types', {
-  id: uuid('id').primaryKey(),
-  name: text('name').notNull(),
-  widgetSettings: jsonb('widget_settings').notNull().default([]),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
-});
-
 // --- Owners (organization only) ---
 
 export const discoveryOwners = pgTable('discovery_owners', {

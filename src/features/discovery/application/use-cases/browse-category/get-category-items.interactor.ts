@@ -4,7 +4,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { toListView } from '../../../domain/mappers/item-list-view.mapper.js';
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import {
-  CategoryAncestorLookupPort,
   ItemCardEnrichmentPort,
   ItemQueryPort,
   RankedListCachePort,
@@ -17,6 +16,7 @@ import {
   userGlobalCategoryWithCatalog,
 } from '@/infra/lib/geo/h3-geo.js';
 import { nextOffsetCursor, parseOffsetCursor } from '@/infra/lib/pagination/index.js';
+import { CategoryDirectoryPort } from '@/kernel/application/ports/category-directory.js';
 import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 import type { CategoryId, ItemId, UserId } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
@@ -40,7 +40,7 @@ export class GetCategoryItemsInteractor {
     @Inject(ItemQueryPort) private readonly itemQuery: ItemQueryPort,
     @Inject(ItemCardEnrichmentPort) private readonly cardEnrichment: ItemCardEnrichmentPort,
     @Inject(CityCoordinatesPort) private readonly cityCoordinates: CityCoordinatesPort,
-    @Inject(CategoryAncestorLookupPort) private readonly ancestorLookup: CategoryAncestorLookupPort,
+    @Inject(CategoryDirectoryPort) private readonly categoryDirectory: CategoryDirectoryPort,
   ) {}
 
   public async execute(query: {
@@ -238,8 +238,10 @@ export class GetCategoryItemsInteractor {
     ageGroup: AgeGroupOption,
     coordinates?: { lat: number; lng: number },
   ): Promise<string> {
-    const rootCatIds = await this.ancestorLookup.findRootCategoryIds([categoryId]);
-    const rootCatId = String(rootCatIds[0] ?? categoryId);
+    const view = await this.categoryDirectory.findById(categoryId);
+    const rootCatId = view
+      ? String(view.ancestorIds.length > 0 ? view.ancestorIds[0] : view.categoryId)
+      : String(categoryId);
 
     if (coordinates) {
       return userGeoCategoryWithCatalog(coordinates.lat, coordinates.lng, ageGroup, rootCatId);

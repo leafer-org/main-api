@@ -111,16 +111,8 @@ export class DrizzleUserRepository extends UserRepository {
       userStreamingContract,
       {
         userId: state.id as string,
-        phoneNumber: state.phoneNumber as string,
-        fullName: state.fullName as string,
-        role: state.role as string,
-        cityId: state.cityId,
-        lat: state.lat,
-        lng: state.lng,
-        blockedAt: state.blockedAt?.toISOString(),
-        blockReason: state.blockReason,
-        createdAt: state.createdAt.toISOString(),
-        updatedAt: state.updatedAt.toISOString(),
+        type: 'user.profile-changed',
+        changedAt: state.updatedAt.toISOString(),
       },
       { key: state.id as string },
     );

@@ -22,9 +22,6 @@ export class UserProjectionKafkaHandler {
 
     await this.handler.handleUserEvent(eventId, {
       userId: UserId.raw(payload.userId),
-      fullName: payload.fullName,
-      lat: payload.lat,
-      lng: payload.lng,
     });
   }
 }

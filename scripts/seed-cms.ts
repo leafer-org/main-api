@@ -767,7 +767,7 @@ export async function seedCms(baseUrl: string, otpCode: string) {
     console.log(`  → Category: ${cat.name}${cat.parentCategoryId ? ' (sub)' : ''}`);
   }
 
-  // Attributes — добавляем ДО publish, иначе они не попадут в category.published event
+  // Attributes — добавляем ДО publish, иначе на момент проекции они ещё не будут в state'е категории
   for (const attr of CATEGORY_ATTRIBUTES) {
     await api.POST('/cms/categories/{id}/attributes', {
       params: { path: { id: attr.categoryId } },

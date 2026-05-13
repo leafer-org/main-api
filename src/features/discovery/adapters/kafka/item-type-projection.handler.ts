@@ -8,12 +8,7 @@ import {
   type ContractKafkaMessage,
   KafkaConsumerHandlers,
 } from '@/infra/lib/nest-kafka/index.js';
-import type {
-  ItemTypeCreatedEvent,
-  ItemTypeUpdatedEvent,
-} from '@/kernel/domain/events/item-type.events.js';
 import { TypeId } from '@/kernel/domain/ids.js';
-import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
 
 @KafkaConsumerHandlers(DISCOVERY_CONSUMER_ID)
 @Injectable()
@@ -25,27 +20,6 @@ export class ItemTypeProjectionKafkaHandler {
     message: ContractKafkaMessage<typeof itemTypeStreamingContract>,
   ): Promise<void> {
     const payload = message.value;
-
-    if (payload.type === 'item-type.created') {
-      await this.handler.handleItemTypeCreated(payload.id, {
-        id: payload.id,
-        type: 'item-type.created',
-        typeId: TypeId.raw(payload.typeId),
-        name: payload.name!,
-        label: payload.label!,
-        widgetSettings: (payload.widgetSettings ?? []) as WidgetSettings[],
-        createdAt: new Date(payload.createdAt!),
-      } satisfies ItemTypeCreatedEvent);
-    } else if (payload.type === 'item-type.updated') {
-      await this.handler.handleItemTypeUpdated(payload.id, {
-        id: payload.id,
-        type: 'item-type.updated',
-        typeId: TypeId.raw(payload.typeId),
-        name: payload.name!,
-        label: payload.label!,
-        widgetSettings: (payload.widgetSettings ?? []) as WidgetSettings[],
-        updatedAt: new Date(payload.updatedAt!),
-      } satisfies ItemTypeUpdatedEvent);
-    }
+    await this.handler.handleItemTypeChanged(payload.id, TypeId.raw(payload.typeId));
   }
 }

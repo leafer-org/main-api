@@ -1,17 +1,23 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { projectItemFromEvent } from '../../../domain/read-models/item.read-model.js';
+import {
+  type ItemReadModel,
+  projectItemFromState,
+} from '../../../domain/read-models/item.read-model.js';
 import { IdempotencyPort, ItemProjectionPort } from '../../projection-ports.js';
 import { GorseSyncPort, MeilisearchSyncPort } from '../../sync-ports.js';
-import type {
-  ItemPublishedEvent,
-  ItemUnpublishedEvent,
-} from '@/kernel/domain/events/item.events.js';
+import { CategoryDirectoryPort } from '@/kernel/application/ports/category-directory.js';
+import { ItemDirectoryPort } from '@/kernel/application/ports/item-directory.js';
+import type { ItemId } from '@/kernel/domain/ids.js';
 
 /**
- * Проецирует item.published / item.unpublished в PG + Gorse + Meilisearch.
+ * Реакция discovery на тонкое событие `item.changed`:
+ *  - Если item published — читаем свежий state через `ItemDirectoryPort`,
+ *    мапим в read-model, обогащаем closure категорий и upsert'аем
+ *    в discovery_items + Gorse + Meilisearch.
+ *  - Если item не найден / удалён / снят с публикации — delete.
  *
- * TODO: DLQ при ошибке синхронизации Gorse/Meilisearch (exponential backoff, макс 10 попыток)
+ * TODO: DLQ при ошибке синхронизации Gorse/Meilisearch (exponential backoff).
  */
 @Injectable()
 export class ProjectItemHandler {
@@ -20,12 +26,36 @@ export class ProjectItemHandler {
     @Inject(ItemProjectionPort) private readonly itemProjection: ItemProjectionPort,
     @Inject(GorseSyncPort) private readonly gorse: GorseSyncPort,
     @Inject(MeilisearchSyncPort) private readonly meilisearch: MeilisearchSyncPort,
+    @Inject(CategoryDirectoryPort) private readonly categoryDirectory: CategoryDirectoryPort,
+    @Inject(ItemDirectoryPort) private readonly itemDirectory: ItemDirectoryPort,
   ) {}
 
-  public async handleItemPublished(eventId: string, payload: ItemPublishedEvent): Promise<void> {
+  public async handleItemChanged(eventId: string, itemId: ItemId): Promise<void> {
     if (await this.idempotency.isProcessed(eventId)) return;
 
-    const readModel = projectItemFromEvent(payload);
+    // Cache мог быть прогрет старым state'ом до события — сбрасываем.
+    this.itemDirectory.clearCache();
+
+    const view = await this.itemDirectory.findById(itemId);
+
+    if (!view) {
+      // Удалён / не опубликован — снимаем с проекций и индексов.
+      await this.itemProjection.delete(itemId);
+      await this.gorse.deleteItem(itemId);
+      await this.meilisearch.deleteItem(itemId);
+      await this.idempotency.markProcessed(eventId);
+      return;
+    }
+
+    const readModel = projectItemFromState({
+      itemId: view.itemId,
+      typeId: view.typeId,
+      widgets: view.widgets,
+      publishedAt: view.publishedAt,
+      updatedAt: view.updatedAt,
+    });
+    await this.enrichCategoryClosure(readModel);
+
     await this.itemProjection.upsert(readModel);
     await this.gorse.upsertItem(readModel);
     await this.meilisearch.upsertItem(readModel);
@@ -33,16 +63,10 @@ export class ProjectItemHandler {
     await this.idempotency.markProcessed(eventId);
   }
 
-  public async handleItemUnpublished(
-    eventId: string,
-    payload: ItemUnpublishedEvent,
-  ): Promise<void> {
-    if (await this.idempotency.isProcessed(eventId)) return;
-
-    await this.itemProjection.delete(payload.itemId);
-    await this.gorse.deleteItem(payload.itemId);
-    await this.meilisearch.deleteItem(payload.itemId);
-
-    await this.idempotency.markProcessed(eventId);
+  private async enrichCategoryClosure(item: ItemReadModel): Promise<void> {
+    if (!item.category) return;
+    item.category.closureCategoryIds = await this.categoryDirectory.findAncestorClosure(
+      item.category.categoryIds,
+    );
   }
 }

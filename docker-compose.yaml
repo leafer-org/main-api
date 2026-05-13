@@ -178,6 +178,25 @@ services:
       gorse-redis:
         condition: service_healthy
 
+  centrifugo:
+    image: centrifugo/centrifugo:v5
+    command: centrifugo --config /etc/centrifugo/config.json
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./docker/centrifugo.json:/etc/centrifugo/config.json:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # === Observability stack ===
 
   otel-collector:

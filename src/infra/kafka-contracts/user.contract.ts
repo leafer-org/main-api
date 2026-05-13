@@ -2,23 +2,15 @@ import { Type } from 'typebox';
 
 import { createTypeboxContract } from '@/infra/lib/nest-kafka/contract/create-typebox-contract.js';
 
-const UserSnapshotMessage = Type.Object({
+const UserProfileChangedMessage = Type.Object({
   userId: Type.String(),
-  phoneNumber: Type.String(),
-  fullName: Type.String(),
-  role: Type.String(),
-  cityId: Type.String(),
-  lat: Type.Optional(Type.Number()),
-  lng: Type.Optional(Type.Number()),
-  blockedAt: Type.Optional(Type.String()),
-  blockReason: Type.Optional(Type.String()),
-  createdAt: Type.String(),
-  updatedAt: Type.String(),
+  type: Type.Literal('user.profile-changed'),
+  changedAt: Type.String(),
 });
 
 export const userStreamingContract = createTypeboxContract({
   topic: 'user.streaming',
-  schema: UserSnapshotMessage,
+  schema: UserProfileChangedMessage,
 });
 
 export type UserStreamingMessage =

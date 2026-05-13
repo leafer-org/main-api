@@ -6,18 +6,16 @@ import request from 'supertest';
 import { uuidv7 } from 'uuidv7';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { seedCmsCategory, seedCmsItemType } from '../../helpers/cms-seed.js';
 import { startContainers, stopContainers } from '../../helpers/containers.js';
 import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
+import { seedItemPublished } from '../../helpers/organization-seed.js';
 import { waitForAllConsumers } from '../../helpers/kafka.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
 import { configureApp } from '@/apps/configure-app.js';
 import { DiscoveryDatabaseClient } from '@/features/discovery/adapters/db/client.js';
-import {
-  discoveryCategories,
-  discoveryItems,
-  discoveryItemTypes,
-} from '@/features/discovery/adapters/db/schema.js';
+import { discoveryItems } from '@/features/discovery/adapters/db/schema.js';
 import { GorseSyncStub } from '@/features/discovery/adapters/gorse/gorse-sync.stub.js';
 import { RecommendationStub } from '@/features/discovery/adapters/gorse/recommendation.stub.js';
 import { RecommendationService } from '@/features/discovery/application/ports.js';
@@ -61,30 +59,21 @@ describe('discovery-category-items', () => {
     categoryId: string;
     parentCategoryId?: string | null;
     name?: string;
-    ancestorIds?: string[];
   }) {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
     const categoryId = params.categoryId;
-    await produce(categoryStreamingContract, {
-      id: uuidv7(),
-      type: 'category.published',
-      categoryId,
+    await seedCmsCategory(process.env.DB_URL, {
+      id: categoryId,
       parentCategoryId: params.parentCategoryId ?? null,
       name: params.name ?? 'Test Category',
-      iconId: randomUUID(),
-      allowedTypeIds: [],
-      ancestorIds: params.ancestorIds ?? [],
-      attributes: [],
-      republished: false,
-      publishedAt: new Date().toISOString(),
+      status: 'published',
     });
-
-    await vi.waitFor(async () => {
-      const [row] = await db
-        .select()
-        .from(discoveryCategories)
-        .where(eq(discoveryCategories.id, categoryId));
-      expectDefined(row);
-    }, WAIT_OPTIONS);
+    await produce(categoryStreamingContract, {
+      id: uuidv7(),
+      type: 'category.changed',
+      categoryId,
+      changedAt: new Date().toISOString(),
+    });
   }
 
 
@@ -92,23 +81,19 @@ describe('discovery-category-items', () => {
     typeId: string;
     widgetSettings: { type: string; required: boolean; showOnCard?: boolean; [k: string]: unknown }[];
   }) {
-    await produce(itemTypeStreamingContract, {
-      id: uuidv7(),
-      type: 'item-type.created',
-      typeId: params.typeId,
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await seedCmsItemType(process.env.DB_URL, {
+      id: params.typeId,
       name: 'Type',
       label: 'тип',
-      widgetSettings: params.widgetSettings as never,
-      createdAt: new Date().toISOString(),
+      widgetSettings: params.widgetSettings,
     });
-
-    await vi.waitFor(async () => {
-      const [row] = await db
-        .select()
-        .from(discoveryItemTypes)
-        .where(eq(discoveryItemTypes.id, params.typeId));
-      expectDefined(row);
-    }, WAIT_OPTIONS);
+    await produce(itemTypeStreamingContract, {
+      id: uuidv7(),
+      type: 'item-type.changed',
+      typeId: params.typeId,
+      changedAt: new Date().toISOString(),
+    });
   }
 
   async function seedItem(params: {
@@ -175,15 +160,19 @@ describe('discovery-category-items', () => {
       });
     }
 
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await seedItemPublished(process.env.DB_URL, {
+      id: params.itemId,
+      organizationId: params.orgId,
+      typeId: params.typeId,
+      widgets,
+      publishedAt: params.publishedAt ? new Date(params.publishedAt) : undefined,
+    });
     await produce(itemStreamingContract, {
       id: uuidv7(),
-      type: 'item.published',
+      type: 'item.changed',
       itemId: params.itemId,
-      typeId: params.typeId,
-      organizationId: params.orgId,
-      widgets,
-      republished: false,
-      publishedAt: params.publishedAt ?? new Date().toISOString(),
+      changedAt: new Date().toISOString(),
     });
 
     await vi.waitFor(async () => {
@@ -271,13 +260,11 @@ describe('discovery-category-items', () => {
       await seedCategory({
         categoryId: childId,
         parentCategoryId: rootId,
-        ancestorIds: [rootId],
         name: 'Child',
       });
       await seedCategory({
         categoryId: grandchildId,
         parentCategoryId: childId,
-        ancestorIds: [rootId, childId],
         name: 'Grandchild',
       });
       await seedCategory({ categoryId: otherRootId, name: 'Unrelated' });

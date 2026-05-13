@@ -7,26 +7,25 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { startContainers, stopContainers } from '../../helpers/containers.js';
 import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
+import {
+  seedItemPublished,
+  seedOrganizationPublished,
+  unpublishItem,
+  unpublishOrganization,
+} from '../../helpers/organization-seed.js';
 import { waitForAllConsumers } from '../../helpers/kafka.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
 import { configureApp } from '@/apps/configure-app.js';
 import { DiscoveryDatabaseClient } from '@/features/discovery/adapters/db/client.js';
-import {
-  discoveryCategories,
-  discoveryItems,
-  discoveryItemTypes,
-  discoveryOwners,
-} from '@/features/discovery/adapters/db/schema.js';
+import { discoveryItems, discoveryOwners } from '@/features/discovery/adapters/db/schema.js';
 import { GorseSyncStub } from '@/features/discovery/adapters/gorse/gorse-sync.stub.js';
 import { RecommendationStub } from '@/features/discovery/adapters/gorse/recommendation.stub.js';
 import { RecommendationService } from '@/features/discovery/application/ports.js';
 import { GorseSyncPort, MeilisearchSyncPort } from '@/features/discovery/application/sync-ports.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
-import { categoryStreamingContract } from '@/infra/kafka-contracts/category.contract.js';
 import { itemStreamingContract } from '@/infra/kafka-contracts/item.contract.js';
-import { itemTypeStreamingContract } from '@/infra/kafka-contracts/item-type.contract.js';
 import { organizationStreamingContract } from '@/infra/kafka-contracts/organization.contract.js';
 import { reviewStreamingContract } from '@/infra/kafka-contracts/review.contract.js';
 import type { Contract, ContractMessage } from '@/infra/lib/nest-kafka/contract/contract.js';
@@ -51,16 +50,50 @@ describe('discovery-handlers', () => {
     await producer.flush();
   }
 
-  function publishItem(itemId: string, typeId: string, orgId: string, widgets: AnyWidget[]) {
-    return produce(itemStreamingContract, {
-      id: uuidv7(),
-      type: 'item.published',
-      itemId,
-      typeId,
+  async function publishItem(itemId: string, typeId: string, orgId: string, widgets: AnyWidget[]) {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await seedItemPublished(process.env.DB_URL, {
+      id: itemId,
       organizationId: orgId,
-      widgets: widgets as any,
-      republished: false,
-      publishedAt: new Date().toISOString(),
+      typeId,
+      widgets: widgets as unknown[],
+    });
+    await produce(itemStreamingContract, {
+      id: uuidv7(),
+      type: 'item.changed',
+      itemId,
+      changedAt: new Date().toISOString(),
+    });
+  }
+
+  async function publishOrganization(
+    orgId: string,
+    info: { name: string; avatarId?: string | null; description?: string },
+  ) {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await seedOrganizationPublished(process.env.DB_URL, {
+      id: orgId,
+      name: info.name,
+      avatarId: info.avatarId ?? null,
+      description: info.description ?? '',
+      published: true,
+    });
+    await produce(organizationStreamingContract, {
+      id: uuidv7(),
+      type: 'organization.changed',
+      organizationId: orgId,
+      changedAt: new Date().toISOString(),
+    });
+  }
+
+  async function unpublishOrganizationEvent(orgId: string) {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await unpublishOrganization(process.env.DB_URL, orgId);
+    await produce(organizationStreamingContract, {
+      id: uuidv7(),
+      type: 'organization.changed',
+      organizationId: orgId,
+      changedAt: new Date().toISOString(),
     });
   }
 
@@ -122,15 +155,7 @@ describe('discovery-handlers', () => {
     it('проецирует organization.published в discovery_owners', async () => {
       const orgId = randomUUID();
 
-      await produce(organizationStreamingContract, {
-        id: uuidv7(),
-        type: 'organization.published',
-        organizationId: orgId,
-        name: 'Test Organization',
-        avatarId: null,
-        republished: false,
-        publishedAt: new Date().toISOString(),
-      });
+      await publishOrganization(orgId, { name: 'Test Organization', avatarId: null });
 
       await vi.waitFor(async () => {
         const [row] = await db.select().from(discoveryOwners).where(eq(discoveryOwners.id, orgId));
@@ -147,15 +172,7 @@ describe('discovery-handlers', () => {
       const itemId = randomUUID();
       const typeId = randomUUID();
 
-      await produce(organizationStreamingContract, {
-        id: uuidv7(),
-        type: 'organization.published',
-        organizationId: orgId,
-        name: 'Original Name',
-        avatarId: null,
-        republished: false,
-        publishedAt: new Date().toISOString(),
-      });
+      await publishOrganization(orgId, { name: 'Original Name', avatarId: null });
 
       await vi.waitFor(async () => {
         const [row] = await db.select().from(discoveryOwners).where(eq(discoveryOwners.id, orgId));
@@ -172,15 +189,7 @@ describe('discovery-handlers', () => {
         expectDefined(row);
       }, WAIT_OPTIONS);
 
-      await produce(organizationStreamingContract, {
-        id: uuidv7(),
-        type: 'organization.published',
-        organizationId: orgId,
-        name: 'Updated Name',
-        avatarId: 'new-avatar-id',
-        republished: true,
-        publishedAt: new Date().toISOString(),
-      });
+      await publishOrganization(orgId, { name: 'Updated Name', avatarId: 'new-avatar-id' });
 
       await vi.waitFor(async () => {
         const [owner] = await db
@@ -203,15 +212,7 @@ describe('discovery-handlers', () => {
       const itemId = randomUUID();
       const typeId = randomUUID();
 
-      await produce(organizationStreamingContract, {
-        id: uuidv7(),
-        type: 'organization.published',
-        organizationId: orgId,
-        name: 'To Delete',
-        avatarId: null,
-        republished: false,
-        publishedAt: new Date().toISOString(),
-      });
+      await publishOrganization(orgId, { name: 'To Delete', avatarId: null });
 
       await vi.waitFor(async () => {
         const [row] = await db.select().from(discoveryOwners).where(eq(discoveryOwners.id, orgId));
@@ -228,12 +229,7 @@ describe('discovery-handlers', () => {
         expectDefined(row);
       }, WAIT_OPTIONS);
 
-      await produce(organizationStreamingContract, {
-        id: uuidv7(),
-        type: 'organization.unpublished',
-        organizationId: orgId,
-        unpublishedAt: new Date().toISOString(),
-      });
+      await unpublishOrganizationEvent(orgId);
 
       await vi.waitFor(async () => {
         const owners = await db.select().from(discoveryOwners).where(eq(discoveryOwners.id, orgId));
@@ -248,175 +244,17 @@ describe('discovery-handlers', () => {
     });
   });
 
-  // ─── Category projection ───────────────────────────────────────────
-
-  describe('Category projection', () => {
-    it('проецирует category.published в discovery_categories с атрибутами', async () => {
-      const categoryId = randomUUID();
-      const attrId = randomUUID();
-
-      await produce(categoryStreamingContract, {
-        id: uuidv7(),
-        type: 'category.published',
-        categoryId,
-        parentCategoryId: null,
-        name: 'Test Category',
-        iconId: randomUUID(),
-        allowedTypeIds: [randomUUID()],
-        ancestorIds: [],
-        attributes: [
-          {
-            attributeId: attrId,
-            name: 'Color',
-            required: true,
-            schema: { type: 'string' },
-          },
-        ],
-        republished: false,
-        publishedAt: new Date().toISOString(),
-      });
-
-      await vi.waitFor(async () => {
-        const [cat] = await db
-          .select()
-          .from(discoveryCategories)
-          .where(eq(discoveryCategories.id, categoryId));
-        expectDefined(cat);
-        expect(cat.name).toBe('Test Category');
-        expect(cat.parentCategoryId).toBeNull();
-        expect(cat.attributes).toHaveLength(1);
-        expect(cat.attributes[0]).toMatchObject({
-          attributeId: attrId,
-          name: 'Color',
-          required: true,
-        });
-      }, WAIT_OPTIONS);
-    });
-
-    it('удаляет category при unpublish', async () => {
-      const categoryId = randomUUID();
-
-      await produce(categoryStreamingContract, {
-        id: uuidv7(),
-        type: 'category.published',
-        categoryId,
-        parentCategoryId: null,
-        name: 'To Delete',
-        iconId: randomUUID(),
-        allowedTypeIds: [],
-        ancestorIds: [],
-        attributes: [
-          { attributeId: randomUUID(), name: 'Attr', required: false, schema: { type: 'string' } },
-        ],
-        republished: false,
-        publishedAt: new Date().toISOString(),
-      });
-
-      await vi.waitFor(async () => {
-        const [cat] = await db
-          .select()
-          .from(discoveryCategories)
-          .where(eq(discoveryCategories.id, categoryId));
-        expectDefined(cat);
-      }, WAIT_OPTIONS);
-
-      await produce(categoryStreamingContract, {
-        id: uuidv7(),
-        type: 'category.unpublished',
-        categoryId,
-        unpublishedAt: new Date().toISOString(),
-      });
-
-      await vi.waitFor(async () => {
-        const cats = await db
-          .select()
-          .from(discoveryCategories)
-          .where(eq(discoveryCategories.id, categoryId));
-        expect(cats).toHaveLength(0);
-      }, WAIT_OPTIONS);
-    });
-  });
-
-  // ─── Item Type projection ─────────────────────────────────────────
-
-  describe('Item Type projection', () => {
-    it('проецирует item-type.created в discovery_item_types', async () => {
-      const typeId = randomUUID();
-
-      const settings = [
-        { type: 'base-info' as const, required: true },
-        { type: 'location' as const, required: false },
-        { type: 'payment' as const, required: false, allowedStrategies: ['free' as const, 'one-time' as const, 'subscription' as const] },
-      ];
-
-      await produce(itemTypeStreamingContract, {
-        id: uuidv7(),
-        type: 'item-type.created',
-        typeId,
-        name: 'Service',
-        label: 'услугу',
-        widgetSettings: settings,
-        createdAt: new Date().toISOString(),
-      });
-
-      await vi.waitFor(async () => {
-        const [row] = await db
-          .select()
-          .from(discoveryItemTypes)
-          .where(eq(discoveryItemTypes.id, typeId));
-        expectDefined(row);
-        expect(row.name).toBe('Service');
-        expect(row.widgetSettings).toEqual(settings);
-      }, WAIT_OPTIONS);
-    });
-
-    it('обновляет item type при item-type.updated', async () => {
-      const typeId = randomUUID();
-
-      await produce(itemTypeStreamingContract, {
-        id: uuidv7(),
-        type: 'item-type.created',
-        typeId,
-        name: 'Original',
-        label: 'оригинал',
-        widgetSettings: [{ type: 'base-info', required: false }],
-        createdAt: new Date().toISOString(),
-      });
-
-      await vi.waitFor(async () => {
-        const [row] = await db
-          .select()
-          .from(discoveryItemTypes)
-          .where(eq(discoveryItemTypes.id, typeId));
-        expectDefined(row);
-      }, WAIT_OPTIONS);
-
-      const updatedSettings = [
-        { type: 'base-info' as const, required: true },
-        { type: 'payment' as const, required: false, allowedStrategies: ['free' as const, 'one-time' as const, 'subscription' as const] },
-      ];
-
-      await produce(itemTypeStreamingContract, {
-        id: uuidv7(),
-        type: 'item-type.updated',
-        typeId,
-        name: 'Updated Service',
-        label: 'обновлённую услугу',
-        widgetSettings: updatedSettings,
-        updatedAt: new Date().toISOString(),
-      });
-
-      await vi.waitFor(async () => {
-        const [row] = await db
-          .select()
-          .from(discoveryItemTypes)
-          .where(eq(discoveryItemTypes.id, typeId));
-        expectDefined(row);
-        expect(row.name).toBe('Updated Service');
-        expect(row.widgetSettings).toEqual(updatedSettings);
-      }, WAIT_OPTIONS);
-    });
-  });
+  // ─── Category / ItemType projection ────────────────────────────────
+  //
+  // Метаданные категорий и item-type'ов больше не проецируются в discovery
+  // — читаются на запрос через CategoryDirectoryPort/ItemTypeDirectoryPort
+  // (cms write-side). Тонкое событие category.changed/item-type.changed
+  // нужно для:
+  //   1) обновления Meili-индекса search-suggestions
+  //   2) cascade re-sync items в поддереве (для closure в junction)
+  //
+  // Поведение endpoint'ов проверяется в discovery-categories.e2e-spec.ts
+  // и discovery-search-suggestions.e2e-spec.ts.
 
   // ─── Item projection ──────────────────────────────────────────────
 
@@ -468,11 +306,12 @@ describe('discovery-handlers', () => {
         expectDefined(row);
       }, WAIT_OPTIONS);
 
+      await unpublishItem(process.env.DB_URL!, itemId);
       await produce(itemStreamingContract, {
         id: uuidv7(),
-        type: 'item.unpublished',
+        type: 'item.changed',
         itemId,
-        unpublishedAt: new Date().toISOString(),
+        changedAt: new Date().toISOString(),
       });
 
       await vi.waitFor(async () => {
@@ -521,15 +360,7 @@ describe('discovery-handlers', () => {
       const itemId = randomUUID();
       const typeId = randomUUID();
 
-      await produce(organizationStreamingContract, {
-        id: uuidv7(),
-        type: 'organization.published',
-        organizationId: orgId,
-        name: 'Reviewed Org',
-        avatarId: null,
-        republished: false,
-        publishedAt: new Date().toISOString(),
-      });
+      await publishOrganization(orgId, { name: 'Reviewed Org', avatarId: null });
 
       await vi.waitFor(async () => {
         const [row] = await db.select().from(discoveryOwners).where(eq(discoveryOwners.id, orgId));

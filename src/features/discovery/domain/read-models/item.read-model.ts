@@ -1,5 +1,4 @@
 import { h3Labels } from '@/infra/lib/geo/h3-geo.js';
-import type { ItemPublishedEvent } from '@/kernel/domain/events/item.events.js';
 import type {
   AttributeId,
   CategoryId,
@@ -37,7 +36,15 @@ export type ItemPayment = {
 };
 
 export type ItemCategory = {
+  /** Прямые категории, к которым привязан товар (как в widget). */
   categoryIds: CategoryId[];
+  /**
+   * Замыкание: direct ∪ ancestors. Используется для фильтрации
+   * («items в категории X или любом потомке») в junction-таблице,
+   * фасетах Meili и labels Gorse.
+   * Заполняется в проекторе из `CategoryDirectoryPort.findByIds`.
+   */
+  closureCategoryIds: CategoryId[];
   attributeValues: { attributeId: AttributeId; value: string }[];
 };
 
@@ -162,17 +169,26 @@ export function toGorseLabels(item: ItemReadModel): string[] {
   return labels;
 }
 
-/** Извлекает данные из массива виджетов {@link ItemPublishedEvent} в плоскую структуру. */
-export function projectItemFromEvent(event: ItemPublishedEvent): ItemReadModel {
+/**
+ * Извлекает данные из массива виджетов в плоскую структуру.
+ * Источник — `ItemDirectoryView` (write-side state) либо ручная сборка.
+ */
+export function projectItemFromState(input: {
+  itemId: ItemId;
+  typeId: TypeId;
+  widgets: ItemWidget[];
+  publishedAt: Date;
+  updatedAt?: Date;
+}): ItemReadModel {
   const model: ItemReadModel = {
-    itemId: event.itemId,
-    typeId: event.typeId,
-    widgets: event.widgets,
-    publishedAt: event.publishedAt,
-    updatedAt: event.publishedAt,
+    itemId: input.itemId,
+    typeId: input.typeId,
+    widgets: input.widgets,
+    publishedAt: input.publishedAt,
+    updatedAt: input.updatedAt ?? input.publishedAt,
   };
 
-  for (const widget of event.widgets) {
+  for (const widget of input.widgets) {
     switch (widget.type) {
       case 'base-info':
         model.baseInfo = {
@@ -197,6 +213,9 @@ export function projectItemFromEvent(event: ItemPublishedEvent): ItemReadModel {
       case 'category':
         model.category = {
           categoryIds: widget.categoryIds,
+          // closureCategoryIds инициализируется direct'ами; ProjectItemHandler
+          // дозаполняет ancestors через CategoryDirectoryPort перед upsert.
+          closureCategoryIds: widget.categoryIds,
           attributeValues: widget.attributes,
         };
         break;

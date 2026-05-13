@@ -1,6 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 
 import { OrganizationDatabaseClient } from './adapters/db/client.js';
+import { DrizzleItemDirectoryAdapter } from './adapters/db/item-directory.adapter.js';
+import { DrizzleOrganizationDirectoryAdapter } from './adapters/db/organization-directory.adapter.js';
 import { DrizzleOrganizationPermissionCheckService } from './adapters/db/organization-permission-check.service.js';
 import { DrizzleOrganizationRespondabilityService } from './adapters/db/organization-respondability.service.js';
 import { DrizzleClaimTokenQuery } from './adapters/db/queries/claim-token.query.js';
@@ -68,6 +70,8 @@ import { DeleteEmployeeRoleInteractor } from './application/use-cases/manage-rol
 import { GetOrganizationRolesInteractor } from './application/use-cases/manage-roles/get-organization-roles.interactor.js';
 import { UpdateEmployeeRoleInteractor } from './application/use-cases/manage-roles/update-employee-role.interactor.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
+import { ItemDirectoryPort } from '@/kernel/application/ports/item-directory.js';
+import { OrganizationDirectoryPort } from '@/kernel/application/ports/organization-directory.js';
 import { OrganizationRespondabilityPort } from '@/kernel/application/ports/organization-respondability.js';
 
 @Global()
@@ -88,6 +92,8 @@ import { OrganizationRespondabilityPort } from '@/kernel/application/ports/organ
     { provide: ItemRepository, useClass: DrizzleItemRepository },
     { provide: OrganizationQueryPort, useClass: DrizzleOrganizationQuery },
     { provide: ItemQueryPort, useClass: DrizzleItemQuery },
+    { provide: OrganizationDirectoryPort, useClass: DrizzleOrganizationDirectoryAdapter },
+    { provide: ItemDirectoryPort, useClass: DrizzleItemDirectoryAdapter },
     { provide: OrganizationEventPublisher, useClass: OutboxOrganizationEventPublisher },
     { provide: ItemEventPublisher, useClass: OutboxItemEventPublisher },
     { provide: ModerationResultPublisher, useClass: OutboxModerationResultPublisher },
@@ -151,6 +157,6 @@ import { OrganizationRespondabilityPort } from '@/kernel/application/ports/organ
     UnpublishExcessItemsHandler,
     RepublishItemsOnOrgUpdateHandler,
   ],
-  exports: [OrganizationRespondabilityPort],
+  exports: [OrganizationRespondabilityPort, OrganizationDirectoryPort, ItemDirectoryPort],
 })
 export class OrganizationModule {}

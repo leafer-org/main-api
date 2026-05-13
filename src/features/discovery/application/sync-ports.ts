@@ -1,5 +1,11 @@
 import type { ItemReadModel } from '../domain/read-models/item.read-model.js';
-import type { ItemId, UserId } from '@/kernel/domain/ids.js';
+import type {
+  CategoryId,
+  ItemId,
+  OrganizationId,
+  TypeId,
+  UserId,
+} from '@/kernel/domain/ids.js';
 
 /**
  * Синхронизация items и user feedback в Gorse.
@@ -29,4 +35,24 @@ export abstract class MeilisearchSyncPort {
   public abstract upsertItem(item: ItemReadModel): Promise<void>;
   public abstract deleteItem(itemId: ItemId): Promise<void>;
   public abstract upsertItems(items: ItemReadModel[]): Promise<void>;
+}
+
+/**
+ * Синхронизация в Meili-индексы для search-suggestions
+ * (categories/item-types/owners уже там — см. owner sync-логику).
+ * Минимальный документ: { id, name }.
+ */
+export abstract class CategorySearchSyncPort {
+  public abstract upsert(input: { categoryId: CategoryId; name: string }): Promise<void>;
+  public abstract delete(categoryId: CategoryId): Promise<void>;
+}
+
+export abstract class ItemTypeSearchSyncPort {
+  public abstract upsert(input: { typeId: TypeId; name: string }): Promise<void>;
+  public abstract delete(typeId: TypeId): Promise<void>;
+}
+
+export abstract class OrganizationSearchSyncPort {
+  public abstract upsert(input: { organizationId: OrganizationId; name: string }): Promise<void>;
+  public abstract delete(organizationId: OrganizationId): Promise<void>;
 }

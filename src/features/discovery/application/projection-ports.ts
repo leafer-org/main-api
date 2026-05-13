@@ -1,6 +1,4 @@
-import type { CategoryReadModel } from '../domain/read-models/category.read-model.js';
 import type { ItemReadModel } from '../domain/read-models/item.read-model.js';
-import type { ItemTypeReadModel } from '../domain/read-models/item-type.read-model.js';
 import type { OwnerReadModel } from '../domain/read-models/owner.read-model.js';
 import type { CategoryId, MediaId, ItemId, OrganizationId } from '@/kernel/domain/ids.js';
 
@@ -29,16 +27,6 @@ export abstract class ItemProjectionPort {
 
   /** Загружает ItemReadModel для всех items, привязанных хотя бы к одной из categoryIds. */
   public abstract findReadModelsByCategoryIds(categoryIds: CategoryId[]): Promise<ItemReadModel[]>;
-}
-
-export abstract class CategoryProjectionPort {
-  public abstract upsert(category: CategoryReadModel): Promise<void>;
-  public abstract delete(categoryId: CategoryId): Promise<void>;
-  public abstract recalcAllCounts(): Promise<void>;
-}
-
-export abstract class ItemTypeProjectionPort {
-  public abstract upsert(itemType: ItemTypeReadModel): Promise<void>;
 }
 
 export abstract class OwnerProjectionPort {

@@ -8,12 +8,7 @@ import {
   type ContractKafkaMessage,
   KafkaConsumerHandlers,
 } from '@/infra/lib/nest-kafka/index.js';
-import type {
-  ItemPublishedEvent,
-  ItemUnpublishedEvent,
-  ItemWidget,
-} from '@/kernel/domain/events/item.events.js';
-import { ItemId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
+import { ItemId } from '@/kernel/domain/ids.js';
 
 @KafkaConsumerHandlers(DISCOVERY_CONSUMER_ID)
 @Injectable()
@@ -23,25 +18,6 @@ export class ItemProjectionKafkaHandler {
   @ContractHandler(itemStreamingContract)
   public async handle(message: ContractKafkaMessage<typeof itemStreamingContract>): Promise<void> {
     const payload = message.value;
-
-    if (payload.type === 'item.published') {
-      await this.handler.handleItemPublished(payload.id, {
-        id: payload.id,
-        type: 'item.published',
-        itemId: ItemId.raw(payload.itemId),
-        typeId: TypeId.raw(payload.typeId!),
-        organizationId: OrganizationId.raw(payload.organizationId!),
-        widgets: (payload.widgets ?? []) as ItemWidget[],
-        republished: payload.republished ?? false,
-        publishedAt: new Date(payload.publishedAt!),
-      } satisfies ItemPublishedEvent);
-    } else if (payload.type === 'item.unpublished') {
-      await this.handler.handleItemUnpublished(payload.id, {
-        id: payload.id,
-        type: 'item.unpublished',
-        itemId: ItemId.raw(payload.itemId),
-        unpublishedAt: new Date(payload.unpublishedAt!),
-      } satisfies ItemUnpublishedEvent);
-    }
+    await this.handler.handleItemChanged(payload.id, ItemId.raw(payload.itemId));
   }
 }

@@ -26,72 +26,21 @@ export class OutboxOrganizationEventPublisher extends OrganizationEventPublisher
     tx: Transaction,
     event: OrganizationPublishedEvent,
   ): Promise<void> {
-    const db = this.txHost.get(tx);
-    await this.outbox.enqueue(
-      db,
-      organizationStreamingContract,
-      {
-        id: event.id,
-        type: 'organization.published',
-        organizationId: event.organizationId as string,
-        name: event.name,
-        description: event.description,
-        avatarId: event.avatarId as string | null,
-        media: event.media.map((m) => ({ type: m.type, mediaId: m.mediaId as string })),
-        contacts: event.contacts.map((c) => ({ type: c.type, value: c.value, label: c.label })),
-        team: event.team
-          ? {
-              title: event.team.title,
-              members: event.team.members.map((m) => ({
-                name: m.name,
-                description: m.description,
-                media: m.media.map((mm) => ({ type: mm.type, mediaId: mm.mediaId as string })),
-                employeeUserId: m.employeeUserId,
-              })),
-            }
-          : null,
-        republished: event.republished,
-        publishedAt: event.publishedAt.toISOString(),
-      },
-      { key: event.organizationId as string },
-    );
+    await this.publishChanged(tx, event.id, event.organizationId as string, event.publishedAt);
   }
 
   public async publishOrganizationUnpublished(
     tx: Transaction,
     event: OrganizationUnpublishedEvent,
   ): Promise<void> {
-    const db = this.txHost.get(tx);
-    await this.outbox.enqueue(
-      db,
-      organizationStreamingContract,
-      {
-        id: event.id,
-        type: 'organization.unpublished',
-        organizationId: event.organizationId as string,
-        unpublishedAt: event.unpublishedAt.toISOString(),
-      },
-      { key: event.organizationId as string },
-    );
+    await this.publishChanged(tx, event.id, event.organizationId as string, event.unpublishedAt);
   }
 
   public async publishRespondabilityChanged(
     tx: Transaction,
     event: OrganizationRespondabilityChangedEvent,
   ): Promise<void> {
-    const db = this.txHost.get(tx);
-    await this.outbox.enqueue(
-      db,
-      organizationStreamingContract,
-      {
-        id: event.id,
-        type: 'organization.respondability-changed',
-        organizationId: event.organizationId as string,
-        userId: event.userId as string,
-        changedAt: event.changedAt.toISOString(),
-      },
-      { key: event.organizationId as string },
-    );
+    await this.publishChanged(tx, event.id, event.organizationId as string, event.changedAt);
   }
 
   public async publishModerationRequested(
@@ -113,6 +62,26 @@ export class OutboxOrganizationEventPublisher extends OrganizationEventPublisher
         submittedAt: event.submittedAt.toISOString(),
       },
       { key: event.organizationId as string },
+    );
+  }
+
+  private async publishChanged(
+    tx: Transaction,
+    id: string,
+    organizationId: string,
+    changedAt: Date,
+  ): Promise<void> {
+    const db = this.txHost.get(tx);
+    await this.outbox.enqueue(
+      db,
+      organizationStreamingContract,
+      {
+        id,
+        type: 'organization.changed',
+        organizationId,
+        changedAt: changedAt.toISOString(),
+      },
+      { key: organizationId },
     );
   }
 }

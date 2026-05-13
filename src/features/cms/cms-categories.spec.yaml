@@ -89,8 +89,10 @@ specs-unit:
         Unpublish из draft невалидно — 400.
     - assert: outbox события успешно обрабатываются после publish
       description: |
-        Publish порождает интеграционное событие, которое должно успешно
-        процесситься через outbox.
+        Publish порождает тонкое интеграционное событие
+        `category.changed { categoryId, changedAt }`, которое должно успешно
+        процесситься через outbox. Свежее состояние категории читается
+        consumer'ом через kernel-port `CategoryDirectoryPort` (cms write-side).
 
   # ==================== АТРИБУТЫ ====================
 

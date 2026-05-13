@@ -4,9 +4,10 @@ import { inArray } from 'drizzle-orm';
 import { ItemCardEnrichmentPort } from '../../../application/ports.js';
 import type { ItemCardEnrichment } from '../../../domain/read-models/item-list-view.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
-import { discoveryItems, discoveryItemTypes } from '../schema.js';
+import { discoveryItems } from '../schema.js';
 import { Clock } from '@/infra/lib/clock.js';
-import type { ItemId, TypeId } from '@/kernel/domain/ids.js';
+import { ItemTypeDirectoryPort } from '@/kernel/application/ports/item-type-directory.js';
+import { type ItemId, TypeId } from '@/kernel/domain/ids.js';
 import { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { ItemWidget } from '@/kernel/domain/vo/widget.js';
 import type { WidgetSettings } from '@/kernel/domain/vo/widget-settings.js';
@@ -69,6 +70,8 @@ export class DrizzleItemCardEnrichmentQuery implements ItemCardEnrichmentPort {
   public constructor(
     private readonly dbClient: DiscoveryDatabaseClient,
     @Inject(Clock) private readonly clock: Clock,
+    @Inject(ItemTypeDirectoryPort)
+    private readonly itemTypeDirectory: ItemTypeDirectoryPort,
   ) {}
 
   public async enrich(input: {
@@ -77,27 +80,22 @@ export class DrizzleItemCardEnrichmentQuery implements ItemCardEnrichmentPort {
     const result = new Map<string, ItemCardEnrichment>();
     if (input.items.length === 0) return result;
 
-    const uniqueTypeIds = [...new Set(input.items.map((i) => String(i.typeId)))];
+    const uniqueTypeIds = [...new Set(input.items.map((i) => String(i.typeId)))].map((id) =>
+      TypeId.raw(id),
+    );
 
-    const typeRows = await this.dbClient.db
-      .select({
-        id: discoveryItemTypes.id,
-        name: discoveryItemTypes.name,
-        widgetSettings: discoveryItemTypes.widgetSettings,
-      })
-      .from(discoveryItemTypes)
-      .where(inArray(discoveryItemTypes.id, uniqueTypeIds));
+    const typeViews = await this.itemTypeDirectory.findByIds(uniqueTypeIds);
 
     const cardWidgetsByType = new Map<string, Set<WidgetSettings['type']>>();
     const typeNameById = new Map<string, string>();
-    for (const row of typeRows) {
-      const settings = (row.widgetSettings ?? []) as WidgetSettings[];
+    for (const view of typeViews) {
       const enabled = new Set<WidgetSettings['type']>();
-      for (const s of settings) {
+      for (const s of view.widgetSettings) {
         if (isShownOnCard(s)) enabled.add(s.type);
       }
-      cardWidgetsByType.set(row.id, enabled);
-      typeNameById.set(row.id, row.name);
+      const id = String(view.typeId);
+      cardWidgetsByType.set(id, enabled);
+      typeNameById.set(id, view.name);
     }
 
     // Дочитываем widgets только для тех item-ов, у которых их нет в памяти (likes/search)

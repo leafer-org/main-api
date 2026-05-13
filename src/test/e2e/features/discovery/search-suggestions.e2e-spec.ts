@@ -6,19 +6,16 @@ import request from 'supertest';
 import { uuidv7 } from 'uuidv7';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { seedCmsCategory, seedCmsItemType } from '../../helpers/cms-seed.js';
 import { startContainers, stopContainers } from '../../helpers/containers.js';
 import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
+import { seedItemPublished, seedOrganizationPublished } from '../../helpers/organization-seed.js';
 import { waitForAllConsumers } from '../../helpers/kafka.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
 import { configureApp } from '@/apps/configure-app.js';
 import { DiscoveryDatabaseClient } from '@/features/discovery/adapters/db/client.js';
-import {
-  discoveryCategories,
-  discoveryItems,
-  discoveryItemTypes,
-  discoveryOwners,
-} from '@/features/discovery/adapters/db/schema.js';
+import { discoveryItems, discoveryOwners } from '@/features/discovery/adapters/db/schema.js';
 import { GorseSyncStub } from '@/features/discovery/adapters/gorse/gorse-sync.stub.js';
 import { RecommendationStub } from '@/features/discovery/adapters/gorse/recommendation.stub.js';
 import { RecommendationService } from '@/features/discovery/application/ports.js';
@@ -57,63 +54,71 @@ describe('discovery-search-suggestions', () => {
   }
 
   async function seedCategory(name: string): Promise<string> {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
     const categoryId = randomUUID();
-    await produce(categoryStreamingContract, {
-      id: uuidv7(),
-      type: 'category.published',
-      categoryId,
+    await seedCmsCategory(process.env.DB_URL, {
+      id: categoryId,
       parentCategoryId: null,
       name,
-      iconId: randomUUID(),
-      order: 0,
-      allowedTypeIds: [],
-      ancestorIds: [],
-      attributes: [],
-      republished: false,
-      publishedAt: new Date().toISOString(),
+      status: 'published',
+    });
+    // category.changed апдейтит Meili-индекс search-suggestions; ждём появления в подсказках.
+    await produce(categoryStreamingContract, {
+      id: uuidv7(),
+      type: 'category.changed',
+      categoryId,
+      changedAt: new Date().toISOString(),
     });
     await vi.waitFor(async () => {
-      const [row] = await db
-        .select()
-        .from(discoveryCategories)
-        .where(eq(discoveryCategories.id, categoryId));
-      expectDefined(row);
+      const res = await agent.get('/search-suggestions').query({ query: name }).expect(200);
+      const found = (res.body.categories ?? []).some(
+        (c: { categoryId: string }) => c.categoryId === categoryId,
+      );
+      expect(found).toBe(true);
     }, WAIT_OPTIONS);
     return categoryId;
   }
 
   async function seedItemType(name: string): Promise<string> {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
     const typeId = randomUUID();
-    await produce(itemTypeStreamingContract, {
-      id: uuidv7(),
-      type: 'item-type.created',
-      typeId,
+    await seedCmsItemType(process.env.DB_URL, {
+      id: typeId,
       name,
       label: name.toLowerCase(),
       widgetSettings: [{ type: 'base-info', required: true }],
-      createdAt: new Date().toISOString(),
+    });
+    await produce(itemTypeStreamingContract, {
+      id: uuidv7(),
+      type: 'item-type.changed',
+      typeId,
+      changedAt: new Date().toISOString(),
     });
     await vi.waitFor(async () => {
-      const [row] = await db
-        .select()
-        .from(discoveryItemTypes)
-        .where(eq(discoveryItemTypes.id, typeId));
-      expectDefined(row);
+      const res = await agent.get('/search-suggestions').query({ query: name }).expect(200);
+      const found = (res.body.itemTypes ?? []).some(
+        (t: { typeId: string }) => t.typeId === typeId,
+      );
+      expect(found).toBe(true);
     }, WAIT_OPTIONS);
     return typeId;
   }
 
   async function seedOrganization(name: string): Promise<string> {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
     const orgId = randomUUID();
-    await produce(organizationStreamingContract, {
-      id: uuidv7(),
-      type: 'organization.published',
-      organizationId: orgId,
+    await seedOrganizationPublished(process.env.DB_URL, {
+      id: orgId,
       name,
       avatarId: null,
       media: [],
-      republished: false,
-      publishedAt: new Date().toISOString(),
+      published: true,
+    });
+    await produce(organizationStreamingContract, {
+      id: uuidv7(),
+      type: 'organization.changed',
+      organizationId: orgId,
+      changedAt: new Date().toISOString(),
     });
     await vi.waitFor(async () => {
       const [row] = await db
@@ -126,24 +131,28 @@ describe('discovery-search-suggestions', () => {
   }
 
   async function seedItem(opts: { title: string; cityId?: string; ageGroup?: string } = { title: '' }) {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
     const itemId = randomUUID();
     const typeId = randomUUID();
     const orgId = randomUUID();
+    const widgets = [
+      { type: 'base-info', title: opts.title, description: 'Desc', media: [] },
+      { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
+      { type: 'category', categoryIds: [], attributes: [] },
+      { type: 'location', cityId: opts.cityId ?? CITY_ID, lat: 55.75, lng: 37.62, address: 'A' },
+      { type: 'age-group', value: AgeGroupOption.restore(opts.ageGroup ?? 'adults') },
+    ];
+    await seedItemPublished(process.env.DB_URL, {
+      id: itemId,
+      organizationId: orgId,
+      typeId,
+      widgets,
+    });
     await produce(itemStreamingContract, {
       id: uuidv7(),
-      type: 'item.published',
+      type: 'item.changed',
       itemId,
-      typeId,
-      organizationId: orgId,
-      widgets: [
-        { type: 'base-info', title: opts.title, description: 'Desc', media: [] },
-        { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
-        { type: 'category', categoryIds: [], attributes: [] },
-        { type: 'location', cityId: opts.cityId ?? CITY_ID, lat: 55.75, lng: 37.62, address: 'A' },
-        { type: 'age-group', value: AgeGroupOption.restore(opts.ageGroup ?? 'adults') },
-      ],
-      republished: false,
-      publishedAt: new Date().toISOString(),
+      changedAt: new Date().toISOString(),
     });
     await vi.waitFor(async () => {
       const [row] = await db.select().from(discoveryItems).where(eq(discoveryItems.id, itemId));

@@ -1,11 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-import { CategoryAncestorLookupPort } from '../../application/ports.js';
 import { GorseSyncPort } from '../../application/sync-ports.js';
 import { type ItemReadModel, toGorseLabels } from '../../domain/read-models/item.read-model.js';
 import { itemGeoCategories, itemGlobalCategories } from '@/infra/lib/geo/h3-geo.js';
 import type { GorseItemPayload } from '@/infra/lib/nest-gorse/index.js';
 import { GorseClient } from '@/infra/lib/nest-gorse/index.js';
+import { CategoryDirectoryPort } from '@/kernel/application/ports/category-directory.js';
 import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 import type { ItemId, UserId } from '@/kernel/domain/ids.js';
 
@@ -15,7 +15,7 @@ export class GorseSyncAdapter implements GorseSyncPort {
 
   public constructor(
     @Inject(GorseClient) private readonly client: GorseClient,
-    @Inject(CategoryAncestorLookupPort) private readonly ancestorLookup: CategoryAncestorLookupPort,
+    @Inject(CategoryDirectoryPort) private readonly categoryDirectory: CategoryDirectoryPort,
     @Inject(CityCoordinatesPort) private readonly cityCoordinates: CityCoordinatesPort,
   ) {}
 
@@ -74,10 +74,16 @@ export class GorseSyncAdapter implements GorseSyncPort {
     const labels = toGorseLabels(item);
 
     const ageGroups = this.resolveAgeGroups(item.ageGroup);
-    const categoryIds = item.category?.categoryIds ?? [];
+    const directIds = item.category?.categoryIds ?? [];
     const rootCategoryIds =
-      categoryIds.length > 0
-        ? (await this.ancestorLookup.findRootCategoryIds(categoryIds)).map(String)
+      directIds.length > 0
+        ? [
+            ...new Set(
+              (await this.categoryDirectory.findByIds(directIds)).map((v) =>
+                v.ancestorIds.length > 0 ? String(v.ancestorIds[0]) : String(v.categoryId),
+              ),
+            ),
+          ]
         : [];
 
     const categories = await this.resolveCategories(item, ageGroups, rootCategoryIds);

@@ -1,65 +1,69 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { projectCategory } from '../../../domain/read-models/category.read-model.js';
-import { CategoryAncestorLookupPort } from '../../ports.js';
+import { IdempotencyPort, ItemProjectionPort } from '../../projection-ports.js';
 import {
-  CategoryProjectionPort,
-  IdempotencyPort,
-  ItemProjectionPort,
-} from '../../projection-ports.js';
-import { GorseSyncPort, MeilisearchSyncPort } from '../../sync-ports.js';
-import type {
-  CategoryPublishedEvent,
-  CategoryUnpublishedEvent,
-} from '@/kernel/domain/events/category.events.js';
+  CategorySearchSyncPort,
+  GorseSyncPort,
+  MeilisearchSyncPort,
+} from '../../sync-ports.js';
+import { CategoryDirectoryPort } from '@/kernel/application/ports/category-directory.js';
+import type { CategoryId } from '@/kernel/domain/ids.js';
 
-/** Проецирует category.published / category.unpublished в PG. Атрибуты хранятся как JSONB внутри категории. */
+/**
+ * Реакция discovery на тонкое событие `category.changed`:
+ *  1) Меняем индекс suggestions в Meili (upsert/delete по `status`)
+ *  2) Re-syncаем items в поддереве этой категории (closure + Meili + Gorse)
+ *     — структурная цена смены родителя категории.
+ *
+ * Discovery не хранит проекции категорий (метаданные читаются через
+ * CategoryDirectoryPort из cms write-side). Денормализация дерева живёт в
+ * `discovery_item_categories` (closure: direct ∪ ancestors).
+ */
 @Injectable()
 export class ProjectCategoryHandler {
   public constructor(
     @Inject(IdempotencyPort) private readonly idempotency: IdempotencyPort,
-    @Inject(CategoryProjectionPort) private readonly categoryProjection: CategoryProjectionPort,
-    @Inject(CategoryAncestorLookupPort) private readonly ancestorLookup: CategoryAncestorLookupPort,
     @Inject(ItemProjectionPort) private readonly itemProjection: ItemProjectionPort,
     @Inject(GorseSyncPort) private readonly gorse: GorseSyncPort,
     @Inject(MeilisearchSyncPort) private readonly meilisearch: MeilisearchSyncPort,
+    @Inject(CategoryDirectoryPort) private readonly categoryDirectory: CategoryDirectoryPort,
+    @Inject(CategorySearchSyncPort)
+    private readonly categorySearchSync: CategorySearchSyncPort,
   ) {}
 
-  public async handleCategoryPublished(
-    eventId: string,
-    payload: CategoryPublishedEvent,
-  ): Promise<void> {
+  public async handleCategoryChanged(eventId: string, categoryId: CategoryId): Promise<void> {
     if (await this.idempotency.isProcessed(eventId)) return;
 
-    const category = projectCategory(payload);
-    await this.categoryProjection.upsert(category);
-    this.ancestorLookup.clearCache();
+    // Свежий read категории — отсюда же резолвим closure для items в поддереве.
+    // Cache в адаптере мог быть прогрет старыми данными до события.
+    this.categoryDirectory.clearCache();
 
-    if (payload.republished) {
-      // Re-sync items этой категории: rootCategoryIds в Gorse и categoryIds-фасеты
-      // в Meilisearch резолвились в момент item.published — после смены родителя
-      // они устарели, а сами items не получают своего события.
-      // Каскад на потомков не нужен: при изменении родителя CMS требует unpublish
-      // (см. CategoryEntity.update), а unpublish каскадно валит всё поддерево —
-      // последующий republish каждой категории несёт свежие ancestorIds в самом событии.
-      const items = await this.itemProjection.findReadModelsByCategoryIds([payload.categoryId]);
+    const view = await this.categoryDirectory.findById(categoryId);
+
+    if (!view || view.status !== 'published') {
+      await this.categorySearchSync.delete(categoryId);
+    } else {
+      await this.categorySearchSync.upsert({ categoryId: view.categoryId, name: view.name });
+    }
+
+    // Cascade: items в этой категории и поддереве должны переиндексироваться,
+    // т.к. их closureCategoryIds зависит от ancestor-chain, который мог сместиться.
+    const subtreeIds = await this.categoryDirectory.findDescendantIds(categoryId);
+    if (subtreeIds.length > 0) {
+      const items = await this.itemProjection.findReadModelsByCategoryIds(subtreeIds);
       if (items.length > 0) {
+        for (const item of items) {
+          if (item.category) {
+            item.category.closureCategoryIds = await this.categoryDirectory.findAncestorClosure(
+              item.category.categoryIds,
+            );
+          }
+        }
+        for (const item of items) await this.itemProjection.upsert(item);
         await Promise.all(items.map((item) => this.gorse.upsertItem(item)));
         await this.meilisearch.upsertItems(items);
       }
     }
-
-    await this.idempotency.markProcessed(eventId);
-  }
-
-  public async handleCategoryUnpublished(
-    eventId: string,
-    payload: CategoryUnpublishedEvent,
-  ): Promise<void> {
-    if (await this.idempotency.isProcessed(eventId)) return;
-
-    await this.categoryProjection.delete(payload.categoryId);
-    this.ancestorLookup.clearCache();
 
     await this.idempotency.markProcessed(eventId);
   }

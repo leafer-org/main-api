@@ -568,7 +568,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** @description Список дочерних категорий с количеством товаров */
+    /** @description Список дочерних категорий каталога */
     get: operations['getCategories'];
     put?: never;
     post?: never;
@@ -2823,8 +2823,6 @@ export interface components {
       categoryId: string;
       name: string;
       iconUrl: string;
-      childCount: number;
-      itemCount: number;
     };
     ImagePreview: {
       /** Format: uri */

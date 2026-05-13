@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { startContainers, stopContainers } from '../../helpers/containers.js';
 import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
+import { seedItemPublished } from '../../helpers/organization-seed.js';
 import { waitForAllConsumers } from '../../helpers/kafka.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
@@ -144,16 +145,19 @@ describe('discovery-item-detail', () => {
       widgets.push({ type: 'schedule', entries: options.schedule });
     }
 
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await seedItemPublished(process.env.DB_URL, {
+      id: itemId,
+      organizationId: orgId,
+      typeId,
+      widgets,
+    });
     await produce(itemStreamingContract, {
       id: uuidv7(),
-      type: 'item.published',
+      type: 'item.changed',
       itemId,
-      typeId,
-      organizationId: orgId,
-      widgets,
-      republished: false,
-      publishedAt: new Date().toISOString(),
-    } as ContractMessage<typeof itemStreamingContract>);
+      changedAt: new Date().toISOString(),
+    });
 
     await vi.waitFor(async () => {
       const [row] = await db.select().from(discoveryItems).where(eq(discoveryItems.id, itemId));

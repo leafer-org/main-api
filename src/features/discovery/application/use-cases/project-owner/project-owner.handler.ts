@@ -1,28 +1,28 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { projectOwnerFromOrganization } from '../../../domain/read-models/owner.read-model.js';
 import { ItemQueryPort } from '../../ports.js';
 import {
   IdempotencyPort,
   ItemProjectionPort,
   OwnerProjectionPort,
 } from '../../projection-ports.js';
-import { GorseSyncPort, MeilisearchSyncPort } from '../../sync-ports.js';
-import type {
-  OrganizationPublishedEvent,
-  OrganizationUnpublishedEvent,
-} from '@/kernel/domain/events/organization.events.js';
-import { OrganizationId } from '@/kernel/domain/ids.js';
+import {
+  GorseSyncPort,
+  MeilisearchSyncPort,
+  OrganizationSearchSyncPort,
+} from '../../sync-ports.js';
+import { OrganizationDirectoryPort } from '@/kernel/application/ports/organization-directory.js';
+import type { OrganizationId } from '@/kernel/domain/ids.js';
 
 /**
- * Проецирует события организаций в PG + Gorse + Meilisearch.
+ * Реакция discovery на тонкое событие `organization.changed`:
+ *  - Если организация published — upsert в `discovery_owners` (denormalized name/avatar/team).
+ *    На conflict рейтинг/reviewCount сохраняются (cascade из review.created).
+ *    Каскадно обновляется `ownerName`/`ownerAvatarId` у её items + переиндексация в Meili.
+ *  - Если организация удалена / не-published — delete owner + каскадное удаление items.
  *
- * - `organization.published` (republished=true): обновить name/avatar в owner + каскад в items +
- *   Meilisearch (без перезаписи рейтинга).
- * - `organization.published` (republished=false): создать нового owner.
- * - `organization.unpublished`: удалить owner + каскадно все items из PG/Gorse/Meilisearch.
- *
- * TODO: DLQ при ошибке синхронизации
+ * Свежий state читается через `OrganizationDirectoryPort` (write-side в feature
+ * `organization`). Тонкое событие — только сигнал «что-то изменилось».
  */
 @Injectable()
 export class ProjectOwnerHandler {
@@ -33,57 +33,69 @@ export class ProjectOwnerHandler {
     @Inject(ItemQueryPort) private readonly itemQuery: ItemQueryPort,
     @Inject(GorseSyncPort) private readonly gorse: GorseSyncPort,
     @Inject(MeilisearchSyncPort) private readonly meilisearch: MeilisearchSyncPort,
+    @Inject(OrganizationDirectoryPort)
+    private readonly organizationDirectory: OrganizationDirectoryPort,
+    @Inject(OrganizationSearchSyncPort)
+    private readonly organizationSearchSync: OrganizationSearchSyncPort,
   ) {}
 
-  public async handleOrganizationPublished(
+  public async handleOrganizationChanged(
     eventId: string,
-    payload: OrganizationPublishedEvent,
+    organizationId: OrganizationId,
   ): Promise<void> {
     if (await this.idempotency.isProcessed(eventId)) return;
 
-    const ownerId = OrganizationId.raw(payload.organizationId);
+    // Cache мог быть прогрет старым state'ом до события — сбрасываем.
+    this.organizationDirectory.clearCache();
 
-    if (payload.republished) {
-      await this.ownerProjection.updateData(ownerId, {
-        name: payload.name,
-        description: payload.description,
-        avatarId: payload.avatarId,
-        media: payload.media,
-        contacts: payload.contacts,
-        team: payload.team,
-        updatedAt: payload.publishedAt,
-      });
+    const view = await this.organizationDirectory.findById(organizationId);
 
-      const affectedItemIds = await this.itemProjection.updateOwnerData(ownerId, {
-        name: payload.name,
-        avatarId: payload.avatarId,
-      });
-      const items = await this.itemQuery.findByIds(affectedItemIds);
-      await this.meilisearch.upsertItems(items);
-    } else {
-      const owner = projectOwnerFromOrganization(payload);
-      await this.ownerProjection.upsert(owner);
+    if (!view) {
+      // Организация удалена / не опубликована — удаляем owner, search-индекс
+      // и каскадно items.
+      await this.organizationSearchSync.delete(organizationId);
+      await this.ownerProjection.delete(organizationId);
+      const affectedItemIds = await this.itemProjection.deleteByOrganizationId(organizationId);
+      await Promise.all(
+        affectedItemIds.map(async (itemId) => {
+          await this.gorse.deleteItem(itemId);
+          await this.meilisearch.deleteItem(itemId);
+        }),
+      );
+      await this.idempotency.markProcessed(eventId);
+      return;
     }
 
-    await this.idempotency.markProcessed(eventId);
-  }
+    // Meili search-suggestions: имя организации (для autocomplete).
+    await this.organizationSearchSync.upsert({
+      organizationId: view.organizationId,
+      name: view.name,
+    });
 
-  public async handleOrganizationUnpublished(
-    eventId: string,
-    payload: OrganizationUnpublishedEvent,
-  ): Promise<void> {
-    if (await this.idempotency.isProcessed(eventId)) return;
+    // upsert: на конфликте обновляются только denormalized поля,
+    // rating/reviewCount остаются в проекции нетронутыми.
+    await this.ownerProjection.upsert({
+      ownerId: view.organizationId,
+      name: view.name,
+      description: view.description,
+      avatarId: view.avatarId,
+      media: view.media,
+      contacts: view.contacts,
+      team: view.team,
+      rating: null,
+      reviewCount: 0,
+      updatedAt: view.updatedAt,
+    });
 
-    const ownerId = OrganizationId.raw(payload.organizationId);
-    await this.ownerProjection.delete(ownerId);
-
-    const affectedItemIds = await this.itemProjection.deleteByOrganizationId(ownerId);
-    await Promise.all(
-      affectedItemIds.map(async (itemId) => {
-        await this.gorse.deleteItem(itemId);
-        await this.meilisearch.deleteItem(itemId);
-      }),
-    );
+    // Каскад denormalized полей в discovery_items + переиндексация в Meili.
+    const affectedItemIds = await this.itemProjection.updateOwnerData(view.organizationId, {
+      name: view.name,
+      avatarId: view.avatarId,
+    });
+    if (affectedItemIds.length > 0) {
+      const items = await this.itemQuery.findByIds(affectedItemIds);
+      await this.meilisearch.upsertItems(items);
+    }
 
     await this.idempotency.markProcessed(eventId);
   }

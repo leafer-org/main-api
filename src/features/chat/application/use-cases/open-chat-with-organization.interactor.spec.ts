@@ -65,6 +65,9 @@ function makeStubs() {
     canRespondAsOrganization: vi
       .fn<(orgId: OrganizationId, userId: UserId) => Promise<boolean>>()
       .mockResolvedValue(false),
+    findRespondableUserIds: vi
+      .fn<(orgId: OrganizationId) => Promise<UserId[]>>()
+      .mockResolvedValue([]),
   };
   const txHost: TransactionHost = {
     startTransaction: async (cb) => cb(NO_TRANSACTION),

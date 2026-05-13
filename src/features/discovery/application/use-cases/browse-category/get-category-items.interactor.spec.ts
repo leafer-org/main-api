@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import type {
-  CategoryAncestorLookupPort,
   ItemCardEnrichmentPort,
   ItemQueryPort,
   RankedListCachePort,
@@ -11,6 +10,7 @@ import type {
 import { GetCategoryItemsInteractor } from './get-category-items.interactor.js';
 import { isRight } from '@/infra/lib/box.js';
 import { ServiceMock } from '@/infra/test/mock.js';
+import type { CategoryDirectoryPort } from '@/kernel/application/ports/category-directory.js';
 import type { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
 import { CategoryId, ItemId, TypeId, UserId } from '@/kernel/domain/ids.js';
 import { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
@@ -42,9 +42,23 @@ function makeDeps() {
   const itemQuery = ServiceMock<ItemQueryPort>();
   const cardEnrichment = ServiceMock<ItemCardEnrichmentPort>();
   const cityCoordinates = ServiceMock<CityCoordinatesPort>();
-  const ancestorLookup = ServiceMock<CategoryAncestorLookupPort>();
+  const categoryDirectory = ServiceMock<CategoryDirectoryPort>();
   cityCoordinates.findCoordinates.mockResolvedValue(null);
-  ancestorLookup.findRootCategoryIds.mockResolvedValue([ROOT_CATEGORY_ID]);
+  categoryDirectory.findById.mockResolvedValue({
+    categoryId: CATEGORY_ID,
+    parentCategoryId: ROOT_CATEGORY_ID,
+    name: 'cat',
+    iconId: 'icon' as never,
+    order: 0,
+    status: 'published' as const,
+    allowedTypeIds: [],
+    ancestorIds: [ROOT_CATEGORY_ID, CATEGORY_ID],
+    ageGroups: [],
+    attributes: [],
+    publishedAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
   cardEnrichment.enrich.mockResolvedValue(new Map());
   return {
     recommendation,
@@ -52,7 +66,7 @@ function makeDeps() {
     itemQuery,
     cardEnrichment,
     cityCoordinates,
-    ancestorLookup,
+    categoryDirectory,
   };
 }
 
@@ -63,7 +77,7 @@ function makeInteractor(deps: ReturnType<typeof makeDeps>) {
     deps.itemQuery,
     deps.cardEnrichment,
     deps.cityCoordinates,
-    deps.ancestorLookup,
+    deps.categoryDirectory,
   );
 }
 
@@ -318,7 +332,7 @@ describe('GetCategoryItemsInteractor', () => {
       expect(calls[0]![0]).not.toBe(calls[1]![0]);
     });
 
-    it('резолвит root-категорию через ancestorLookup', async () => {
+    it('резолвит root-категорию через CategoryDirectoryPort', async () => {
       const deps = makeDeps();
       deps.rankedListCache.get.mockResolvedValue(null);
       deps.recommendation.recommend.mockResolvedValue([ItemId.raw('a')]);
@@ -331,7 +345,7 @@ describe('GetCategoryItemsInteractor', () => {
       const interactor = makeInteractor(deps);
       await interactor.execute(baseQuery);
 
-      expect(deps.ancestorLookup.findRootCategoryIds).toHaveBeenCalledWith([CATEGORY_ID]);
+      expect(deps.categoryDirectory.findById).toHaveBeenCalledWith(CATEGORY_ID);
     });
 
     it('сохраняет порядок Gorse после фильтрации', async () => {

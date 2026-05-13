@@ -1,56 +1,63 @@
 feature: Discovery Projection Handlers
 code: discovery-handlers
 description: |
-  Kafka-обработчики, которые проецируют интеграционные события из
-  cms / organization / review в локальную read-модель Discovery
-  (`discovery_owners`, `discovery_categories`, `discovery_item_types`,
-  `discovery_items`).
+  Kafka-обработчики discovery, которые реагируют на тонкие интеграционные
+  события (`organization.changed` / `item.changed` / `category.changed` /
+  `item-type.changed` / `review.created` / `interaction.*` / `user.profile-changed`).
 
-  Все обработки идемпотентны и поддерживают каскады (например,
-  публикация organization обновляет связанные items, отписка —
-  удаляет их).
+  Все «жирные» снимки убраны: handler читает свежий state через kernel
+  directory-порты (`OrganizationDirectoryPort`, `ItemDirectoryPort`,
+  `CategoryDirectoryPort`, `ItemTypeDirectoryPort`, `UserDirectoryPort` —
+  реализуются в feature-владельцах данных).
+
+  Локальные проекции в discovery остались только там, где нужны для hot-path
+  фильтрации/выборок:
+    - `discovery_owners` — denormalized {name, avatar, team, rating, reviewCount};
+    - `discovery_items` + `discovery_item_categories` (closure) +
+      attribute/event/schedule junction tables — рабочий набор для search/feed/browse.
+  Метаданные категорий и item-types в discovery НЕ проецируются.
+
+  Search-suggestions (categories/item-types/orgs) живут в Meili-индексах,
+  обновляются на тех же тонких событиях.
+
+  Все обработки идемпотентны и поддерживают каскады (publish организации
+  обновляет связанные items, unpublish — удаляет их).
 
 specs-unit:
   Owner projection:
-    - assert: проецирует organization.published в discovery_owners
+    - assert: проецирует organization.changed в discovery_owners
       description: |
-        Создаётся запись в `discovery_owners`: `name`, `avatarId`,
-        `rating: null`, `reviewCount: 0` по умолчанию.
-    - assert: обновляет owner и каскадно items при republish
+        На `organization.changed` handler читает свежий state через
+        `OrganizationDirectoryPort.findById`. Если published — upsert
+        в `discovery_owners`: `name`, `avatarId`, `rating: null`,
+        `reviewCount: 0` по умолчанию (rating сохраняется на conflict).
+        Имя организации индексируется в Meili `discovery_organizations_search`.
+    - assert: обновляет owner и каскадно items при изменении
       description: |
-        `organization.published` с `republished: true` обновляет
-        owner-запись и денормализованные поля `ownerName`/`ownerAvatarId`
-        во всех привязанных items.
+        Очередное `organization.changed` (повторная публикация / правка)
+        обновляет denormalized поля в owner и `ownerName`/`ownerAvatarId`
+        во всех привязанных items + переиндексирует их в Meili.
+        Rating/reviewCount в owner НЕ затирается.
     - assert: удаляет owner и все items при unpublish
       description: |
-        `organization.unpublished` удаляет owner и каскадно все items
-        этой организации.
-
-  Category projection:
-    - assert: проецирует category.published в discovery_categories с атрибутами
-      description: |
-        Создаётся категория со всеми атрибутами (`attributeId`, `name`,
-        `required`, `schema`).
-    - assert: удаляет category при unpublish
-      description: "`category.unpublished` удаляет запись категории."
-
-  Item Type projection:
-    - assert: проецирует item-type.created в discovery_item_types
-      description: |
-        Создаётся тип товара с `widgetSettings` (со всеми флагами,
-        в т.ч. `allowedStrategies` у payment-виджета).
-    - assert: обновляет item type при item-type.updated
-      description: |
-        `item-type.updated` обновляет `name`, `label`, `widgetSettings`.
+        Если `OrganizationDirectoryPort.findById` вернул `null` (организация
+        не опубликована / удалена) — handler удаляет owner, search-индекс
+        и каскадно все items этой организации (Gorse + Meilisearch).
 
   Item projection:
-    - assert: проецирует item.published в discovery_items с widgets
+    - assert: проецирует item.changed в discovery_items с widgets
       description: |
-        Создаётся item с денормализованными полями из виджетов:
-        `title`, `description`, `media`, `cityId`, `lat/lng`, `address`,
-        `paymentOptions`, `minPrice`, `organizationId`, `ownerName`.
-    - assert: удаляет item при item.unpublished
-      description: "`item.unpublished` удаляет item-запись."
+        На `item.changed` handler читает свежий state через
+        `ItemDirectoryPort.findById`. Если published — мапит widgets в
+        denormalized плоскую структуру (`title`, `description`, `media`,
+        `cityId`, `lat/lng`, `address`, `paymentOptions`, `minPrice`,
+        `organizationId`, `ownerName`) и пишет в `discovery_items` +
+        Gorse + Meilisearch. В `discovery_item_categories` сохраняется
+        closure (direct ∪ ancestors) через `CategoryDirectoryPort.findAncestorClosure`.
+    - assert: удаляет item при отсутствии state (unpublish/delete)
+      description: |
+        Если `ItemDirectoryPort.findById` вернул `null` — handler удаляет
+        запись из `discovery_items`, junction-таблиц, Gorse и Meilisearch.
 
   Review projection:
     - assert: обновляет рейтинг item при review.created с target=item

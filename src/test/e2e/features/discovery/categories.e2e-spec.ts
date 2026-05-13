@@ -6,22 +6,19 @@ import request from 'supertest';
 import { uuidv7 } from 'uuidv7';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { seedCmsCategory, seedCmsItemType } from '../../helpers/cms-seed.js';
 import { startContainers, stopContainers } from '../../helpers/containers.js';
 import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
+import { seedItemPublished } from '../../helpers/organization-seed.js';
 import { waitForAllConsumers } from '../../helpers/kafka.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
 import { configureApp } from '@/apps/configure-app.js';
 import { DiscoveryDatabaseClient } from '@/features/discovery/adapters/db/client.js';
-import {
-  discoveryCategories,
-  discoveryItems,
-  discoveryItemTypes,
-} from '@/features/discovery/adapters/db/schema.js';
+import { discoveryItems } from '@/features/discovery/adapters/db/schema.js';
 import { GorseSyncStub } from '@/features/discovery/adapters/gorse/gorse-sync.stub.js';
 import { RecommendationStub } from '@/features/discovery/adapters/gorse/recommendation.stub.js';
 import { RecommendationService } from '@/features/discovery/application/ports.js';
-import { CategoryProjectionPort } from '@/features/discovery/application/projection-ports.js';
 import { GorseSyncPort, MeilisearchSyncPort } from '@/features/discovery/application/sync-ports.js';
 import { OtpGeneratorService } from '@/features/idp/application/ports.js';
 import { OtpCode } from '@/features/idp/domain/vo/otp.js';
@@ -47,13 +44,16 @@ describe('discovery-categories', () => {
   let agent: ReturnType<typeof request>;
   let producer: KafkaProducerService;
   let db: DiscoveryDatabaseClient;
-  let categoryProjection: CategoryProjectionPort;
 
   async function produce<C extends Contract>(contract: C, message: ContractMessage<C>) {
     producer.send(contract, message);
     await producer.flush();
   }
 
+  /**
+   * Сидим категорию в cms write-side и эмитим тонкое событие — discovery
+   * читает свежий state через CategoryDirectoryPort при следующем запросе.
+   */
   async function seedCategory(params: {
     categoryId: string;
     parentCategoryId: string | null;
@@ -61,67 +61,62 @@ describe('discovery-categories', () => {
     iconId?: string;
     order?: number;
     allowedTypeIds?: string[];
-    ancestorIds?: string[];
     attributes?: { attributeId: string; name: string; required: boolean; schema: object }[];
   }) {
-    await produce(categoryStreamingContract, {
-      id: uuidv7(),
-      type: 'category.published',
-      categoryId: params.categoryId,
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await seedCmsCategory(process.env.DB_URL, {
+      id: params.categoryId,
       parentCategoryId: params.parentCategoryId,
       name: params.name,
-      iconId: params.iconId ?? randomUUID(),
-      order: params.order ?? 0,
-      allowedTypeIds: params.allowedTypeIds ?? [],
-      ancestorIds: params.ancestorIds ?? [],
-      attributes: params.attributes ?? [],
-      republished: false,
-      publishedAt: new Date().toISOString(),
+      iconId: params.iconId,
+      order: params.order,
+      allowedTypeIds: params.allowedTypeIds,
+      attributes: params.attributes,
+      status: 'published',
     });
 
-    await vi.waitFor(async () => {
-      const [row] = await db
-        .select()
-        .from(discoveryCategories)
-        .where(eq(discoveryCategories.id, params.categoryId));
-      expectDefined(row);
-    }, WAIT_OPTIONS);
+    await produce(categoryStreamingContract, {
+      id: uuidv7(),
+      type: 'category.changed',
+      categoryId: params.categoryId,
+      changedAt: new Date().toISOString(),
+    });
   }
 
   async function seedItemType(typeId: string, name: string) {
-    await produce(itemTypeStreamingContract, {
-      id: uuidv7(),
-      type: 'item-type.created',
-      typeId,
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    await seedCmsItemType(process.env.DB_URL, {
+      id: typeId,
       name,
       label: name.toLowerCase(),
       widgetSettings: [{ type: 'base-info', required: true }],
-      createdAt: new Date().toISOString(),
     });
-
-    await vi.waitFor(async () => {
-      const [row] = await db
-        .select()
-        .from(discoveryItemTypes)
-        .where(eq(discoveryItemTypes.id, typeId));
-      expectDefined(row);
-    }, WAIT_OPTIONS);
+    await produce(itemTypeStreamingContract, {
+      id: uuidv7(),
+      type: 'item-type.changed',
+      typeId,
+      changedAt: new Date().toISOString(),
+    });
   }
 
   async function seedItem(itemId: string, typeId: string, orgId: string, categoryIds: string[]) {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
+    const widgets = [
+      { type: 'base-info', title: 'Test Item', description: 'Desc', media: [] },
+      { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
+      { type: 'category', categoryIds, attributes: [] },
+    ];
+    await seedItemPublished(process.env.DB_URL, {
+      id: itemId,
+      organizationId: orgId,
+      typeId,
+      widgets,
+    });
     await produce(itemStreamingContract, {
       id: uuidv7(),
-      type: 'item.published',
+      type: 'item.changed',
       itemId,
-      typeId,
-      organizationId: orgId,
-      widgets: [
-        { type: 'base-info', title: 'Test Item', description: 'Desc', media: [] },
-        { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
-        { type: 'category', categoryIds, attributes: [] },
-      ],
-      republished: false,
-      publishedAt: new Date().toISOString(),
+      changedAt: new Date().toISOString(),
     });
 
     await vi.waitFor(async () => {
@@ -155,7 +150,6 @@ describe('discovery-categories', () => {
 
     producer = app.get(KafkaProducerService);
     db = app.get(DiscoveryDatabaseClient);
-    categoryProjection = app.get(CategoryProjectionPort);
     agent = request(app.getHttpServer());
   });
 
@@ -228,70 +222,6 @@ describe('discovery-categories', () => {
       expect(names).toEqual(['Child 1', 'Child 2']);
     });
 
-    it('возвращает корректный childCount после recalc', async () => {
-      const rootId = randomUUID();
-      const childId1 = randomUUID();
-      const childId2 = randomUUID();
-
-      await seedCategory({ categoryId: rootId, parentCategoryId: null, name: 'Root' });
-      await seedCategory({ categoryId: childId1, parentCategoryId: rootId, name: 'Child 1' });
-      await seedCategory({ categoryId: childId2, parentCategoryId: rootId, name: 'Child 2' });
-
-      await categoryProjection.recalcAllCounts();
-
-      const res = await agent.get('/categories').expect(200);
-
-      const root = res.body.find((c: { categoryId: string }) => c.categoryId === rootId);
-      expectDefined(root);
-      expect(root.childCount).toBe(2);
-    });
-
-    it('возвращает корректный прямой itemCount после recalc', async () => {
-      const rootId = randomUUID();
-      const typeId = randomUUID();
-      const orgId = randomUUID();
-
-      await seedCategory({ categoryId: rootId, parentCategoryId: null, name: 'Root' });
-      await seedItem(randomUUID(), typeId, orgId, [rootId]);
-      await seedItem(randomUUID(), typeId, orgId, [rootId]);
-
-      await categoryProjection.recalcAllCounts();
-
-      const res = await agent.get('/categories').expect(200);
-
-      const root = res.body.find((c: { categoryId: string }) => c.categoryId === rootId);
-      expectDefined(root);
-      expect(root.itemCount).toBe(2);
-    });
-
-    it('аккумулирует itemCount от детей к родителю', async () => {
-      const rootId = randomUUID();
-      const childId = randomUUID();
-      const typeId = randomUUID();
-      const orgId = randomUUID();
-
-      await seedCategory({ categoryId: rootId, parentCategoryId: null, name: 'Root' });
-      await seedCategory({
-        categoryId: childId,
-        parentCategoryId: rootId,
-        name: 'Child',
-        ancestorIds: [rootId],
-      });
-
-      await seedItem(randomUUID(), typeId, orgId, [rootId]);
-      await seedItem(randomUUID(), typeId, orgId, [childId]);
-      await seedItem(randomUUID(), typeId, orgId, [childId]);
-
-      await categoryProjection.recalcAllCounts();
-
-      const res = await agent.get('/categories').expect(200);
-
-      const root = res.body.find((c: { categoryId: string }) => c.categoryId === rootId);
-      expectDefined(root);
-      // 1 direct + 2 from child = 3
-      expect(root.itemCount).toBe(3);
-    });
-
     it('сортирует категории по order asc, затем по name asc', async () => {
       const ids = {
         last: randomUUID(),
@@ -306,7 +236,7 @@ describe('discovery-categories', () => {
       await seedCategory({ categoryId: ids.middleB, parentCategoryId: null, name: 'Ccc', order: 50 });
 
       const res = await agent.get('/categories').expect(200);
-      const categoryIds = (res.body as { categoryId: string }[]).map((c: { categoryId: string }) => c.categoryId);
+      const categoryIds = (res.body as { categoryId: string }[]).map((c) => c.categoryId);
 
       expect(categoryIds).toEqual([ids.first, ids.middleA, ids.middleB, ids.last]);
     });
@@ -321,12 +251,7 @@ describe('discovery-categories', () => {
 
       await seedCategory({ categoryId: rootAId, parentCategoryId: null, name: 'Root A' });
       await seedCategory({ categoryId: rootBId, parentCategoryId: null, name: 'Root B' });
-      await seedCategory({
-        categoryId,
-        parentCategoryId: rootAId,
-        name: 'Cat',
-        ancestorIds: [rootAId],
-      });
+      await seedCategory({ categoryId, parentCategoryId: rootAId, name: 'Cat' });
       await seedItem(itemId, typeId, orgId, [categoryId]);
 
       const gorseSpy = vi.spyOn(app.get(GorseSyncPort), 'upsertItem');
@@ -334,21 +259,19 @@ describe('discovery-categories', () => {
       gorseSpy.mockClear();
       meiliSpy.mockClear();
 
-      // Republish категории с новым родителем
-      await produce(categoryStreamingContract, {
-        id: uuidv7(),
-        type: 'category.published',
-        categoryId,
+      // Republish с новым родителем — обновляем cms write-side, эмитим thin event
+      if (!process.env.DB_URL) throw new Error('DB_URL not set');
+      await seedCmsCategory(process.env.DB_URL, {
+        id: categoryId,
         parentCategoryId: rootBId,
         name: 'Cat',
-        iconId: randomUUID(),
-        order: 0,
-        allowedTypeIds: [],
-        ancestorIds: [rootBId],
-        attributes: [],
-        ageGroups: [],
-        republished: true,
-        publishedAt: new Date().toISOString(),
+        status: 'published',
+      });
+      await produce(categoryStreamingContract, {
+        id: uuidv7(),
+        type: 'category.changed',
+        categoryId,
+        changedAt: new Date().toISOString(),
       });
 
       await vi.waitFor(() => {
@@ -363,42 +286,26 @@ describe('discovery-categories', () => {
       expect(meiliItemIds).toContain(itemId);
     });
 
-    it('сбрасывает счётчики после unpublish категории', async () => {
+    it('исчезает из выдачи после unpublish', async () => {
       const rootId = randomUUID();
       const childId = randomUUID();
 
       await seedCategory({ categoryId: rootId, parentCategoryId: null, name: 'Root' });
       await seedCategory({ categoryId: childId, parentCategoryId: rootId, name: 'Child' });
 
-      await categoryProjection.recalcAllCounts();
+      const res1 = await agent.get('/categories').query({ parentCategoryId: rootId }).expect(200);
+      expect(res1.body).toHaveLength(1);
 
-      const res1 = await agent.get('/categories').expect(200);
-      const root1 = res1.body.find((c: { categoryId: string }) => c.categoryId === rootId);
-      expectDefined(root1);
-      expect(root1.childCount).toBe(1);
-
-      // Unpublish child
-      await produce(categoryStreamingContract, {
-        id: uuidv7(),
-        type: 'category.unpublished',
-        categoryId: childId,
-        unpublishedAt: new Date().toISOString(),
+      if (!process.env.DB_URL) throw new Error('DB_URL not set');
+      await seedCmsCategory(process.env.DB_URL, {
+        id: childId,
+        parentCategoryId: rootId,
+        name: 'Child',
+        status: 'unpublished',
       });
 
-      await vi.waitFor(async () => {
-        const cats = await db
-          .select()
-          .from(discoveryCategories)
-          .where(eq(discoveryCategories.id, childId));
-        expect(cats).toHaveLength(0);
-      }, WAIT_OPTIONS);
-
-      await categoryProjection.recalcAllCounts();
-
-      const res2 = await agent.get('/categories').expect(200);
-      const root2 = res2.body.find((c: { categoryId: string }) => c.categoryId === rootId);
-      expectDefined(root2);
-      expect(root2.childCount).toBe(0);
+      const res2 = await agent.get('/categories').query({ parentCategoryId: rootId }).expect(200);
+      expect(res2.body).toHaveLength(0);
     });
   });
 

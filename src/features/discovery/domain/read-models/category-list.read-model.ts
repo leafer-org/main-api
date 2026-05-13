@@ -5,6 +5,4 @@ export type CategoryListReadModel = {
   categoryId: CategoryId;
   name: string;
   iconId: MediaId;
-  childCount: number;
-  itemCount: number;
 };

@@ -1,21 +1,14 @@
 // TODO: DLQ-процессор (cron 10с, exponential backoff 10с→5мин, макс 10 попыток, таблица dead_letter_events)
 import { Module } from '@nestjs/common';
 
-// --- Cron ---
-import { CategoryCountsCron } from './adapters/cron/category-counts.cron.js';
-import { DrizzleCategoryAncestorLookupQuery } from './adapters/db/queries/category-ancestor-lookup.query.js';
-import { DrizzleCategoryFiltersQuery } from './adapters/db/queries/category-filters.query.js';
-import { DrizzleCategoryListQuery } from './adapters/db/queries/category-list.query.js';
 import { DrizzleItemCardEnrichmentQuery } from './adapters/db/queries/item-card-enrichment.query.js';
 import { DrizzleItemQuery } from './adapters/db/queries/item.query.js';
 // --- DB Adapters ---
 import { DrizzleLikedItemsQuery } from './adapters/db/queries/liked-items.query.js';
 import { DrizzleOrganizationProfileQuery } from './adapters/db/queries/organization-profile.query.js';
 import { DrizzleSearchSuggestionsQuery } from './adapters/db/queries/search-suggestions.query.js';
-import { DrizzleCategoryProjectionRepository } from './adapters/db/repositories/category-projection.repository.js';
 import { DrizzleIdempotencyRepository } from './adapters/db/repositories/idempotency.repository.js';
 import { DrizzleItemProjectionRepository } from './adapters/db/repositories/item-projection.repository.js';
-import { DrizzleItemTypeProjectionRepository } from './adapters/db/repositories/item-type-projection.repository.js';
 import { DrizzleLikeWriteRepository } from './adapters/db/repositories/like-write.repository.js';
 import { DrizzleOwnerProjectionRepository } from './adapters/db/repositories/owner-projection.repository.js';
 import { DrizzleSearchLogRepository } from './adapters/db/repositories/search-log.repository.js';
@@ -41,14 +34,17 @@ import { OwnerProjectionKafkaHandler } from './adapters/kafka/owner-projection.h
 import { ReviewProjectionKafkaHandler } from './adapters/kafka/review-projection.handler.js';
 import { UserProjectionKafkaHandler } from './adapters/kafka/user-projection.handler.js';
 // --- Real Adapters ---
+import { MeiliCategorySearchSyncAdapter } from './adapters/meilisearch/category-search-sync.adapter.js';
+import { DiscoveryCategoriesSearchClient } from './adapters/meilisearch/discovery-categories-search.index.js';
+import { DiscoveryItemTypesSearchClient } from './adapters/meilisearch/discovery-item-types-search.index.js';
+import { DiscoveryOrganizationsSearchClient } from './adapters/meilisearch/discovery-organizations-search.index.js';
+import { MeiliItemTypeSearchSyncAdapter } from './adapters/meilisearch/item-type-search-sync.adapter.js';
 import { MeilisearchSyncAdapter } from './adapters/meilisearch/meilisearch-sync.adapter.js';
+import { MeiliOrganizationSearchSyncAdapter } from './adapters/meilisearch/organization-search-sync.adapter.js';
 import { MeiliSearchQuery } from './adapters/meilisearch/search.adapter.js';
 import { RedisRankedListCache } from './adapters/redis/ranked-list-cache.adapter.js';
 // --- Application ---
 import {
-  CategoryAncestorLookupPort,
-  CategoryFiltersQueryPort,
-  CategoryListQueryPort,
   ItemCardEnrichmentPort,
   ItemQueryPort,
   LikedItemsQueryPort,
@@ -61,13 +57,17 @@ import {
   SearchSuggestionsQueryPort,
 } from './application/ports.js';
 import {
-  CategoryProjectionPort,
   IdempotencyPort,
   ItemProjectionPort,
-  ItemTypeProjectionPort,
   OwnerProjectionPort,
 } from './application/projection-ports.js';
-import { GorseSyncPort, MeilisearchSyncPort } from './application/sync-ports.js';
+import {
+  CategorySearchSyncPort,
+  GorseSyncPort,
+  ItemTypeSearchSyncPort,
+  MeilisearchSyncPort,
+  OrganizationSearchSyncPort,
+} from './application/sync-ports.js';
 import { GetCategoryFiltersInteractor } from './application/use-cases/browse-category/get-category-filters.interactor.js';
 import { GetCategoryItemsInteractor } from './application/use-cases/browse-category/get-category-items.interactor.js';
 import { GetCategoryListInteractor } from './application/use-cases/browse-category/get-category-list.interactor.js';
@@ -104,6 +104,11 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     // Infrastructure
     { provide: Clock, useClass: SystemClock },
 
+    // Meili search clients
+    DiscoveryCategoriesSearchClient,
+    DiscoveryItemTypesSearchClient,
+    DiscoveryOrganizationsSearchClient,
+
     // Use cases / Interactors
     GetFeedInteractor,
     GetCategoryItemsInteractor,
@@ -126,21 +131,13 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     ProjectInteractionHandler,
     ProjectUserHandler,
 
-    // Cron
-    CategoryCountsCron,
-
     // Query port → adapter bindings
     { provide: ItemQueryPort, useClass: DrizzleItemQuery },
     { provide: ItemCardEnrichmentPort, useClass: DrizzleItemCardEnrichmentQuery },
-    { provide: CategoryFiltersQueryPort, useClass: DrizzleCategoryFiltersQuery },
-    { provide: CategoryListQueryPort, useClass: DrizzleCategoryListQuery },
-    { provide: CategoryAncestorLookupPort, useClass: DrizzleCategoryAncestorLookupQuery },
     { provide: OrganizationProfileQueryPort, useClass: DrizzleOrganizationProfileQuery },
 
     // Projection port → adapter bindings
     { provide: ItemProjectionPort, useClass: DrizzleItemProjectionRepository },
-    { provide: CategoryProjectionPort, useClass: DrizzleCategoryProjectionRepository },
-    { provide: ItemTypeProjectionPort, useClass: DrizzleItemTypeProjectionRepository },
     { provide: OwnerProjectionPort, useClass: DrizzleOwnerProjectionRepository },
     { provide: IdempotencyPort, useClass: DrizzleIdempotencyRepository },
 
@@ -149,6 +146,9 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
 
     // Real adapters
     { provide: MeilisearchSyncPort, useClass: MeilisearchSyncAdapter },
+    { provide: CategorySearchSyncPort, useClass: MeiliCategorySearchSyncAdapter },
+    { provide: ItemTypeSearchSyncPort, useClass: MeiliItemTypeSearchSyncAdapter },
+    { provide: OrganizationSearchSyncPort, useClass: MeiliOrganizationSearchSyncAdapter },
     { provide: SearchPort, useClass: MeiliSearchQuery },
     { provide: SearchSuggestionsQueryPort, useClass: DrizzleSearchSuggestionsQuery },
     { provide: SearchLogPort, useClass: DrizzleSearchLogRepository },

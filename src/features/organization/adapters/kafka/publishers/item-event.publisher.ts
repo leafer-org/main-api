@@ -22,39 +22,11 @@ export class OutboxItemEventPublisher extends ItemEventPublisher {
   }
 
   public async publishItemPublished(tx: Transaction, event: ItemPublishedEvent): Promise<void> {
-    const db = this.txHost.get(tx);
-    // biome-ignore lint/suspicious/noExplicitAny: ItemWidget[] structurally matches WidgetSchema union but TypeBox types are not assignable
-    const widgets = event.widgets as any;
-    await this.outbox.enqueue(
-      db,
-      itemStreamingContract,
-      {
-        id: event.id,
-        type: 'item.published',
-        itemId: event.itemId as string,
-        typeId: event.typeId as string,
-        organizationId: event.organizationId as string,
-        widgets,
-        republished: event.republished,
-        publishedAt: event.publishedAt.toISOString(),
-      },
-      { key: event.itemId as string },
-    );
+    await this.publishChanged(tx, event.id, event.itemId as string, event.publishedAt);
   }
 
   public async publishItemUnpublished(tx: Transaction, event: ItemUnpublishedEvent): Promise<void> {
-    const db = this.txHost.get(tx);
-    await this.outbox.enqueue(
-      db,
-      itemStreamingContract,
-      {
-        id: event.id,
-        type: 'item.unpublished',
-        itemId: event.itemId as string,
-        unpublishedAt: event.unpublishedAt.toISOString(),
-      },
-      { key: event.itemId as string },
-    );
+    await this.publishChanged(tx, event.id, event.itemId as string, event.unpublishedAt);
   }
 
   public async publishModerationRequested(
@@ -75,6 +47,26 @@ export class OutboxItemEventPublisher extends ItemEventPublisher {
         submittedAt: event.submittedAt.toISOString(),
       },
       { key: event.itemId as string },
+    );
+  }
+
+  private async publishChanged(
+    tx: Transaction,
+    id: string,
+    itemId: string,
+    changedAt: Date,
+  ): Promise<void> {
+    const db = this.txHost.get(tx);
+    await this.outbox.enqueue(
+      db,
+      itemStreamingContract,
+      {
+        id,
+        type: 'item.changed',
+        itemId,
+        changedAt: changedAt.toISOString(),
+      },
+      { key: itemId },
     );
   }
 }

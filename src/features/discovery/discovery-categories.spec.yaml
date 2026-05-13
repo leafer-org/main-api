@@ -1,13 +1,15 @@
 feature: Discovery Categories HTTP
 code: discovery-categories
 description: |
-  Публичный HTTP-API для дерева категорий каталога. Категории проецируются
-  из Kafka-событий cms-сервиса (category.published / category.unpublished),
-  внутри Discovery поддерживается агрегированная статистика по веткам
-  (childCount, itemCount).
+  Публичный HTTP-API для дерева категорий каталога. Метаданные категорий
+  больше НЕ проецируются в discovery — discovery-handlers читают их
+  на запрос через `CategoryDirectoryPort` (cms write-side).
+  Тонкое событие `category.changed` нужно только для:
+    1) обновления Meili-индекса search-suggestions;
+    2) cascade re-sync items в поддереве (closure в `discovery_item_categories`).
 
   Эндпоинты:
-    GET /categories                 — корневые или дочерние категории.
+    GET /categories                 — корневые или дочерние published-категории.
     GET /categories/:id/filters     — фильтры (атрибуты, типы, common-флаги).
 
 specs-unit:
@@ -15,52 +17,41 @@ specs-unit:
     - assert: возвращает пустой массив при отсутствии категорий
       description: Пустой каталог — пустой массив, без 404.
     - assert: возвращает корневые категории
-      description: Без `parentCategoryId` отдаются только корневые категории.
+      description: Без `parentCategoryId` отдаются только корневые published-категории.
     - assert: возвращает iconUrl вместо iconId
       description: |
         Каждая категория содержит резолвнутый `iconUrl` (строка), а не сырой
         `iconId`. URL получается через `MediaService.createDownloadUrlsLoader`
-        с `imageProxy` 64x64 webp.
+        с `imageProxy`.
     - assert: возвращает детей по parentCategoryId
       description: Передача `parentCategoryId` фильтрует выдачу прямыми детьми.
-    - assert: возвращает корректный childCount после recalc
-      description: |
-        Поле `childCount` обновляется проекцией `recalcAllCounts()` —
-        у корня видно количество прямых детей.
-    - assert: возвращает корректный прямой itemCount после recalc
-      description: |
-        `itemCount` суммирует товары, привязанные напрямую к категории
-        (через widget `category.categoryIds`).
-    - assert: аккумулирует itemCount от детей к родителю
-      description: |
-        `itemCount` родителя включает товары всех потомков
-        (1 прямой + 2 у ребёнка = 3).
     - assert: сортирует категории по order asc, затем по name asc
       description: |
         Стабильная сортировка: сначала по `order` по возрастанию,
         внутри одного `order` — по `name`.
-    - assert: сбрасывает счётчики после unpublish категории
+    - assert: исчезает из выдачи после unpublish
       description: |
-        После `category.unpublished` запись удаляется и пересчёт
-        возвращает корректные значения (childCount = 0).
+        Если категория переведена в `unpublished` в cms — `/categories`
+        её больше не возвращает (фильтр по статусу в `CategoryDirectoryPort`).
 
   Projection cascade:
     - assert: переиндексирует items при republish их категории
       description: |
-        После `category.published(republished: true)` все items, привязанные
-        напрямую к категории, синкаются заново в Gorse и Meilisearch — иначе
-        `rootCategoryIds` и фасеты остаются вычисленными по старой иерархии.
-        Каскад на потомков не нужен: смена parent требует unpublish, а unpublish
-        каскадно валит поддерево, и последующий republish каждой категории
-        несёт свежие ancestorIds сам по себе.
+        После `category.changed` (status=published, parent изменился) все items
+        в поддереве этой категории синкаются заново в Gorse и Meilisearch,
+        обновляются junction-строки в `discovery_item_categories` (closure
+        ancestor-цепи). Это структурное свойство Meili-индекса:
+        `ancestorCategoryIds`-фасет хранится в каждом item-документе.
 
   GET /categories/:id/filters:
     - assert: возвращает 404 для несуществующей категории
-      description: Несуществующая категория — 404.
+      description: |
+        Если category не найдена через `CategoryDirectoryPort.findById` — 404.
     - assert: возвращает фильтры с attributes и type filters
       description: |
-        Возвращаются `attributeFilters` (по атрибутам категории)
-        и `typeFilters` (по разрешённым типам товаров).
+        Возвращаются `attributeFilters` (атрибуты категории из cms)
+        и `typeFilters` (разрешённые типы, читаются через
+        `ItemTypeDirectoryPort.findByIds`).
     - assert: возвращает commonFilters со всеми полями true
       description: |
         Базовые фильтры (`hasPriceRange`, `hasRating`, `hasLocation`,

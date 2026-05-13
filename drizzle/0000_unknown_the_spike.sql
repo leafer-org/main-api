@@ -88,21 +88,6 @@ CREATE TABLE "cms_item_types" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "discovery_categories" (
-	"id" uuid PRIMARY KEY NOT NULL,
-	"parent_category_id" text,
-	"name" text NOT NULL,
-	"icon_id" text NOT NULL,
-	"order" integer DEFAULT 0 NOT NULL,
-	"allowed_type_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"ancestor_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"attributes" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"child_count" integer DEFAULT 0 NOT NULL,
-	"item_count" integer DEFAULT 0 NOT NULL,
-	"created_at" timestamp with time zone NOT NULL,
-	"updated_at" timestamp with time zone NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "discovery_item_attributes" (
 	"item_id" uuid NOT NULL,
 	"attribute_id" text NOT NULL,
@@ -129,14 +114,6 @@ CREATE TABLE "discovery_item_schedules" (
 	"start_time" text NOT NULL,
 	"end_time" text NOT NULL,
 	CONSTRAINT "discovery_item_schedules_item_id_day_of_week_start_time_end_time_pk" PRIMARY KEY("item_id","day_of_week","start_time","end_time")
-);
---> statement-breakpoint
-CREATE TABLE "discovery_item_types" (
-	"id" uuid PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"widget_settings" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"created_at" timestamp with time zone NOT NULL,
-	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "discovery_items" (
@@ -353,6 +330,8 @@ CREATE INDEX "chat_reports_message_id_idx" ON "chat_reports" USING btree ("messa
 CREATE INDEX "chat_reports_reporter_idx" ON "chat_reports" USING btree ("reporter_user_id");--> statement-breakpoint
 CREATE INDEX "chats_status_idx" ON "chats" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "chats_last_message_at_idx" ON "chats" USING btree ("last_message_at");--> statement-breakpoint
+CREATE INDEX "cms_categories_parent_idx" ON "cms_categories" USING btree ("parent_category_id");--> statement-breakpoint
+CREATE INDEX "cms_categories_status_order_name_idx" ON "cms_categories" USING btree ("status","order","name");--> statement-breakpoint
 CREATE INDEX "discovery_item_attributes_attr_value_idx" ON "discovery_item_attributes" USING btree ("attribute_id","value");--> statement-breakpoint
 CREATE INDEX "discovery_item_categories_category_idx" ON "discovery_item_categories" USING btree ("category_id");--> statement-breakpoint
 CREATE INDEX "discovery_item_event_dates_date_idx" ON "discovery_item_event_dates" USING btree ("event_date");--> statement-breakpoint

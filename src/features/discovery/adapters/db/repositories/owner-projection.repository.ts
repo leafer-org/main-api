@@ -42,6 +42,9 @@ export class DrizzleOwnerProjectionRepository implements OwnerProjectionPort {
       updatedAt: owner.updatedAt,
     };
 
+    // На конфликте обновляем только denormalized данные. Рейтинг и reviewCount
+    // живут на стороне discovery (cascade из review.created) — не трогаем,
+    // иначе очередное `organization.changed` сбросит их в null.
     await this.dbClient.db
       .insert(discoveryOwners)
       .values(payload)
@@ -54,8 +57,6 @@ export class DrizzleOwnerProjectionRepository implements OwnerProjectionPort {
           media: payload.media,
           contacts: payload.contacts,
           team: payload.team,
-          rating: payload.rating,
-          reviewCount: payload.reviewCount,
           updatedAt: payload.updatedAt,
         },
       });

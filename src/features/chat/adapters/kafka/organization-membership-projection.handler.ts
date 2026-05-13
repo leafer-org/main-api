@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { CHAT_CONSUMER_ID } from './consumer-ids.js';
 import { chatOrganizationMembers } from '../db/schema.js';
@@ -12,15 +12,15 @@ import {
 } from '@/infra/lib/nest-kafka/index.js';
 import { OrganizationRespondabilityPort } from '@/kernel/application/ports/organization-respondability.js';
 import { NO_TRANSACTION } from '@/kernel/application/ports/tx-host.js';
-import { OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import { OrganizationId } from '@/kernel/domain/ids.js';
 
 /**
- * Слушает тонкое событие `organization.respondability-changed` и пересчитывает
- * локальную проекцию: вызывает OrganizationRespondabilityPort и upsert/delete.
+ * На тонкое `organization.changed` пересинкаем локальную проекцию членства:
+ * берём актуальный список respondable userIds через
+ * `OrganizationRespondabilityPort` и сводим diff с `chat_organization_members`.
  *
- * Так логика «может ли user отвечать как org» остаётся в feature/organization,
- * а chat имеет быструю локальную таблицу для list-запросов
- * (operator chat list, notifications routing).
+ * Локальная проекция нужна для быстрых list-запросов (operator chat list,
+ * notifications routing) — без хождения в organization на каждый запрос.
  */
 @KafkaConsumerHandlers(CHAT_CONSUMER_ID)
 @Injectable()
@@ -36,35 +36,44 @@ export class OrganizationMembershipProjectionHandler {
     message: ContractKafkaMessage<typeof organizationStreamingContract>,
   ): Promise<void> {
     const payload = message.value;
-
-    if (payload.type !== 'organization.respondability-changed') return;
-    if (payload.userId === undefined) return;
-
     const orgId = OrganizationId.raw(payload.organizationId);
-    const userId = UserId.raw(payload.userId);
-
-    const canRespond = await this.respondability.canRespondAsOrganization(orgId, userId);
-
+    const changedAt = new Date(payload.changedAt);
     const db = this.txHost.get(NO_TRANSACTION);
 
-    if (canRespond) {
+    const desired = await this.respondability.findRespondableUserIds(orgId);
+    const desiredSet = new Set(desired.map((u) => u as string));
+
+    const existing = await db
+      .select({ userId: chatOrganizationMembers.userId })
+      .from(chatOrganizationMembers)
+      .where(eq(chatOrganizationMembers.organizationId, orgId as string));
+    const existingSet = new Set(existing.map((r) => r.userId));
+
+    const toAdd = [...desiredSet].filter((u) => !existingSet.has(u));
+    const toRemove = [...existingSet].filter((u) => !desiredSet.has(u));
+
+    if (toAdd.length > 0) {
       await db
         .insert(chatOrganizationMembers)
-        .values({
-          organizationId: orgId as string,
-          userId: userId as string,
-          joinedAt: new Date(payload.changedAt ?? new Date().toISOString()),
-        })
+        .values(
+          toAdd.map((userId) => ({
+            organizationId: orgId as string,
+            userId,
+            joinedAt: changedAt,
+          })),
+        )
         .onConflictDoNothing({
           target: [chatOrganizationMembers.organizationId, chatOrganizationMembers.userId],
         });
-    } else {
+    }
+
+    if (toRemove.length > 0) {
       await db
         .delete(chatOrganizationMembers)
         .where(
           and(
             eq(chatOrganizationMembers.organizationId, orgId as string),
-            eq(chatOrganizationMembers.userId, userId as string),
+            inArray(chatOrganizationMembers.userId, toRemove),
           ),
         );
     }

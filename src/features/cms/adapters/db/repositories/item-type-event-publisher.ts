@@ -19,38 +19,29 @@ export class OutboxItemTypeEventPublisher implements ItemTypeEventPublisher {
   ) {}
 
   public async publishItemTypeCreated(tx: Transaction, event: ItemTypeCreatedEvent): Promise<void> {
-    const db = this.txHost.get(tx);
-    await this.outbox.enqueue(
-      db,
-      itemTypeStreamingContract,
-      {
-        id: uuidv7(),
-        type: 'item-type.created' as const,
-        typeId: event.typeId as string,
-        name: event.name,
-        label: event.label,
-        widgetSettings: event.widgetSettings,
-        createdAt: event.createdAt.toISOString(),
-      },
-      { key: event.typeId as string },
-    );
+    await this.publishChanged(tx, event.typeId as string, event.createdAt);
   }
 
   public async publishItemTypeUpdated(tx: Transaction, event: ItemTypeUpdatedEvent): Promise<void> {
+    await this.publishChanged(tx, event.typeId as string, event.updatedAt);
+  }
+
+  private async publishChanged(
+    tx: Transaction,
+    typeId: string,
+    changedAt: Date,
+  ): Promise<void> {
     const db = this.txHost.get(tx);
     await this.outbox.enqueue(
       db,
       itemTypeStreamingContract,
       {
         id: uuidv7(),
-        type: 'item-type.updated' as const,
-        typeId: event.typeId as string,
-        name: event.name,
-        label: event.label,
-        widgetSettings: event.widgetSettings,
-        updatedAt: event.updatedAt.toISOString(),
+        type: 'item-type.changed',
+        typeId,
+        changedAt: changedAt.toISOString(),
       },
-      { key: event.typeId as string },
+      { key: typeId },
     );
   }
 }

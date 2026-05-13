@@ -22,36 +22,20 @@ export class OutboxCategoryEventPublisher implements CategoryEventPublisher {
     tx: Transaction,
     event: CategoryPublishedEvent,
   ): Promise<void> {
-    const db = this.txHost.get(tx);
-    await this.outbox.enqueue(
-      db,
-      categoryStreamingContract,
-      {
-        id: uuidv7(),
-        type: 'category.published' as const,
-        categoryId: event.categoryId as string,
-        parentCategoryId: event.parentCategoryId as string | null,
-        name: event.name,
-        iconId: event.iconId as string,
-        allowedTypeIds: event.allowedTypeIds as string[],
-        ageGroups: event.ageGroups as string[],
-        ancestorIds: event.ancestorIds as string[],
-        attributes: event.attributes.map((a) => ({
-          attributeId: a.attributeId as string,
-          name: a.name,
-          required: a.required,
-          schema: a.schema,
-        })),
-        republished: event.republished,
-        publishedAt: event.publishedAt.toISOString(),
-      },
-      { key: event.categoryId as string },
-    );
+    await this.publishChanged(tx, event.categoryId as string, event.publishedAt);
   }
 
   public async publishCategoryUnpublished(
     tx: Transaction,
     event: CategoryUnpublishedEvent,
+  ): Promise<void> {
+    await this.publishChanged(tx, event.categoryId as string, event.unpublishedAt);
+  }
+
+  private async publishChanged(
+    tx: Transaction,
+    categoryId: string,
+    changedAt: Date,
   ): Promise<void> {
     const db = this.txHost.get(tx);
     await this.outbox.enqueue(
@@ -59,11 +43,11 @@ export class OutboxCategoryEventPublisher implements CategoryEventPublisher {
       categoryStreamingContract,
       {
         id: uuidv7(),
-        type: 'category.unpublished' as const,
-        categoryId: event.categoryId as string,
-        unpublishedAt: event.unpublishedAt.toISOString(),
+        type: 'category.changed',
+        categoryId,
+        changedAt: changedAt.toISOString(),
       },
-      { key: event.categoryId as string },
+      { key: categoryId },
     );
   }
 }

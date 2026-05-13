@@ -8,13 +8,7 @@ import {
   type ContractKafkaMessage,
   KafkaConsumerHandlers,
 } from '@/infra/lib/nest-kafka/index.js';
-import type {
-  CategoryPublishedEvent,
-  CategoryUnpublishedEvent,
-} from '@/kernel/domain/events/category.events.js';
-import { AttributeId, CategoryId, MediaId, TypeId } from '@/kernel/domain/ids.js';
-import { AgeGroup } from '@/kernel/domain/vo/age-group.js';
-import type { AttributeSchema } from '@/kernel/domain/vo/attribute.js';
+import { CategoryId } from '@/kernel/domain/ids.js';
 
 @KafkaConsumerHandlers(DISCOVERY_CONSUMER_ID)
 @Injectable()
@@ -26,37 +20,6 @@ export class CategoryProjectionKafkaHandler {
     message: ContractKafkaMessage<typeof categoryStreamingContract>,
   ): Promise<void> {
     const payload = message.value;
-
-    if (payload.type === 'category.published') {
-      await this.handler.handleCategoryPublished(payload.id, {
-        id: payload.id,
-        type: 'category.published',
-        categoryId: CategoryId.raw(payload.categoryId),
-        parentCategoryId: payload.parentCategoryId
-          ? CategoryId.raw(payload.parentCategoryId)
-          : null,
-        name: payload.name!,
-        iconId: MediaId.raw(payload.iconId!),
-        allowedTypeIds: (payload.allowedTypeIds ?? []).map((id) => TypeId.raw(id)),
-        ancestorIds: (payload.ancestorIds ?? []).map((id) => CategoryId.raw(id)),
-        attributes: (payload.attributes ?? []).map((a) => ({
-          attributeId: AttributeId.raw(a.attributeId),
-          name: a.name,
-          required: a.required,
-          schema: a.schema as AttributeSchema,
-        })),
-        ageGroups: (payload.ageGroups ?? []).map(AgeGroup.restore),
-        order: payload.order ?? 0,
-        republished: payload.republished ?? false,
-        publishedAt: new Date(payload.publishedAt!),
-      } satisfies CategoryPublishedEvent);
-    } else if (payload.type === 'category.unpublished') {
-      await this.handler.handleCategoryUnpublished(payload.id, {
-        id: payload.id,
-        type: 'category.unpublished',
-        categoryId: CategoryId.raw(payload.categoryId),
-        unpublishedAt: new Date(payload.unpublishedAt!),
-      } satisfies CategoryUnpublishedEvent);
-    }
+    await this.handler.handleCategoryChanged(payload.id, CategoryId.raw(payload.categoryId));
   }
 }

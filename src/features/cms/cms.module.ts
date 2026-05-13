@@ -1,7 +1,9 @@
 import { Global, Module } from '@nestjs/common';
 
 import { DrizzleCatalogValidationAdapter } from './adapters/db/catalog-validation.adapter.js';
+import { DrizzleCategoryDirectoryAdapter } from './adapters/db/category-directory.adapter.js';
 import { DrizzleCityCoordinatesAdapter } from './adapters/db/city-coordinates.adapter.js';
+import { DrizzleItemTypeDirectoryAdapter } from './adapters/db/item-type-directory.adapter.js';
 import { DrizzleCategoryQuery } from './adapters/db/queries/category.query.js';
 import { DrizzleCityQuery } from './adapters/db/queries/city.query.js';
 import { DrizzleItemTypeQuery } from './adapters/db/queries/item-type.query.js';
@@ -38,7 +40,9 @@ import { GetItemTypeListInteractor } from './application/use-cases/item-type/get
 import { UpdateItemTypeInteractor } from './application/use-cases/item-type/update-item-type.interactor.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 import { CatalogValidationPort } from '@/kernel/application/ports/catalog-validation.js';
+import { CategoryDirectoryPort } from '@/kernel/application/ports/category-directory.js';
 import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates.js';
+import { ItemTypeDirectoryPort } from '@/kernel/application/ports/item-type-directory.js';
 
 @Global()
 @Module({
@@ -57,6 +61,8 @@ import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates
     { provide: CityQueryPort, useClass: DrizzleCityQuery },
     { provide: CatalogValidationPort, useClass: DrizzleCatalogValidationAdapter },
     { provide: CityCoordinatesPort, useClass: DrizzleCityCoordinatesAdapter },
+    { provide: CategoryDirectoryPort, useClass: DrizzleCategoryDirectoryAdapter },
+    { provide: ItemTypeDirectoryPort, useClass: DrizzleItemTypeDirectoryAdapter },
 
     // Category use cases
     CreateCategoryInteractor,
@@ -83,6 +89,6 @@ import { CityCoordinatesPort } from '@/kernel/application/ports/city-coordinates
     // Kafka handlers
     CategoryCascadeKafkaHandler,
   ],
-  exports: [CatalogValidationPort, CityCoordinatesPort],
+  exports: [CatalogValidationPort, CityCoordinatesPort, CategoryDirectoryPort, ItemTypeDirectoryPort],
 })
 export class CmsModule {}

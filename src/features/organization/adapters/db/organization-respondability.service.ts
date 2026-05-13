@@ -26,4 +26,10 @@ export class DrizzleOrganizationRespondabilityService extends OrganizationRespon
     if (!org) return false;
     return org.employees.some((e) => (e.userId as string) === (userId as string));
   }
+
+  public async findRespondableUserIds(orgId: OrganizationId): Promise<UserId[]> {
+    const org = await this.organizationRepository.findById(NO_TRANSACTION, orgId);
+    if (!org) return [];
+    return org.employees.map((e) => e.userId);
+  }
 }

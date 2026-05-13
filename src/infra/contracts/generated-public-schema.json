@@ -2676,7 +2676,7 @@
         "tags": [
           "Discovery"
         ],
-        "description": "Список дочерних категорий с количеством товаров",
+        "description": "Список дочерних категорий каталога",
         "parameters": [
           {
             "name": "parentCategoryId",
@@ -13595,9 +13595,7 @@
         "required": [
           "categoryId",
           "name",
-          "iconUrl",
-          "childCount",
-          "itemCount"
+          "iconUrl"
         ],
         "properties": {
           "categoryId": {
@@ -13608,14 +13606,6 @@
           },
           "iconUrl": {
             "type": "string"
-          },
-          "childCount": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "itemCount": {
-            "type": "integer",
-            "minimum": 0
           }
         }
       },

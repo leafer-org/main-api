@@ -10,7 +10,6 @@ import type {
 import type { ItemReadModel } from '../../../domain/read-models/item.read-model.js';
 import { DiscoveryDatabaseClient } from '../client.js';
 import {
-  discoveryCategories,
   discoveryItemAttributes,
   discoveryItemCategories,
   discoveryItemEventDates,
@@ -83,16 +82,13 @@ export class DrizzleItemQuery implements ItemQueryPort {
     limit: number;
   }): Promise<{ items: ItemReadModel[]; nextCursor: string | null }> {
     const conditions: SQL[] = [
-      // Принадлежность к категории или любому её потомку. Поддерево резолвится
-      // через `discovery_categories.ancestor_ids` (jsonb-массив id предков).
+      // Принадлежность к категории или любому её потомку — `discovery_item_categories`
+      // хранит замыкание (direct ∪ ancestors) для каждого item, поэтому достаточно
+      // одного B-tree lookup'а по category_id.
       sql`EXISTS (
         SELECT 1 FROM ${discoveryItemCategories}
         WHERE ${discoveryItemCategories.itemId} = ${discoveryItems.id}
-          AND ${discoveryItemCategories.categoryId} IN (
-            SELECT ${discoveryCategories.id}::text FROM ${discoveryCategories}
-            WHERE ${discoveryCategories.id} = ${params.categoryId as string}::uuid
-               OR jsonb_exists(${discoveryCategories.ancestorIds}, ${params.categoryId as string})
-          )
+          AND ${discoveryItemCategories.categoryId} = ${params.categoryId as string}
       )`,
       eq(discoveryItems.cityId, params.cityId),
       sql`(${discoveryItems.ageGroup} = ${params.ageGroup} OR ${discoveryItems.ageGroup} = 'all')`,
@@ -357,9 +353,16 @@ export class DrizzleItemQuery implements ItemQueryPort {
       };
     }
 
-    if (categories.length > 0) {
+    // direct ids — из widgets (источник истины), closure — из junction-таблицы
+    const widgetsArr = (row.widgets ?? []) as ItemWidget[];
+    const directIds = widgetsArr
+      .filter((w): w is Extract<ItemWidget, { type: 'category' }> => w.type === 'category')
+      .flatMap((w) => w.categoryIds);
+    const closureIds = categories.map((c) => CategoryId.raw(c.categoryId));
+    if (directIds.length > 0 || closureIds.length > 0) {
       model.category = {
-        categoryIds: categories.map((c) => CategoryId.raw(c.categoryId)),
+        categoryIds: directIds,
+        closureCategoryIds: closureIds,
         attributeValues: attributes.map((a) => ({
           attributeId: AttributeId.raw(a.attributeId),
           value: a.value,

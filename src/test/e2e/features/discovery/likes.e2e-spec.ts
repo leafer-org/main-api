@@ -9,6 +9,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { registerUser } from '../../actors/auth.js';
 import { startContainers, stopContainers } from '../../helpers/containers.js';
 import { runMigrations, seedAdminUser, seedStaticRoles, truncateAll } from '../../helpers/db.js';
+import { seedItemPublished } from '../../helpers/organization-seed.js';
 import { waitForAllConsumers } from '../../helpers/kafka.js';
 import { createBuckets } from '../../helpers/s3.js';
 import { AppModule } from '@/apps/app.module.js';
@@ -48,22 +49,26 @@ describe('discovery-likes', () => {
   }
 
   async function seedItem(itemId: string, title = 'Test Item') {
+    if (!process.env.DB_URL) throw new Error('DB_URL not set');
     const typeId = randomUUID();
     const orgId = randomUUID();
+    const widgets = [
+      { type: 'base-info', title, description: 'Desc', media: [] },
+      { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
+      { type: 'category', categoryIds: [], attributes: [] },
+    ];
 
+    await seedItemPublished(process.env.DB_URL, {
+      id: itemId,
+      organizationId: orgId,
+      typeId,
+      widgets,
+    });
     await produce(itemStreamingContract, {
       id: uuidv7(),
-      type: 'item.published',
+      type: 'item.changed',
       itemId,
-      typeId,
-      organizationId: orgId,
-      widgets: [
-        { type: 'base-info', title, description: 'Desc', media: [] },
-        { type: 'owner', organizationId: orgId, name: 'Org', avatarId: null },
-        { type: 'category', categoryIds: [], attributes: [] },
-      ],
-      republished: false,
-      publishedAt: new Date().toISOString(),
+      changedAt: new Date().toISOString(),
     });
 
     await vi.waitFor(async () => {

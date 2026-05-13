@@ -1,0 +1,27 @@
+{
+  "admin": false,
+  "allowed_origins": ["*"],
+  "api_key": "devApiKey",
+  "token_hmac_secret_key": "devTokenSecret",
+  "health": true,
+  "log_level": "info",
+  "proxy_subscribe_endpoint": "http://host.docker.internal:3012/internal/centrifugo/subscribe",
+  "proxy_static_http_headers": {
+    "x-internal-secret": "devProxySecret"
+  },
+  "namespaces": [
+    {
+      "name": "chat",
+      "history_size": 100,
+      "history_ttl": "5m",
+      "presence": true,
+      "proxy_subscribe": true
+    },
+    {
+      "name": "inbox",
+      "history_size": 100,
+      "history_ttl": "5m",
+      "proxy_subscribe": true
+    }
+  ]
+}
