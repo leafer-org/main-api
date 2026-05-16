@@ -34,14 +34,23 @@ description: |
     - Soft-delete: text=null, mediaIds=[], deletedAt=now; запись остаётся
     - Edit history не хранится (MVP)
 
-  Read receipts:
-    - Курсор lastReadMessageId хранится на ChatParticipant.
-    - Unread count (для participant P) = count messages where
-        chatId = P.chatId
-        AND senderParticipantId ≠ P.id
+  Read receipts (per-user):
+    - Per-user курсор хранится в таблице
+        chat_participant_user_reads(participant_id, user_id, last_read_message_id, last_read_at).
+      У одного participant'а org-slot'а — по записи на каждого сотрудника-member'а,
+      у user-slot'а — одна запись на subjectId.
+    - При mark-read курсоры создаются для ВСЕХ slot'ов, через которые actor видит чат
+      (subjectId, claimed, member-без-claim) — иначе GROUP BY chat_id в unread query
+      посчитает чат дважды.
+    - Unread count (для user U) = COUNT messages where
+        chatId = chat.id
+        AND access via {kind='user' AND subject_id=U} OR {assigned_user_id=U}
+            OR {kind='organization' AND subject_id ∈ orgs(U)}
+        AND senderParticipantId ≠ accessed participant.id (то есть «не свои»)
         AND kind ≠ 'system'
-        AND id > P.lastReadMessageId
         AND deletedAt IS NULL
+        AND (cpur(participant, U).last_read_at IS NULL
+             OR m.created_at > cpur.last_read_at).
 
 specs-unit:
   # ==================== ОТПРАВКА ====================
@@ -58,9 +67,6 @@ specs-unit:
         Публикуются MessageSent + outbox(chat.message.created).
     - assert: Текущий user не имеет user-слота в этом чате — 404 chat_not_found
     - assert: Чат blocked — 403 chat_blocked
-    - assert: Чат closed — auto-reopen + send в одной транзакции
-      description: |
-        Сначала ChatReopened, затем MessageSent. Status → open.
 
   Отправка сообщения от operator-слота (org/support):
     - assert: POST /admin/chats/:chatId/messages
@@ -73,16 +79,16 @@ specs-unit:
           claim=true  → атомарный claim релевантного слота + send (1 транзакция)
         Если current user не в pool ни одного слота — 403 not_a_chat_responder.
     - assert: ?claim=true на уже claim'нутый другим — 409 slot_already_claimed
-    - assert: ?claim=true на closed чат — auto-reopen + claim + send
+    - assert: blocked доступ к send для operator-стороны не отнимается
       description: |
-        Заблокированный остаётся blocked'нутым: blocked доступ к send для
-        operator-стороны не отнимает.
+        Operator может отправлять сообщения в blocked-чат (это инструмент
+        модерации; user-стороне send закрыт).
 
   Системные сообщения:
     - assert: Системные сообщения создаются только аггрегатом, не через API
       description: |
         Триггеры (kind='system', systemEvent.type):
-          chat.opened, chat.reopened, chat.closed, chat.blocked, chat.unblocked,
+          chat.opened, chat.blocked, chat.unblocked,
           participant.claimed, participant.released, participant.reassigned.
         senderParticipantId — null (или специальный системный participant —
         выбрать при имплементации). Для read-counts эти сообщения не учитываются

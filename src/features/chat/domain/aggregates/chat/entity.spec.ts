@@ -428,27 +428,6 @@ describe('ChatEntity.sendMessage', () => {
     }
   });
 
-  it('auto-reopens closed chat on send (emits reopened + sent events)', () => {
-    const state = openUserToOrg();
-    const closed: ChatState = { ...state, status: 'closed' };
-    const result = ChatEntity.sendMessage(closed, {
-      type: 'SendMessage',
-      message: {
-        messageId: MSG_2,
-        senderParticipantId: PA,
-        kind: 'text',
-        text: 'back',
-        mediaIds: [],
-      },
-      now: LATER,
-    });
-    expect(isLeft(result)).toBe(false);
-    if (isLeft(result)) return;
-    expect(result.value.state.status).toBe('open');
-    expect(result.value.events).toHaveLength(2);
-    expect(result.value.events[0]?.type).toBe('chat.reopened');
-    expect(result.value.events[1]?.type).toBe('chat.message.sent');
-  });
 });
 
 describe('ChatEntity.claimSlot', () => {
@@ -503,21 +482,6 @@ describe('ChatEntity.claimSlot', () => {
     expect(isLeft(result)).toBe(true);
     if (isLeft(result)) {
       expect(result.error.type).toBe('slot_not_claimable');
-    }
-  });
-
-  it('rejects claim in closed chat', () => {
-    const state: ChatState = { ...openUserToOrg(), status: 'closed' };
-    const result = ChatEntity.claimSlot(state, {
-      type: 'ClaimSlot',
-      participantId: PB,
-      userId: EMPLOYEE_1,
-      systemMessageId: SYS_MSG_1,
-      now: LATER,
-    });
-    expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) {
-      expect(result.error.type).toBe('chat_not_open');
     }
   });
 
@@ -670,20 +634,6 @@ describe('ChatEntity.blockChat', () => {
     }
   });
 
-  it('rejects block on closed chat', () => {
-    const state: ChatState = { ...openClaimed(), status: 'closed' };
-    const result = ChatEntity.blockChat(state, {
-      type: 'BlockChat',
-      byParticipantId: PB,
-      reason: null,
-      systemMessageId: SYS_MSG_1,
-      now: LATER,
-    });
-    expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) {
-      expect(result.error.type).toBe('chat_not_open');
-    }
-  });
 });
 
 describe('ChatEntity.unblockChat', () => {
@@ -728,68 +678,30 @@ describe('ChatEntity.unblockChat', () => {
   });
 });
 
-describe('ChatEntity.closeChat', () => {
-  it('closes open chat from operator side', () => {
-    const result = ChatEntity.closeChat(openClaimed(), {
-      type: 'CloseChat',
-      byParticipantId: PB,
-      reason: 'resolved',
-      systemMessageId: SYS_MSG_1,
-      now: LATER,
-    });
-    expect(isLeft(result)).toBe(false);
-    if (isLeft(result)) return;
-    expect(result.value.state.status).toBe('closed');
-    expect(result.value.events[0].type).toBe('chat.closed');
-    expect(result.value.events[0].reason).toBe('resolved');
-  });
-
-  it('rejects close from user side', () => {
-    const result = ChatEntity.closeChat(openClaimed(), {
-      type: 'CloseChat',
-      byParticipantId: PA,
-      reason: null,
-      systemMessageId: SYS_MSG_1,
-      now: LATER,
-    });
-    expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) {
-      expect(result.error.type).toBe('cannot_act_as_user');
-    }
-  });
-
-  it('rejects close on already-closed chat', () => {
-    const state: ChatState = { ...openClaimed(), status: 'closed' };
-    const result = ChatEntity.closeChat(state, {
-      type: 'CloseChat',
-      byParticipantId: PB,
-      reason: null,
-      systemMessageId: SYS_MSG_1,
-      now: LATER,
-    });
-    expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) {
-      expect(result.error.type).toBe('chat_not_open');
-    }
-  });
-});
-
 describe('ChatEntity.markRead', () => {
-  it('moves lastReadMessageId on participant', () => {
+  it('emits chat.read event with readerUserId and slotKind, state unchanged', () => {
     const state = openClaimed();
     const result = ChatEntity.markRead(state, {
       type: 'MarkRead',
       participantId: PA,
+      readerUserId: USER_1,
       upToMessageId: MSG_1,
       now: LATER,
     });
     expect(isLeft(result)).toBe(false);
     if (isLeft(result)) return;
 
-    const userSlotState = result.value.state.participants.find((p) => p.kind === 'user');
-    expect(userSlotState?.lastReadMessageId).toBe(MSG_1);
+    // State не меняется — per-user cursor живёт в read-model.
+    expect(result.value.state).toBe(state);
     expect(result.value.events).toHaveLength(1);
-    expect(result.value.events[0].type).toBe('chat.read');
+    const event = result.value.events[0];
+    expect(event.type).toBe('chat.read');
+    if (event.type === 'chat.read') {
+      expect(event.participantId).toBe(PA);
+      expect(event.readerUserId).toBe(USER_1);
+      expect(event.slotKind).toBe('user');
+      expect(event.upToMessageId).toBe(MSG_1);
+    }
   });
 
   it('rejects markRead for non-existent participant', () => {
@@ -797,6 +709,7 @@ describe('ChatEntity.markRead', () => {
     const result = ChatEntity.markRead(state, {
       type: 'MarkRead',
       participantId: ChatParticipantId.raw('px'),
+      readerUserId: USER_1,
       upToMessageId: MSG_1,
       now: LATER,
     });

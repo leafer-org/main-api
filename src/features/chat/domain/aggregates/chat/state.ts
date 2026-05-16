@@ -8,15 +8,19 @@ import type {
   UserId,
 } from '@/kernel/domain/ids.js';
 
-export type ChatStatus = 'open' | 'closed' | 'blocked';
+export type ChatStatus = 'open' | 'blocked';
 
+/**
+ * Slot участника. Per-user lastReadMessageId хранится в отдельной таблице
+ * `chat_participant_user_reads(participant_id, user_id, ...)` — это позволяет
+ * member'ам организации иметь персональные курсоры внутри одного org-slot'а.
+ */
 export type ChatParticipant = Readonly<{
   id: ChatParticipantId;
   kind: ParticipantKind;
   subjectId: string | null;
   assignedUserId: UserId | null;
   claimedAt: Date | null;
-  lastReadMessageId: ChatMessageId | null;
   createdAt: Date;
 }>;
 

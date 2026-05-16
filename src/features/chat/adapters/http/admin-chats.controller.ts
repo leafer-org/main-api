@@ -12,7 +12,6 @@ import {
 import { type ChatSearchHit, ChatListQueryPort, type AdminChatFilters } from '../../application/ports.js';
 import {
   BlockChatInteractor,
-  CloseChatInteractor,
   UnblockChatInteractor,
 } from '../../application/use-cases/block-chat.interactor.js';
 import { ClaimSlotInteractor } from '../../application/use-cases/claim-slot.interactor.js';
@@ -21,10 +20,11 @@ import { ReassignSlotInteractor } from '../../application/use-cases/reassign-slo
 import { ReleaseSlotInteractor } from '../../application/use-cases/release-slot.interactor.js';
 import { SearchChatsAsOperatorInteractor } from '../../application/use-cases/search-chats.interactor.js';
 import { SendMessageAsOperatorInteractor } from '../../application/use-cases/send-message-as-operator.interactor.js';
+import { serializeChat } from './serialize-chat.js';
 import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
 import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import type { PublicBody, PublicResponse } from '@/infra/contracts/types.js';
-import { isLeft } from '@/infra/lib/box.js';
+import { isLeft, Left } from '@/infra/lib/box.js';
 import {
   ChatId,
   ChatParticipantId,
@@ -77,7 +77,6 @@ export class AdminChatsController {
     private readonly reassignSlot: ReassignSlotInteractor,
     private readonly blockChat: BlockChatInteractor,
     private readonly unblockChat: UnblockChatInteractor,
-    private readonly closeChat: CloseChatInteractor,
     private readonly listQuery: ChatListQueryPort,
     private readonly searchAsOperator: SearchChatsAsOperatorInteractor,
   ) {}
@@ -105,7 +104,6 @@ export class AdminChatsController {
     return {
       chatId: result.value.chatId,
       reused: result.value.reused,
-      reopened: result.value.reopened,
     };
   }
 
@@ -114,7 +112,7 @@ export class AdminChatsController {
     @CurrentUser() user: JwtUserPayload,
     @Query('slotKind') slotKind?: 'organization' | 'support',
     @Query('orgId') orgId?: string,
-    @Query('status') status?: 'open' | 'closed' | 'blocked',
+    @Query('status') status?: 'open' | 'blocked',
     @Query('assignedToMe') assignedToMe?: string,
     @Query('unassigned') unassigned?: string,
     @Query('from') from?: string,
@@ -132,28 +130,7 @@ export class AdminChatsController {
       size: size ? Number(size) : undefined,
     });
     return {
-      chats: page.chats.map((c) => ({
-        chatId: c.chatId,
-        status: c.status,
-        participants: c.participants.map((p) => ({
-          id: p.id,
-          kind: p.kind,
-          subjectId: p.subjectId,
-          assignedUserId: p.assignedUserId,
-        })),
-        contextItemId: c.contextItemId,
-        lastMessage:
-          c.lastMessage === null
-            ? null
-            : {
-                messageId: c.lastMessage.messageId,
-                preview: c.lastMessage.preview,
-                senderParticipantId: c.lastMessage.senderParticipantId,
-                createdAt: c.lastMessage.createdAt.toISOString(),
-              },
-        myUnreadCount: c.myUnreadCount,
-        updatedAt: c.updatedAt.toISOString(),
-      })),
+      chats: page.chats.map(serializeChat),
       total: page.total,
     };
   }
@@ -166,7 +143,7 @@ export class AdminChatsController {
     @Query('limit') limit: string | undefined,
     @Query('slotKind') slotKind: 'organization' | 'support' | undefined,
     @Query('orgId') orgId: string | undefined,
-    @Query('status') status: 'open' | 'closed' | 'blocked' | undefined,
+    @Query('status') status: 'open' | 'blocked' | undefined,
     @Query('from') from: string | undefined,
     @Query('to') to: string | undefined,
   ) {
@@ -231,7 +208,6 @@ export class AdminChatsController {
     return {
       messageId: result.value.messageId,
       claimed: result.value.claimed,
-      reopened: result.value.reopened,
     };
   }
 
@@ -310,18 +286,4 @@ export class AdminChatsController {
     if (isLeft(result)) throwDomainError(result.error);
   }
 
-  @Post(':chatId/close')
-  @HttpCode(204)
-  public async close(
-    @Param('chatId') chatId: string,
-    @Body() body: PublicBody['closeChat'],
-    @CurrentUser() user: JwtUserPayload,
-  ): Promise<void> {
-    const result = await this.closeChat.execute({
-      chatId: ChatId.raw(chatId),
-      actorUserId: user.userId,
-      reason: body?.reason ?? null,
-    });
-    if (isLeft(result)) throwDomainError(result.error);
-  }
 }

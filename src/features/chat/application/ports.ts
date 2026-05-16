@@ -90,20 +90,51 @@ export abstract class ChatEventPublisher {
 
 // --- Read-model query ports ---
 
+/**
+ * Облегчённое представление user'а для UI-обогащения (chat-list, sender info).
+ * Display-поля nullable: null если enrichment недоступен или сущность удалена.
+ */
+export type UserRefDto = {
+  kind: 'user';
+  id: UserId;
+  fullName: string | null;
+  avatarUrl: string | null;
+};
+
+/**
+ * Облегчённое представление организации для UI-обогащения.
+ * Display-поля nullable: null если enrichment недоступен или орг не опубликована.
+ */
+export type OrganizationRefDto = {
+  kind: 'organization';
+  id: OrganizationId;
+  name: string | null;
+  logoUrl: string | null;
+};
+
+/**
+ * Discriminated union по полю kind — кто стоит за slot'ом участника.
+ * Для kind='support' subject = null (поддержка пока не имеет display-данных).
+ */
+export type ChatParticipantSubjectDto = UserRefDto | OrganizationRefDto;
+
 export type ChatListItem = {
   chatId: ChatId;
-  status: 'open' | 'closed' | 'blocked';
+  status: 'open' | 'blocked';
   participants: ReadonlyArray<{
     id: ChatParticipantId;
-    kind: 'user' | 'organization' | 'support';
-    subjectId: string | null;
-    assignedUserId: UserId | null;
+    /** Кто стоит за slot'ом. null когда subjectId не зафиксирован (support без subject_id). */
+    subject: ChatParticipantSubjectDto | null;
+    /** Claim'нувший org-slot сотрудник. null для user-slot'ов и не-claim'нутых org-slot'ов. */
+    assignedUser: UserRefDto | null;
   }>;
   contextItemId: string | null;
   lastMessage: {
     messageId: ChatMessageId;
     preview: string;
     senderParticipantId: ChatParticipantId | null;
+    /** Конкретный отправитель (для org-slot'а — claim'нувший сотрудник). null если sender не определён или enrichment не удался. */
+    senderUser: UserRefDto | null;
     createdAt: Date;
   } | null;
   myUnreadCount: number;
@@ -136,7 +167,7 @@ export type ChatMessagesPage = {
 export type AdminChatFilters = {
   slotKind?: 'organization' | 'support';
   orgId?: string;
-  status?: 'open' | 'closed' | 'blocked';
+  status?: 'open' | 'blocked';
   assignedToMe?: boolean;
   unassigned?: boolean;
 };
@@ -207,7 +238,7 @@ export type ChatSearchResultInChat = {
 export type OperatorSearchFilters = {
   slotKind?: 'organization' | 'support';
   orgId?: string;
-  status?: 'open' | 'closed' | 'blocked';
+  status?: 'open' | 'blocked';
   from?: Date;
   to?: Date;
 };

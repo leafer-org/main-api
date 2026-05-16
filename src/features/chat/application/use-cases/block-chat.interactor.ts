@@ -34,12 +34,6 @@ export type UnblockChatCommand = {
   actorUserId: UserId;
 };
 
-export type CloseChatCommand = {
-  chatId: ChatId;
-  actorUserId: UserId;
-  reason: string | null;
-};
-
 type BlockError =
   | ChatNotFoundError
   | ParticipantNotFoundError
@@ -55,8 +49,6 @@ type UnblockError =
   | ClaimRequiredError
   | ChatNotBlockedError
   | NotAChatResponderError;
-
-type CloseError = BlockError;
 
 abstract class ChatLifecycleBase {
   public constructor(
@@ -163,45 +155,3 @@ export class UnblockChatInteractor extends ChatLifecycleBase {
   }
 }
 
-@Injectable()
-export class CloseChatInteractor extends ChatLifecycleBase {
-  public constructor(
-    @Inject(ChatRepository) chatRepo: ChatRepository,
-    @Inject(MessageRepository) messageRepo: MessageRepository,
-    @Inject(ChatIdGenerator) idGen: ChatIdGenerator,
-    @Inject(TransactionHost) txHost: TransactionHost,
-    @Inject(Clock) clock: Clock,
-    @Inject(ChatEventPublisher) publisher: ChatEventPublisher,
-  ) {
-    super(chatRepo, messageRepo, idGen, txHost, clock, publisher);
-  }
-
-  public async execute(cmd: CloseChatCommand): Promise<Either<CloseError, void>> {
-    return this.txHost.startTransaction(async (tx) => {
-      const chat = await this.chatRepo.findById(tx, cmd.chatId);
-      if (!chat) return Left(new ChatNotFoundError());
-
-      const slot = this.operatorSlotFor(chat, cmd.actorUserId);
-      if (!slot) return Left(new NotAChatResponderError());
-
-      const result = ChatEntity.closeChat(chat, {
-        type: 'CloseChat',
-        byParticipantId: slot.id as never,
-        reason: cmd.reason,
-        systemMessageId: this.idGen.generateMessageId(),
-        now: this.clock.now(),
-      });
-      if (isLeft(result)) return result;
-
-      const { state, events } = result.value;
-      await this.chatRepo.save(tx, state, pairKeyOf(state.participants));
-      for (const event of events) {
-        if (event.type === 'chat.message.sent') {
-          await this.messageRepo.save(tx, MessageEntity.fromSentEvent(event, null));
-        }
-        await this.publisher.publish(tx, event);
-      }
-      return Right(undefined);
-    });
-  }
-}

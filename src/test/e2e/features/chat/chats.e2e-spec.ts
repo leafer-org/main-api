@@ -95,7 +95,6 @@ describe('chat — open with organization', () => {
 
       expect(res.body.chatId).toBeDefined();
       expect(res.body.reused).toBe(false);
-      expect(res.body.reopened).toBe(false);
     });
 
     it('повторный POST /chats возвращает существующий чат (reused=true)', async () => {
@@ -116,7 +115,6 @@ describe('chat — open with organization', () => {
 
       expect(second.body.chatId).toBe(first.body.chatId);
       expect(second.body.reused).toBe(true);
-      expect(second.body.reopened).toBe(false);
     });
 
     it('400 empty_message при пустом text и пустых mediaIds', async () => {

@@ -49,7 +49,7 @@ export type OpenChatAsSupportCommand = {
   message: { text: string | null; mediaIds: readonly MediaId[] };
 };
 
-export type OpenChatResult = { chatId: ChatId; reused: boolean; reopened: boolean };
+export type OpenChatResult = { chatId: ChatId; reused: boolean };
 
 type OpenError =
   | OrganizationNotFoundForChatError
@@ -154,8 +154,7 @@ export class OpenChatAsSupportInteractor {
         if (isLeft(sendResult)) return sendResult;
 
         await this.persist(tx, sendResult.value, cmd.actorUserId, pairKey);
-        const reopened = sendResult.value.events.some((e) => e.type === 'chat.reopened');
-        return Right({ chatId: existing.chatId, reused: true, reopened });
+        return Right({ chatId: existing.chatId, reused: true });
       }
 
       const chatId = this.idGen.generateChatId();
@@ -196,7 +195,7 @@ export class OpenChatAsSupportInteractor {
       if (isLeft(result)) return result;
 
       await this.persist(tx, result.value, cmd.actorUserId, pairKey);
-      return Right({ chatId, reused: false, reopened: false });
+      return Right({ chatId, reused: false });
     });
   }
 

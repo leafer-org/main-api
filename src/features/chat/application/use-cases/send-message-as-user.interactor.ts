@@ -32,7 +32,6 @@ export type SendMessageAsUserCommand = {
 
 export type SendMessageResult = {
   messageId: ChatMessageId;
-  reopened: boolean;
 };
 
 type SendError =
@@ -89,9 +88,7 @@ export class SendMessageAsUserInteractor {
       const pairKey = pairKeyOf(state.participants);
       await this.chatRepo.save(tx, state, pairKey);
 
-      let reopened = false;
       for (const event of events) {
-        if (event.type === 'chat.reopened') reopened = true;
         if (event.type === 'chat.message.sent') {
           const msgState = MessageEntity.fromSentEvent(event, cmd.actorUserId);
           await this.messageRepo.save(tx, msgState);
@@ -99,7 +96,7 @@ export class SendMessageAsUserInteractor {
         await this.publisher.publish(tx, event);
       }
 
-      return Right({ messageId, reopened });
+      return Right({ messageId });
     });
   }
 }

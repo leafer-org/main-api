@@ -38,17 +38,19 @@ description: |
     *           → support-from-support ❌  (support↔support запрещён)
 
   Lifecycle статусов чата:
-    open → closed            (close оператором; reopen новым сообщением)
     open → blocked           (block оператором; unblock возвращает в open)
     blocked → open           (unblock)
-    closed → open            (reopen новым сообщением от любой стороны
-                              — кроме user в blocked)
+
+  Чат — это способ связи, а не workflow-обращение. Обработка обращений
+  («решено / переоткрыто / в работе») живёт в tickets-feature; chat не
+  имеет состояния «закрыт» / «разрешено». Активный список инбокса
+  фильтруется не статусом, а связанными тикетами / участием сотрудника.
 
   Инвариант — нет пустого чата:
     Chat существует только если у него ≥ 1 сообщения. Открытие чата всегда
     атомарно совмещено с отправкой первого сообщения (одна транзакция: insert
     Chat + insert ChatParticipant×N + insert Message). Нет endpoint'а «открыть
-    пустой чат». Reopen closed-чата происходит ТОЛЬКО через входящее сообщение.
+    пустой чат».
 
   Уникальность чата:
     Между набором участников (мультимножество (kind, subjectId) пар) ≤ 1 чата.
@@ -80,10 +82,6 @@ specs-unit:
       description: |
         Откат вставки Message откатывает создание Chat и ChatParticipant'ов.
         Не должно быть состояния, в котором Chat существует без сообщений.
-    - assert: Reopen closed-чата происходит только через входящее сообщение
-      description: |
-        Нет endpoint'а POST /chats/:id/reopen. Любое новое сообщение в closed-чат
-        переводит его в open в той же транзакции, что и MessageSent.
 
   Инициация User → Organization:
     - assert: POST /chats создаёт чат с participants [(user,me), (organization,O)] и первым сообщением
@@ -104,10 +102,6 @@ specs-unit:
         не создаётся, message добавляется в существующий, возвращается тот же
         chatId. participants и contextItemId из body игнорируются (контекст
         у чата уже зафиксирован).
-    - assert: Идемпотентность с переоткрытием при closed чате
-      description: |
-        Тот же chatId, status переводится в open, публикуется ChatReopened,
-        message добавляется. contextItemId в body игнорируется.
     - assert: Несуществующая или неопубликованная organization — 404 organization_not_found
     - assert: Несуществующий contextItemId — 400 context_item_not_found
     - assert: contextItemId не принадлежит указанной orgId — 400 context_item_mismatch
@@ -121,7 +115,6 @@ specs-unit:
         Body: { participants: [{ kind: 'support' }], message }.
         Слот support создаётся с subjectId=null, assignedUserId=null.
         Идемпотентность по паре (userId, support).
-    - assert: Идемпотентный reopen для closed support-чата
 
   Инициация Support → User (proactive admin):
     - assert: POST /admin/chats создаёт чат [(support,null assigned=me), (user,U)]
@@ -186,9 +179,18 @@ specs-unit:
       description: |
         Поля: chatId, status, participants[], contextItem?, blockedBy?, blockedAt?,
               createdAt, updatedAt, lastMessage, myUnreadCount.
-        participants[i]: { id, kind, subjectId, assignedUserId, claimedAt,
-                           role, displayName, avatar, isMe }.
-        isMe — флаг для UI «это мой слот».
+        participants[i]: { id, subject, assignedUser }, где:
+          - id — slot-id, используется в claim/release endpoints;
+          - subject: ChatParticipantSubject | null — discriminated union по полю
+            kind (user|organization), несёт { kind, id } + display-поля
+            (fullName/avatarUrl для user; name/logoUrl для organization).
+            Display-поля могут быть null если enrichment недоступен или
+            сущность удалена. subject=null когда subjectId в БД не зафиксирован.
+          - assignedUser: UserRef | null — сотрудник, claim'нувший org-slot;
+            null для user-slot'ов и не-claim'нутых org-slot'ов.
+        lastMessage дополнительно содержит senderUser: UserRef | null —
+        конкретного отправителя (для org-slot'а — claim'нувшего сотрудника).
+        Флаг «это мой слот» вычисляется на клиенте по subject.id / assignedUser.id.
     - assert: Доступ к чужому чату без права — 404 chat_not_found
       description: Не 403, чтобы не раскрывать существование.
 
@@ -208,7 +210,7 @@ specs-unit:
     - assert: Claim слота kind='user' — 400 user_slot_not_claimable
       description: |
         У 'user' слота нет понятия claim — assignedUserId всегда subjectId.
-    - assert: Claim в чате closed/blocked — 409 chat_not_open
+    - assert: Claim в чате blocked — 409 chat_not_open
 
   Release (бывший unclaim):
     - assert: POST /admin/chats/:chatId/participants/:participantId/release
@@ -246,29 +248,16 @@ specs-unit:
       description: |
         Доступно тому же оператору (или с правом chat.unblock-any).
         Status → open, blockedBy/blockedAt = null. ChatUnblocked event.
-    - assert: Block чата в closed — 409 chat_not_open
-
-  # ==================== ЗАКРЫТИЕ ====================
-
-  Close / Reopen:
-    - assert: POST /admin/chats/:chatId/close — оператор закрывает чат
-      description: |
-        Status → closed. ChatClosed event + системное сообщение.
-        Доступно participant'у operator-стороны с claim'ом.
-    - assert: Close чата в blocked — 409 chat_blocked (сначала unblock)
-    - assert: Reopen происходит только через новое сообщение
-      description: |
-        Любое сообщение в closed-чат от разрешённой стороны → ChatReopened
-        + MessageSent в одной транзакции. Прямого reopen-endpoint'а нет.
 
   # ==================== ПОЛНЫЙ ФЛОУ ====================
 
   Полный жизненный цикл:
-    - assert: open(by user) → claim(by employee) → messages → release → claim(другой employee) → close → reopen → block → unblock → close
+    - assert: open(by user) → claim(by employee) → messages → release → claim(другой employee) → block → unblock
       description: |
         Все переходы записывают системные сообщения с соответствующими
         systemEvent.type. ChatParticipant.assignedUserId меняется без
-        пересоздания участника.
+        пересоздания участника. Состояния «закрыт / решён» в чате нет —
+        это переехало в tickets-feature.
 
   # ==================== РАСШИРЯЕМОСТЬ ====================
 

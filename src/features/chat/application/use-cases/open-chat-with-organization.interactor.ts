@@ -41,7 +41,6 @@ export type OpenChatWithOrganizationCommand = {
 export type OpenChatResult = {
   chatId: ChatId;
   reused: boolean;
-  reopened: boolean;
 };
 
 type OpenError =
@@ -153,7 +152,7 @@ export class OpenChatWithOrganizationInteractor {
       await this.publisher.publish(tx, event);
     }
 
-    return Right({ chatId, reused: false, reopened: false });
+    return Right({ chatId, reused: false });
   }
 
   private async handleExistingChat(
@@ -199,8 +198,6 @@ export class OpenChatWithOrganizationInteractor {
       await this.publisher.publish(tx, event);
     }
 
-    const reopened = events.some((e) => e.type === 'chat.reopened');
-
-    return Right({ chatId: existing.chatId, reused: true, reopened });
+    return Right({ chatId: existing.chatId, reused: true });
   }
 }

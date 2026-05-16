@@ -19,6 +19,14 @@ CREATE TABLE "chat_organization_members" (
 	CONSTRAINT "chat_organization_members_organization_id_user_id_pk" PRIMARY KEY("organization_id","user_id")
 );
 --> statement-breakpoint
+CREATE TABLE "chat_participant_user_reads" (
+	"participant_id" uuid NOT NULL,
+	"user_id" text NOT NULL,
+	"last_read_message_id" uuid NOT NULL,
+	"last_read_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "chat_participant_user_reads_participant_id_user_id_pk" PRIMARY KEY("participant_id","user_id")
+);
+--> statement-breakpoint
 CREATE TABLE "chat_participants" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"chat_id" uuid NOT NULL,
@@ -26,7 +34,6 @@ CREATE TABLE "chat_participants" (
 	"subject_id" text,
 	"assigned_user_id" text,
 	"claimed_at" timestamp with time zone,
-	"last_read_message_id" uuid,
 	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
@@ -322,6 +329,7 @@ ALTER TABLE "video_details" ADD CONSTRAINT "video_details_media_id_media_id_fk" 
 CREATE INDEX "chat_messages_chat_id_created_idx" ON "chat_messages" USING btree ("chat_id","created_at");--> statement-breakpoint
 CREATE INDEX "chat_messages_actor_user_idx" ON "chat_messages" USING btree ("actor_user_id");--> statement-breakpoint
 CREATE INDEX "chat_org_members_user_idx" ON "chat_organization_members" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "cpur_user_idx" ON "chat_participant_user_reads" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "chat_participants_chat_id_idx" ON "chat_participants" USING btree ("chat_id");--> statement-breakpoint
 CREATE INDEX "chat_participants_kind_subject_idx" ON "chat_participants" USING btree ("kind","subject_id");--> statement-breakpoint
 CREATE INDEX "chat_participants_assigned_user_idx" ON "chat_participants" USING btree ("assigned_user_id");--> statement-breakpoint

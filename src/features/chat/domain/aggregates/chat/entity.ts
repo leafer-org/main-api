@@ -3,7 +3,6 @@ import type { ParticipantKind } from '../../vo/participant-kind.js';
 import type {
   BlockChatCommand,
   ClaimSlotCommand,
-  CloseChatCommand,
   MarkReadCommand,
   NewMessageSpec,
   OpenChatCommand,
@@ -32,12 +31,10 @@ import {
 } from './errors.js';
 import type {
   ChatBlockedEvent,
-  ChatClosedEvent,
   ChatEvent,
   ChatMessageSentEvent,
   ChatOpenedEvent,
   ChatReadEvent,
-  ChatReopenedEvent,
   ChatUnblockedEvent,
   SlotClaimedEvent,
   SlotReassignedEvent,
@@ -130,8 +127,6 @@ function buildLastMessage(spec: NewMessageSpec, now: Date): LastMessageSnapshot 
 
 function systemPreview(systemEvent: SystemEvent): string {
   switch (systemEvent.type) {
-    case 'chat.closed':
-      return '[Чат закрыт]';
     case 'chat.blocked':
       return '[Чат заблокирован]';
     case 'chat.unblocked':
@@ -221,12 +216,6 @@ type UnblockError =
   | ClaimRequiredError
   | ChatNotBlockedError;
 
-type CloseError =
-  | ParticipantNotFoundError
-  | CannotActAsUserError
-  | ClaimRequiredError
-  | ChatNotOpenError;
-
 type MarkReadError = ParticipantNotFoundError;
 
 export type ResultOf<E extends ChatEvent> = Readonly<{
@@ -281,7 +270,6 @@ export const ChatEntity = {
       subjectId: p.subjectId,
       assignedUserId: p.assignedUserId,
       claimedAt: p.assignedUserId !== null && p.kind !== 'user' ? cmd.now : null,
-      lastReadMessageId: null,
       createdAt: cmd.now,
     }));
 
@@ -347,20 +335,6 @@ export const ChatEntity = {
       return validation;
     }
 
-    const events: ChatEvent[] = [];
-    let nextStatus = state.status;
-
-    if (state.status === 'closed') {
-      const reopened: ChatReopenedEvent = {
-        type: 'chat.reopened',
-        chatId: state.chatId,
-        reopenedByParticipantId: sender.id,
-        reopenedAt: cmd.now,
-      };
-      events.push(reopened);
-      nextStatus = 'open';
-    }
-
     const messageEvent: ChatMessageSentEvent = {
       type: 'chat.message.sent',
       chatId: state.chatId,
@@ -372,16 +346,14 @@ export const ChatEntity = {
       systemEvent: null,
       createdAt: cmd.now,
     };
-    events.push(messageEvent);
 
     const nextState: ChatState = {
       ...state,
-      status: nextStatus,
       lastMessage: buildLastMessage(cmd.message, cmd.now),
       updatedAt: cmd.now,
     };
 
-    return Right({ state: nextState, events });
+    return Right({ state: nextState, events: [messageEvent] });
   },
 
   claimSlot(state: ChatState, cmd: ClaimSlotCommand): Either<ClaimError, ResultOf<SlotClaimedEvent>> {
@@ -602,66 +574,25 @@ export const ChatEntity = {
     return Right({ state: nextState, events: [unblockedEvent, sysMsg] });
   },
 
-  closeChat(state: ChatState, cmd: CloseChatCommand): Either<CloseError, ResultOf<ChatClosedEvent>> {
-    if (state.status !== 'open') {
-      return Left(new ChatNotOpenError());
-    }
-    const slot = findParticipant(state, cmd.byParticipantId as string);
-    if (slot === undefined) {
-      return Left(new ParticipantNotFoundError());
-    }
-    if (!isOperatorSlot(slot)) {
-      return Left(new CannotActAsUserError());
-    }
-    if (slot.assignedUserId === null) {
-      return Left(new ClaimRequiredError());
-    }
-
-    const systemEvent: SystemEvent = {
-      type: 'chat.closed',
-      payload: { byParticipantId: cmd.byParticipantId, reason: cmd.reason },
-    };
-    const closedEvent: ChatClosedEvent = {
-      type: 'chat.closed',
-      chatId: state.chatId,
-      byParticipantId: cmd.byParticipantId,
-      reason: cmd.reason,
-      closedAt: cmd.now,
-    };
-    const sysMsg = buildSystemMessageEvent(state.chatId, cmd.systemMessageId, systemEvent, cmd.now);
-
-    const nextState: ChatState = {
-      ...state,
-      status: 'closed',
-      lastMessage: buildSystemLastMessage(cmd.systemMessageId, systemEvent, cmd.now),
-      updatedAt: cmd.now,
-    };
-
-    return Right({ state: nextState, events: [closedEvent, sysMsg] });
-  },
-
   markRead(state: ChatState, cmd: MarkReadCommand): Either<MarkReadError, ReadResult> {
-    const slot = findParticipant(state, cmd.participantId as string);
+    const slot = findParticipant(state, cmd.participantId);
     if (slot === undefined) {
       return Left(new ParticipantNotFoundError());
     }
 
+    // Per-user read cursors живут в read-model (chat_participant_user_reads),
+    // не в state агрегата. State не меняется — только эмитим событие.
+    // Идемпотентность обеспечивается handler'ом (last_read_at compare на INSERT).
     const event: ChatReadEvent = {
       type: 'chat.read',
       chatId: state.chatId,
       participantId: cmd.participantId,
+      readerUserId: cmd.readerUserId,
+      slotKind: slot.kind,
       upToMessageId: cmd.upToMessageId,
       readAt: cmd.now,
     };
 
-    const nextState: ChatState = {
-      ...state,
-      participants: replaceParticipant(state, cmd.participantId, {
-        lastReadMessageId: cmd.upToMessageId,
-      }),
-      updatedAt: cmd.now,
-    };
-
-    return Right({ state: nextState, events: [event] });
+    return Right({ state, events: [event] });
   },
 };

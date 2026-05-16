@@ -33,7 +33,6 @@ export type OpenChatWithSupportCommand = {
 export type OpenChatResult = {
   chatId: ChatId;
   reused: boolean;
-  reopened: boolean;
 };
 
 type OpenError =
@@ -85,8 +84,7 @@ export class OpenChatWithSupportInteractor {
         });
         if (isLeft(sendResult)) return sendResult;
         await this.persist(tx, sendResult.value, cmd.initiatorUserId, pairKey);
-        const reopened = sendResult.value.events.some((e) => e.type === 'chat.reopened');
-        return Right({ chatId: existing.chatId, reused: true, reopened });
+        return Right({ chatId: existing.chatId, reused: true });
       }
 
       const chatId = this.idGen.generateChatId();
@@ -119,7 +117,7 @@ export class OpenChatWithSupportInteractor {
       if (isLeft(result)) return result;
 
       await this.persist(tx, result.value, cmd.initiatorUserId, pairKey);
-      return Right({ chatId, reused: false, reopened: false });
+      return Right({ chatId, reused: false });
     });
   }
 

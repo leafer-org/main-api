@@ -18,6 +18,7 @@ import {
   type ChatSearchHit,
   UnreadSummaryQueryPort,
 } from '../../application/ports.js';
+import { serializeChat } from './serialize-chat.js';
 import { DeleteMessageInteractor } from '../../application/use-cases/delete-message.interactor.js';
 import { EditMessageInteractor } from '../../application/use-cases/edit-message.interactor.js';
 import { MarkReadInteractor } from '../../application/use-cases/mark-read.interactor.js';
@@ -95,51 +96,6 @@ function castMediaIds(ids: readonly string[]): readonly MediaId[] {
   return ids.map((m) => m as MediaId);
 }
 
-function serializeChat(chat: {
-  chatId: { toString(): string };
-  status: string;
-  participants: ReadonlyArray<{
-    id: { toString(): string };
-    kind: string;
-    subjectId: string | null;
-    assignedUserId: { toString(): string } | null;
-  }>;
-  contextItemId: string | null;
-  lastMessage: {
-    messageId: { toString(): string };
-    preview: string;
-    senderParticipantId: { toString(): string } | null;
-    createdAt: Date;
-  } | null;
-  myUnreadCount: number;
-  updatedAt: Date;
-}) {
-  return {
-    chatId: chat.chatId.toString(),
-    status: chat.status,
-    participants: chat.participants.map((p) => ({
-      id: p.id.toString(),
-      kind: p.kind,
-      subjectId: p.subjectId,
-      assignedUserId: p.assignedUserId === null ? null : p.assignedUserId.toString(),
-    })),
-    contextItemId: chat.contextItemId,
-    lastMessage:
-      chat.lastMessage === null
-        ? null
-        : {
-            messageId: chat.lastMessage.messageId.toString(),
-            preview: chat.lastMessage.preview,
-            senderParticipantId:
-              chat.lastMessage.senderParticipantId === null
-                ? null
-                : chat.lastMessage.senderParticipantId.toString(),
-            createdAt: chat.lastMessage.createdAt.toISOString(),
-          },
-    myUnreadCount: chat.myUnreadCount,
-    updatedAt: chat.updatedAt.toISOString(),
-  };
-}
 
 @Controller('chats')
 export class ChatsController {
@@ -175,7 +131,6 @@ export class ChatsController {
     return {
       chatId: result.value.chatId,
       reused: result.value.reused,
-      reopened: result.value.reopened,
     };
   }
 
@@ -193,7 +148,6 @@ export class ChatsController {
     return {
       chatId: result.value.chatId,
       reused: result.value.reused,
-      reopened: result.value.reopened,
     };
   }
 
@@ -326,7 +280,7 @@ export class ChatsController {
       mediaIds: castMediaIds(body.mediaIds),
     });
     if (isLeft(result)) throwDomainError(result.error);
-    return { messageId: result.value.messageId, reopened: result.value.reopened };
+    return { messageId: result.value.messageId };
   }
 
   @Patch(':chatId/messages/:messageId')

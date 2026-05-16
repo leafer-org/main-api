@@ -91,7 +91,6 @@ export class DrizzleChatRepository extends ChatRepository {
           subjectId: p.subjectId,
           assignedUserId: p.assignedUserId as string | null,
           claimedAt: p.claimedAt,
-          lastReadMessageId: p.lastReadMessageId as string | null,
           createdAt: p.createdAt,
         })
         .onConflictDoUpdate({
@@ -99,7 +98,6 @@ export class DrizzleChatRepository extends ChatRepository {
           set: {
             assignedUserId: p.assignedUserId as string | null,
             claimedAt: p.claimedAt,
-            lastReadMessageId: p.lastReadMessageId as string | null,
           },
         });
     }
@@ -121,8 +119,6 @@ export class DrizzleChatRepository extends ChatRepository {
       subjectId: p.subjectId,
       assignedUserId: p.assignedUserId === null ? null : UserId.raw(p.assignedUserId),
       claimedAt: p.claimedAt,
-      lastReadMessageId:
-        p.lastReadMessageId === null ? null : ChatMessageId.raw(p.lastReadMessageId),
       createdAt: p.createdAt,
     }));
 

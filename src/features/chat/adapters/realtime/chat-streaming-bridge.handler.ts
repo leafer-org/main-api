@@ -24,8 +24,7 @@ import { ChatId } from '@/kernel/domain/ids.js';
  * inbox:* — для апдейтов списков (preview / status / new chat appears).
  *
  * Для inbox-каналов нужен снимок participants — берём из ChatRepository
- * (актуальное состояние). Это eventually consistent относительно события
- * (если событие — close, repo уже отражает status='closed' к моменту чтения).
+ * (актуальное состояние). Это eventually consistent относительно события.
  */
 @KafkaConsumerHandlers(CHAT_CONSUMER_ID)
 @Injectable()

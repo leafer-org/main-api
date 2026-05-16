@@ -49,7 +49,7 @@ function systemMessage(): MessageState {
     actorUserId: null,
     kind: 'system',
     text: null,
-    systemEvent: { type: 'chat.closed', payload: {} },
+    systemEvent: { type: 'chat.blocked', payload: {} },
   });
 }
 
@@ -74,7 +74,7 @@ describe('MessageEntity.fromSentEvent', () => {
   });
 
   it('hydrates system message with null actorUserId', () => {
-    const sysEvent: SystemEvent = { type: 'chat.closed', payload: {} };
+    const sysEvent: SystemEvent = { type: 'chat.blocked', payload: {} };
     const event: ChatMessageSentEvent = {
       type: 'chat.message.sent',
       chatId: CHAT_ID,

@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 
+import { IdpModule } from '../idp/idp.module.js';
+import { MediaModule } from '../media/media.module.js';
+import { OrganizationModule } from '../organization/organization.module.js';
+
 import { DrizzleChatOrganizationMembershipReadModel } from './adapters/db/queries/organization-membership.read-model.js';
+import { ChatReadProjectionHandler } from './adapters/kafka/chat-read.handler.js';
 import { OrganizationMembershipProjectionHandler } from './adapters/kafka/organization-membership-projection.handler.js';
 import { ChatStreamingBridgeHandler } from './adapters/realtime/chat-streaming-bridge.handler.js';
 import { DrizzleChatQuery } from './adapters/db/queries/chat.query.js';
@@ -28,7 +33,6 @@ import {
 } from './application/ports.js';
 import {
   BlockChatInteractor,
-  CloseChatInteractor,
   UnblockChatInteractor,
 } from './application/use-cases/block-chat.interactor.js';
 import { ClaimSlotInteractor } from './application/use-cases/claim-slot.interactor.js';
@@ -53,6 +57,7 @@ import { SendMessageAsUserInteractor } from './application/use-cases/send-messag
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 
 @Module({
+  imports: [IdpModule, MediaModule, OrganizationModule],
   controllers: [CentrifugoController, ChatsController, AdminChatsController],
   providers: [
     { provide: Clock, useClass: SystemClock },
@@ -81,6 +86,7 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     // Kafka handlers
     OrganizationMembershipProjectionHandler,
     ChatStreamingBridgeHandler,
+    ChatReadProjectionHandler,
 
     // Use cases
     OpenChatWithOrganizationInteractor,
@@ -93,7 +99,6 @@ import { Clock, SystemClock } from '@/infra/lib/clock.js';
     ReassignSlotInteractor,
     BlockChatInteractor,
     UnblockChatInteractor,
-    CloseChatInteractor,
     MarkReadInteractor,
     EditMessageInteractor,
     DeleteMessageInteractor,

@@ -53,14 +53,6 @@ export class OutboxChatEventPublisher extends ChatEventPublisher {
           })),
           initiatorParticipantId: event.initiatorParticipantId as string,
         };
-      case 'chat.reopened':
-        return {
-          id,
-          type: event.type,
-          chatId,
-          occurredAt: event.reopenedAt.toISOString(),
-          reopenedByParticipantId: event.reopenedByParticipantId as string,
-        };
       case 'chat.message.sent':
         return {
           id,
@@ -139,15 +131,6 @@ export class OutboxChatEventPublisher extends ChatEventPublisher {
           occurredAt: event.unblockedAt.toISOString(),
           byParticipantId: event.byParticipantId as string,
         };
-      case 'chat.closed':
-        return {
-          id,
-          type: event.type,
-          chatId,
-          occurredAt: event.closedAt.toISOString(),
-          byParticipantId: event.byParticipantId as string,
-          reason: event.reason,
-        };
       case 'chat.read':
         return {
           id,
@@ -155,6 +138,8 @@ export class OutboxChatEventPublisher extends ChatEventPublisher {
           chatId,
           occurredAt: event.readAt.toISOString(),
           participantId: event.participantId as string,
+          readerUserId: event.readerUserId as string,
+          slotKind: event.slotKind,
           upToMessageId: event.upToMessageId as string,
         };
     }

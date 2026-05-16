@@ -77,17 +77,10 @@ export type UnblockChatCommand = Readonly<{
   now: Date;
 }>;
 
-export type CloseChatCommand = Readonly<{
-  type: 'CloseChat';
-  byParticipantId: ChatParticipantId;
-  reason: string | null;
-  systemMessageId: ChatMessageId;
-  now: Date;
-}>;
-
 export type MarkReadCommand = Readonly<{
   type: 'MarkRead';
   participantId: ChatParticipantId;
+  readerUserId: UserId;
   upToMessageId: ChatMessageId;
   now: Date;
 }>;
@@ -100,5 +93,4 @@ export type ChatCommand =
   | ReassignSlotCommand
   | BlockChatCommand
   | UnblockChatCommand
-  | CloseChatCommand
   | MarkReadCommand;

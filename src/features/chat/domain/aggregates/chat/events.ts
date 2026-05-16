@@ -23,13 +23,6 @@ export type ChatOpenedEvent = Readonly<{
   openedAt: Date;
 }>;
 
-export type ChatReopenedEvent = Readonly<{
-  type: 'chat.reopened';
-  chatId: ChatId;
-  reopenedByParticipantId: ChatParticipantId;
-  reopenedAt: Date;
-}>;
-
 export type ChatMessageSentEvent = Readonly<{
   type: 'chat.message.sent';
   chatId: ChatId;
@@ -82,30 +75,24 @@ export type ChatUnblockedEvent = Readonly<{
   unblockedAt: Date;
 }>;
 
-export type ChatClosedEvent = Readonly<{
-  type: 'chat.closed';
-  chatId: ChatId;
-  byParticipantId: ChatParticipantId;
-  reason: string | null;
-  closedAt: Date;
-}>;
-
 export type ChatReadEvent = Readonly<{
   type: 'chat.read';
   chatId: ChatId;
   participantId: ChatParticipantId;
+  /** Кто из user'ов отметил как прочитанное (per-user cursor). */
+  readerUserId: UserId;
+  /** Kind slot'а, через который было выполнено mark-read. */
+  slotKind: ParticipantKind;
   upToMessageId: ChatMessageId;
   readAt: Date;
 }>;
 
 export type ChatEvent =
   | ChatOpenedEvent
-  | ChatReopenedEvent
   | ChatMessageSentEvent
   | SlotClaimedEvent
   | SlotReleasedEvent
   | SlotReassignedEvent
   | ChatBlockedEvent
   | ChatUnblockedEvent
-  | ChatClosedEvent
   | ChatReadEvent;

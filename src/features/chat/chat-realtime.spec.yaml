@@ -110,15 +110,16 @@ specs-unit:
     - assert: chat.blocked / chat.unblocked
       description: |
         Payload: { chatId, blockedBy?: ParticipantId, blockedAt?, reason? }.
-    - assert: chat.closed / chat.reopened
-      description: Payload: { chatId, byParticipantId, at }.
 
   События в канале inbox:user:#{userId}:
     - assert: chat.opened — для клиента появился новый чат
       description: |
         Payload: { chatId, participants[], contextItem?, status, lastMessage }.
-        participants публикуются в полном виде (kind, subjectId, assignedUserId,
-        displayName).
+        participants публикуются в новом DTO ChatParticipant: { id, subject,
+        assignedUser } — subject это discriminated union UserRef|OrganizationRef
+        с обогащёнными display-полями (fullName/avatarUrl или name/logoUrl);
+        display-поля nullable при недоступном enrichment'е.
+        lastMessage содержит senderUser: UserRef | null.
     - assert: chat.preview-updated — изменился last message / unread
       description: |
         Payload: { chatId, lastMessage, myUnreadCount }.
@@ -138,7 +139,6 @@ specs-unit:
         (или переместился в «свои» если claim'нул он сам).
     - assert: participant.released — claim снят, чат возвращается в shared
     - assert: chat.preview-updated — апдейт превью
-    - assert: chat.closed / chat.reopened — статус изменился
 
   События в канале inbox:support:
     - assert: Аналогично inbox:org:#{orgId}, но публикуется на любой чат с

@@ -14,7 +14,7 @@ description: |
   Партиционирование по chatId сохраняет порядок событий в пределах одного чата.
 
   Слушатели:
-    - tickets        — chat.opened, chat.closed, chat.reopened
+    - tickets        — chat.opened (создание тикета по новому диалогу)
     - notifications  — chat.message.created, chat.message.edited
     - analytics      — все события
 
@@ -57,8 +57,6 @@ specs-unit:
           initiatorParticipantId
           initiatorUserId
         Тип чата выводится получателем из набора participants.
-    - assert: Reopen существующего closed чата НЕ публикует chat.opened
-      description: Для reopen есть отдельное событие chat.reopened.
 
   chat.message.created:
     - assert: Публикуется при отправке любого сообщения, включая системные
@@ -104,15 +102,6 @@ specs-unit:
       description: |
         Payload: { chatId, unblockedByParticipantId, unblockedByUserId, at }.
 
-  chat.closed / chat.reopened:
-    - assert: chat.closed
-      description: |
-        Payload: { chatId, closedByParticipantId, closedByUserId, reason?,
-                   closedAt }.
-    - assert: chat.reopened
-      description: |
-        Payload: { chatId, reopenedByParticipantId, reopenedByUserId, at }.
-
   chat.message.reported / chat.reported:
     - assert: chat.message.reported
       description: |
@@ -137,10 +126,26 @@ specs-unit:
         publish) не создаёт второй тикет на тот же chatId.
         Точное соответствие board'ов и подписок — отдельная задача расширения
         в tickets-subscriptions.spec.yaml.
-    - assert: tickets-feature слушает chat.closed и переводит связанный тикет в done
-      description: Идемпотентно: если тикет уже done — игнор.
-    - assert: tickets-feature слушает chat.reopened и переоткрывает связанный тикет
-    - assert: chat.message.created в активном чате — тикет получает обновление updatedAt
+    - assert: Переход тикета done / reopen — ответственность tickets-feature
+      description: |
+        Чат не имеет состояния «закрыт» / «решено». Workflow обращения
+        («в работе → done → reopen») живёт целиком на стороне тикета и
+        управляется его собственными командами/событиями. Chat шлёт только
+        chat.opened (создание) и события сообщений / claim'ов / блокировок.
+    - assert: chat.message.created — тикет получает обновление updatedAt независимо от claim-статуса
+      description: |
+        Сообщения в unclaimed чатах тоже триггерят апдейт тикета: ticket в очереди
+        «всплывает» при новой активности от user'а, оператор в shared inbox видит
+        свежее. Семантика updatedAt = «последняя активность в диалоге», а не
+        «последний ответ оператора».
+    - assert: chat.opened и chat.message.created для первого сообщения публикуются в одной транзакции
+      description: |
+        Lazy chat creation: чат создаётся вместе с первым сообщением (POST /chats).
+        Outbox-rows для chat.opened и chat.message.created вставляются в одну
+        транзакцию, publisher шлёт их последовательно в один partition (по chatId),
+        порядок гарантирован. Tickets-consumer получает chat.opened (создание
+        тикета) и сразу следом chat.message.created (превью + updatedAt) — тикет
+        создаётся уже с непустым последним сообщением.
 
   # ==================== ИНТЕГРАЦИЯ С NOTIFICATIONS ====================
 

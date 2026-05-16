@@ -14,7 +14,6 @@ const ChatStreamingMessage = Type.Object({
   id: Type.String(),
   type: Type.Union([
     Type.Literal('chat.opened'),
-    Type.Literal('chat.reopened'),
     Type.Literal('chat.message.sent'),
     Type.Literal('chat.message.edited'),
     Type.Literal('chat.message.deleted'),
@@ -23,7 +22,6 @@ const ChatStreamingMessage = Type.Object({
     Type.Literal('chat.slot.reassigned'),
     Type.Literal('chat.blocked'),
     Type.Literal('chat.unblocked'),
-    Type.Literal('chat.closed'),
     Type.Literal('chat.read'),
   ]),
   chatId: Type.String(),
@@ -72,11 +70,15 @@ const ChatStreamingMessage = Type.Object({
   oldAssigneeUserId: Type.Optional(Type.String()),
   newAssigneeUserId: Type.Optional(Type.String()),
 
-  // block / unblock / close / reopen / read
+  // block / unblock / read
   byParticipantId: Type.Optional(Type.String()),
-  reopenedByParticipantId: Type.Optional(Type.String()),
   reason: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   upToMessageId: Type.Optional(Type.String()),
+  // chat.read — per-user cursor
+  readerUserId: Type.Optional(Type.String()),
+  slotKind: Type.Optional(
+    Type.Union([Type.Literal('user'), Type.Literal('organization'), Type.Literal('support')]),
+  ),
 });
 
 export const chatStreamingContract = createTypeboxContract({

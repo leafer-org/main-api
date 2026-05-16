@@ -74,7 +74,7 @@ describe('chat — full flow', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ organizationId: orgId, message: { text, mediaIds: [] } })
       .expect(200);
-    return res.body as { chatId: string; reused: boolean; reopened: boolean };
+    return res.body as { chatId: string; reused: boolean };
   }
 
   // ─── Operator flow ───────────────────────────────────────────
@@ -95,7 +95,6 @@ describe('chat — full flow', () => {
       expect(sendRes.status).toBe(200);
 
       expect(sendRes.body.claimed).toBe(true);
-      expect(sendRes.body.reopened).toBe(false);
       expect(sendRes.body.messageId).toBeDefined();
     });
 
@@ -223,17 +222,25 @@ describe('chat — full flow', () => {
         .send({ upToMessageId: ownerSend.body.messageId })
         .expect(204);
 
-      const after = await e2e.agent
-        .get('/chats/unread-summary')
-        .set('Authorization', `Bearer ${client.accessToken}`)
-        .expect(200);
-      expect(after.body.totalUnreadCount).toBe(0);
+      // chat.read идёт через outbox → kafka → projection — ждём с polling.
+      const deadline = Date.now() + 8000;
+      let totalUnread = -1;
+      while (Date.now() < deadline) {
+        const after = await e2e.agent
+          .get('/chats/unread-summary')
+          .set('Authorization', `Bearer ${client.accessToken}`)
+          .expect(200);
+        totalUnread = after.body.totalUnreadCount;
+        if (totalUnread === 0) break;
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      expect(totalUnread).toBe(0);
     });
   });
 
-  // ─── Block + close + reopen ──────────────────────────────────
+  // ─── Block / unblock ─────────────────────────────────────────
 
-  describe('Block/unblock/close/reopen', () => {
+  describe('Block/unblock', () => {
     it('owner blocks chat, user gets 403 on send, owner unblocks', async () => {
       const { owner, org, client } = await setupClientAndOrgOwner();
       const { chatId } = await openChat(client.accessToken, org.id);
@@ -262,28 +269,6 @@ describe('chat — full flow', () => {
         .expect(204);
     });
 
-    it('owner closes chat, client reopens via new message', async () => {
-      const { owner, org, client } = await setupClientAndOrgOwner();
-      const { chatId } = await openChat(client.accessToken, org.id);
-      await e2e.agent
-        .post(`/admin/chats/${chatId}/messages?claim=true`)
-        .set('Authorization', `Bearer ${owner.accessToken}`)
-        .send({ text: 'taking it', mediaIds: [] })
-        .expect(200);
-
-      await e2e.agent
-        .post(`/admin/chats/${chatId}/close`)
-        .set('Authorization', `Bearer ${owner.accessToken}`)
-        .send({ reason: null })
-        .expect(204);
-
-      const reopen = await e2e.agent
-        .post(`/chats/${chatId}/messages`)
-        .set('Authorization', `Bearer ${client.accessToken}`)
-        .send({ text: 'comeback', mediaIds: [] })
-        .expect(200);
-      expect(reopen.body.reopened).toBe(true);
-    });
   });
 
   // ─── Reports ─────────────────────────────────────────────────

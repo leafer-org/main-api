@@ -117,7 +117,6 @@ describe('OpenChatWithOrganizationInteractor', () => {
     if (!isRight(result)) return;
     expect(result.value.chatId).toBe(CHAT);
     expect(result.value.reused).toBe(false);
-    expect(result.value.reopened).toBe(false);
 
     expect(stubs.chatRepo.save).toHaveBeenCalledTimes(1);
     expect(stubs.messageRepo.save).toHaveBeenCalledTimes(1);
@@ -150,7 +149,6 @@ describe('OpenChatWithOrganizationInteractor', () => {
           subjectId: USER as string,
           assignedUserId: USER,
           claimedAt: null,
-          lastReadMessageId: null,
           createdAt: NOW,
         },
         {
@@ -159,7 +157,6 @@ describe('OpenChatWithOrganizationInteractor', () => {
           subjectId: ORG as string,
           assignedUserId: null,
           claimedAt: null,
-          lastReadMessageId: null,
           createdAt: NOW,
         },
       ],
@@ -182,65 +179,10 @@ describe('OpenChatWithOrganizationInteractor', () => {
     if (!isRight(result)) return;
     expect(result.value.chatId).toBe(CHAT);
     expect(result.value.reused).toBe(true);
-    expect(result.value.reopened).toBe(false);
 
     expect(stubs.chatRepo.save).toHaveBeenCalledTimes(1);
     expect(stubs.messageRepo.save).toHaveBeenCalledTimes(1);
     expect(stubs.publisher.publish).toHaveBeenCalledTimes(1);
-  });
-
-  it('reopens closed chat on new message and emits chat.reopened + chat.message.sent', async () => {
-    const stubs = makeStubs();
-    const closed: ChatState = {
-      chatId: CHAT,
-      status: 'closed',
-      blockedByParticipantId: null,
-      blockedAt: null,
-      contextItemId: null,
-      participants: [
-        {
-          id: PA,
-          kind: 'user',
-          subjectId: USER as string,
-          assignedUserId: USER,
-          claimedAt: null,
-          lastReadMessageId: null,
-          createdAt: NOW,
-        },
-        {
-          id: PB,
-          kind: 'organization',
-          subjectId: ORG as string,
-          assignedUserId: null,
-          claimedAt: null,
-          lastReadMessageId: null,
-          createdAt: NOW,
-        },
-      ],
-      lastMessage: null,
-      createdAt: NOW,
-      updatedAt: NOW,
-    };
-    stubs.chatRepo.findByPairKey.mockResolvedValueOnce(closed);
-
-    const interactor = makeInteractor(stubs);
-    const result = await interactor.execute({
-      initiatorUserId: USER,
-      organizationId: ORG,
-      contextItemId: null,
-      message: okMessage,
-    });
-
-    expect(isRight(result)).toBe(true);
-    if (!isRight(result)) return;
-    expect(result.value.reopened).toBe(true);
-
-    const publishedTypes = stubs.publisher.publish.mock.calls.map((c) => {
-      const event = c[1];
-      if (event === undefined) throw new Error('publisher called without event');
-      return event.type;
-    });
-    expect(publishedTypes).toEqual(['chat.reopened', 'chat.message.sent']);
   });
 
   it('rejects with chat_blocked when chat is already blocked', async () => {
@@ -258,7 +200,6 @@ describe('OpenChatWithOrganizationInteractor', () => {
           subjectId: USER as string,
           assignedUserId: USER,
           claimedAt: null,
-          lastReadMessageId: null,
           createdAt: NOW,
         },
         {
@@ -267,7 +208,6 @@ describe('OpenChatWithOrganizationInteractor', () => {
           subjectId: ORG as string,
           assignedUserId: null,
           claimedAt: null,
-          lastReadMessageId: null,
           createdAt: NOW,
         },
       ],

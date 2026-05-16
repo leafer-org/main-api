@@ -36,7 +36,6 @@ export type SendMessageAsOperatorCommand = {
 
 export type SendMessageAsOperatorResult = {
   messageId: ChatMessageId;
-  reopened: boolean;
   claimed: boolean;
 };
 
@@ -145,16 +144,14 @@ export class SendMessageAsOperatorInteractor {
       const { state, events } = sendResult.value;
       await this.chatRepo.save(tx, state, pairKeyOf(state.participants));
 
-      let reopened = false;
       for (const event of events) {
-        if (event.type === 'chat.reopened') reopened = true;
         if (event.type === 'chat.message.sent') {
           await this.messageRepo.save(tx, MessageEntity.fromSentEvent(event, cmd.actorUserId));
         }
         await this.publisher.publish(tx, event);
       }
 
-      return Right({ messageId, reopened, claimed });
+      return Right({ messageId, claimed });
     });
   }
 }

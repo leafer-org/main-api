@@ -31,13 +31,36 @@ export const chatParticipants = pgTable(
     subjectId: text('subject_id'),
     assignedUserId: text('assigned_user_id'),
     claimedAt: timestamp('claimed_at', { withTimezone: true }),
-    lastReadMessageId: uuid('last_read_message_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   },
   (table) => [
     index('chat_participants_chat_id_idx').on(table.chatId),
     index('chat_participants_kind_subject_idx').on(table.kind, table.subjectId),
     index('chat_participants_assigned_user_idx').on(table.assignedUserId),
+  ],
+);
+
+/**
+ * Per-user read cursor для каждого слота. Заполняется обработчиком
+ * `chat.read` события из outbox/Kafka — ON CONFLICT с защитой от
+ * out-of-order доставки (compare last_read_at).
+ *
+ * Семантика unread: для slot.id и user.id берётся cursor.last_read_message_id;
+ * unread считаются сообщения с created_at > курсорное created_at.
+ * Для user-slot'а cursor имеет один user_id == subject_id.
+ * Для org-slot'а — у каждого member организации свой row.
+ */
+export const chatParticipantUserReads = pgTable(
+  'chat_participant_user_reads',
+  {
+    participantId: uuid('participant_id').notNull(),
+    userId: text('user_id').notNull(),
+    lastReadMessageId: uuid('last_read_message_id').notNull(),
+    lastReadAt: timestamp('last_read_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.participantId, table.userId] }),
+    index('cpur_user_idx').on(table.userId),
   ],
 );
 

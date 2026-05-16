@@ -11709,15 +11709,11 @@
                 "schema": {
                   "type": "object",
                   "required": [
-                    "messageId",
-                    "reopened"
+                    "messageId"
                   ],
                   "properties": {
                     "messageId": {
                       "type": "string"
-                    },
-                    "reopened": {
-                      "type": "boolean"
                     }
                   }
                 }
@@ -12085,7 +12081,6 @@
               "type": "string",
               "enum": [
                 "open",
-                "closed",
                 "blocked"
               ]
             }
@@ -12310,7 +12305,6 @@
               "type": "string",
               "enum": [
                 "open",
-                "closed",
                 "blocked"
               ]
             }
@@ -12485,17 +12479,13 @@
                   "type": "object",
                   "required": [
                     "messageId",
-                    "claimed",
-                    "reopened"
+                    "claimed"
                   ],
                   "properties": {
                     "messageId": {
                       "type": "string"
                     },
                     "claimed": {
-                      "type": "boolean"
-                    },
-                    "reopened": {
                       "type": "boolean"
                     }
                   }
@@ -12756,60 +12746,6 @@
             }
           }
         ],
-        "responses": {
-          "204": {
-            "description": "OK"
-          },
-          "403": {
-            "$ref": "#/components/responses/DomainError"
-          },
-          "404": {
-            "$ref": "#/components/responses/DomainError"
-          },
-          "409": {
-            "$ref": "#/components/responses/DomainError"
-          }
-        }
-      }
-    },
-    "/admin/chats/{chatId}/close": {
-      "post": {
-        "operationId": "closeChat",
-        "tags": [
-          "chat"
-        ],
-        "summary": "Закрыть чат",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "chatId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "reason": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                }
-              }
-            }
-          }
-        },
         "responses": {
           "204": {
             "description": "OK"
@@ -17470,6 +17406,106 @@
           }
         }
       },
+      "UserRef": {
+        "type": "object",
+        "required": [
+          "kind",
+          "id"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "user"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "OrganizationRef": {
+        "type": "object",
+        "required": [
+          "kind",
+          "id"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "organization"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ChatParticipantSubject": {
+        "description": "Кто/что стоит за slot'ом участника. Discriminated union по полю kind (значение литералом из enum внутри каждого варианта). Display-поля каждого варианта (fullName/name/avatarUrl/logoUrl) могут быть null при недоступности enrichment'а.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UserRef"
+          },
+          {
+            "$ref": "#/components/schemas/OrganizationRef"
+          }
+        ]
+      },
+      "ChatParticipant": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID самого slot'а в чате — используется в claim/release endpoints."
+          },
+          "subject": {
+            "description": "Кто стоит за slot'ом. null когда subjectId в БД не зафиксирован (зарезервированный slot без привязки к user/org).",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ChatParticipantSubject"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignedUser": {
+            "description": "Сотрудник, claim'нувший org-slot. null для user-slot'ов и не-claim'нутых org-slot'ов.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UserRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
       "ChatListItem": {
         "type": "object",
         "required": [
@@ -17488,41 +17524,13 @@
             "type": "string",
             "enum": [
               "open",
-              "closed",
               "blocked"
             ]
           },
           "participants": {
             "type": "array",
             "items": {
-              "type": "object",
-              "required": [
-                "id",
-                "kind",
-                "subjectId",
-                "assignedUserId"
-              ],
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "kind": {
-                  "type": "string",
-                  "enum": [
-                    "user",
-                    "organization",
-                    "support"
-                  ]
-                },
-                "subjectId": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "assignedUserId": {
-                  "type": "string",
-                  "nullable": true
-                }
-              }
+              "$ref": "#/components/schemas/ChatParticipant"
             }
           },
           "contextItemId": {
@@ -17548,6 +17556,17 @@
               "senderParticipantId": {
                 "type": "string",
                 "nullable": true
+              },
+              "senderUser": {
+                "description": "Конкретный пользователь, отправивший сообщение (для org-slot'а — claim'нувший сотрудник). null если senderParticipantId не определён или enrichment недоступен.",
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/UserRef"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "createdAt": {
                 "type": "string",
@@ -17586,17 +17605,13 @@
         "type": "object",
         "required": [
           "chatId",
-          "reused",
-          "reopened"
+          "reused"
         ],
         "properties": {
           "chatId": {
             "type": "string"
           },
           "reused": {
-            "type": "boolean"
-          },
-          "reopened": {
             "type": "boolean"
           }
         }
