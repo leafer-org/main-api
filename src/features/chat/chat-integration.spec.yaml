@@ -15,7 +15,7 @@ description: |
 
   Слушатели:
     - tickets        — chat.opened (создание тикета по новому диалогу)
-    - notifications  — chat.message.created, chat.message.edited
+    - notifications  — chat.message.sent, chat.message.edited
     - analytics      — все события
 
 specs-unit:
@@ -24,7 +24,7 @@ specs-unit:
   Конверт события:
     - assert: Каждое событие содержит обязательные поля type, eventId, occurredAt, chatId, payload
       description: |
-        type — строковый идентификатор (chat.opened, chat.message.created, …)
+        type — строковый идентификатор (chat.opened, chat.message.sent, …)
         eventId — UUID v4, уникален; consumer'ы дедуплицируют по нему
         occurredAt — ISO timestamp
         chatId — UUID, Kafka message key (для партиционирования и ordering)
@@ -57,9 +57,9 @@ specs-unit:
           initiatorUserId
         Тип чата выводится получателем из набора participants.
         Контекст (товар и т.п.) живёт не на чате, а в первом сообщении
-        через `attachments` (см. chat.message.created).
+        через `attachments` (см. chat.message.sent).
 
-  chat.message.created:
+  chat.message.sent:
     - assert: Публикуется при отправке любого сообщения, включая системные
       description: |
         Payload: { chatId, messageId, senderParticipantId, actorUserId,
@@ -124,7 +124,7 @@ specs-unit:
   # ==================== ИНТЕГРАЦИЯ С TICKETS ====================
 
   Связь с фичей tickets (модель «один чат на пару»):
-    - assert: tickets-feature слушает chat.message.created и создаёт тикет на каждый item-ref в attachments
+    - assert: tickets-feature слушает chat.message.sent и создаёт тикет на каждый item-ref в attachments
       description: |
         Чат — единая нить общения между пользователем и организацией (один на пару).
         Тикет — единица обработки конкретного «обращения» (про конкретный товар).
@@ -138,7 +138,7 @@ specs-unit:
         в tickets-subscriptions.spec.yaml.
     - assert: Идемпотентность тикета — по (chatId, messageId, itemId)
       description: |
-        Повторная доставка одного `chat.message.created` (retry publish) не создаёт
+        Повторная доставка одного `chat.message.sent` (retry publish) не создаёт
         второй тикет на ту же пару (messageId, itemId). consumer хранит ключ.
     - assert: Переход тикета done / reopen — ответственность tickets-feature
       description: |
@@ -146,24 +146,24 @@ specs-unit:
         («в работе → done → reopen») живёт целиком на стороне тикета и
         управляется его собственными командами/событиями. Chat шлёт только
         chat.opened (создание чата), события сообщений / claim'ов / блокировок.
-    - assert: chat.message.created без attachments — обновляет updatedAt существующих тикетов чата, не создаёт новых
+    - assert: chat.message.sent без attachments — обновляет updatedAt существующих тикетов чата, не создаёт новых
       description: |
         Семантика updatedAt тикета = «последняя активность в диалоге», а не
         «последний ответ оператора». Сообщения без item-ref (просто текст / медиа)
         бамают updatedAt всех открытых тикетов, привязанных к chatId.
-    - assert: chat.opened и chat.message.created для первого сообщения публикуются в одной транзакции
+    - assert: chat.opened и chat.message.sent для первого сообщения публикуются в одной транзакции
       description: |
         Lazy chat creation: чат создаётся вместе с первым сообщением (POST /chats).
-        Outbox-rows для chat.opened и chat.message.created вставляются в одну
+        Outbox-rows для chat.opened и chat.message.sent вставляются в одну
         транзакцию, publisher шлёт их последовательно в один partition (по chatId),
         порядок гарантирован. Tickets-consumer получает chat.opened (для регистрации
-        чата) и сразу следом chat.message.created — если в attachments есть item-ref,
+        чата) и сразу следом chat.message.sent — если в attachments есть item-ref,
         тикет создаётся с непустым превью и привязкой к товару.
 
   # ==================== ИНТЕГРАЦИЯ С NOTIFICATIONS ====================
 
   Связь с фичей notifications:
-    - assert: notifications-feature слушает chat.message.created
+    - assert: notifications-feature слушает chat.message.sent
       description: |
         Получатели — все participants чата, кроме senderParticipantId.
         Для каждого participant маппинг → канал доставки:
@@ -189,15 +189,15 @@ specs-unit:
       description: |
         Цепочка из одного POST /chats:
         1. Транзакция main-api: insert Chat + insert ChatParticipant×2
-           + insert Message + 2 outbox rows (chat.opened, chat.message.created)
+           + insert Message + 2 outbox rows (chat.opened, chat.message.sent)
         2. Outbox-publisher шлёт оба в Kafka chat.events
         3. tickets-consumer ловит chat.opened → создаёт Ticket с chatId
-        4. notifications-consumer ловит chat.message.created → шлёт push
+        4. notifications-consumer ловит chat.message.sent → шлёт push
            в pool slot.kind='organization', subjectId=O
         5. main-api публикует в Centrifugo chat:* и inbox:* (afterCommit)
     - assert: Идемпотентность — повторная доставка chat.opened не создаёт второй тикет
-    - assert: Идемпотентность — повторная доставка chat.message.created не создаёт второй пуш
-    - assert: claim+send атомарно → события participant.claimed и chat.message.created публикуются в одном commit'е
+    - assert: Идемпотентность — повторная доставка chat.message.sent не создаёт второй пуш
+    - assert: claim+send атомарно → события participant.claimed и chat.message.sent публикуются в одном commit'е
       description: |
         Outbox-rows для обоих событий вставляются в одну транзакцию,
         publisher шлёт их последовательно (порядок сохраняется в пределах

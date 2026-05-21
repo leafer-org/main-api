@@ -94,7 +94,7 @@ specs-unit:
         Сторона инициатора (user) подставляется автоматически из auth-контекста.
         Ответ: { chatId, reused }.
         Транзакция: insert Chat + insert 2 ChatParticipant + insert Message
-        + outbox(chat.opened, chat.message.created).
+        + outbox(chat.opened, chat.message.sent).
         Слот organization создаётся с assignedUserId=null (unclaimed).
         Контекст товара передаётся в attachments сообщения (kind='item-ref').
     - assert: Идемпотентность по набору участников при существующем open чате

@@ -27,6 +27,13 @@ export type ChatMessageSentEvent = Readonly<{
   chatId: ChatId;
   messageId: ChatMessageId;
   senderParticipantId: ChatParticipantId | null;
+  /**
+   * Реальный user, инициировавший сообщение. Для user-slot — это
+   * subjectId, для organization-/support-slot — текущий assignedUser.
+   * null для system-сообщений, у которых нет участника-отправителя
+   * (актор лежит в systemEvent.payload).
+   */
+  actorUserId: UserId | null;
   kind: MessageKind;
   text: string | null;
   mediaIds: readonly MediaId[];

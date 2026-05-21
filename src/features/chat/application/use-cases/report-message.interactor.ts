@@ -111,6 +111,7 @@ export class ReportMessageInteractor {
         chatId: cmd.chatId,
         messageId: cmd.messageId,
         senderParticipantId: null,
+        actorUserId: null,
         kind: 'system',
         text: null,
         mediaIds: [],

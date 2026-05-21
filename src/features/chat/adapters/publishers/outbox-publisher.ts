@@ -60,6 +60,7 @@ export class OutboxChatEventPublisher extends ChatEventPublisher {
           occurredAt: event.createdAt.toISOString(),
           messageId: event.messageId as string,
           senderParticipantId: event.senderParticipantId as string | null,
+          actorUserId: event.actorUserId === null ? undefined : (event.actorUserId as string),
           messageKind: event.kind,
           text: event.text,
           mediaIds: event.mediaIds.map((m) => m as string),

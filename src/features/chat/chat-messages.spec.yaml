@@ -72,7 +72,7 @@ specs-unit:
         subjectId=currentUserId; actorUserId=currentUserId.
         Ответ: { messageId }.
         Обновляются lastMessageAt/lastMessageId/lastMessagePreview на Chat.
-        Публикуются MessageSent + outbox(chat.message.created) с attachments.
+        Публикуются MessageSent + outbox(chat.message.sent) с attachments.
     - assert: Текущий user не имеет user-слота в этом чате — 404 chat_not_found
     - assert: Чат blocked — 403 chat_blocked
 
