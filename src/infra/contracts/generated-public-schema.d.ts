@@ -3306,6 +3306,11 @@ export interface components {
       type: 'payment';
       required: boolean;
       showOnCard?: boolean;
+      /**
+       * @description Если true (по умолчанию) — изменения значения этого виджета требуют повторной модерации.
+       *     Если false — публикуются сразу.
+       */
+      material?: boolean;
       allowedStrategies: components['schemas']['PaymentStrategy'][];
     };
     EventDateTimeWidgetSettings: {
@@ -3316,6 +3321,11 @@ export interface components {
       type: 'event-date-time';
       required: boolean;
       showOnCard?: boolean;
+      /**
+       * @description Если true (по умолчанию) — изменения значения этого виджета требуют повторной модерации.
+       *     Если false — публикуются сразу.
+       */
+      material?: boolean;
       maxDates?: number | null;
     };
     BaseWidgetSettings: {
@@ -3336,6 +3346,11 @@ export interface components {
         | 'team';
       required: boolean;
       showOnCard?: boolean;
+      /**
+       * @description Если true (по умолчанию) — изменения значения этого виджета требуют повторной модерации
+       *     опубликованного товара. Если false — изменения публикуются сразу без модерации.
+       */
+      material?: boolean;
     };
     WidgetSettings:
       | components['schemas']['PaymentWidgetSettings']
@@ -7811,7 +7826,7 @@ export interface operations {
       content: {
         'application/json': {
           name: string;
-          description: string;
+          description?: string;
           avatarId?: string | null;
           media?: components['schemas']['MediaItem'][];
           contacts?: components['schemas']['ContactLink'][];

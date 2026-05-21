@@ -80,6 +80,11 @@ export class UpdateItemDraftInteractor {
 
       await this.itemRepository.save(tx, result.value.state);
 
+      // TODO(material-fields): когда товар уже опубликован и изменения затронули только
+      // non-material виджеты (WidgetSettings.material === false), автоматически переносить
+      // обновлённые виджеты в публикацию без перехода в moderation-request.
+      // Diff между draft.widgets и publication.widgets, фильтр по WidgetSettings.material.
+
       return Right(undefined);
     });
   }

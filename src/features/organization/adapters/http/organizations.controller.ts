@@ -50,7 +50,7 @@ export class OrganizationsController {
       id: orgId,
       creatorUserId: user.userId,
       name: body.name,
-      description: body.description,
+      description: body.description ?? '',
       avatarId: body.avatarId ? MediaId.raw(body.avatarId) : null,
       media: (body.media ?? []).map((m) => ({ type: m.type, mediaId: MediaId.raw(m.mediaId) })),
       contacts: body.contacts ?? [],
