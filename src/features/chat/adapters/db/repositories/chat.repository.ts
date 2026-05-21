@@ -16,7 +16,6 @@ import {
   ChatId,
   ChatMessageId,
   ChatParticipantId,
-  ItemId,
   UserId,
 } from '@/kernel/domain/ids.js';
 
@@ -58,7 +57,6 @@ export class DrizzleChatRepository extends ChatRepository {
         status: state.status,
         blockedByParticipantId: state.blockedByParticipantId as string | null,
         blockedAt: state.blockedAt,
-        contextItemId: state.contextItemId as string | null,
         lastMessageId: lastMessageId as string | null,
         lastMessageAt,
         lastMessagePreview,
@@ -72,7 +70,6 @@ export class DrizzleChatRepository extends ChatRepository {
           status: state.status,
           blockedByParticipantId: state.blockedByParticipantId as string | null,
           blockedAt: state.blockedAt,
-          contextItemId: state.contextItemId as string | null,
           lastMessageId: lastMessageId as string | null,
           lastMessageAt,
           lastMessagePreview,
@@ -143,7 +140,6 @@ export class DrizzleChatRepository extends ChatRepository {
           ? null
           : ChatParticipantId.raw(row.blockedByParticipantId),
       blockedAt: row.blockedAt,
-      contextItemId: row.contextItemId === null ? null : ItemId.raw(row.contextItemId),
       participants,
       lastMessage,
       createdAt: row.createdAt,

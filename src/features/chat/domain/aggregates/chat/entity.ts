@@ -154,6 +154,7 @@ function buildSystemMessageEvent(
     kind: 'system',
     text: null,
     mediaIds: [],
+    attachments: [],
     systemEvent,
     createdAt: now,
   };
@@ -280,7 +281,6 @@ export const ChatEntity = {
       status: 'open',
       blockedByParticipantId: null,
       blockedAt: null,
-      contextItemId: cmd.contextItemId,
       participants,
       lastMessage,
       createdAt: cmd.now,
@@ -290,7 +290,6 @@ export const ChatEntity = {
     const openedEvent: ChatOpenedEvent = {
       type: 'chat.opened',
       chatId: cmd.chatId,
-      contextItemId: cmd.contextItemId,
       participants: cmd.participants.map((p) => ({
         id: p.id,
         kind: p.kind,
@@ -309,6 +308,7 @@ export const ChatEntity = {
       kind: cmd.firstMessage.kind,
       text: cmd.firstMessage.text,
       mediaIds: cmd.firstMessage.mediaIds,
+      attachments: cmd.firstMessage.attachments,
       systemEvent: null,
       createdAt: cmd.now,
     };
@@ -343,6 +343,7 @@ export const ChatEntity = {
       kind: cmd.message.kind,
       text: cmd.message.text,
       mediaIds: cmd.message.mediaIds,
+      attachments: cmd.message.attachments,
       systemEvent: null,
       createdAt: cmd.now,
     };

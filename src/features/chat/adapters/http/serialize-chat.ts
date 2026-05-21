@@ -41,7 +41,6 @@ export function serializeChat(chat: ChatListItem) {
       subject: serializeSubject(p.subject),
       assignedUser: serializeUserRef(p.assignedUser),
     })),
-    contextItemId: chat.contextItemId,
     lastMessage:
       chat.lastMessage === null
         ? null

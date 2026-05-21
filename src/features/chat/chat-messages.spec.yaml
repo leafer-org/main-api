@@ -16,10 +16,18 @@ description: |
     - kind: 'text' | 'media' | 'system'
     - text: string | null     (≤ 4000 после trim)
     - mediaIds: MediaId[]     (≤ 10)
+    - attachments: MessageAttachment[]   (контекстные карточки, immutable)
     - systemEvent: { type, payload } | null
     - editedAt | null
     - deletedAt | null
     - createdAt
+
+  MessageAttachment — карточки, прикрепляемые к сообщению. Discriminated union:
+    - { kind: 'item-ref', itemId } — карточка товара
+  Расширение под новые типы context'а = добавить вариант в union. Backend
+  не валидирует содержимое — клиент прикладывает любые публичные ссылки.
+  Иммутабельно: edit/delete не меняют attachments (сохраняется аудит «о чём
+  был вопрос»).
 
   Кто может отправить сообщение:
     - От слота kind='user' пишет только subjectId слота (сам user).
@@ -58,20 +66,21 @@ specs-unit:
   Отправка сообщения от user-слота:
     - assert: POST /chats/:chatId/messages — клиентская сторона отправляет
       description: |
-        Body: { text?, mediaIds? }. Хотя бы одно из полей непустое.
+        Body: { text?, mediaIds?, attachments? }. Хотя бы одно из text/mediaIds
+        непустое (attachments сами по себе не делают сообщение валидным).
         senderParticipantId резолвится как participant с kind='user' и
         subjectId=currentUserId; actorUserId=currentUserId.
-        Ответ: { messageId, chatId, senderParticipantId, kind, text, mediaIds,
-                 createdAt }.
+        Ответ: { messageId }.
         Обновляются lastMessageAt/lastMessageId/lastMessagePreview на Chat.
-        Публикуются MessageSent + outbox(chat.message.created).
+        Публикуются MessageSent + outbox(chat.message.created) с attachments.
     - assert: Текущий user не имеет user-слота в этом чате — 404 chat_not_found
     - assert: Чат blocked — 403 chat_blocked
 
   Отправка сообщения от operator-слота (org/support):
     - assert: POST /admin/chats/:chatId/messages
       description: |
-        Body: { text?, mediaIds? }, query: ?claim=true|false (default false).
+        Body: { text?, mediaIds?, attachments? }, query: ?claim=true|false
+        (default false). attachments симметричны user-стороне.
         senderParticipantId резолвится как слот, в котором assignedUserId
         совпадает с currentUserId. actorUserId=currentUserId.
         Если ни один слот не assign'ен на текущего user'а:
@@ -160,6 +169,8 @@ specs-unit:
         kind ≠ 'system', deletedAt=null.
         В пределах 15 минут от createdAt.
         editedAt = now. Публикуется MessageEdited.
+        Body: { text?, mediaIds? }. attachments НЕ принимаются — они
+        immutable после create (аудит «о чём был вопрос изначально»).
     - assert: Редактирование чужого — 403 not_message_author
       description: |
         Если admin reassign'нул слот другому, новый assignee НЕ может править
@@ -176,6 +187,7 @@ specs-unit:
     - assert: DELETE /chats/:chatId/messages/:messageId — soft-delete своего
       description: |
         deletedAt=now, text=null, mediaIds=[]. 204.
+        attachments сохраняются (immutable).
         Публикуется MessageDeleted.
         Если удаляемое = lastMessage чата — Chat.lastMessagePreview
         пересчитывается на предыдущее non-deleted (или null).

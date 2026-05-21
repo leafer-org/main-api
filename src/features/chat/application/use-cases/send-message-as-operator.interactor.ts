@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import type { MessageAttachment } from '../../domain/vo/message-attachment.js';
 import { ChatEntity } from '../../domain/aggregates/chat/entity.js';
 import {
   type ChatBlockedError,
@@ -31,6 +32,7 @@ export type SendMessageAsOperatorCommand = {
   actorUserId: UserId;
   text: string | null;
   mediaIds: readonly MediaId[];
+  attachments: readonly MessageAttachment[];
   withClaim: boolean;
 };
 
@@ -136,6 +138,7 @@ export class SendMessageAsOperatorInteractor {
           kind: cmd.text !== null && cmd.text.trim().length > 0 ? 'text' : 'media',
           text: cmd.text,
           mediaIds: cmd.mediaIds,
+          attachments: cmd.attachments,
         },
         now: this.clock.now(),
       });

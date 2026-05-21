@@ -35,6 +35,7 @@ function userMessage(overrides: Partial<MessageState> = {}): MessageState {
     kind: 'text',
     text: 'Hello',
     mediaIds: [],
+    attachments: [],
     systemEvent: null,
     createdAt: NOW,
     editedAt: null,
@@ -63,6 +64,7 @@ describe('MessageEntity.fromSentEvent', () => {
       kind: 'text',
       text: 'hi',
       mediaIds: [],
+      attachments: [],
       systemEvent: null,
       createdAt: NOW,
     };
@@ -83,6 +85,7 @@ describe('MessageEntity.fromSentEvent', () => {
       kind: 'system',
       text: null,
       mediaIds: [],
+      attachments: [],
       systemEvent: sysEvent,
       createdAt: NOW,
     };

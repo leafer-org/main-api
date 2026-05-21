@@ -1,10 +1,10 @@
+import type { MessageAttachment } from '../../vo/message-attachment.js';
 import type { MessageKind } from '../../vo/message-kind.js';
 import type { ParticipantKind } from '../../vo/participant-kind.js';
 import type {
   ChatId,
   ChatMessageId,
   ChatParticipantId,
-  ItemId,
   MediaId,
   UserId,
 } from '@/kernel/domain/ids.js';
@@ -22,13 +22,13 @@ export type NewMessageSpec = Readonly<{
   kind: Exclude<MessageKind, 'system'>;
   text: string | null;
   mediaIds: readonly MediaId[];
+  attachments: readonly MessageAttachment[];
 }>;
 
 export type OpenChatCommand = Readonly<{
   type: 'OpenChat';
   chatId: ChatId;
   participants: readonly NewParticipantSpec[];
-  contextItemId: ItemId | null;
   firstMessage: NewMessageSpec;
   now: Date;
 }>;

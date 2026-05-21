@@ -16,15 +16,6 @@ export abstract class OrganizationRespondabilityPort {
   public abstract exists(orgId: OrganizationId): Promise<boolean>;
 
   /**
-   * Имеет ли user право отвечать в чатах от лица данной организации.
-   * MVP: любой member; в будущем — учёт роли и флага can_respond_in_chats.
-   */
-  public abstract canRespondAsOrganization(
-    orgId: OrganizationId,
-    userId: UserId,
-  ): Promise<boolean>;
-
-  /**
    * Список userId, которые сейчас имеют право отвечать в чатах от лица этой
    * организации. Используется консьюмерами тонкого `organization.changed`
    * для ре-синка локальных проекций членства (chat slot-pool).

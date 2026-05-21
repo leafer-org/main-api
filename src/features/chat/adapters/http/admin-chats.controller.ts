@@ -28,10 +28,13 @@ import { isLeft, Left } from '@/infra/lib/box.js';
 import {
   ChatId,
   ChatParticipantId,
+  type ItemId,
   type MediaId,
   OrganizationId,
   UserId,
 } from '@/kernel/domain/ids.js';
+
+import type { MessageAttachment } from '../../domain/vo/message-attachment.js';
 
 function throwDomainError(error: { toResponse(): Record<number, unknown> }): never {
   const response = error.toResponse();
@@ -46,11 +49,19 @@ function castMediaIds(ids: readonly string[]): readonly MediaId[] {
   return ids.map((m) => m as MediaId);
 }
 
+function castAttachments(
+  attachments: ReadonlyArray<{ kind: string; itemId?: string }> | undefined,
+): readonly MessageAttachment[] {
+  if (!attachments) return [];
+  return attachments
+    .filter((a): a is { kind: 'item-ref'; itemId: string } => a.kind === 'item-ref' && typeof a.itemId === 'string')
+    .map((a) => ({ kind: 'item-ref' as const, itemId: a.itemId as ItemId }));
+}
+
 function serializeHit(
   r: ChatSearchHit & {
     chatPreview?: {
       partyOther: { kind: 'user' | 'organization' | 'support'; subjectId: string | null };
-      contextItemId: string | null;
     } | null;
   },
 ) {
@@ -98,7 +109,11 @@ export class AdminChatsController {
     const result = await this.openAsSupport.execute({
       actorUserId: user.userId,
       target,
-      message: { text: body.message.text, mediaIds: castMediaIds(body.message.mediaIds) },
+      message: {
+        text: body.message.text,
+        mediaIds: castMediaIds(body.message.mediaIds),
+        attachments: castAttachments(body.message.attachments),
+      },
     });
     if (isLeft(result)) throwDomainError(result.error);
     return {
@@ -202,6 +217,7 @@ export class AdminChatsController {
       actorUserId: user.userId,
       text: body.text,
       mediaIds: castMediaIds(body.mediaIds),
+      attachments: castAttachments(body.attachments),
       withClaim: claim === 'true' || claim === true,
     });
     if (isLeft(result)) throwDomainError(result.error);

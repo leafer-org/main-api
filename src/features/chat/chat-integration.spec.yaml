@@ -53,17 +53,26 @@ specs-unit:
           chatId
           participants: [{ participantId, kind, subjectId | null,
                            assignedUserId | null, role }]
-          contextItemId?: ItemId
           initiatorParticipantId
           initiatorUserId
         Тип чата выводится получателем из набора participants.
+        Контекст (товар и т.п.) живёт не на чате, а в первом сообщении
+        через `attachments` (см. chat.message.created).
 
   chat.message.created:
     - assert: Публикуется при отправке любого сообщения, включая системные
       description: |
         Payload: { chatId, messageId, senderParticipantId, actorUserId,
                    kind: 'text'|'media'|'system', text?, mediaIds?,
+                   attachments?: MessageAttachment[],
                    systemEvent?, createdAt }.
+    - assert: MessageAttachment — discriminated union по kind
+      description: |
+        Варианты:
+          { kind: 'item-ref', itemId: ItemId } — карточка товара
+        Расширяется новыми вариантами. Backend не валидирует содержимое —
+        клиент прикладывает любые публичные ссылки.
+        Иммутабельно после create: edit не меняет attachments.
 
   chat.message.edited / chat.message.deleted:
     - assert: chat.message.edited
@@ -114,38 +123,42 @@ specs-unit:
 
   # ==================== ИНТЕГРАЦИЯ С TICKETS ====================
 
-  Связь с фичей tickets:
-    - assert: tickets-feature слушает chat.opened и создаёт тикет по комбинации participants
+  Связь с фичей tickets (модель «один чат на пару»):
+    - assert: tickets-feature слушает chat.message.created и создаёт тикет на каждый item-ref в attachments
       description: |
-        Маппинг (kinds в participants) → board:
-          [user, organization]   → board орг (отдельная подписка)
-          [user, support]        → support-board
-          [support, organization]→ support-board
-        Тикет содержит chatId и contextItemId (если был).
-        Идемпотентность по chatId: повторный chat.opened (например, retry
-        publish) не создаёт второй тикет на тот же chatId.
+        Чат — единая нить общения между пользователем и организацией (один на пару).
+        Тикет — единица обработки конкретного «обращения» (про конкретный товар).
+        Триггер: сообщение содержит attachment kind='item-ref'. На каждый такой
+        attachment создаётся отдельный тикет с привязкой (chatId, itemId).
+        Маппинг (chat participants + attachment) → board:
+          [user, organization] + item-ref → board орг (отдельная подписка)
+          [user, support]                 → support-board (тикет создаётся независимо от item-ref)
+          [support, organization]         → support-board
         Точное соответствие board'ов и подписок — отдельная задача расширения
         в tickets-subscriptions.spec.yaml.
+    - assert: Идемпотентность тикета — по (chatId, messageId, itemId)
+      description: |
+        Повторная доставка одного `chat.message.created` (retry publish) не создаёт
+        второй тикет на ту же пару (messageId, itemId). consumer хранит ключ.
     - assert: Переход тикета done / reopen — ответственность tickets-feature
       description: |
         Чат не имеет состояния «закрыт» / «решено». Workflow обращения
         («в работе → done → reopen») живёт целиком на стороне тикета и
         управляется его собственными командами/событиями. Chat шлёт только
-        chat.opened (создание) и события сообщений / claim'ов / блокировок.
-    - assert: chat.message.created — тикет получает обновление updatedAt независимо от claim-статуса
+        chat.opened (создание чата), события сообщений / claim'ов / блокировок.
+    - assert: chat.message.created без attachments — обновляет updatedAt существующих тикетов чата, не создаёт новых
       description: |
-        Сообщения в unclaimed чатах тоже триггерят апдейт тикета: ticket в очереди
-        «всплывает» при новой активности от user'а, оператор в shared inbox видит
-        свежее. Семантика updatedAt = «последняя активность в диалоге», а не
-        «последний ответ оператора».
+        Семантика updatedAt тикета = «последняя активность в диалоге», а не
+        «последний ответ оператора». Сообщения без item-ref (просто текст / медиа)
+        бамают updatedAt всех открытых тикетов, привязанных к chatId.
     - assert: chat.opened и chat.message.created для первого сообщения публикуются в одной транзакции
       description: |
         Lazy chat creation: чат создаётся вместе с первым сообщением (POST /chats).
         Outbox-rows для chat.opened и chat.message.created вставляются в одну
         транзакцию, publisher шлёт их последовательно в один partition (по chatId),
-        порядок гарантирован. Tickets-consumer получает chat.opened (создание
-        тикета) и сразу следом chat.message.created (превью + updatedAt) — тикет
-        создаётся уже с непустым последним сообщением.
+        порядок гарантирован. Tickets-consumer получает chat.opened (для регистрации
+        чата) и сразу следом chat.message.created — если в attachments есть item-ref,
+        тикет создаётся с непустым превью и привязкой к товару.
 
   # ==================== ИНТЕГРАЦИЯ С NOTIFICATIONS ====================
 

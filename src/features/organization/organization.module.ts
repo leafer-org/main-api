@@ -3,6 +3,7 @@ import { Global, Module } from '@nestjs/common';
 import { OrganizationDatabaseClient } from './adapters/db/client.js';
 import { DrizzleItemDirectoryAdapter } from './adapters/db/item-directory.adapter.js';
 import { DrizzleOrganizationDirectoryAdapter } from './adapters/db/organization-directory.adapter.js';
+import { DrizzleOrganizationActorService } from './adapters/db/organization-actor.service.js';
 import { DrizzleOrganizationPermissionCheckService } from './adapters/db/organization-permission-check.service.js';
 import { DrizzleOrganizationRespondabilityService } from './adapters/db/organization-respondability.service.js';
 import { DrizzleClaimTokenQuery } from './adapters/db/queries/claim-token.query.js';
@@ -71,6 +72,7 @@ import { GetOrganizationRolesInteractor } from './application/use-cases/manage-r
 import { UpdateEmployeeRoleInteractor } from './application/use-cases/manage-roles/update-employee-role.interactor.js';
 import { Clock, SystemClock } from '@/infra/lib/clock.js';
 import { ItemDirectoryPort } from '@/kernel/application/ports/item-directory.js';
+import { OrganizationActorPort } from '@/kernel/application/ports/organization-actor.js';
 import { OrganizationDirectoryPort } from '@/kernel/application/ports/organization-directory.js';
 import { OrganizationRespondabilityPort } from '@/kernel/application/ports/organization-respondability.js';
 
@@ -105,6 +107,10 @@ import { OrganizationRespondabilityPort } from '@/kernel/application/ports/organ
     {
       provide: OrganizationRespondabilityPort,
       useClass: DrizzleOrganizationRespondabilityService,
+    },
+    {
+      provide: OrganizationActorPort,
+      useClass: DrizzleOrganizationActorService,
     },
     { provide: AdminOrganizationsListRepository, useClass: MeiliAdminOrganizationsListRepository },
     { provide: AdminOrganizationsListQueryPort, useClass: MeiliAdminOrganizationsListQuery },
@@ -157,6 +163,11 @@ import { OrganizationRespondabilityPort } from '@/kernel/application/ports/organ
     UnpublishExcessItemsHandler,
     RepublishItemsOnOrgUpdateHandler,
   ],
-  exports: [OrganizationRespondabilityPort, OrganizationDirectoryPort, ItemDirectoryPort],
+  exports: [
+    OrganizationRespondabilityPort,
+    OrganizationActorPort,
+    OrganizationDirectoryPort,
+    ItemDirectoryPort,
+  ],
 })
 export class OrganizationModule {}

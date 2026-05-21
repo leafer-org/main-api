@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import type { MessageAttachment } from '../../domain/vo/message-attachment.js';
 import { ChatEntity } from '../../domain/aggregates/chat/entity.js';
 import {
   ChatBlockedError,
@@ -13,11 +14,7 @@ import {
   SenderNotInChatError,
 } from '../../domain/aggregates/chat/errors.js';
 import { MessageEntity } from '../../domain/aggregates/message/entity.js';
-import {
-  ContextItemMismatchError,
-  ContextItemNotFoundError,
-  OrganizationNotFoundForChatError,
-} from '../errors.js';
+import { OrganizationNotFoundForChatError } from '../errors.js';
 import { pairKeyOf } from '../pair-key.js';
 import {
   ChatEventPublisher,
@@ -29,13 +26,16 @@ import { type Either, isLeft, Left, Right } from '@/infra/lib/box.js';
 import { Clock } from '@/infra/lib/clock.js';
 import { OrganizationRespondabilityPort } from '@/kernel/application/ports/organization-respondability.js';
 import { TransactionHost } from '@/kernel/application/ports/tx-host.js';
-import type { ChatId, ItemId, MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
+import type { ChatId, MediaId, OrganizationId, UserId } from '@/kernel/domain/ids.js';
 
 export type OpenChatWithOrganizationCommand = {
   initiatorUserId: UserId;
   organizationId: OrganizationId;
-  contextItemId: ItemId | null;
-  message: { text: string | null; mediaIds: readonly MediaId[] };
+  message: {
+    text: string | null;
+    mediaIds: readonly MediaId[];
+    attachments: readonly MessageAttachment[];
+  };
 };
 
 export type OpenChatResult = {
@@ -45,8 +45,6 @@ export type OpenChatResult = {
 
 type OpenError =
   | OrganizationNotFoundForChatError
-  | ContextItemNotFoundError
-  | ContextItemMismatchError
   | EmptyMessageError
   | MessageTextTooLongError
   | MessageTooManyMediaError
@@ -128,13 +126,13 @@ export class OpenChatWithOrganizationInteractor {
           assignedUserId: null,
         },
       ],
-      contextItemId: cmd.contextItemId,
       firstMessage: {
         messageId,
         senderParticipantId: userParticipantId,
         kind: cmd.message.text !== null && cmd.message.text.trim().length > 0 ? 'text' : 'media',
         text: cmd.message.text,
         mediaIds: cmd.message.mediaIds,
+        attachments: cmd.message.attachments,
       },
       now,
     });
@@ -181,6 +179,7 @@ export class OpenChatWithOrganizationInteractor {
         kind: cmd.message.text !== null && cmd.message.text.trim().length > 0 ? 'text' : 'media',
         text: cmd.message.text,
         mediaIds: cmd.message.mediaIds,
+        attachments: cmd.message.attachments,
       },
       now,
     });

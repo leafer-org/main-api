@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { ChatOrganizationMembershipReadModel, SlotPoolResolver } from '../../application/ports.js';
 import type { ParticipantKind } from '../../domain/vo/participant-kind.js';
-import { OrganizationRespondabilityPort } from '@/kernel/application/ports/organization-respondability.js';
+import { OrganizationActorPort } from '@/kernel/application/ports/organization-actor.js';
 import { PermissionCheckService } from '@/kernel/application/ports/permission.js';
 import { OrganizationId, type UserId } from '@/kernel/domain/ids.js';
 import { Permission } from '@/kernel/domain/permissions.js';
@@ -12,9 +12,9 @@ import { Permission } from '@/kernel/domain/permissions.js';
  *
  * Каждый kind резолвится через подходящий источник:
  * - 'user'         : userId == subjectId (тривиально).
- * - 'organization' : sync-проверка через kernel-порт OrganizationRespondabilityPort
- *                    (на write-path нужны свежие данные, не eventually-consistent
- *                    проекция).
+ * - 'organization' : sync-проверка через kernel-порт OrganizationActorPort с
+ *                    capability 'chat.respond' (на write-path нужны свежие
+ *                    данные, не eventually-consistent проекция).
  * - 'support'      : permission chat.respond.support через PermissionCheckService —
  *                    проверка делается для CURRENT user текущего HTTP-запроса
  *                    (PermissionCheckService привязан к JWT контексту).
@@ -28,8 +28,8 @@ import { Permission } from '@/kernel/domain/permissions.js';
 @Injectable()
 export class DefaultSlotPoolResolver extends SlotPoolResolver {
   public constructor(
-    @Inject(OrganizationRespondabilityPort)
-    private readonly respondability: OrganizationRespondabilityPort,
+    @Inject(OrganizationActorPort)
+    private readonly orgActor: OrganizationActorPort,
     @Inject(ChatOrganizationMembershipReadModel)
     private readonly orgMembership: ChatOrganizationMembershipReadModel,
     @Inject(PermissionCheckService)
@@ -48,9 +48,10 @@ export class DefaultSlotPoolResolver extends SlotPoolResolver {
     }
     if (kind === 'organization') {
       if (subjectId === null) return false;
-      return this.respondability.canRespondAsOrganization(
+      return this.orgActor.canActAs(
         OrganizationId.raw(subjectId),
         userId,
+        'chat.respond',
       );
     }
     if (kind === 'support') {

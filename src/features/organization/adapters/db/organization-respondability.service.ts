@@ -18,15 +18,6 @@ export class DrizzleOrganizationRespondabilityService extends OrganizationRespon
     return org !== null;
   }
 
-  public async canRespondAsOrganization(
-    orgId: OrganizationId,
-    userId: UserId,
-  ): Promise<boolean> {
-    const org = await this.organizationRepository.findById(NO_TRANSACTION, orgId);
-    if (!org) return false;
-    return org.employees.some((e) => (e.userId as string) === (userId as string));
-  }
-
   public async findRespondableUserIds(orgId: OrganizationId): Promise<UserId[]> {
     const org = await this.organizationRepository.findById(NO_TRANSACTION, orgId);
     if (!org) return [];

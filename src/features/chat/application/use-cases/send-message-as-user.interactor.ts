@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import type { MessageAttachment } from '../../domain/vo/message-attachment.js';
 import { ChatEntity } from '../../domain/aggregates/chat/entity.js';
 import { pairKeyOf } from '../pair-key.js';
 import {
@@ -28,6 +29,7 @@ export type SendMessageAsUserCommand = {
   actorUserId: UserId;
   text: string | null;
   mediaIds: readonly MediaId[];
+  attachments: readonly MessageAttachment[];
 };
 
 export type SendMessageResult = {
@@ -78,6 +80,7 @@ export class SendMessageAsUserInteractor {
           kind: text !== null && text.trim().length > 0 ? 'text' : 'media',
           text,
           mediaIds: cmd.mediaIds,
+          attachments: cmd.attachments,
         },
         now,
       });

@@ -53,6 +53,7 @@ const firstMessage = (overrides: Partial<NewMessageSpec> = {}): NewMessageSpec =
   kind: 'text',
   text: 'Hello',
   mediaIds: [],
+  attachments: [],
   ...overrides,
 });
 
@@ -61,7 +62,6 @@ function openUserToOrg(): ChatState {
     type: 'OpenChat',
     chatId: CHAT_ID,
     participants: [userSlot, orgSlotUnclaimed],
-    contextItemId: null,
     firstMessage: firstMessage(),
     now: NOW,
   });
@@ -87,8 +87,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot, orgSlotUnclaimed],
-      contextItemId: null,
-      firstMessage: firstMessage(),
+        firstMessage: firstMessage(),
       now: NOW,
     });
 
@@ -117,8 +116,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot, supportSlotUnclaimed],
-      contextItemId: null,
-      firstMessage: firstMessage(),
+        firstMessage: firstMessage(),
       now: NOW,
     });
 
@@ -136,8 +134,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot, userSlotB],
-      contextItemId: null,
-      firstMessage: firstMessage(),
+        firstMessage: firstMessage(),
       now: NOW,
     });
     expect(isLeft(result)).toBe(true);
@@ -163,8 +160,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [orgClaimedAsInitiator, userResponder],
-      contextItemId: null,
-      firstMessage: firstMessage({ senderParticipantId: PA }),
+        firstMessage: firstMessage({ senderParticipantId: PA }),
       now: NOW,
     });
     expect(isLeft(result)).toBe(true);
@@ -178,8 +174,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot],
-      contextItemId: null,
-      firstMessage: firstMessage(),
+        firstMessage: firstMessage(),
       now: NOW,
     });
     expect(isLeft(result)).toBe(true);
@@ -199,8 +194,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [badUser, orgSlotUnclaimed],
-      contextItemId: null,
-      firstMessage: firstMessage(),
+        firstMessage: firstMessage(),
       now: NOW,
     });
     expect(isLeft(result)).toBe(true);
@@ -220,8 +214,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot, badSupport],
-      contextItemId: null,
-      firstMessage: firstMessage(),
+        firstMessage: firstMessage(),
       now: NOW,
     });
     expect(isLeft(result)).toBe(true);
@@ -236,8 +229,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot, orgSlotUnclaimed],
-      contextItemId: null,
-      firstMessage: firstMessage({ senderParticipantId: stranger }),
+        firstMessage: firstMessage({ senderParticipantId: stranger }),
       now: NOW,
     });
     expect(isLeft(result)).toBe(true);
@@ -251,8 +243,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot, orgSlotUnclaimed],
-      contextItemId: null,
-      firstMessage: firstMessage({ text: null, mediaIds: [] }),
+        firstMessage: firstMessage({ text: null, mediaIds: [] }),
       now: NOW,
     });
     expect(isLeft(result)).toBe(true);
@@ -267,8 +258,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot, orgSlotUnclaimed],
-      contextItemId: null,
-      firstMessage: firstMessage({ text: longText }),
+        firstMessage: firstMessage({ text: longText }),
       now: NOW,
     });
     expect(isLeft(result)).toBe(true);
@@ -286,8 +276,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot, orgSlotUnclaimed],
-      contextItemId: null,
-      firstMessage: firstMessage({ text: null, mediaIds }),
+        firstMessage: firstMessage({ text: null, mediaIds }),
       now: NOW,
     });
     expect(isLeft(result)).toBe(true);
@@ -301,8 +290,7 @@ describe('ChatEntity.open', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot, orgSlotUnclaimed],
-      contextItemId: null,
-      firstMessage: firstMessage({ kind: 'media', text: null, mediaIds: ['m1' as MediaId] }),
+        firstMessage: firstMessage({ kind: 'media', text: null, mediaIds: ['m1' as MediaId] }),
       now: NOW,
     });
     expect(isLeft(result)).toBe(false);
@@ -322,6 +310,7 @@ describe('ChatEntity.sendMessage', () => {
         kind: 'text',
         text: 'Second',
         mediaIds: [],
+        attachments: [],
       },
       now: LATER,
     });
@@ -343,6 +332,7 @@ describe('ChatEntity.sendMessage', () => {
         kind: 'text',
         text: 'reply',
         mediaIds: [],
+        attachments: [],
       },
       now: LATER,
     });
@@ -363,8 +353,7 @@ describe('ChatEntity.sendMessage', () => {
       type: 'OpenChat',
       chatId: CHAT_ID,
       participants: [userSlot, orgClaimed],
-      contextItemId: null,
-      firstMessage: firstMessage(),
+        firstMessage: firstMessage(),
       now: NOW,
     });
     if (isLeft(opened)) throw new Error('open failed');
@@ -377,6 +366,7 @@ describe('ChatEntity.sendMessage', () => {
         kind: 'text',
         text: 'reply from employee',
         mediaIds: [],
+        attachments: [],
       },
       now: LATER,
     });
@@ -394,6 +384,7 @@ describe('ChatEntity.sendMessage', () => {
         kind: 'text',
         text: 'hi',
         mediaIds: [],
+        attachments: [],
       },
       now: LATER,
     });
@@ -419,6 +410,7 @@ describe('ChatEntity.sendMessage', () => {
         kind: 'text',
         text: 'will fail',
         mediaIds: [],
+        attachments: [],
       },
       now: LATER,
     });

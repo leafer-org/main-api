@@ -1,3 +1,4 @@
+import type { MessageAttachment } from '../../vo/message-attachment.js';
 import type { MessageKind, SystemEvent } from '../../vo/message-kind.js';
 import type { EntityState } from '@/infra/ddd/entity-state.js';
 import type {
@@ -16,6 +17,7 @@ export type MessageState = EntityState<{
   kind: MessageKind;
   text: string | null;
   mediaIds: readonly MediaId[];
+  attachments: readonly MessageAttachment[];
   systemEvent: SystemEvent | null;
   createdAt: Date;
   editedAt: Date | null;

@@ -8,7 +8,6 @@ export const chats = pgTable(
     status: text('status').notNull(),
     blockedByParticipantId: uuid('blocked_by_participant_id'),
     blockedAt: timestamp('blocked_at', { withTimezone: true }),
-    contextItemId: text('context_item_id'),
     lastMessageId: uuid('last_message_id'),
     lastMessageAt: timestamp('last_message_at', { withTimezone: true }),
     lastMessagePreview: text('last_message_preview'),
@@ -74,6 +73,12 @@ export const chatMessages = pgTable(
     kind: text('kind').notNull(),
     text: text('text'),
     mediaIds: jsonb('media_ids').notNull().default([]),
+    /**
+     * Прикрепляемые карточки контекста (item-ref и расширения). Immutable
+     * после создания: edit меняет только text/mediaIds. Содержит массив
+     * MessageAttachment'ов из domain/vo/message-attachment.ts.
+     */
+    attachments: jsonb('attachments').notNull().default([]),
     systemEvent: jsonb('system_event'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
     editedAt: timestamp('edited_at', { withTimezone: true }),

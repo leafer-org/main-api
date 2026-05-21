@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import type { MessageAttachment } from '../../domain/vo/message-attachment.js';
 import { ChatEntity } from '../../domain/aggregates/chat/entity.js';
 import {
   ChatBlockedError,
@@ -14,11 +15,7 @@ import {
   type SlotAlreadyClaimedError,
 } from '../../domain/aggregates/chat/errors.js';
 import { MessageEntity } from '../../domain/aggregates/message/entity.js';
-import {
-  ContextItemMismatchError,
-  ContextItemNotFoundError,
-  OrganizationNotFoundForChatError,
-} from '../errors.js';
+import { OrganizationNotFoundForChatError } from '../errors.js';
 import { pairKeyOf } from '../pair-key.js';
 import {
   ChatEventPublisher,
@@ -46,15 +43,17 @@ export type SupportTarget =
 export type OpenChatAsSupportCommand = {
   actorUserId: UserId; // admin
   target: SupportTarget;
-  message: { text: string | null; mediaIds: readonly MediaId[] };
+  message: {
+    text: string | null;
+    mediaIds: readonly MediaId[];
+    attachments: readonly MessageAttachment[];
+  };
 };
 
 export type OpenChatResult = { chatId: ChatId; reused: boolean };
 
 type OpenError =
   | OrganizationNotFoundForChatError
-  | ContextItemNotFoundError
-  | ContextItemMismatchError
   | EmptyMessageError
   | MessageTextTooLongError
   | MessageTooManyMediaError
@@ -148,6 +147,7 @@ export class OpenChatAsSupportInteractor {
             kind: kindOf(cmd.message.text),
             text: cmd.message.text,
             mediaIds: cmd.message.mediaIds,
+            attachments: cmd.message.attachments,
           },
           now: this.clock.now(),
         });
@@ -182,13 +182,13 @@ export class OpenChatAsSupportInteractor {
             assignedUserId: cmd.target.kind === 'user' ? cmd.target.userId : null,
           },
         ],
-        contextItemId: null,
         firstMessage: {
           messageId,
           senderParticipantId: supportPid,
           kind: kindOf(cmd.message.text),
           text: cmd.message.text,
           mediaIds: cmd.message.mediaIds,
+          attachments: cmd.message.attachments,
         },
         now: this.clock.now(),
       });

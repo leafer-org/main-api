@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import type { MessageAttachment } from '../../domain/vo/message-attachment.js';
 import { ChatEntity } from '../../domain/aggregates/chat/entity.js';
 import {
   ChatBlockedError,
@@ -27,7 +28,11 @@ import type { ChatId, MediaId, UserId } from '@/kernel/domain/ids.js';
 
 export type OpenChatWithSupportCommand = {
   initiatorUserId: UserId;
-  message: { text: string | null; mediaIds: readonly MediaId[] };
+  message: {
+    text: string | null;
+    mediaIds: readonly MediaId[];
+    attachments: readonly MessageAttachment[];
+  };
 };
 
 export type OpenChatResult = {
@@ -79,6 +84,7 @@ export class OpenChatWithSupportInteractor {
             kind: kindOf(cmd.message.text),
             text: cmd.message.text,
             mediaIds: cmd.message.mediaIds,
+            attachments: cmd.message.attachments,
           },
           now: this.clock.now(),
         });
@@ -104,13 +110,13 @@ export class OpenChatWithSupportInteractor {
           },
           { id: supportPid, kind: 'support', subjectId: null, assignedUserId: null },
         ],
-        contextItemId: null,
         firstMessage: {
           messageId,
           senderParticipantId: userPid,
           kind: kindOf(cmd.message.text),
           text: cmd.message.text,
           mediaIds: cmd.message.mediaIds,
+          attachments: cmd.message.attachments,
         },
         now: this.clock.now(),
       });

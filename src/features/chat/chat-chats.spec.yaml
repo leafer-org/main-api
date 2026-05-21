@@ -59,8 +59,11 @@ description: |
       (user, U) + (support, null)
       (support, null) + (organization, O)
 
-  Контекст услуги: при инициации user→organization можно передать contextItemId.
-  Сохраняется на чате (Chat.contextItemId), используется для тикета и UI.
+  Контекст (товар, заявка и т.п.): прикрепляется не к чату, а к сообщению
+  через `attachments: MessageAttachment[]`. Один чат на пару (user, org) —
+  любые «обращения по разным товарам» живут как разные сообщения с
+  attachments в одной нити. Backend не валидирует содержимое attachment'ов:
+  клиент прикладывает любые публичные ссылки (см. chat-messages.spec.yaml).
 
   Slot-pool resolver (концепция, реализуется в kernel или в feature):
     Для каждого kind определена пара функций:
@@ -86,25 +89,24 @@ specs-unit:
   Инициация User → Organization:
     - assert: POST /chats создаёт чат с participants [(user,me), (organization,O)] и первым сообщением
       description: |
-        Body: { participants: [{ kind: 'organization', subjectId: orgId }],
-                contextItemId?, message: { text?, mediaIds? } }.
-        Сторона инициатора (user) подставляется автоматически из auth-контекста
-        (нет нужды дублировать в body).
-        Ответ: { chatId, participants: [{ id, kind, subjectId, assignedUserId,
-                                         role }],
-                 firstMessageId, status: 'open' }.
+        Body: { organizationId,
+                message: { text?, mediaIds?, attachments? } }.
+        Сторона инициатора (user) подставляется автоматически из auth-контекста.
+        Ответ: { chatId, reused }.
         Транзакция: insert Chat + insert 2 ChatParticipant + insert Message
         + outbox(chat.opened, chat.message.created).
         Слот organization создаётся с assignedUserId=null (unclaimed).
+        Контекст товара передаётся в attachments сообщения (kind='item-ref').
     - assert: Идемпотентность по набору участников при существующем open чате
       description: |
         Если у инициатора уже есть open-чат с теми же participants — новый чат
-        не создаётся, message добавляется в существующий, возвращается тот же
-        chatId. participants и contextItemId из body игнорируются (контекст
-        у чата уже зафиксирован).
+        не создаётся, message добавляется в существующий (с своими attachments),
+        возвращается тот же chatId с `reused: true`.
     - assert: Несуществующая или неопубликованная organization — 404 organization_not_found
-    - assert: Несуществующий contextItemId — 400 context_item_not_found
-    - assert: contextItemId не принадлежит указанной orgId — 400 context_item_mismatch
+    - assert: Backend не валидирует attachments — клиент прикладывает любые публичные ссылки
+      description: |
+        Несуществующий item в attachment не возвращает ошибку при отправке.
+        UI обогатит карточку при рендере или покажет «Товар недоступен».
     - assert: Без авторизации — 401
     - assert: Чат blocked — POST /chats возвращает 409 chat_blocked
       description: User не переоткрывает blocked через инициацию.

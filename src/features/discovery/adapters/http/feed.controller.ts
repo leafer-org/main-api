@@ -4,9 +4,12 @@ import type { Request } from 'express';
 import { GetFeedInteractor } from '../../application/use-cases/browse-feed/get-feed.interactor.js';
 import { avatarImageProxy, cardImageOptions } from './image-proxy-options.js';
 import { resolveItemListMedia } from './resolve-item-media.js';
+import { CurrentUser } from '@/infra/auth/authn/current-user.decorator.js';
+import type { JwtUserPayload } from '@/infra/auth/authn/jwt-user-payload.js';
 import { Public } from '@/infra/auth/authn/public.decorator.js';
 import type { PublicQuery, PublicResponse } from '@/infra/contracts/types.js';
 import { MediaService } from '@/kernel/application/ports/media.js';
+import { OrganizationFreshnessQueryPort } from '@/kernel/application/ports/organization-freshness-query.js';
 import { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 
 @Public()
@@ -15,11 +18,14 @@ export class FeedController {
   public constructor(
     private readonly getFeed: GetFeedInteractor,
     @Inject(MediaService) private readonly mediaService: MediaService,
+    @Inject(OrganizationFreshnessQueryPort)
+    private readonly freshnessQuery: OrganizationFreshnessQueryPort,
   ) {}
 
   @Get()
   public async list(
     @Req() req: Request,
+    @CurrentUser() user: JwtUserPayload | null,
     @Query('cityId') cityId: PublicQuery['getFeed']['cityId'],
     @Query('ageGroup') ageGroup?: PublicQuery['getFeed']['ageGroup'],
     @Query('cursor') cursor?: PublicQuery['getFeed']['cursor'],
@@ -38,8 +44,26 @@ export class FeedController {
       limit: Number(limit ?? 20),
     });
 
+    // Один батч-запрос за freshOrgIds на всю страницу. Для анонима — пустой Set.
+    const ownerOrgIds = Array.from(
+      new Set(
+        result.value.items
+          .map((it) => it.owner?.organizationId)
+          .filter((id): id is NonNullable<typeof id> => id !== undefined),
+      ),
+    );
+    const freshOrgIds = await this.freshnessQuery.computeFreshOrgIds(
+      user?.userId ?? null,
+      ownerOrgIds,
+    );
+
     const loader = this.mediaService.createMediaLoader(cardImageOptions(req));
-    const resolvedItems = await resolveItemListMedia(result.value.items, loader, avatarImageProxy(req));
+    const resolvedItems = await resolveItemListMedia(
+      result.value.items,
+      loader,
+      avatarImageProxy(req),
+      freshOrgIds,
+    );
 
     return {
       items: resolvedItems,

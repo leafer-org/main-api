@@ -6,6 +6,7 @@ CREATE TABLE "chat_messages" (
 	"kind" text NOT NULL,
 	"text" text,
 	"media_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"attachments" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"system_event" jsonb,
 	"created_at" timestamp with time zone NOT NULL,
 	"edited_at" timestamp with time zone,
@@ -54,7 +55,6 @@ CREATE TABLE "chats" (
 	"status" text NOT NULL,
 	"blocked_by_participant_id" uuid,
 	"blocked_at" timestamp with time zone,
-	"context_item_id" text,
 	"last_message_id" uuid,
 	"last_message_at" timestamp with time zone,
 	"last_message_preview" text,
@@ -284,6 +284,51 @@ CREATE TABLE "organizations" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "organization_freshness" (
+	"organization_id" text PRIMARY KEY NOT NULL,
+	"last_post_id" uuid,
+	"last_post_at" timestamp with time zone,
+	"updated_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "post_comments" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"post_id" uuid NOT NULL,
+	"author_user_id" text NOT NULL,
+	"text" text NOT NULL,
+	"moderation_status" text DEFAULT 'visible' NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"edited_at" timestamp with time zone
+);
+--> statement-breakpoint
+CREATE TABLE "post_likes" (
+	"post_id" uuid NOT NULL,
+	"user_id" text NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "post_likes_post_id_user_id_pk" PRIMARY KEY("post_id","user_id")
+);
+--> statement-breakpoint
+CREATE TABLE "post_views" (
+	"user_id" text NOT NULL,
+	"post_id" uuid NOT NULL,
+	"viewed_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "post_views_user_id_post_id_pk" PRIMARY KEY("user_id","post_id")
+);
+--> statement-breakpoint
+CREATE TABLE "posts" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"author_user_id" text NOT NULL,
+	"text" text DEFAULT '' NOT NULL,
+	"media" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"moderation_status" text DEFAULT 'visible' NOT NULL,
+	"like_count" integer DEFAULT 0 NOT NULL,
+	"comment_count" integer DEFAULT 0 NOT NULL,
+	"view_count" integer DEFAULT 0 NOT NULL,
+	"edited_at" timestamp with time zone,
+	"created_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "reviews" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"author_id" text NOT NULL,
@@ -326,6 +371,9 @@ CREATE TABLE "outbox" (
 --> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "video_details" ADD CONSTRAINT "video_details_media_id_media_id_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "post_comments" ADD CONSTRAINT "post_comments_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "post_likes" ADD CONSTRAINT "post_likes_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "post_views" ADD CONSTRAINT "post_views_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "chat_messages_chat_id_created_idx" ON "chat_messages" USING btree ("chat_id","created_at");--> statement-breakpoint
 CREATE INDEX "chat_messages_actor_user_idx" ON "chat_messages" USING btree ("actor_user_id");--> statement-breakpoint
 CREATE INDEX "chat_org_members_user_idx" ON "chat_organization_members" USING btree ("user_id");--> statement-breakpoint
@@ -361,6 +409,14 @@ CREATE INDEX "interactions_type_idx" ON "interactions" USING btree ("type","time
 CREATE INDEX "interactions_dedup_idx" ON "interactions" USING btree ("user_id","item_id","type","timestamp");--> statement-breakpoint
 CREATE INDEX "items_organization_id_idx" ON "items" USING btree ("organization_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "organizations_claim_token_idx" ON "organizations" USING btree ("claim_token");--> statement-breakpoint
+CREATE INDEX "org_freshness_last_post_at_idx" ON "organization_freshness" USING btree ("last_post_at");--> statement-breakpoint
+CREATE INDEX "post_comments_post_created_idx" ON "post_comments" USING btree ("post_id","created_at");--> statement-breakpoint
+CREATE INDEX "post_comments_author_idx" ON "post_comments" USING btree ("author_user_id");--> statement-breakpoint
+CREATE INDEX "post_likes_user_idx" ON "post_likes" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "post_views_post_idx" ON "post_views" USING btree ("post_id");--> statement-breakpoint
+CREATE INDEX "posts_org_created_idx" ON "posts" USING btree ("organization_id","created_at");--> statement-breakpoint
+CREATE INDEX "posts_author_idx" ON "posts" USING btree ("author_user_id");--> statement-breakpoint
+CREATE INDEX "posts_org_visible_created_idx" ON "posts" USING btree ("organization_id","created_at") WHERE "posts"."moderation_status" = 'visible';--> statement-breakpoint
 CREATE INDEX "reviews_author_target_idx" ON "reviews" USING btree ("author_id","target_type","target_id");--> statement-breakpoint
 CREATE INDEX "reviews_target_status_idx" ON "reviews" USING btree ("target_type","target_id","status");--> statement-breakpoint
 CREATE INDEX "reviews_organization_status_idx" ON "reviews" USING btree ("organization_id","status");--> statement-breakpoint

@@ -2203,6 +2203,113 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/organizations/{orgId}/posts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Список постов организации */
+    get: operations['getOrganizationPosts'];
+    put?: never;
+    /** Опубликовать пост от лица организации */
+    post: operations['publishPost'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/posts/{postId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Получить один пост */
+    get: operations['getPostDetail'];
+    put?: never;
+    post?: never;
+    /** Удалить пост (hard delete) */
+    delete: operations['deletePost'];
+    options?: never;
+    head?: never;
+    /** Редактировать пост */
+    patch: operations['editPost'];
+    trace?: never;
+  };
+  '/posts/{postId}/like': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Лайкнуть пост (idempotent) */
+    put: operations['likePost'];
+    post?: never;
+    /** Убрать лайк (idempotent) */
+    delete: operations['unlikePost'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/posts/{postId}/comments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Список комментов к посту */
+    get: operations['getPostComments'];
+    put?: never;
+    /** Оставить коммент к посту */
+    post: operations['createPostComment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/comments/{commentId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Удалить коммент (hard delete) */
+    delete: operations['deletePostComment'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/post-views': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Зафиксировать просмотры постов (batch от intersection observer) */
+    post: operations['recordPostViews'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/chats/centrifugo-token': {
     parameters: {
       query?: never;
@@ -2854,10 +2961,12 @@ export interface components {
       options: components['schemas']['PaymentOption'][];
     };
     ItemOwnerSummary: {
+      organizationId: string;
       name: string;
       avatarId?: string | null;
       /** Format: uri */
       avatarUrl?: string | null;
+      hasUnreadFreshPosts: boolean;
     };
     ItemLocationSummary: {
       cityId: string;
@@ -3818,6 +3927,46 @@ export interface components {
       categories: ('open' | 'close' | 'redirect')[];
       params: components['schemas']['TriggerParam'][];
     };
+    PostMediaItem: {
+      /** @enum {string} */
+      type: 'image' | 'video';
+      mediaId: string;
+    };
+    PostDetail: {
+      postId: string;
+      organizationId: string;
+      authorUserId: string;
+      text: string;
+      media: components['schemas']['PostMediaItem'][];
+      /** @enum {string} */
+      moderationStatus: 'visible' | 'hidden';
+      likeCount: number;
+      commentCount: number;
+      viewCount: number;
+      viewerLiked: boolean;
+      /** Format: date-time */
+      editedAt: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    PostListResponse: {
+      posts: components['schemas']['PostDetail'][];
+      nextCursor: string | null;
+    };
+    CommentDetail: {
+      commentId: string;
+      postId: string;
+      authorUserId: string;
+      text: string;
+      /** @enum {string} */
+      moderationStatus: 'visible' | 'hidden';
+      /** Format: date-time */
+      createdAt: string;
+    };
+    CommentListResponse: {
+      comments: components['schemas']['CommentDetail'][];
+      nextCursor: string | null;
+    };
     UserRef: {
       /** @enum {string} */
       kind: 'user';
@@ -3854,7 +4003,6 @@ export interface components {
       /** @enum {string} */
       status: 'open' | 'blocked';
       participants: components['schemas']['ChatParticipant'][];
-      contextItemId?: string | null;
       lastMessage: {
         messageId: string;
         preview: string;
@@ -3871,6 +4019,12 @@ export interface components {
     ChatList: {
       chats: components['schemas']['ChatListItem'][];
       total: number;
+    };
+    /** @description Карточка-вложение к сообщению. Discriminated union по полю kind. Расширение: новый context = новый вариант в oneOf. */
+    MessageAttachment: {
+      /** @enum {string} */
+      kind: 'item-ref';
+      itemId: string;
     };
     ChatOpenResponse: {
       chatId: string;
@@ -3894,7 +4048,6 @@ export interface components {
         kind: 'user' | 'organization' | 'support';
         subjectId: string | null;
       };
-      contextItemId: string | null;
     };
     SearchResultsGlobal: {
       results: (components['schemas']['SearchHit'] & {
@@ -3914,6 +4067,8 @@ export interface components {
       kind: 'text' | 'media' | 'system';
       text?: string | null;
       mediaIds: string[];
+      /** @description Прикрепляемые карточки публичных данных (товар и т.п.). Иммутабельны: edit меняет только text/mediaIds. */
+      attachments?: components['schemas']['MessageAttachment'][];
       systemEvent?: {
         type?: string;
         payload?: {
@@ -3947,8 +4102,20 @@ export interface components {
         'application/json': components['schemas']['Error'];
       };
     };
-    /** @description Доменная ошибка */
+    /** @description Ошибка домена */
     DomainError: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        'application/json': {
+          code: string;
+          message?: string;
+        };
+      };
+    };
+    /** @description Доменная ошибка */
+    'components-DomainError': {
       headers: {
         [name: string]: unknown;
       };
@@ -10743,6 +10910,355 @@ export interface operations {
       };
     };
   };
+  getOrganizationPosts: {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        orgId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список постов */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PostListResponse'];
+        };
+      };
+    };
+  };
+  publishPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orgId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          text: string;
+          media: components['schemas']['PostMediaItem'][];
+        };
+      };
+    };
+    responses: {
+      /** @description Пост создан */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            postId: string;
+          };
+        };
+      };
+      400: components['responses']['DomainError'];
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  getPostDetail: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        postId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Пост */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PostDetail'];
+        };
+      };
+      404: components['responses']['DomainError'];
+    };
+  };
+  deletePost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        postId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Удалено */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  editPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        postId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          text?: string;
+          media?: components['schemas']['PostMediaItem'][];
+        };
+      };
+    };
+    responses: {
+      /** @description Обновлено */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['DomainError'];
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  likePost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        postId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Лайк зафиксирован */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            liked: true;
+            likeCount: number;
+          };
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components['responses']['DomainError'];
+    };
+  };
+  unlikePost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        postId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Лайк снят */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            /** @enum {boolean} */
+            liked: false;
+            likeCount: number;
+          };
+        };
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components['responses']['DomainError'];
+    };
+  };
+  getPostComments: {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        postId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Список комментов */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CommentListResponse'];
+        };
+      };
+      404: components['responses']['DomainError'];
+    };
+  };
+  createPostComment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        postId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          text: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Коммент создан */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            commentId: string;
+          };
+        };
+      };
+      400: components['responses']['DomainError'];
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components['responses']['DomainError'];
+    };
+  };
+  deletePostComment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        commentId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Удалено */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      403: components['responses']['DomainError'];
+      404: components['responses']['DomainError'];
+    };
+  };
+  recordPostViews: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          postIds: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description Просмотры зафиксированы (или пустой массив — no-op) */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['DomainError'];
+      /** @description Не авторизован */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   getCentrifugoToken: {
     parameters: {
       query?: never;
@@ -10808,10 +11324,10 @@ export interface operations {
       content: {
         'application/json': {
           organizationId: string;
-          contextItemId?: string | null;
           message: {
             text: string | null;
             mediaIds: string[];
+            attachments?: components['schemas']['MessageAttachment'][];
           };
         };
       };
@@ -10826,7 +11342,7 @@ export interface operations {
           'application/json': components['schemas']['ChatOpenResponse'];
         };
       };
-      400: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
       /** @description Не авторизован */
       401: {
         headers: {
@@ -10834,8 +11350,8 @@ export interface operations {
         };
         content?: never;
       };
-      404: components['responses']['DomainError'];
-      409: components['responses']['DomainError'];
+      404: components['responses']['components-DomainError'];
+      409: components['responses']['components-DomainError'];
     };
   };
   openChatWithSupport: {
@@ -10851,6 +11367,7 @@ export interface operations {
           message: {
             text: string | null;
             mediaIds: string[];
+            attachments?: components['schemas']['MessageAttachment'][];
           };
         };
       };
@@ -10865,7 +11382,7 @@ export interface operations {
           'application/json': components['schemas']['ChatOpenResponse'];
         };
       };
-      400: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
       /** @description Не авторизован */
       401: {
         headers: {
@@ -10873,7 +11390,7 @@ export interface operations {
         };
         content?: never;
       };
-      409: components['responses']['DomainError'];
+      409: components['responses']['components-DomainError'];
     };
   };
   getUnreadSummary: {
@@ -10924,7 +11441,7 @@ export interface operations {
           'application/json': components['schemas']['SearchResultsGlobal'];
         };
       };
-      400: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
     };
   };
   searchInChat: {
@@ -10951,8 +11468,8 @@ export interface operations {
           'application/json': components['schemas']['SearchResultsInChat'];
         };
       };
-      400: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
     };
   };
   getChatDetail: {
@@ -10975,7 +11492,7 @@ export interface operations {
           'application/json': components['schemas']['ChatListItem'];
         };
       };
-      404: components['responses']['DomainError'];
+      404: components['responses']['components-DomainError'];
     };
   };
   getChatMessages: {
@@ -11004,8 +11521,8 @@ export interface operations {
           };
         };
       };
-      400: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
     };
   };
   sendMessageInChat: {
@@ -11022,6 +11539,7 @@ export interface operations {
         'application/json': {
           text: string | null;
           mediaIds: string[];
+          attachments?: components['schemas']['MessageAttachment'][];
         };
       };
     };
@@ -11037,9 +11555,9 @@ export interface operations {
           };
         };
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
     };
   };
   deleteMessageInChat: {
@@ -11061,9 +11579,9 @@ export interface operations {
         };
         content?: never;
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
     };
   };
   editMessageInChat: {
@@ -11092,9 +11610,9 @@ export interface operations {
         };
         content?: never;
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
     };
   };
   reportMessage: {
@@ -11124,10 +11642,10 @@ export interface operations {
         };
         content?: never;
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
-      409: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
+      409: components['responses']['components-DomainError'];
     };
   };
   reportChat: {
@@ -11156,8 +11674,8 @@ export interface operations {
         };
         content?: never;
       };
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
     };
   };
   markChatRead: {
@@ -11184,8 +11702,8 @@ export interface operations {
         };
         content?: never;
       };
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
     };
   };
   listAdminChats: {
@@ -11240,6 +11758,7 @@ export interface operations {
           message: {
             text: string | null;
             mediaIds: string[];
+            attachments?: components['schemas']['MessageAttachment'][];
           };
         };
       };
@@ -11254,10 +11773,10 @@ export interface operations {
           'application/json': components['schemas']['ChatOpenResponse'];
         };
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
-      409: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
+      409: components['responses']['components-DomainError'];
     };
   };
   operatorSearchAll: {
@@ -11287,8 +11806,8 @@ export interface operations {
           'application/json': components['schemas']['SearchResultsGlobal'];
         };
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
     };
   };
   operatorSearchInChat: {
@@ -11315,9 +11834,9 @@ export interface operations {
           'application/json': components['schemas']['SearchResultsInChat'];
         };
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
     };
   };
   sendMessageAsOperator: {
@@ -11336,6 +11855,7 @@ export interface operations {
         'application/json': {
           text: string | null;
           mediaIds: string[];
+          attachments?: components['schemas']['MessageAttachment'][];
         };
       };
     };
@@ -11352,10 +11872,10 @@ export interface operations {
           };
         };
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
-      409: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
+      409: components['responses']['components-DomainError'];
     };
   };
   claimChatSlot: {
@@ -11377,10 +11897,10 @@ export interface operations {
         };
         content?: never;
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
-      409: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
+      409: components['responses']['components-DomainError'];
     };
   };
   releaseChatSlot: {
@@ -11402,10 +11922,10 @@ export interface operations {
         };
         content?: never;
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
-      409: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
+      409: components['responses']['components-DomainError'];
     };
   };
   reassignChatSlot: {
@@ -11433,9 +11953,9 @@ export interface operations {
         };
         content?: never;
       };
-      400: components['responses']['DomainError'];
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
+      400: components['responses']['components-DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
     };
   };
   blockChat: {
@@ -11462,9 +11982,9 @@ export interface operations {
         };
         content?: never;
       };
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
-      409: components['responses']['DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
+      409: components['responses']['components-DomainError'];
     };
   };
   unblockChat: {
@@ -11485,9 +12005,9 @@ export interface operations {
         };
         content?: never;
       };
-      403: components['responses']['DomainError'];
-      404: components['responses']['DomainError'];
-      409: components['responses']['DomainError'];
+      403: components['responses']['components-DomainError'];
+      404: components['responses']['components-DomainError'];
+      409: components['responses']['components-DomainError'];
     };
   };
 }

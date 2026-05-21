@@ -28,7 +28,6 @@ const ChatStreamingMessage = Type.Object({
   occurredAt: Type.String(), // ISO; конкретное поле-таймштамп события скопировано сюда
 
   // chat.opened
-  contextItemId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   participants: Type.Optional(
     Type.Array(
       Type.Object({
@@ -53,6 +52,17 @@ const ChatStreamingMessage = Type.Object({
   ),
   text: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   mediaIds: Type.Optional(Type.Array(Type.String())),
+  /**
+   * Прикрепляемые карточки контекста. Дискриминированный union по kind.
+   * Расширение: добавляется новый вариант в Union.
+   */
+  attachments: Type.Optional(
+    Type.Array(
+      Type.Union([
+        Type.Object({ kind: Type.Literal('item-ref'), itemId: Type.String() }),
+      ]),
+    ),
+  ),
   systemEvent: Type.Optional(
     Type.Union([
       Type.Object({

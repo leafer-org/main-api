@@ -9,7 +9,7 @@ import {
 import type { SearchFacets } from '../../domain/read-models/search-result.read-model.js';
 import { DISCOVERY_ITEMS_INDEX, DiscoveryItemsSearchClient } from './discovery-items.index.js';
 import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
-import { CategoryId, MediaId, ItemId, TypeId } from '@/kernel/domain/ids.js';
+import { CategoryId, ItemId, MediaId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
 import type { AgeGroupOption } from '@/kernel/domain/vo/age-group.js';
 import type { PaymentStrategy } from '@/kernel/domain/vo/widget.js';
 
@@ -25,6 +25,7 @@ type DiscoveryItemHit = {
   reviewCount: number;
   ownerName: string;
   ownerAvatarId: string | null;
+  ownerOrganizationId: string | null;
   cityId: string | null;
   address: string;
   categoryIds: string[];
@@ -124,12 +125,14 @@ export class MeiliSearchQuery implements SearchPort {
           : null,
       rating: hit.rating,
       reviewCount: hit.reviewCount,
-      owner: hit.ownerName
-        ? {
-            name: hit.ownerName,
-            avatarId: hit.ownerAvatarId ? MediaId.raw(hit.ownerAvatarId) : null,
-          }
-        : null,
+      owner:
+        hit.ownerName && hit.ownerOrganizationId
+          ? {
+              organizationId: OrganizationId.raw(hit.ownerOrganizationId),
+              name: hit.ownerName,
+              avatarId: hit.ownerAvatarId ? MediaId.raw(hit.ownerAvatarId) : null,
+            }
+          : null,
       location: hit.cityId ? { cityId: hit.cityId, address: hit.address || null } : null,
       categoryIds: hit.categoryIds.map((id) => CategoryId.raw(id)),
       ...EMPTY_CARD_ENRICHMENT,

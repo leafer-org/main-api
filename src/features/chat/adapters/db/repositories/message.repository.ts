@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 
 import { MessageRepository } from '../../../application/ports.js';
 import type { MessageState } from '../../../domain/aggregates/message/state.js';
+import type { MessageAttachment } from '../../../domain/vo/message-attachment.js';
 import type { MessageKind, SystemEvent } from '../../../domain/vo/message-kind.js';
 import { chatMessages } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
@@ -46,6 +47,7 @@ export class DrizzleMessageRepository extends MessageRepository {
         kind: state.kind,
         text: state.text,
         mediaIds: state.mediaIds as MediaId[],
+        attachments: state.attachments as MessageAttachment[],
         systemEvent: state.systemEvent,
         createdAt: state.createdAt,
         editedAt: state.editedAt,
@@ -54,6 +56,7 @@ export class DrizzleMessageRepository extends MessageRepository {
       .onConflictDoUpdate({
         target: chatMessages.id,
         set: {
+          // attachments immutable — не обновляем при edit/delete
           kind: state.kind,
           text: state.text,
           mediaIds: state.mediaIds as MediaId[],
@@ -75,6 +78,7 @@ export class DrizzleMessageRepository extends MessageRepository {
       kind: row.kind as MessageKind,
       text: row.text,
       mediaIds: (row.mediaIds as string[]).map((m) => m as MediaId),
+      attachments: (row.attachments as MessageAttachment[]) ?? [],
       systemEvent: row.systemEvent as SystemEvent | null,
       createdAt: row.createdAt,
       editedAt: row.editedAt,

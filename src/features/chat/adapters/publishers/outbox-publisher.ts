@@ -44,7 +44,6 @@ export class OutboxChatEventPublisher extends ChatEventPublisher {
           type: event.type,
           chatId,
           occurredAt: event.openedAt.toISOString(),
-          contextItemId: event.contextItemId as string | null,
           participants: event.participants.map((p) => ({
             id: p.id as string,
             kind: p.kind,
@@ -64,6 +63,10 @@ export class OutboxChatEventPublisher extends ChatEventPublisher {
           messageKind: event.kind,
           text: event.text,
           mediaIds: event.mediaIds.map((m) => m as string),
+          attachments: event.attachments.map((a) => ({
+            kind: a.kind,
+            itemId: a.itemId as string,
+          })),
           systemEvent: event.systemEvent,
         };
       case 'chat.message.edited':

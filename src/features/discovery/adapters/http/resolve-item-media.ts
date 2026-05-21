@@ -4,13 +4,26 @@ import type { ItemListView } from '../../domain/read-models/item-list-view.read-
 
 export type ResolvedItemListView = Omit<ItemListView, 'media' | 'owner'> & {
   media: ResolvedMediaItem[];
-  owner: { name: string; avatarId: MediaId | null; avatarUrl: string | null } | null;
+  owner: {
+    organizationId: string;
+    name: string;
+    avatarId: MediaId | null;
+    avatarUrl: string | null;
+    /**
+     * Кружочек свежести: у орг есть пост, не просмотренный текущим user'ом,
+     * не старше 7 дней. Для анонима и не-feed-контекстов всегда false.
+     * Реальный расчёт делает feed.controller через OrganizationFreshnessQueryPort
+     * и передаёт `freshOrgIds`. См. posts-views.spec.
+     */
+    hasUnreadFreshPosts: boolean;
+  } | null;
 };
 
 export async function resolveItemListMedia(
   items: ItemListView[],
   loader: MediaLoader,
   avatarProxy: ImageProxyOptions,
+  freshOrgIds: ReadonlySet<string> = new Set(),
 ): Promise<ResolvedItemListView[]> {
   return Promise.all(
     items.map(async (item): Promise<ResolvedItemListView> => {
@@ -22,7 +35,15 @@ export async function resolveItemListMedia(
       return {
         ...item,
         media,
-        owner: item.owner ? { ...item.owner, avatarUrl } : null,
+        owner: item.owner
+          ? {
+              organizationId: item.owner.organizationId as string,
+              name: item.owner.name,
+              avatarId: item.owner.avatarId,
+              avatarUrl,
+              hasUnreadFreshPosts: freshOrgIds.has(item.owner.organizationId as string),
+            }
+          : null,
       };
     }),
   );

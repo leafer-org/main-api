@@ -37,10 +37,12 @@ import { isLeft } from '@/infra/lib/box.js';
 import {
   ChatId,
   ChatMessageId,
-  ItemId,
+  type ItemId,
   type MediaId,
   OrganizationId,
 } from '@/kernel/domain/ids.js';
+
+import type { MessageAttachment } from '../../domain/vo/message-attachment.js';
 
 type SerializedHit = {
   messageId: string;
@@ -55,7 +57,6 @@ type SerializedHit = {
 type SerializedHitWithPreview = SerializedHit & {
   chatPreview: {
     partyOther: { kind: 'user' | 'organization' | 'support'; subjectId: string | null };
-    contextItemId: string | null;
   } | null;
 };
 
@@ -76,7 +77,6 @@ function serializeHitWithPreview(
   r: ChatSearchHit & {
     chatPreview: {
       partyOther: { kind: 'user' | 'organization' | 'support'; subjectId: string | null };
-      contextItemId: string | null;
     } | null;
   },
 ): SerializedHitWithPreview {
@@ -94,6 +94,19 @@ function throwDomainError(error: { toResponse(): Record<number, unknown> }): nev
 
 function castMediaIds(ids: readonly string[]): readonly MediaId[] {
   return ids.map((m) => m as MediaId);
+}
+
+/**
+ * Маппит attachments из контракта в domain VO. Backend не валидирует
+ * содержимое — клиент прикладывает любые публичные ссылки на свой риск.
+ */
+function castAttachments(
+  attachments: ReadonlyArray<{ kind: string; itemId?: string }> | undefined,
+): readonly MessageAttachment[] {
+  if (!attachments) return [];
+  return attachments
+    .filter((a): a is { kind: 'item-ref'; itemId: string } => a.kind === 'item-ref' && typeof a.itemId === 'string')
+    .map((a) => ({ kind: 'item-ref' as const, itemId: a.itemId as ItemId }));
 }
 
 
@@ -124,8 +137,11 @@ export class ChatsController {
     const result = await this.openWithOrg.execute({
       initiatorUserId: user.userId,
       organizationId: OrganizationId.raw(body.organizationId),
-      contextItemId: body.contextItemId ? ItemId.raw(body.contextItemId) : null,
-      message: { text: body.message.text, mediaIds: castMediaIds(body.message.mediaIds) },
+      message: {
+        text: body.message.text,
+        mediaIds: castMediaIds(body.message.mediaIds),
+        attachments: castAttachments(body.message.attachments),
+      },
     });
     if (isLeft(result)) throwDomainError(result.error);
     return {
@@ -142,7 +158,11 @@ export class ChatsController {
   ): Promise<PublicResponse['openChatWithSupport']> {
     const result = await this.openWithSupport.execute({
       initiatorUserId: user.userId,
-      message: { text: body.message.text, mediaIds: castMediaIds(body.message.mediaIds) },
+      message: {
+        text: body.message.text,
+        mediaIds: castMediaIds(body.message.mediaIds),
+        attachments: castAttachments(body.message.attachments),
+      },
     });
     if (isLeft(result)) throwDomainError(result.error);
     return {
@@ -191,7 +211,6 @@ export class ChatsController {
     type GlobalHit = ChatSearchHit & {
       chatPreview?: {
         partyOther: { kind: 'user' | 'organization' | 'support'; subjectId: string | null };
-        contextItemId: string | null;
       } | null;
     };
     const value = result.value as { results: GlobalHit[]; nextCursor: string | null };
@@ -257,6 +276,7 @@ export class ChatsController {
         kind: m.kind,
         text: m.text,
         mediaIds: m.mediaIds,
+        attachments: m.attachments as ReadonlyArray<{ kind: 'item-ref'; itemId: string }>,
         systemEvent: m.systemEvent,
         createdAt: m.createdAt.toISOString(),
         editedAt: m.editedAt?.toISOString() ?? null,
@@ -278,6 +298,7 @@ export class ChatsController {
       actorUserId: user.userId,
       text: body.text,
       mediaIds: castMediaIds(body.mediaIds),
+      attachments: castAttachments(body.attachments),
     });
     if (isLeft(result)) throwDomainError(result.error);
     return { messageId: result.value.messageId };

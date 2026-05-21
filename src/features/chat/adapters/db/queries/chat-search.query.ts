@@ -248,7 +248,7 @@ export class DrizzleChatSearchQuery extends ChatSearchQueryPort {
   ): Promise<
     Map<
       string,
-      { partyOther: { kind: 'user' | 'organization' | 'support'; subjectId: string | null }; contextItemId: string | null }
+      { partyOther: { kind: 'user' | 'organization' | 'support'; subjectId: string | null } }
     >
   > {
     if (chatIds.length === 0) return new Map();
@@ -258,13 +258,11 @@ export class DrizzleChatSearchQuery extends ChatSearchQueryPort {
       chat_id: string;
       participant_kind: ParticipantKind;
       participant_subject_id: string | null;
-      context_item_id: string | null;
     }>(sql`
       SELECT
         c.id AS chat_id,
         cp.kind AS participant_kind,
-        cp.subject_id AS participant_subject_id,
-        c.context_item_id AS context_item_id
+        cp.subject_id AS participant_subject_id
       FROM chats c
       JOIN chat_participants cp ON cp.chat_id = c.id
       WHERE c.id IN (${sql.join(
@@ -276,7 +274,7 @@ export class DrizzleChatSearchQuery extends ChatSearchQueryPort {
 
     const map = new Map<
       string,
-      { partyOther: { kind: 'user' | 'organization' | 'support'; subjectId: string | null }; contextItemId: string | null }
+      { partyOther: { kind: 'user' | 'organization' | 'support'; subjectId: string | null } }
     >();
     for (const r of rows.rows) {
       // Берём первого «другого» — для пары (user↔org/support) это один participant.
@@ -286,7 +284,6 @@ export class DrizzleChatSearchQuery extends ChatSearchQueryPort {
           kind: r.participant_kind,
           subjectId: r.participant_subject_id,
         },
-        contextItemId: r.context_item_id,
       });
     }
     return map;

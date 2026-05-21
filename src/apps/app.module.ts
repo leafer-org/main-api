@@ -17,6 +17,8 @@ import { InteractionsModule } from '../features/interactions/interactions.module
 import { MediaModule } from '../features/media/media.module.js';
 import { ORGANIZATION_CONSUMER_ID } from '../features/organization/adapters/kafka/consumer-ids.js';
 import { OrganizationModule } from '../features/organization/organization.module.js';
+import { POSTS_CONSUMER_ID } from '../features/posts/adapters/kafka/consumer-ids.js';
+import { PostsModule } from '../features/posts/posts.module.js';
 import { ReviewsModule } from '../features/reviews/reviews.module.js';
 import { TicketsModule } from '../features/tickets/tickets.module.js';
 import { MainDbModule } from './db.module.js';
@@ -127,6 +129,18 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
       }),
       inject: [MainConfigService],
     }),
+    KafkaConsumerModule.registerAsync({
+      consumerId: POSTS_CONSUMER_ID,
+      mode: { type: 'single' },
+      imports: [MainConfigModule],
+      useFactory: (config: MainConfigService) => ({
+        consumerConfig: {
+          'metadata.broker.list': config.get('KAFKA_BROKER'),
+          'group.id': 'posts-consumer',
+        },
+      }),
+      inject: [MainConfigService],
+    }),
     OutboxRelayModule,
     ...(process.env.NODE_ENV !== 'production' ? [TestModule] : []),
     IdpModule,
@@ -138,6 +152,7 @@ import { OutboxRelayModule } from '@/infra/lib/nest-outbox/outbox-relay.module.j
     InteractionsModule,
     TicketsModule,
     ChatModule,
+    PostsModule,
   ],
 })
 export class AppModule {}

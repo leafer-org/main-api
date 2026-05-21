@@ -62,9 +62,6 @@ function makeStubs() {
     exists: vi
       .fn<(orgId: OrganizationId) => Promise<boolean>>()
       .mockResolvedValue(true),
-    canRespondAsOrganization: vi
-      .fn<(orgId: OrganizationId, userId: UserId) => Promise<boolean>>()
-      .mockResolvedValue(false),
     findRespondableUserIds: vi
       .fn<(orgId: OrganizationId) => Promise<UserId[]>>()
       .mockResolvedValue([]),
@@ -99,7 +96,7 @@ function makeInteractor(stubs: Stubs) {
   );
 }
 
-const okMessage = { text: 'Hello', mediaIds: [] as readonly MediaId[] };
+const okMessage = { text: 'Hello', mediaIds: [] as readonly MediaId[], attachments: [] };
 
 describe('OpenChatWithOrganizationInteractor', () => {
   it('opens new chat: persists chat + first message and publishes 2 events', async () => {
@@ -109,7 +106,6 @@ describe('OpenChatWithOrganizationInteractor', () => {
     const result = await interactor.execute({
       initiatorUserId: USER,
       organizationId: ORG,
-      contextItemId: null,
       message: okMessage,
     });
 
@@ -141,7 +137,6 @@ describe('OpenChatWithOrganizationInteractor', () => {
       status: 'open',
       blockedByParticipantId: null,
       blockedAt: null,
-      contextItemId: null,
       participants: [
         {
           id: PA,
@@ -171,8 +166,7 @@ describe('OpenChatWithOrganizationInteractor', () => {
     const result = await interactor.execute({
       initiatorUserId: USER,
       organizationId: ORG,
-      contextItemId: null,
-      message: { text: 'Hi again', mediaIds: [] },
+      message: { text: 'Hi again', mediaIds: [], attachments: [] },
     });
 
     expect(isRight(result)).toBe(true);
@@ -192,7 +186,6 @@ describe('OpenChatWithOrganizationInteractor', () => {
       status: 'blocked',
       blockedByParticipantId: PB,
       blockedAt: NOW,
-      contextItemId: null,
       participants: [
         {
           id: PA,
@@ -221,7 +214,6 @@ describe('OpenChatWithOrganizationInteractor', () => {
     const result = await interactor.execute({
       initiatorUserId: USER,
       organizationId: ORG,
-      contextItemId: null,
       message: okMessage,
     });
 
@@ -239,7 +231,6 @@ describe('OpenChatWithOrganizationInteractor', () => {
     const result = await interactor.execute({
       initiatorUserId: USER,
       organizationId: ORG,
-      contextItemId: null,
       message: okMessage,
     });
 
@@ -257,8 +248,7 @@ describe('OpenChatWithOrganizationInteractor', () => {
     const result = await interactor.execute({
       initiatorUserId: USER,
       organizationId: ORG,
-      contextItemId: null,
-      message: { text: null, mediaIds: [] },
+      message: { text: null, mediaIds: [], attachments: [] },
     });
 
     expect(isLeft(result)).toBe(true);

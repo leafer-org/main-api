@@ -18,7 +18,13 @@ export function toListView(item: ItemReadModel, enrichment?: ItemCardEnrichment)
     price: item.payment ?? null,
     rating: item.itemReview?.rating ?? null,
     reviewCount: item.itemReview?.reviewCount ?? 0,
-    owner: item.owner ? { name: item.owner.name, avatarId: item.owner.avatarId } : null,
+    owner: item.owner
+      ? {
+          organizationId: item.owner.organizationId,
+          name: item.owner.name,
+          avatarId: item.owner.avatarId,
+        }
+      : null,
     location: item.location
       ? { cityId: item.location.cityId, address: item.location.address }
       : null,

@@ -4,7 +4,6 @@ import type {
   ChatId,
   ChatMessageId,
   ChatParticipantId,
-  ItemId,
   UserId,
 } from '@/kernel/domain/ids.js';
 
@@ -36,7 +35,6 @@ export type ChatState = EntityState<{
   status: ChatStatus;
   blockedByParticipantId: ChatParticipantId | null;
   blockedAt: Date | null;
-  contextItemId: ItemId | null;
   participants: ChatParticipant[];
   lastMessage: LastMessageSnapshot | null;
   createdAt: Date;

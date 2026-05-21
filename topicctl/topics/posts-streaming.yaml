@@ -1,0 +1,9 @@
+meta:
+  name: posts.streaming
+  cluster: local-cluster
+  environment: local
+  description: posts domain events stream (Post/Comment events → projections, tickets, analytics)
+
+spec:
+  partitions: 1
+  replicationFactor: 1

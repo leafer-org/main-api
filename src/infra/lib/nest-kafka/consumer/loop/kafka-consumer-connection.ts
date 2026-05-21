@@ -41,7 +41,12 @@ export class KafkaConsumerConnection {
           'enable.auto.commit': false,
           rebalance_cb: true,
         },
-        this.options.consumerTopicConfig ?? {},
+        {
+          // Projection-style consumers must see all events for correctness; `latest` (librdkafka
+          // default) silently skips messages when a group joins with no committed offset.
+          'auto.offset.reset': 'earliest',
+          ...this.options.consumerTopicConfig,
+        },
       );
 
       const timer = setTimeout(() => {

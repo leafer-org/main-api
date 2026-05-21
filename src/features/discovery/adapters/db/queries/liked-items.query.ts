@@ -9,7 +9,7 @@ import { DiscoveryDatabaseClient } from '../client.js';
 import { discoveryItemCategories, discoveryItems, discoveryUserLikes } from '../schema.js';
 import { decodeCursor, encodeCursor } from '@/infra/lib/pagination/index.js';
 import type { UserId } from '@/kernel/domain/ids.js';
-import { CategoryId, MediaId, ItemId, TypeId } from '@/kernel/domain/ids.js';
+import { CategoryId, ItemId, MediaId, OrganizationId, TypeId } from '@/kernel/domain/ids.js';
 import type { PaymentStrategy } from '@/kernel/domain/vo/widget.js';
 
 @Injectable()
@@ -46,6 +46,7 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
         paymentOptions: discoveryItems.paymentOptions,
         itemRating: discoveryItems.itemRating,
         itemReviewCount: discoveryItems.itemReviewCount,
+        organizationId: discoveryItems.organizationId,
         ownerName: discoveryItems.ownerName,
         ownerAvatarId: discoveryItems.ownerAvatarId,
         cityId: discoveryItems.cityId,
@@ -101,6 +102,7 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
       paymentOptions: { name: string; description: string | null; strategy: string; price: number | null }[] | null;
       itemRating: string | null;
       itemReviewCount: number;
+      organizationId: string | null;
       ownerName: string | null;
       ownerAvatarId: string | null;
       cityId: string | null;
@@ -129,12 +131,14 @@ export class DrizzleLikedItemsQuery implements LikedItemsQueryPort {
           : null,
       rating: row.itemRating !== null ? Number(row.itemRating) : null,
       reviewCount: row.itemReviewCount,
-      owner: row.ownerName
-        ? {
-            name: row.ownerName,
-            avatarId: row.ownerAvatarId ? MediaId.raw(row.ownerAvatarId) : null,
-          }
-        : null,
+      owner:
+        row.ownerName && row.organizationId
+          ? {
+              organizationId: OrganizationId.raw(row.organizationId),
+              name: row.ownerName,
+              avatarId: row.ownerAvatarId ? MediaId.raw(row.ownerAvatarId) : null,
+            }
+          : null,
       location: row.cityId ? { cityId: row.cityId, address: row.address } : null,
       categoryIds: categoryIds.map((id) => CategoryId.raw(id)),
       ...EMPTY_CARD_ENRICHMENT,

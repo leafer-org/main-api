@@ -11,6 +11,7 @@ type DiscoveryItemDocument = {
   title: string;
   description: string;
   ownerName: string;
+  ownerOrganizationId: string | null;
   address: string;
   cityId: string | null;
   ageGroup: string | null;
@@ -32,6 +33,7 @@ function toDocument(item: ItemReadModel): DiscoveryItemDocument {
     title: item.baseInfo?.title ?? '',
     description: item.baseInfo?.description ?? '',
     ownerName: item.owner?.name ?? '',
+    ownerOrganizationId: item.owner?.organizationId ? String(item.owner.organizationId) : null,
     address: item.location?.address ?? '',
     cityId: item.location?.cityId ?? null,
     ageGroup: item.ageGroup ?? null,

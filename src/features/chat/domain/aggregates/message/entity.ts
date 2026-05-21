@@ -92,6 +92,7 @@ export const MessageEntity = {
       kind: event.kind,
       text: event.text,
       mediaIds: event.mediaIds,
+      attachments: event.attachments,
       systemEvent: event.systemEvent,
       createdAt: event.createdAt,
       editedAt: null,

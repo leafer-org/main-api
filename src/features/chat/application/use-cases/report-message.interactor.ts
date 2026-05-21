@@ -114,6 +114,7 @@ export class ReportMessageInteractor {
         kind: 'system',
         text: null,
         mediaIds: [],
+        attachments: [],
         systemEvent: null,
         createdAt: this.clock.now(),
       });

@@ -118,6 +118,12 @@ export type OrganizationRefDto = {
  */
 export type ChatParticipantSubjectDto = UserRefDto | OrganizationRefDto;
 
+/**
+ * Карточка-вложение в сообщении. Discriminated union по kind.
+ * Расширение: новый context = новый вариант. Иммутабельно после create.
+ */
+export type MessageAttachmentDto = { kind: 'item-ref'; itemId: string };
+
 export type ChatListItem = {
   chatId: ChatId;
   status: 'open' | 'blocked';
@@ -128,7 +134,6 @@ export type ChatListItem = {
     /** Claim'нувший org-slot сотрудник. null для user-slot'ов и не-claim'нутых org-slot'ов. */
     assignedUser: UserRefDto | null;
   }>;
-  contextItemId: string | null;
   lastMessage: {
     messageId: ChatMessageId;
     preview: string;
@@ -148,6 +153,7 @@ export type ChatMessageItem = {
   kind: 'text' | 'media' | 'system';
   text: string | null;
   mediaIds: readonly string[];
+  attachments: readonly MessageAttachmentDto[];
   systemEvent: { type: string; payload: Record<string, unknown> } | null;
   createdAt: Date;
   editedAt: Date | null;
@@ -222,7 +228,6 @@ export type ChatSearchHit = {
 
 export type ChatSearchPreview = {
   partyOther: { kind: 'user' | 'organization' | 'support'; subjectId: string | null };
-  contextItemId: string | null;
 };
 
 export type ChatSearchResultGlobal = {

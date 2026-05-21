@@ -5,10 +5,6 @@ export class OrganizationNotFoundForChatError extends CreateDomainError(
   404,
 ) {}
 
-export class ContextItemNotFoundError extends CreateDomainError('context_item_not_found', 400) {}
-
-export class ContextItemMismatchError extends CreateDomainError('context_item_mismatch', 400) {}
-
 export class NotAChatResponderError extends CreateDomainError('not_a_chat_responder', 403) {}
 
 export class QueryTooShortError extends CreateDomainError('query_too_short', 400) {}

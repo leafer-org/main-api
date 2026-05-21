@@ -1,10 +1,10 @@
+import type { MessageAttachment } from '../../vo/message-attachment.js';
 import type { MessageKind, SystemEvent } from '../../vo/message-kind.js';
 import type { ParticipantKind } from '../../vo/participant-kind.js';
 import type {
   ChatId,
   ChatMessageId,
   ChatParticipantId,
-  ItemId,
   MediaId,
   UserId,
 } from '@/kernel/domain/ids.js';
@@ -12,7 +12,6 @@ import type {
 export type ChatOpenedEvent = Readonly<{
   type: 'chat.opened';
   chatId: ChatId;
-  contextItemId: ItemId | null;
   participants: ReadonlyArray<{
     id: ChatParticipantId;
     kind: ParticipantKind;
@@ -31,6 +30,7 @@ export type ChatMessageSentEvent = Readonly<{
   kind: MessageKind;
   text: string | null;
   mediaIds: readonly MediaId[];
+  attachments: readonly MessageAttachment[];
   systemEvent: SystemEvent | null;
   createdAt: Date;
 }>;

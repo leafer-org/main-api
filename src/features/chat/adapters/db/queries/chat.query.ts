@@ -11,14 +11,20 @@ import {
   type ChatMessagesPage,
   ChatMessagesQueryPort,
   ChatOrganizationMembershipReadModel,
+  type MessageAttachmentDto,
   type OrganizationRefDto,
   type UnreadSummary,
   UnreadSummaryQueryPort,
   type UserRefDto,
 } from '../../../application/ports.js';
+import type { MessageAttachment } from '../../../domain/vo/message-attachment.js';
 import type { MessageKind, SystemEvent } from '../../../domain/vo/message-kind.js';
 import { chatMessages, chatParticipants, chats } from '../schema.js';
 import { TransactionHostPg } from '@/infra/db/tx-host-pg.js';
+import {
+  ItemDirectoryPort,
+  type ItemDirectoryView,
+} from '@/kernel/application/ports/item-directory.js';
 import {
   type GetDownloadUrlOptions,
   MediaService,
@@ -37,6 +43,7 @@ import {
   ChatId,
   ChatMessageId,
   ChatParticipantId,
+  type ItemId,
   type MediaId,
   type OrganizationId,
   type UserId,
@@ -76,6 +83,13 @@ type RawParticipant = {
   assignedUserId: string | null;
 };
 
+function extractItemTitle(view: ItemDirectoryView): string | null {
+  const baseInfo = view.widgets.find((w) => w.type === 'base-info');
+  if (!baseInfo || baseInfo.type !== 'base-info') return null;
+  const title = baseInfo.title;
+  return typeof title === 'string' && title.length > 0 ? title : null;
+}
+
 @Injectable()
 export class DrizzleChatQuery
   extends ChatListQueryPort
@@ -93,6 +107,8 @@ export class DrizzleChatQuery
     private readonly userDirectory: UserDirectoryPort,
     @Inject(OrganizationDirectoryPort)
     private readonly orgDirectory: OrganizationDirectoryPort,
+    @Inject(ItemDirectoryPort)
+    private readonly itemDirectory: ItemDirectoryPort,
     @Inject(MediaService)
     private readonly mediaService: MediaService,
   ) {
@@ -266,6 +282,7 @@ export class DrizzleChatQuery
       kind: row.kind as MessageKind,
       text: row.text,
       mediaIds: row.mediaIds as string[],
+      attachments: (row.attachments as MessageAttachmentDto[] | null) ?? [],
       systemEvent: row.systemEvent as SystemEvent | null,
       createdAt: row.createdAt,
       editedAt: row.editedAt,
@@ -390,7 +407,25 @@ export class DrizzleChatQuery
     const unreadByChat = new Map<string, number>();
     for (const row of unreadRows.rows) unreadByChat.set(row.chat_id, Number(row.cnt));
 
-    // --- Enrichment: собрать userIds + orgIds, безопасные batch-lookup'ы ---
+    // --- Last messages: для preview-обогащения по attachments нужны сами строки сообщений
+    const lastMessageIds = chatRows
+      .map((c) => c.lastMessageId)
+      .filter((id): id is string => id !== null);
+    const lastMessageRows = lastMessageIds.length
+      ? await db
+          .select()
+          .from(chatMessages)
+          .where(
+            sql`${chatMessages.id} IN (${sql.join(
+              lastMessageIds.map((id) => sql`${id}::uuid`),
+              sql`, `,
+            )})`,
+          )
+      : [];
+    const lastMessageById = new Map<string, typeof lastMessageRows[number]>();
+    for (const m of lastMessageRows) lastMessageById.set(m.id, m);
+
+    // --- Enrichment: собрать userIds + orgIds + itemIds, безопасные batch-lookup'ы ---
     const participantsByChat = new Map<string, RawParticipant[]>();
     for (const p of participantRows) {
       const list = participantsByChat.get(p.chatId) ?? [];
@@ -400,6 +435,7 @@ export class DrizzleChatQuery
 
     const userIdSet = new Set<string>();
     const orgIdSet = new Set<string>();
+    const itemIdSet = new Set<string>();
 
     for (const p of participantRows) {
       if (p.kind === 'user' && p.subjectId) userIdSet.add(p.subjectId);
@@ -419,9 +455,18 @@ export class DrizzleChatQuery
       if (senderUserId) userIdSet.add(senderUserId);
     }
 
-    const [userMap, orgMap] = await Promise.all([
+    // Item-ref attachments в последних сообщениях — для preview-обогащения.
+    for (const m of lastMessageRows) {
+      const attachments = (m.attachments as MessageAttachment[]) ?? [];
+      for (const a of attachments) {
+        if (a.kind === 'item-ref') itemIdSet.add(a.itemId as string);
+      }
+    }
+
+    const [userMap, orgMap, itemMap] = await Promise.all([
       this.safeBatchUsers([...userIdSet] as UserId[]),
       this.safeBatchOrganizations([...orgIdSet] as OrganizationId[]),
+      this.safeBatchItems([...itemIdSet] as ItemId[]),
     ]);
 
     // Собрать аватары для batch-lookup URLs одним вызовом.
@@ -437,11 +482,16 @@ export class DrizzleChatQuery
     const items: ChatListItem[] = chatRows.map((c) => {
       const myParticipants = participantsByChat.get(c.id) ?? [];
 
+      const lastMessageRow = c.lastMessageId ? lastMessageById.get(c.lastMessageId) : undefined;
       const lastMessage =
         c.lastMessageId !== null && c.lastMessageAt !== null && c.lastMessagePreview !== null
           ? {
               messageId: ChatMessageId.raw(c.lastMessageId),
-              preview: c.lastMessagePreview,
+              preview: this.buildLastMessagePreview(
+                c.lastMessagePreview,
+                lastMessageRow?.attachments as MessageAttachment[] | undefined,
+                itemMap,
+              ),
               senderParticipantId:
                 c.lastMessageSenderParticipantId === null
                   ? null
@@ -469,7 +519,6 @@ export class DrizzleChatQuery
               ? this.toUserRef(p.assignedUserId as UserId, userMap, avatarUrlMap)
               : null,
         })),
-        contextItemId: c.contextItemId,
         lastMessage,
         myUnreadCount: unreadByChat.get(c.id) ?? 0,
         updatedAt: c.updatedAt,
@@ -477,6 +526,28 @@ export class DrizzleChatQuery
     });
 
     return { chats: items, total };
+  }
+
+  /**
+   * Превью последнего сообщения с учётом attachments.
+   * Приоритет: непустой текст → item-ref title → stored preview (`[media]`).
+   * itemMap может не содержать item (товар удалён / приватный) — fallback на «Товар».
+   */
+  private buildLastMessagePreview(
+    storedPreview: string,
+    attachments: readonly MessageAttachment[] | undefined,
+    itemMap: Map<string, ItemDirectoryView>,
+  ): string {
+    if (storedPreview.length > 0 && storedPreview !== '[media]') return storedPreview;
+    if (attachments && attachments.length > 0) {
+      const itemRef = attachments.find((a) => a.kind === 'item-ref');
+      if (itemRef) {
+        const view = itemMap.get(itemRef.itemId as string);
+        const title = view ? extractItemTitle(view) : null;
+        return title ? `📌 ${title}` : '📌 Товар';
+      }
+    }
+    return storedPreview;
   }
 
   /** Конкретный userId, написавший сообщение, по slot'у: для user-slot'а subjectId, для org/support — assignedUserId. */
@@ -589,6 +660,19 @@ export class DrizzleChatQuery
       return map;
     } catch (err) {
       this.logger.error('avatar url batch failed', err as Error);
+      return new Map();
+    }
+  }
+
+  private async safeBatchItems(ids: ItemId[]): Promise<Map<string, ItemDirectoryView>> {
+    if (ids.length === 0) return new Map();
+    try {
+      const list = await this.itemDirectory.findByIds(ids);
+      const map = new Map<string, ItemDirectoryView>();
+      for (const i of list) map.set(i.itemId as string, i);
+      return map;
+    } catch (err) {
+      this.logger.error('item enrichment failed', err as Error);
       return new Map();
     }
   }
